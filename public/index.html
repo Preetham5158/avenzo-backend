@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Avenzo</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #0f0f10;
+      color: white;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      padding: 20px;
+      align-items: center;
+      border-bottom: 1px solid #222;
+    }
+
+    .logo {
+      font-weight: bold;
+      font-size: 18px;
+    }
+
+    .nav button {
+      background: white;
+      color: black;
+      border: none;
+      padding: 8px 14px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .hero {
+      text-align: center;
+      padding: 80px 20px;
+    }
+
+    .hero h1 {
+      font-size: 36px;
+      margin-bottom: 10px;
+    }
+
+    .hero p {
+      color: #aaa;
+      max-width: 500px;
+      margin: auto;
+    }
+
+    .hero button {
+      margin-top: 20px;
+      padding: 12px 20px;
+      border: none;
+      background: white;
+      color: black;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .section {
+      padding: 60px 20px;
+      text-align: center;
+    }
+
+    .grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      justify-content: center;
+      margin-top: 30px;
+    }
+
+    .card {
+      background: #1a1a1c;
+      padding: 20px;
+      border-radius: 12px;
+      width: 260px;
+    }
+
+    .card h3 {
+      margin-bottom: 10px;
+    }
+
+    .light {
+      background: #f6f7fb;
+      color: black;
+    }
+
+    footer {
+      padding: 20px;
+      text-align: center;
+      font-size: 12px;
+      color: #aaa;
+      border-top: 1px solid #222;
+    }
+  </style>
+</head>
+
+<body>
+
+<header>
+  <div class="logo">Avenzo</div>
+  <div class="nav">
+    <button onclick="location.href='/login.html'">Login</button>
+  </div>
+</header>
+
+<section class="hero">
+  <h1>Scan. Order. Done.</h1>
+  <p>
+    Avenzo helps restaurants serve faster with QR-based ordering.
+    No waiting, no confusion — just smooth ordering.
+  </p>
+  <button onclick="location.href='/menu.html?restaurantId=demo'">
+    Try Demo
+  </button>
+</section>
+
+<section class="section">
+  <h2>How it works</h2>
+
+  <div class="grid">
+    <div class="card">
+      <h3>📱 Scan QR</h3>
+      <p>Customers scan a QR code at the table or counter</p>
+    </div>
+
+    <div class="card">
+      <h3>🍽 Browse Menu</h3>
+      <p>View categorized menu with real-time availability</p>
+    </div>
+
+    <div class="card">
+      <h3>🧾 Place Order</h3>
+      <p>Order instantly and get pickup code</p>
+    </div>
+  </div>
+</section>
+
+<section class="section light">
+  <h2>Built for Restaurants</h2>
+
+  <div class="grid">
+    <div class="card">
+      <h3>⚡ Faster Service</h3>
+      <p>Reduce waiting time and increase efficiency</p>
+    </div>
+
+    <div class="card">
+      <h3>🧠 Smart Menu</h3>
+      <p>Update items, prices, availability anytime</p>
+    </div>
+
+    <div class="card">
+      <h3>📊 Order Control</h3>
+      <p>Manage orders in real-time from dashboard</p>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <h2>Why Avenzo?</h2>
+
+  <div class="grid">
+    <div class="card">
+      <h3>🚀 No App Needed</h3>
+      <p>Works instantly in browser</p>
+    </div>
+
+    <div class="card">
+      <h3>🔒 Secure</h3>
+      <p>Role-based access for admins</p>
+    </div>
+
+    <div class="card">
+      <h3>📱 Mobile First</h3>
+      <p>Designed for real-world usage</p>
+    </div>
+  </div>
+</section>
+
+<section class="section light">
+  <h2>Ready to modernize your restaurant?</h2>
+  <button onclick="location.href='/signup.html'">Get Started</button>
+</section>
+
+<footer>
+  © 2026 Avenzo • Built for modern restaurants
+</footer>
+
+</body>
+</html>
