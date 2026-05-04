@@ -5,23 +5,42 @@ const prisma = new PrismaClient();
 async function main() {
 
   /* ================================
-     CLEANUP (VERY IMPORTANT)
-     Order matters due to FK constraints
+     CLEANUP
   ================================ */
-
   await prisma.orderItem.deleteMany();
   await prisma.order.deleteMany();
   await prisma.menu.deleteMany();
   await prisma.restaurant.deleteMany();
+  await prisma.user.deleteMany();
 
   console.log("🧹 Old data cleared");
+
+  /* ================================
+     CREATE USERS (OWNERS)
+  ================================ */
+  const user1 = await prisma.user.create({
+    data: {
+      email: "admin@avenzo.com",
+      password: "Admin@123"
+    }
+  });
+
+  const user2 = await prisma.user.create({
+    data: {
+      email: "preetham@avenzo.com",
+      password: "Trust@2026"
+    }
+  });
+
+  console.log("👤 Users created");
 
   /* ================================
      RESTAURANT 1
   ================================ */
   const restaurant1 = await prisma.restaurant.create({
     data: {
-      name: "Avenzo Cafe"
+      name: "Avenzo Cafe",
+      ownerId: user1.id   // ✅ FIX
     }
   });
 
@@ -43,7 +62,8 @@ async function main() {
   ================================ */
   const restaurant2 = await prisma.restaurant.create({
     data: {
-      name: "Spice Garden"
+      name: "Spice Garden",
+      ownerId: user2.id   // ✅ FIX
     }
   });
 
@@ -56,11 +76,11 @@ async function main() {
   });
 
   /* ================================
-     LOG OUTPUT (VERY USEFUL)
+     OUTPUT
   ================================ */
-  console.log("✅ Seed completed successfully");
+  console.log("✅ Seed completed successfully\n");
 
-  console.log("\n🔗 Restaurant URLs:\n");
+  console.log("🔗 Restaurant URLs:\n");
 
   console.log(`Avenzo Cafe:
 https://avenzo.app/menu.html?restaurantId=${restaurant1.id}

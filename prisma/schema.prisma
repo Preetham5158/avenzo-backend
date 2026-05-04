@@ -19,6 +19,8 @@ model Restaurant {
   createdAt DateTime @default(now())
   menus     Menu[]
   orders    Order[]
+  ownerId   String 
+  owner     User     @relation(fields: [ownerId], references: [id])
 }
 
 model Menu {
@@ -62,5 +64,6 @@ model User {
   email     String   @unique
   password  String
   name      String?
+  restaurants Restaurant[]
   createdAt DateTime @default(now())
 }

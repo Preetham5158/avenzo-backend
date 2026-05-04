@@ -14,24 +14,23 @@ app.use(express.json());
 app.use(express.static("public"));
 
 const BASE_URL = process.env.BASE_URL || "http://localhost:5000";
-const ADMIN_KEY = process.env.ADMIN_KEY || "12345";
 
 /* ================================
    HELPER: ADMIN AUTH
 ================================ */
-function checkAdmin(req, res) {
-  if (req.headers["x-admin-key"] !== ADMIN_KEY) {
-    res.status(403).json({ error: "Unauthorized" });
-    return false;
-  }
-  return true;
-}
+// function checkAdmin(req, res) {
+//   if (req.headers["x-admin-key"] !== ADMIN_KEY) {
+//     res.status(403).json({ error: "Unauthorized" });
+//     return false;
+//   }
+//   return true;
+// }
 
 /* ================================
    HEALTH CHECK
 ================================ */
 app.get("/", (req, res) => {
-  res.send("Avenzo API running 🚀");
+  res.sendFile(path.join(__dirname, "../public/index.html"));
 });
 
 /* ================================
@@ -160,124 +159,14 @@ app.get("/order/:id", async (req, res) => {
 });
 
 /* ================================
-   UPDATE STATUS
-================================ */
-app.patch("/order/:id/status", async (req, res) => {
-  try {
-    if (!req.body.status) {
-      return res.status(400).json({ error: "Status required" });
-    }
-
-    const updated = await prisma.order.update({
-      where: { id: req.params.id },
-      data: { status: req.body.status }
-    });
-
-    res.json(updated);
-  } catch {
-    res.status(500).json({ error: "Error updating status" });
-  }
-});
-
-/* ================================
    RESTAURANTS LIST
 ================================ */
-app.get("/restaurants", async (req, res) => {
+app.get("/restaurants", authMiddleware, async (req, res) => {
   const restaurants = await prisma.restaurant.findMany({
-    orderBy: { name: "asc" }
+    where: { ownerId: req.user.userId }
   });
 
   res.json(restaurants);
-});
-
-/* ================================
-   ADMIN ROUTES
-================================ */
-
-app.get("/admin/menu/:restaurantId", async (req, res) => {
-  const menu = await prisma.menu.findMany({
-    where: { restaurantId: req.params.restaurantId }
-  });
-
-  res.json(menu);
-});
-
-app.post("/admin/menu", async (req, res) => {
-  if (!checkAdmin(req, res)) return;
-
-  const { name, price, category, restaurantId } = req.body;
-
-  if (!name || !price || !category || !restaurantId) {
-    return res.status(400).json({ error: "Missing fields" });
-  }
-
-  const item = await prisma.menu.create({
-    data: {
-      name,
-      price: Number(price),
-      category,
-      restaurantId,
-      isAvailable: true
-    }
-  });
-
-  res.json(item);
-});
-
-app.put("/admin/menu/:id", async (req, res) => {
-  if (!checkAdmin(req, res)) return;
-
-  const { name, price, category } = req.body;
-
-  if (!name || !price || !category) {
-    return res.status(400).json({ error: "Missing fields" });
-  }
-
-  const updated = await prisma.menu.update({
-    where: { id: req.params.id },
-    data: {
-      name,
-      price: Number(price),
-      category
-    }
-  });
-
-  res.json(updated);
-});
-
-app.patch("/admin/menu/:id/toggle", async (req, res) => {
-  if (!checkAdmin(req, res)) return;
-
-  const item = await prisma.menu.findUnique({
-    where: { id: req.params.id }
-  });
-
-  if (!item) {
-    return res.status(404).json({ error: "Item not found" });
-  }
-
-  const updated = await prisma.menu.update({
-    where: { id: req.params.id },
-    data: { isAvailable: !item.isAvailable }
-  });
-
-  res.json(updated);
-});
-
-app.delete("/admin/menu/:id", async (req, res) => {
-  if (!checkAdmin(req, res)) return;
-
-  const id = req.params.id;
-
-  await prisma.orderItem.deleteMany({
-    where: { menuId: id }
-  });
-
-  await prisma.menu.delete({
-    where: { id }
-  });
-
-  res.json({ success: true });
 });
 
 app.get("/track/:id", (req, res) => {
@@ -309,6 +198,9 @@ app.post("/auth/signup", async (req, res) => {
 app.post("/auth/login", async (req, res) => {
   try {
     const { email, password } = req.body;
+    if (!email || !password) {
+  return res.status(400).json({ error: "Email & password required" });
+}
 
     const user = await prisma.user.findUnique({ where: { email } });
     if (!user) {
@@ -354,6 +246,177 @@ app.get("/auth/me", authMiddleware, async (req, res) => {
   });
 
   res.json(user);
+});
+
+async function isOwner(prisma, restaurantId, userId) {
+  const r = await prisma.restaurant.findUnique({
+    where: { id: restaurantId },
+    select: { ownerId: true }
+  });
+
+  return !!r && r.ownerId === userId;
+}
+
+app.post("/restaurant", authMiddleware, async (req, res) => {
+  const { name } = req.body;
+  if (!name) {
+  return res.status(400).json({ error: "Name required" });
+}
+
+  const restaurant = await prisma.restaurant.create({
+    data: {
+      name,
+      ownerId: req.user.userId
+    }
+  });
+
+  res.json(restaurant);
+});
+
+app.put("/restaurant/:id", authMiddleware, async (req, res) => {
+  const { id } = req.params;
+  const { name } = req.body;
+if (!name) {
+  return res.status(400).json({ error: "Name required" });
+}
+  const allowed = await isOwner(prisma, id, req.user.userId);
+  if (!allowed) return res.status(403).json({ error: "Not allowed" });
+
+  const updated = await prisma.restaurant.update({
+    where: { id },
+    data: { name }
+  });
+
+  res.json(updated);
+});
+
+app.delete("/restaurant/:id", authMiddleware, async (req, res) => {
+  const { id } = req.params;
+
+  const allowed = await isOwner(prisma, id, req.user.userId);
+  if (!allowed) return res.status(403).json({ error: "Not allowed" });
+
+  await prisma.orderItem.deleteMany({
+  where: { order: { restaurantId: id } }
+});
+
+await prisma.order.deleteMany({
+  where: { restaurantId: id }
+});
+
+await prisma.menu.deleteMany({
+  where: { restaurantId: id }
+});
+
+await prisma.restaurant.delete({
+  where: { id }
+});
+
+  res.json({ message: "Deleted" });
+});
+
+app.post("/menu", authMiddleware, async (req, res) => {
+  const { name, price, category, restaurantId } = req.body;
+  if (!name || !price || !category || !restaurantId) {
+  return res.status(400).json({ error: "Missing fields" });
+}
+
+  const allowed = await isOwner(prisma, restaurantId, req.user.userId);
+  if (!allowed) return res.status(403).json({ error: "Not allowed" });
+
+  const item = await prisma.menu.create({
+    data: { name, price, category, restaurantId }
+  });
+
+  res.json(item);
+});
+
+app.put("/menu/:id", authMiddleware, async (req, res) => {
+  const { id } = req.params;
+  const { name, price, category, isAvailable } = req.body;
+  if (!name || !price || !category) {
+  return res.status(400).json({ error: "Missing fields" });
+}
+  const item = await prisma.menu.findUnique({
+    where: { id },
+    select: { restaurantId: true }
+  });
+
+  if (!item) return res.status(404).json({ error: "Not found" });
+
+  const allowed = await isOwner(prisma, item.restaurantId, req.user.userId);
+  if (!allowed) return res.status(403).json({ error: "Not allowed" });
+
+  const updated = await prisma.menu.update({
+    where: { id },
+    data: { name, price, category, isAvailable }
+  });
+
+  res.json(updated);
+});
+
+app.delete("/menu/:id", authMiddleware, async (req, res) => {
+  const { id } = req.params;
+
+  const item = await prisma.menu.findUnique({
+    where: { id },
+    select: { restaurantId: true }
+  });
+
+  if (!item) return res.status(404).json({ error: "Not found" });
+
+  const allowed = await isOwner(prisma, item.restaurantId, req.user.userId);
+  if (!allowed) return res.status(403).json({ error: "Not allowed" });
+
+  await prisma.menu.delete({ where: { id } });
+
+  res.json({ message: "Deleted" });
+});
+
+app.patch("/order/:id/status", authMiddleware, async (req, res) => {
+  const { id } = req.params;
+  const { status } = req.body;
+  const validStatuses = ["PENDING", "PREPARING", "READY", "COMPLETED"];
+
+if (!validStatuses.includes(status)) {
+  return res.status(400).json({ error: "Invalid status" });
+}
+
+  const order = await prisma.order.findUnique({
+    where: { id },
+    select: { restaurantId: true }
+  });
+
+  if (!order) return res.status(404).json({ error: "Not found" });
+
+  const allowed = await isOwner(prisma, order.restaurantId, req.user.userId);
+  if (!allowed) return res.status(403).json({ error: "Not allowed" });
+
+  const updated = await prisma.order.update({
+    where: { id },
+    data: { status }
+  });
+
+  res.json(updated);
+});
+
+app.get("/admin/orders/:restaurantId", authMiddleware, async (req, res) => {
+  const { restaurantId } = req.params;
+
+  const allowed = await isOwner(prisma, restaurantId, req.user.userId);
+  if (!allowed) return res.status(403).json({ error: "Not allowed" });
+
+  const orders = await prisma.order.findMany({
+    where: { restaurantId },
+    include: {
+      items: {
+        include: { menu: true }
+      }
+    },
+    orderBy: { id: "desc" }
+  });
+
+  res.json(orders);
 });
 
 /* ================================

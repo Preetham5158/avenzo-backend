@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Manage Menu</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <style>
+    body { font-family: Arial; margin:0; background:#f6f7fb; }
+
+    header {
+      background:white;
+      padding:15px;
+      border-bottom:1px solid #eee;
+    }
+
+    .container { padding:15px; }
+
+    .card {
+      background:white;
+      padding:12px;
+      border-radius:10px;
+      margin-bottom:10px;
+      display:flex;
+      justify-content:space-between;
+    }
+
+    input {
+      padding:8px;
+      margin:5px;
+    }
+
+    button {
+      padding:6px 10px;
+      border:none;
+      background:black;
+      color:white;
+      border-radius:5px;
+      cursor:pointer;
+    }
+  </style>
+</head>
+
+<body>
+
+<header>
+  <b>Menu Management</b>
+</header>
+
+<div class="container">
+
+  <div>
+    <input id="name" placeholder="Item name">
+    <input id="price" placeholder="Price">
+    <input id="category" placeholder="Category">
+    <button onclick="add()">Add</button>
+  </div>
+
+  <br>
+
+  <div id="list"></div>
+
+</div>
+
+<script>
+const API = "https://avenzo.app";
+const token = localStorage.getItem("token");
+
+if (!token) window.location.href = "/login.html";
+
+const params = new URLSearchParams(window.location.search);
+const restaurantId = params.get("restaurantId");
+
+async function load() {
+  const res = await fetch(`${API}/menu/${restaurantId}`);
+  const data = await res.json();
+
+  const list = document.getElementById("list");
+  list.innerHTML = "";
+
+  data.forEach(m => {
+    const div = document.createElement("div");
+    div.className = "card";
+
+    div.innerHTML = `
+      <div>${m.name} - ₹${m.price}</div>
+      <div>
+        <button onclick="del('${m.id}')">Delete</button>
+      </div>
+    `;
+
+    list.appendChild(div);
+  });
+}
+
+async function add() {
+  const name = document.getElementById("name").value;
+  const price = document.getElementById("price").value;
+  const category = document.getElementById("category").value;
+
+  await fetch(`${API}/menu`, {
+    method: "POST",
+    headers: {
+      "Content-Type":"application/json",
+      "Authorization": token
+    },
+    body: JSON.stringify({
+      name,
+      price,
+      category,
+      restaurantId
+    })
+  });
+
+  load();
+}
+
+async function del(id) {
+  await fetch(`${API}/menu/${id}`, {
+    method: "DELETE",
+    headers: { "Authorization": token }
+  });
+
+  load();
+}
+
+load();
+</script>
+
+</body>
+</html>
