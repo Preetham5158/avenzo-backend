@@ -8,55 +8,77 @@
     body {
       margin: 0;
       font-family: Arial, sans-serif;
-      background: #0f0f10;
+      background: #0b0b0c;
       color: white;
     }
 
     header {
       display: flex;
       justify-content: space-between;
-      padding: 20px;
       align-items: center;
+      padding: 15px 20px;
       border-bottom: 1px solid #222;
     }
 
     .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .logo img {
+      height: 35px;
+    }
+
+    .logo span {
       font-weight: bold;
       font-size: 18px;
     }
 
     .nav button {
-      background: white;
-      color: black;
+      background: linear-gradient(45deg,#ff7a00,#ffb300);
       border: none;
       padding: 8px 14px;
       border-radius: 6px;
       cursor: pointer;
+      color: black;
+      font-weight: bold;
     }
 
     .hero {
       text-align: center;
-      padding: 80px 20px;
+      padding: 80px 20px 60px;
+    }
+
+    .hero img {
+      width: 120px;
+      margin-bottom: 20px;
     }
 
     .hero h1 {
       font-size: 36px;
-      margin-bottom: 10px;
+      margin: 0;
+    }
+
+    .tagline {
+      color: #ff9d00;
+      margin-top: 10px;
+      font-weight: bold;
     }
 
     .hero p {
       color: #aaa;
       max-width: 500px;
-      margin: auto;
+      margin: 20px auto;
     }
 
     .hero button {
-      margin-top: 20px;
       padding: 12px 20px;
       border: none;
-      background: white;
-      color: black;
       border-radius: 8px;
+      background: linear-gradient(45deg,#ff7a00,#ffb300);
+      color: black;
+      font-weight: bold;
       cursor: pointer;
     }
 
@@ -65,36 +87,68 @@
       text-align: center;
     }
 
+    .section h2 {
+      margin-bottom: 20px;
+    }
+
     .grid {
       display: flex;
       flex-wrap: wrap;
       gap: 20px;
       justify-content: center;
-      margin-top: 30px;
     }
 
     .card {
-      background: #1a1a1c;
+      background: #141416;
       padding: 20px;
       border-radius: 12px;
       width: 260px;
+      text-align: left;
+      border: 1px solid #222;
     }
 
     .card h3 {
-      margin-bottom: 10px;
+      margin: 10px 0;
+      color: #ff9d00;
     }
 
-    .light {
-      background: #f6f7fb;
+    .card p {
+      color: #bbb;
+      font-size: 14px;
+    }
+
+    .highlight {
+      background: #111;
+    }
+
+    .cta {
+      background: linear-gradient(45deg,#ff7a00,#ffb300);
       color: black;
+      padding: 60px 20px;
+      text-align: center;
+    }
+
+    .cta button {
+      margin-top: 20px;
+      padding: 12px 20px;
+      border: none;
+      border-radius: 8px;
+      font-weight: bold;
+      cursor: pointer;
     }
 
     footer {
       padding: 20px;
       text-align: center;
+      color: #777;
       font-size: 12px;
-      color: #aaa;
       border-top: 1px solid #222;
+    }
+
+    @media(max-width:600px){
+      .hero h1 {
+        font-size: 28px;
+      }
     }
   </style>
 </head>
@@ -102,61 +156,67 @@
 <body>
 
 <header>
-  <div class="logo">Avenzo</div>
+  <div class="logo">
+    <img src="/logo.png" />
+    <span>Avenzo</span>
+  </div>
+
   <div class="nav">
     <button onclick="location.href='/login.html'">Login</button>
   </div>
 </header>
 
 <section class="hero">
+  <img src="/logo.png" />
   <h1>Scan. Order. Done.</h1>
+  <div class="tagline">Order Smart. Skip The Wait.</div>
+
   <p>
-    Avenzo helps restaurants serve faster with QR-based ordering.
-    No waiting, no confusion — just smooth ordering.
+    Avenzo transforms restaurant ordering with QR technology.
+    No apps. No waiting. Just fast and seamless ordering.
   </p>
-  <button onclick="location.href='/menu.html?restaurantId=demo'">
-    Try Demo
-  </button>
+
+  <button onclick="location.href='/menu.html'">Try Demo</button>
 </section>
 
 <section class="section">
-  <h2>How it works</h2>
+  <h2>How It Works</h2>
 
   <div class="grid">
     <div class="card">
       <h3>📱 Scan QR</h3>
-      <p>Customers scan a QR code at the table or counter</p>
+      <p>Customers scan a QR code and instantly open the menu</p>
     </div>
 
     <div class="card">
       <h3>🍽 Browse Menu</h3>
-      <p>View categorized menu with real-time availability</p>
+      <p>Live menu with categories and real-time updates</p>
     </div>
 
     <div class="card">
-      <h3>🧾 Place Order</h3>
-      <p>Order instantly and get pickup code</p>
+      <h3>⚡ Order Instantly</h3>
+      <p>Place order in seconds and get pickup code</p>
     </div>
   </div>
 </section>
 
-<section class="section light">
+<section class="section highlight">
   <h2>Built for Restaurants</h2>
 
   <div class="grid">
     <div class="card">
       <h3>⚡ Faster Service</h3>
-      <p>Reduce waiting time and increase efficiency</p>
+      <p>Reduce waiting time and improve efficiency</p>
     </div>
 
     <div class="card">
       <h3>🧠 Smart Menu</h3>
-      <p>Update items, prices, availability anytime</p>
+      <p>Update prices, items and availability anytime</p>
     </div>
 
     <div class="card">
       <h3>📊 Order Control</h3>
-      <p>Manage orders in real-time from dashboard</p>
+      <p>Track and manage orders in real-time</p>
     </div>
   </div>
 </section>
@@ -167,28 +227,28 @@
   <div class="grid">
     <div class="card">
       <h3>🚀 No App Needed</h3>
-      <p>Works instantly in browser</p>
-    </div>
-
-    <div class="card">
-      <h3>🔒 Secure</h3>
-      <p>Role-based access for admins</p>
+      <p>Works directly in browser — no install required</p>
     </div>
 
     <div class="card">
       <h3>📱 Mobile First</h3>
-      <p>Designed for real-world usage</p>
+      <p>Designed for real-world restaurant usage</p>
+    </div>
+
+    <div class="card">
+      <h3>🔄 Real-Time Updates</h3>
+      <p>Instant status updates for customers and staff</p>
     </div>
   </div>
 </section>
 
-<section class="section light">
+<section class="cta">
   <h2>Ready to modernize your restaurant?</h2>
   <button onclick="location.href='/signup.html'">Get Started</button>
 </section>
 
 <footer>
-  © 2026 Avenzo • Built for modern restaurants
+  © 2026 Avenzo • Order Smart. Skip The Wait.
 </footer>
 
 </body>
