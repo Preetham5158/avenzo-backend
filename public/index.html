@@ -1,449 +1,492 @@
 <!DOCTYPE html>
 <html>
+
 <head>
-  <title>Avenzo</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Avenzo</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 
-  <style>
-    /* GLOBAL */
-body {
-  margin: 0;
-  font-family: 'Inter', sans-serif;
-  background: linear-gradient(180deg, #f5f7fb, #eef1f7);
-  color: #111;
-  scroll-behavior: smooth;
-}
+    <style>
+        /* GLOBAL */
+        body {
+            margin: 0;
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(180deg, #f5f7fb, #eef1f7);
+            color: #111;
+            scroll-behavior: smooth;
+        }
 
-.container {
-  max-width: 1200px;
-  margin: auto;
-  padding: 0 40px;
-}
+        .container {
+            max-width: 1200px;
+            margin: auto;
+            padding: 0 40px;
+        }
 
-section {
-  padding: 80px 0;
-  position: relative;
-}
+        section {
+            padding: 80px 0;
+            position: relative;
+        }
 
-/* subtle section separator glow */
-section::after {
-  content: "";
-  position: absolute;
-  bottom: -40px;
-  left: 0;
-  width: 100%;
-  height: 80px;
-  background: radial-gradient(circle, rgba(0,0,0,0.05), transparent);
-  z-index: -1;
-}
+        /* subtle section separator glow */
+        section::after {
+            content: "";
+            position: absolute;
+            bottom: -40px;
+            left: 0;
+            width: 100%;
+            height: 80px;
+            background: radial-gradient(circle, rgba(0, 0, 0, 0.05), transparent);
+            z-index: -1;
+        }
 
-/* HEADER */
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 18px 40px;
-  background: rgba(255,255,255,0.85);
-  backdrop-filter: blur(12px);
-  border-bottom: 1px solid #eee;
-  position: sticky;
-  top: 0;
-  z-index: 10;
-}
+        /* HEADER */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 18px 40px;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid #eee;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
 
-.brand {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-weight: 700;
-  font-size: 20px;
-}
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 700;
+            font-size: 20px;
+        }
 
-.brand img {
-  height: 30px;
-  transition: transform 0.3s ease;
-}
+        .brand img {
+            height: 30px;
+            transition: transform 0.3s ease;
+        }
 
-.brand img:hover {
-  transform: scale(1.1);
-}
+        .brand img:hover {
+            transform: scale(1.1);
+        }
 
-.nav {
-  display: flex;
-  gap: 25px;
-  align-items: center;
-}
+        .nav {
+            display: flex;
+            gap: 25px;
+            align-items: center;
+        }
 
-.nav a {
-  text-decoration: none;
-  color: #333;
-  font-weight: 500;
-  position: relative;
-  transition: 0.3s;
-}
+        .nav a {
+            text-decoration: none;
+            color: #333;
+            font-weight: 500;
+            position: relative;
+            transition: 0.3s;
+        }
 
-.nav a::after {
-  content: "";
-  position: absolute;
-  width: 0;
-  height: 2px;
-  background: #ff6a00;
-  left: 0;
-  bottom: -4px;
-  transition: 0.3s;
-}
+        .nav a::after {
+            content: "";
+            position: absolute;
+            width: 0;
+            height: 2px;
+            background: #ff6a00;
+            left: 0;
+            bottom: -4px;
+            transition: 0.3s;
+        }
 
-.nav a:hover::after {
-  width: 100%;
-}
+        .nav a:hover::after {
+            width: 100%;
+        }
 
-.nav button {
-  background: linear-gradient(45deg,#ff6a00,#ff8c33);
-  border: none;
-  padding: 10px 18px;
-  border-radius: 8px;
-  color: white;
-  cursor: pointer;
-  transition: 0.3s;
-}
+        .nav button {
+            background: linear-gradient(45deg, #ff6a00, #ff8c33);
+            border: none;
+            padding: 10px 18px;
+            border-radius: 8px;
+            color: white;
+            cursor: pointer;
+            transition: 0.3s;
+        }
 
-.nav button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 20px rgba(255,106,0,0.3);
-}
+        .nav button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(255, 106, 0, 0.3);
+        }
 
-/* HERO */
-.hero {
-  background:
-    radial-gradient(circle at 20% 20%, rgba(255,106,0,0.25), transparent),
-    radial-gradient(circle at 80% 30%, rgba(255,180,0,0.15), transparent),
-    linear-gradient(180deg,#ffffff,#f3f4f8);
-}
+        /* HERO */
+        .hero {
+            background:
+                radial-gradient(circle at 20% 20%, rgba(255, 106, 0, 0.25), transparent),
+                radial-gradient(circle at 80% 30%, rgba(255, 180, 0, 0.15), transparent),
+                linear-gradient(180deg, #ffffff, #f3f4f8);
+        }
 
-.hero-content {
-  display: flex;
-  align-items: center;
-  gap: 50px;
-  flex-wrap: wrap;
-}
+        .hero-content {
+            display: flex;
+            align-items: center;
+            gap: 50px;
+            flex-wrap: wrap;
+        }
 
-.hero-text {
-  flex: 1;
-  animation: fadeUp 0.8s ease;
-}
+        .hero-text {
+            flex: 1;
+            animation: fadeUp 0.8s ease;
+        }
 
-.hero-text h1 {
-  font-size: 48px;
-  line-height: 1.2;
-}
+        .hero-text h1 {
+            font-size: 48px;
+            line-height: 1.2;
+        }
 
-.hero-text span {
-  background: linear-gradient(45deg,#ff6a00,#ffb347);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
+        .hero-text span {
+            background: linear-gradient(45deg, #ff6a00, #ffb347);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
 
-.hero-text p {
-  font-size: 18px;
-  color: #555;
-  margin: 20px 0;
-}
+        .hero-text p {
+            font-size: 18px;
+            color: #555;
+            margin: 20px 0;
+        }
 
-.hero-text button {
-  background: linear-gradient(45deg,#ff6a00,#ff8c33);
-  padding: 14px 28px;
-  border-radius: 10px;
-  border: none;
-  color: white;
-  font-weight: 600;
-  transition: 0.3s;
-}
+        .hero-text button {
+            background: linear-gradient(45deg, #ff6a00, #ff8c33);
+            padding: 14px 28px;
+            border-radius: 10px;
+            border: none;
+            color: white;
+            font-weight: 600;
+            transition: 0.3s;
+        }
 
-.hero-text button:hover {
-  transform: translateY(-3px) scale(1.04);
-  box-shadow: 0 15px 30px rgba(255,106,0,0.4);
-}
+        .hero-text button:hover {
+            transform: translateY(-3px) scale(1.04);
+            box-shadow: 0 15px 30px rgba(255, 106, 0, 0.4);
+        }
 
-.hero-img {
-  flex: 1;
-  position: relative;
-  animation: fadeUp 1s ease;
-}
+        .hero-img {
+            flex: 1;
+            position: relative;
+            animation: fadeUp 1s ease;
+        }
 
-.hero-img img {
-  width: 100%;
-  border-radius: 14px;
-  transition: 0.4s;
-}
+        .hero-img img {
+            width: 100%;
+            border-radius: 14px;
+            transition: 0.4s;
+        }
 
-.hero-img img:hover {
-  transform: scale(1.03);
-}
+        .hero-img img:hover {
+            transform: scale(1.03);
+        }
 
-/* floating glow */
-.hero-img::before {
-  content: "";
-  position: absolute;
-  width: 200px;
-  height: 200px;
-  background: radial-gradient(circle, rgba(255,106,0,0.3), transparent);
-  top: -30px;
-  right: -30px;
-  filter: blur(60px);
-}
+        /* floating glow */
+        .hero-img::before {
+            content: "";
+            position: absolute;
+            width: 200px;
+            height: 200px;
+            background: radial-gradient(circle, rgba(255, 106, 0, 0.3), transparent);
+            top: -30px;
+            right: -30px;
+            filter: blur(60px);
+        }
 
-/* PROBLEM */
-.problem {
-  background:
-    radial-gradient(circle at center, rgba(255,106,0,0.12), transparent),
-    #0a0a0a;
-  color: white;
-}
+        /* PROBLEM */
+        .problem {
+            background:
+                radial-gradient(circle at center, rgba(255, 106, 0, 0.12), transparent),
+                #0a0a0a;
+            color: white;
+        }
 
-.grid {
-  display: flex;
-  gap: 30px;
-  flex-wrap: wrap;
-}
+        .grid {
+            display: flex;
+            gap: 30px;
+            flex-wrap: wrap;
+        }
 
-.card {
-  flex: 1;
-  min-width: 260px;
-  padding: 25px;
-  border-radius: 12px;
-  transition: all 0.3s ease;
-}
+        .card {
+            flex: 1;
+            min-width: 260px;
+            padding: 25px;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+        }
 
-.problem .card {
-  background: rgba(255,255,255,0.05);
-  border: 1px solid rgba(255,255,255,0.1);
-}
+        .problem .card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
 
-.card:hover {
-  transform: translateY(-10px);
-}
+        .card:hover {
+            transform: translateY(-10px);
+        }
 
-/* SPLIT */
-.split {
-  display: flex;
-  gap: 50px;
-  align-items: center;
-  flex-wrap: wrap;
-}
+        /* SPLIT */
+        .split {
+            display: flex;
+            gap: 50px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
 
-.split img {
-  width: 100%;
-  border-radius: 12px;
-  transition: 0.4s;
-}
+        .split img {
+            width: 100%;
+            border-radius: 12px;
+            transition: 0.4s;
+        }
 
-.split img:hover {
-  transform: scale(1.03);
-}
+        .split img:hover {
+            transform: scale(1.03);
+        }
 
-/* BENEFITS */
-.benefits .card {
-  background: white;
-  border: 1px solid #eee;
-}
+        /* BENEFITS */
+        .benefits .card {
+            background: white;
+            border: 1px solid #eee;
+        }
 
-.card h3 {
-  color: #ff6a00;
-}
+        .card h3 {
+            color: #ff6a00;
+        }
 
-/* CTA */
-.cta {
-  text-align: center;
-  background:
-    radial-gradient(circle at center, rgba(255,106,0,0.25), transparent),
-    linear-gradient(180deg,#0a0a0a,#000);
-  color: white;
-}
+        /* CTA */
+        .cta {
+            text-align: center;
+            background:
+                radial-gradient(circle at center, rgba(255, 106, 0, 0.25), transparent),
+                linear-gradient(180deg, #0a0a0a, #000);
+            color: white;
+        }
 
-.cta button {
-  margin-top: 20px;
-  padding: 14px 30px;
-  background: linear-gradient(45deg,#ff6a00,#ff8c33);
-  border: none;
-  border-radius: 8px;
-  color: white;
-  transition: 0.3s;
-}
+        .cta button {
+            margin-top: 20px;
+            padding: 14px 30px;
+            background: linear-gradient(45deg, #ff6a00, #ff8c33);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            transition: 0.3s;
+        }
 
-.cta button:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 10px 25px rgba(255,106,0,0.4);
-}
+        .cta button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(255, 106, 0, 0.4);
+        }
 
-/* FOOTER */
-footer {
-  text-align: center;
-  padding: 20px;
-  background: #000;
-  color: #aaa;
-}
+        /* FOOTER */
+        footer {
+            text-align: center;
+            padding: 20px;
+            background: #000;
+            color: #aaa;
+        }
 
-/* ANIMATION */
-@keyframes fadeUp {
-  from {
-    opacity: 0;
-    transform: translateY(30px);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
+        /* ANIMATION */
+        @keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
 
-/* RESPONSIVE */
-@media(max-width:900px){
-  .hero-content,
-  .split {
-    flex-direction: column;
-  }
+            to {
+                opacity: 1;
+                transform: none;
+            }
+        }
 
-  .container {
-    padding: 0 20px;
-  }
+        /* RESPONSIVE */
+        @media(max-width:900px) {
 
-  .hero-text h1 {
-    font-size: 34px;
-  }
+            .hero-content,
+            .split {
+                flex-direction: column;
+            }
 
-  .nav {
-    gap: 15px;
-  }
-}
+            .container {
+                padding: 0 20px;
+            }
 
-@media(max-width:600px){
-  .nav a {
-    display: none;
-  }
+            .hero-text h1 {
+                font-size: 34px;
+            }
 
-  .hero-text h1 {
-    font-size: 28px;
-  }
+            .nav {
+                gap: 15px;
+            }
+        }
 
-  section {
-    padding: 60px 0;
-  }
-}
-  </style>
+        @media(max-width:600px) {
+            .nav a {
+                display: none;
+            }
+
+            .hero-text h1 {
+                font-size: 28px;
+            }
+
+            section {
+                padding: 60px 0;
+            }
+        }
+
+        #comingSoonToast {
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+        }
+    </style>
 </head>
 
 <body>
 
-<header class="header">
-  <div class="brand">
-    <img src="/logo.png"> AVENZO
-  </div>
+    <header class="header">
+        <div class="brand">
+            <img src="/logo.png"> AVENZO
+        </div>
 
-  <div class="nav">
-    <a href="#">Features</a>
-    <a href="#">How it Works</a>
-    <a href="#">Benefits</a>
-    <button onclick="location.href='/login.html'">Login</button>
-  </div>
-</header>
+        <div class="nav">
+            <a href="#" onclick="comingSoon(event)">Features</a>
+            <a href="#">How it Works</a>
+            <a href="#">Benefits</a>
+            <button onclick="comingSoon(event)">Login</button>
+        </div>
+    </header>
 
-<section class="hero">
-  <div class="container hero-content">
-    
-    <div class="hero-text">
-      <h1>Make Ordering Effortless.<br><span>For You and Your Customers.</span></h1>
+    <section class="hero">
+        <div class="container hero-content">
 
-      <p>
-        No more waiting in queues. No more confusion at counters.  
-        Avenzo helps customers order instantly while helping you serve faster and grow your revenue smoothly.
-      </p>
+            <div class="hero-text">
+                <h1>Make Ordering Effortless.<br><span>For You and Your Customers.</span></h1>
 
-      <button onclick="location.href='/menu.html'">Try Live Demo</button>
-    </div>
+                <p>
+                    No more waiting in queues. No more confusion at counters.
+                    Avenzo helps customers order instantly while helping you serve faster and grow your revenue
+                    smoothly.
+                </p>
 
-    <div class="hero-img">
-      <img src="https://images.unsplash.com/photo-1556742205-e10c9486e506">
-    </div>
+                <button onclick="comingSoon(event)">Try Live Demo</button>
+            </div>
 
-  </div>
-</section>
+            <div class="hero-img">
+                <img src="https://images.unsplash.com/photo-1556742205-e10c9486e506">
+            </div>
 
-<section class="problem">
-  <div class="container">
-    <h2>Common Challenges in Busy Restaurants</h2>
+        </div>
+    </section>
 
-    <div class="grid">
-      <div class="card">
-        <h3>⏳ Waiting Frustrates Customers</h3>
-        <p>Long queues often lead to poor experience and lost interest</p>
-      </div>
+    <section class="problem">
+        <div class="container">
+            <h2>Common Challenges in Busy Restaurants</h2>
 
-      <div class="card">
-        <h3>📄 Manual Orders Cause Errors</h3>
-        <p>Miscommunication between counter and kitchen creates delays</p>
-      </div>
+            <div class="grid">
+                <div class="card">
+                    <h3>⏳ Waiting Frustrates Customers</h3>
+                    <p>Long queues often lead to poor experience and lost interest</p>
+                </div>
 
-      <div class="card">
-        <h3>💸 Missed Opportunities</h3>
-        <p>When systems slow down, fewer customers are served</p>
-      </div>
-    </div>
-  </div>
-</section>
+                <div class="card">
+                    <h3>📄 Manual Orders Cause Errors</h3>
+                    <p>Miscommunication between counter and kitchen creates delays</p>
+                </div>
 
-<section>
-  <div class="container split">
-    <div>
-      <h2>A Better Experience for Customers</h2>
-      <p>
-        Customers can scan, browse, and order at their own pace.  
-        No pressure, no waiting — just a smooth and comfortable ordering experience.
-      </p>
-    </div>
+                <div class="card">
+                    <h3>💸 Missed Opportunities</h3>
+                    <p>When systems slow down, fewer customers are served</p>
+                </div>
+            </div>
+        </div>
+    </section>
 
-    <img src="https://images.unsplash.com/photo-1600891964599-f61ba0e24092">
-  </div>
-</section>
+    <section>
+        <div class="container split">
+            <div>
+                <h2>A Better Experience for Customers</h2>
+                <p>
+                    Customers can scan, browse, and order at their own pace.
+                    No pressure, no waiting — just a smooth and comfortable ordering experience.
+                </p>
+            </div>
 
-<section class="benefits">
-  <div class="container">
-    <h2>How Avenzo Helps Your Business</h2>
+            <img src="https://images.unsplash.com/photo-1600891964599-f61ba0e24092">
+        </div>
+    </section>
 
-    <div class="grid">
-      <div class="card">
-        <h3>🚀 Faster Service</h3>
-        <p>Serve more customers without increasing staff load</p>
-      </div>
+    <section class="benefits">
+        <div class="container">
+            <h2>How Avenzo Helps Your Business</h2>
 
-      <div class="card">
-        <h3>📈 Better Revenue Flow</h3>
-        <p>More orders completed in less time</p>
-      </div>
+            <div class="grid">
+                <div class="card">
+                    <h3>🚀 Faster Service</h3>
+                    <p>Serve more customers without increasing staff load</p>
+                </div>
 
-      <div class="card">
-        <h3>⚡ Smooth Operations</h3>
-        <p>Reduce stress and improve coordination</p>
-      </div>
-    </div>
-  </div>
-</section>
+                <div class="card">
+                    <h3>📈 Better Revenue Flow</h3>
+                    <p>More orders completed in less time</p>
+                </div>
 
-<section class="cta">
-  <div class="container">
-    <h2>Bring Simplicity to Your Ordering System</h2>
+                <div class="card">
+                    <h3>⚡ Smooth Operations</h3>
+                    <p>Reduce stress and improve coordination</p>
+                </div>
+            </div>
+        </div>
+    </section>
 
-    <p>
-      Avenzo is built to make ordering easier for customers and operations smoother for you.
-    </p>
+    <section class="cta">
+        <div class="container">
+            <h2>Bring Simplicity to Your Ordering System</h2>
 
-    <button onclick="location.href='/signup.html'">Get Started</button>
-  </div>
-</section>
+            <p>
+                Avenzo is built to make ordering easier for customers and operations smoother for you.
+            </p>
 
-<footer>
-  © 2026 Avenzo • Simplifying Food Ordering
-</footer>
+            <button onclick="location.href='/signup.html'">Get Started</button>
+        </div>
+    </section>
+
+    <footer>
+        © 2026 Avenzo • Simplifying Food Ordering
+    </footer>
 
 </body>
-</html>
+<div id="comingSoonToast" style="
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: 0.3s;
+  z-index: 999;
+">
+  <div style="
+    background: #111;
+    color: white;
+    padding: 20px 30px;
+    border-radius: 10px;
+  ">
+    Feature coming soon 🚀
+  </div>
+</div>
+
+<script>
+function comingSoon(e){
+  if(e) e.preventDefault();
+
+  const t = document.getElementById("comingSoonToast");
+  t.style.opacity = "1";
+  t.style.pointerEvents = "auto";
+
+  setTimeout(() => {
+    t.style.opacity = "0";
+    t.style.pointerEvents = "none";
+  }, 1800);
+}
+</script>
