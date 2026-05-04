@@ -56,3 +56,11 @@ model OrderItem {
   order Order @relation(fields: [orderId], references: [id])
   menu  Menu  @relation(fields: [menuId], references: [id])
 }
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  name      String?
+  createdAt DateTime @default(now())
+}

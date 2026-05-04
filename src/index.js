@@ -4,6 +4,9 @@ const express = require("express");
 const path = require("path");
 const { PrismaClient } = require("@prisma/client");
 
+const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
+
 const app = express();
 const prisma = new PrismaClient();
 
@@ -279,6 +282,78 @@ app.delete("/admin/menu/:id", async (req, res) => {
 
 app.get("/track/:id", (req, res) => {
   res.sendFile(path.join(__dirname, "../public/track.html"));
+});
+
+app.post("/auth/signup", async (req, res) => {
+  try {
+    const { email, password, name } = req.body;
+
+    const existing = await prisma.user.findUnique({ where: { email } });
+    if (existing) {
+      return res.status(400).json({ error: "User already exists" });
+    }
+
+    const hashed = await bcrypt.hash(password, 10);
+
+    const user = await prisma.user.create({
+      data: { email, password: hashed, name }
+    });
+
+    res.json({ message: "User created", userId: user.id });
+
+  } catch (err) {
+    res.status(500).json({ error: "Signup failed" });
+  }
+});
+
+app.post("/auth/login", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (!user) {
+      return res.status(400).json({ error: "Invalid credentials" });
+    }
+
+    const valid = await bcrypt.compare(password, user.password);
+    if (!valid) {
+      return res.status(400).json({ error: "Invalid credentials" });
+    }
+
+    const token = jwt.sign(
+      { userId: user.id },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    res.json({ token });
+
+  } catch {
+    res.status(500).json({ error: "Login failed" });
+  }
+});
+
+function authMiddleware(req, res, next) {
+  const token = req.headers.authorization;
+
+  if (!token) return res.status(401).json({ error: "No token" });
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.user = decoded;
+    next();
+  } catch {
+    res.status(401).json({ error: "Invalid token" });
+  }
+}
+
+app.get("/auth/me", authMiddleware, async (req, res) => {
+  const user = await prisma.user.findUnique({
+    where: { id: req.user.userId },
+    select: { id: true, email: true, name: true }
+  });
+
+  res.json(user);
 });
 
 /* ================================
