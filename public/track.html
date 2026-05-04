@@ -3,12 +3,105 @@
 <head>
   <title>Track Order</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f6f7fb;
+      margin: 0;
+      padding: 20px;
+      text-align: center;
+    }
+
+    .card {
+      max-width: 400px;
+      margin: auto;
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+
+    h2 {
+      margin-bottom: 10px;
+    }
+
+    .status {
+      font-size: 20px;
+      font-weight: bold;
+      margin: 10px 0;
+    }
+
+    .pickup {
+      font-size: 28px;
+      font-weight: bold;
+      color: black;
+      margin: 10px 0 20px;
+    }
+
+    .section {
+      text-align: left;
+      margin-top: 15px;
+    }
+
+    .item {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+
+    .total {
+      border-top: 1px solid #eee;
+      padding-top: 10px;
+      margin-top: 10px;
+      font-weight: bold;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 14px;
+      background: black;
+      color: white;
+    }
+
+    .loader {
+      margin-top: 20px;
+      font-size: 12px;
+      color: #888;
+    }
+  </style>
 </head>
 
-<body style="font-family: Arial; text-align:center; padding:40px;">
+<body>
 
-<h2>Order Status</h2>
-<p id="status" style="font-size:20px; font-weight:bold;">Loading...</p>
+<div class="card">
+  <h2>🍽 Order Status</h2>
+
+  <div class="status">
+    <span id="status" class="badge">Loading...</span>
+  </div>
+
+  <div>
+    Pickup Code
+    <div class="pickup" id="pickup">----</div>
+  </div>
+
+  <div class="section">
+    <h4>Items</h4>
+    <div id="items"></div>
+  </div>
+
+  <div class="total">
+    <span>Total</span>
+    <span id="total">₹0</span>
+  </div>
+
+  <div class="loader">Auto updating...</div>
+</div>
 
 <script>
 const API = "https://avenzo.app";
@@ -20,21 +113,47 @@ async function loadStatus() {
     const data = await res.json();
 
     if (!res.ok) {
-      document.getElementById("status").innerText = "Order not found";
+      document.getElementById("status").innerText = "Not Found";
       return;
     }
 
+    // STATUS
     document.getElementById("status").innerText = data.status;
 
+    // PICKUP CODE
+    document.getElementById("pickup").innerText = data.pickupCode;
+
+    // ITEMS
+    const itemsDiv = document.getElementById("items");
+    itemsDiv.innerHTML = "";
+
+    let total = 0;
+
+    data.items.forEach(i => {
+      const price = i.menu.price * i.quantity;
+      total += price;
+
+      const div = document.createElement("div");
+      div.className = "item";
+      div.innerHTML = `
+        <span>${i.menu.name} x ${i.quantity}</span>
+        <span>₹${price}</span>
+      `;
+
+      itemsDiv.appendChild(div);
+    });
+
+    document.getElementById("total").innerText = "₹" + total;
+
   } catch (err) {
-    document.getElementById("status").innerText = "Error loading status";
+    document.getElementById("status").innerText = "Error";
   }
 }
 
 // initial load
 loadStatus();
 
-// 🔥 AUTO REFRESH (every 3 sec)
+// 🔥 auto refresh
 setInterval(loadStatus, 3000);
 </script>
 
