@@ -8,22 +8,34 @@
 <body style="font-family: Arial; text-align:center; padding:40px;">
 
 <h2>Order Status</h2>
-<p id="status">Loading...</p>
+<p id="status" style="font-size:20px; font-weight:bold;">Loading...</p>
 
 <script>
 const API = "https://avenzo.app";
-
-// get orderId from URL
 const orderId = window.location.pathname.split("/track/")[1];
 
 async function loadStatus() {
-  const res = await fetch(`${API}/order/${orderId}`);
-  const data = await res.json();
+  try {
+    const res = await fetch(`${API}/order/${orderId}`);
+    const data = await res.json();
 
-  document.getElementById("status").innerText = data.status;
+    if (!res.ok) {
+      document.getElementById("status").innerText = "Order not found";
+      return;
+    }
+
+    document.getElementById("status").innerText = data.status;
+
+  } catch (err) {
+    document.getElementById("status").innerText = "Error loading status";
+  }
 }
 
+// initial load
 loadStatus();
+
+// 🔥 AUTO REFRESH (every 3 sec)
+setInterval(loadStatus, 3000);
 </script>
 
 </body>
