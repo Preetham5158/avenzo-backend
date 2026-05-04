@@ -112,7 +112,7 @@
     🛒 <span id="count">0</span> items<br>
     ₹ <span id="total">0</span>
   </div>
-  <button class="cart-btn" onclick="placeOrder()">Place Order</button>
+  <button id="orderBtn" class="cart-btn" onclick="placeOrder()">Place Order</button>
 </div>
 
 <script>
@@ -217,24 +217,33 @@ function updateUI() {
 }
 
 async function placeOrder() {
-  if (cart.length === 0) {
-    alert("Cart empty");
-    return;
+  if (cart.length === 0) return alert("Cart empty");
+
+  const btn = document.getElementById("orderBtn");
+
+  btn.disabled = true;
+  btn.innerText = "Placing Order...";
+
+  try {
+    const res = await fetch(`${API}/order`, {
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({
+        restaurantId,
+        sessionId:"web-"+Date.now(),
+        items: cart
+      })
+    });
+
+    const data = await res.json();
+
+    window.location.href = `${API}/track/${data.orderId}`;
+
+  } catch (err) {
+    btn.disabled = false;
+    btn.innerText = "Place Order";
+    alert("Order failed. Please try again.");
   }
-
-  const res = await fetch(`${API}/order`, {
-    method: "POST",
-    headers: {"Content-Type":"application/json"},
-    body: JSON.stringify({
-      restaurantId,
-      sessionId: "web-" + Date.now(),
-      items: cart
-    })
-  });
-
-  const data = await res.json();
-
-  window.location.href = `${API}/track/${data.orderId}`;
 }
 
 loadRestaurant();

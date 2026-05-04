@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Avenzo Admin</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <style>
+    body { font-family: Arial; background:#f6f7fb; padding:20px; }
+    h2 { text-align:center; }
+
+    .container { max-width:600px; margin:auto; }
+
+    .card {
+      background:white;
+      padding:15px;
+      border-radius:10px;
+      margin-bottom:10px;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+    }
+
+    input, select {
+      width:100%;
+      padding:8px;
+      margin-top:5px;
+      margin-bottom:10px;
+    }
+
+    button {
+      padding:6px 10px;
+      border:none;
+      background:black;
+      color:white;
+      border-radius:6px;
+      cursor:pointer;
+    }
+
+    .danger { background:red; }
+    .toggle { background:green; }
+  </style>
+</head>
+
+<body>
+
+<h2>Admin Panel</h2>
+
+<div class="container">
+
+  <h3>Add Item</h3>
+
+  <input id="name" placeholder="Item name" />
+  <input id="price" placeholder="Price" type="number" />
+  <input id="category" placeholder="Category" />
+
+  <button onclick="addItem()">Add Item</button>
+
+  <hr>
+
+  <h3>Menu</h3>
+  <div id="menu"></div>
+
+</div>
+
+<script>
+const API = "https://avenzo.app";
+
+const params = new URLSearchParams(window.location.search);
+const restaurantId = params.get("restaurantId");
+
+async function loadMenu() {
+  const res = await fetch(`${API}/admin/menu/${restaurantId}`);
+  const data = await res.json();
+
+  const container = document.getElementById("menu");
+  container.innerHTML = "";
+
+  data.forEach(item => {
+    const div = document.createElement("div");
+    div.className = "card";
+
+    div.innerHTML = `
+      <div>
+        <b>${item.name}</b><br>
+        ₹${item.price} | ${item.category}<br>
+        ${item.isAvailable ? "🟢 Available" : "🔴 Out of stock"}
+      </div>
+
+      <div>
+        <button onclick="toggle('${item.id}')">Toggle</button>
+        <button onclick="deleteItem('${item.id}')" class="danger">Delete</button>
+      </div>
+    `;
+
+    container.appendChild(div);
+  });
+}
+
+async function addItem() {
+  const name = document.getElementById("name").value;
+  const price = document.getElementById("price").value;
+  const category = document.getElementById("category").value;
+
+  await fetch(`${API}/admin/menu`, {
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({ name, price, category, restaurantId })
+  });
+
+  loadMenu();
+}
+
+async function toggle(id) {
+  await fetch(`${API}/admin/menu/${id}/toggle`, {
+    method:"PATCH"
+  });
+
+  loadMenu();
+}
+
+async function deleteItem(id) {
+  await fetch(`${API}/admin/menu/${id}`, {
+    method:"DELETE"
+  });
+
+  loadMenu();
+}
+
+loadMenu();
+</script>
+
+</body>
+</html>
