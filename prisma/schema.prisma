@@ -15,7 +15,7 @@ datasource db {
 
 model Restaurant {
   id        String   @id @default(uuid())
-  name      String
+  name      String @unique
   createdAt DateTime @default(now())
   menus     Menu[]
   orders    Order[]

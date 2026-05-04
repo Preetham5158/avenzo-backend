@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Avenzo QR Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <style>
+    body {
+      font-family: Arial;
+      background: #f6f7fb;
+      padding: 20px;
+      text-align: center;
+    }
+
+    h2 {
+      margin-bottom: 20px;
+    }
+
+    .grid {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 20px;
+    }
+
+    .card {
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      width: 220px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+    }
+
+    .title {
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+
+    img {
+      margin: 10px 0;
+    }
+
+    .label {
+      font-size: 14px;
+      margin-top: 10px;
+    }
+
+    button {
+      margin-top: 10px;
+      padding: 6px 10px;
+      border: none;
+      background: black;
+      color: white;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+
+<body>
+
+<h2>QR Codes</h2>
+
+<div class="grid" id="container"></div>
+
+<script>
+const API = "https://avenzo.app";
+
+async function loadRestaurants() {
+  const res = await fetch(`${API}/restaurants`);
+  const data = await res.json();
+
+  const container = document.getElementById("container");
+
+  data.forEach(r => {
+    const url = `${API}/menu.html?restaurantId=${r.id}`;
+
+    const qr = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(url)}`;
+
+    const div = document.createElement("div");
+    div.className = "card";
+
+    div.innerHTML = `
+      <div class="title">${r.name}</div>
+      <img src="${qr}" />
+      <div class="label">
+        Scan to Order 🍽️<br>
+        ${r.name}
+      </div>
+      <button onclick="downloadQR('${qr}', '${r.name}')">Download</button>
+    `;
+
+    container.appendChild(div);
+  });
+}
+
+function downloadQR(qrUrl, name) {
+  const a = document.createElement("a");
+  a.href = qrUrl;
+  a.download = name + "-qr.png";
+  a.click();
+}
+
+loadRestaurants();
+</script>
+
+</body>
+</html>

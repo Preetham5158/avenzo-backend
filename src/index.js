@@ -262,10 +262,26 @@ app.get("/track/:orderId", async (req, res) => {
 });
 
 /* ================================
+   GET ALL RESTAURANTS (QR DASHBOARD)
+================================ */
+app.get("/restaurants", async (req, res) => {
+  try {
+    const restaurants = await prisma.restaurant.findMany({
+      orderBy: { name: "asc" }
+    });
+
+    res.json(restaurants);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Error fetching restaurants" });
+  }
+});
+
+/* ================================
    START SERVER
 ================================ */
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
-  console.log("Server running 🚀 on port " + PORT);
+  console.log("Server running on port " + PORT);
 });
