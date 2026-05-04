@@ -1,36 +1,139 @@
 <!DOCTYPE html>
 <html>
-<body style="font-family: Arial; text-align:center; padding:40px;">
+<head>
+  <title>Avenzo Login</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-<h2>Login</h2>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial;
+      background: #0b0b0c;
+      color: white;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
 
-<input id="email" placeholder="Email"><br><br>
-<input id="password" type="password" placeholder="Password"><br><br>
+    .card {
+      background: #141416;
+      padding: 30px;
+      border-radius: 12px;
+      width: 320px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+      text-align: center;
+    }
 
-<button onclick="login()">Login</button>
+    h2 {
+      margin-bottom: 20px;
+    }
+
+    input {
+      width: 100%;
+      padding: 12px;
+      margin: 10px 0;
+      border-radius: 8px;
+      border: 1px solid #333;
+      background: #0b0b0c;
+      color: white;
+    }
+
+    input:focus {
+      outline: none;
+      border-color: #ff9d00;
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      margin-top: 15px;
+      border: none;
+      border-radius: 8px;
+      background: linear-gradient(45deg,#ff7a00,#ffb300);
+      color: black;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .error {
+      color: #ff4d4d;
+      margin-top: 10px;
+      font-size: 14px;
+    }
+
+    .link {
+      margin-top: 15px;
+      font-size: 14px;
+      color: #aaa;
+    }
+
+    .link span {
+      color: #ff9d00;
+      cursor: pointer;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="card">
+  <h2>Login</h2>
+
+  <input id="email" placeholder="Email">
+  <input id="password" type="password" placeholder="Password">
+
+  <button id="loginBtn" onclick="login()">Login</button>
+
+  <div id="error" class="error"></div>
+
+  <div class="link">
+    Don’t have an account?
+    <span onclick="location.href='/signup.html'">Sign up</span>
+  </div>
+</div>
 
 <script>
 const API = "https://avenzo.app";
 
 async function login() {
-  const email = document.getElementById("email").value;
-  const password = document.getElementById("password").value;
+  const btn = document.getElementById("loginBtn");
+  const errorEl = document.getElementById("error");
 
-  const res = await fetch(`${API}/auth/login`, {
-    method: "POST",
-    headers: {"Content-Type":"application/json"},
-    body: JSON.stringify({ email, password })
-  });
+  errorEl.innerText = "";
+  btn.innerText = "Logging in...";
+  btn.disabled = true;
 
-  const data = await res.json();
+  try {
+    const email = document.getElementById("email").value;
+    const password = document.getElementById("password").value;
 
-  if (data.token) {
-    localStorage.setItem("token", data.token);
-    alert("Logged in");
-    window.location.href = "/";
-  } else {
-    alert(data.error);
+    const res = await fetch(`${API}/auth/login`, {
+      method: "POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({ email, password })
+    });
+
+    const data = await res.json();
+
+    if (data.token) {
+      localStorage.setItem("token", data.token);
+      window.location.href = "/";
+    } else {
+      errorEl.innerText = data.error || "Login failed";
+    }
+
+  } catch {
+    errorEl.innerText = "Something went wrong";
   }
+
+  btn.innerText = "Login";
+  btn.disabled = false;
 }
 </script>
 
