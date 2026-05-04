@@ -2,27 +2,27 @@
 <html>
 <head>
   <title>Track Order</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 </head>
-<body>
+
+<body style="font-family: Arial; text-align:center; padding:40px;">
 
 <h2>Order Status</h2>
-<div id="status">Loading...</div>
+<p id="status">Loading...</p>
 
 <script>
 const API = "https://avenzo.app";
 
-const params = new URLSearchParams(window.location.search);
-const orderId = params.get("orderId");
+// get orderId from URL
+const orderId = window.location.pathname.split("/track/")[1];
 
 async function loadStatus() {
   const res = await fetch(`${API}/order/${orderId}`);
   const data = await res.json();
 
-  document.getElementById("status").innerText =
-    "Status: " + data.status;
+  document.getElementById("status").innerText = data.status;
 }
 
-setInterval(loadStatus, 3000);
 loadStatus();
 </script>
 

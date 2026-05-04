@@ -276,6 +276,10 @@ app.delete("/admin/menu/:id", async (req, res) => {
   res.json({ success: true });
 });
 
+app.get("/track/:id", (req, res) => {
+  res.sendFile(path.join(__dirname, "../public/track.html"));
+});
+
 /* ================================
    START SERVER
 ================================ */
