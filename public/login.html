@@ -7,9 +7,8 @@
   <style>
     body {
       margin: 0;
-      font-family: Arial;
-      background: #0b0b0c;
-      color: white;
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #ffffff, #f4f6fb);
       display: flex;
       justify-content: center;
       align-items: center;
@@ -17,12 +16,30 @@
     }
 
     .card {
-      background: #141416;
+      background: white;
       padding: 30px;
-      border-radius: 12px;
-      width: 320px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+      border-radius: 14px;
+      width: 340px;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.08);
       text-align: center;
+      transition: 0.3s;
+    }
+
+    .logo {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .logo img {
+      height: 35px;
+    }
+
+    .logo span {
+      font-weight: bold;
+      font-size: 20px;
     }
 
     h2 {
@@ -34,14 +51,15 @@
       padding: 12px;
       margin: 10px 0;
       border-radius: 8px;
-      border: 1px solid #333;
-      background: #0b0b0c;
-      color: white;
+      border: 1px solid #ddd;
+      background: #fafafa;
+      transition: 0.2s;
     }
 
     input:focus {
       outline: none;
       border-color: #ff9d00;
+      box-shadow: 0 0 0 2px rgba(255,157,0,0.15);
     }
 
     button {
@@ -54,28 +72,34 @@
       color: black;
       font-weight: bold;
       cursor: pointer;
+      transition: 0.2s;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 5px 15px rgba(255,157,0,0.3);
     }
 
     button:disabled {
       opacity: 0.6;
-      cursor: not-allowed;
     }
 
     .error {
-      color: #ff4d4d;
-      margin-top: 10px;
+      color: red;
       font-size: 14px;
+      margin-top: 10px;
     }
 
     .link {
       margin-top: 15px;
       font-size: 14px;
-      color: #aaa;
+      color: #666;
     }
 
     .link span {
-      color: #ff9d00;
+      color: #ff7a00;
       cursor: pointer;
+      font-weight: bold;
     }
   </style>
 </head>
@@ -83,7 +107,13 @@
 <body>
 
 <div class="card">
-  <h2>Login</h2>
+
+  <div class="logo">
+    <img src="/logo.png">
+    <span>Avenzo</span>
+  </div>
+
+  <h2>Welcome Back</h2>
 
   <input id="email" placeholder="Email">
   <input id="password" type="password" placeholder="Password">
@@ -96,6 +126,7 @@
     Don’t have an account?
     <span onclick="location.href='/signup.html'">Sign up</span>
   </div>
+
 </div>
 
 <script>
