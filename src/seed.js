@@ -3,41 +3,29 @@ const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
 
 async function main() {
-  // Create Restaurant
+
   const restaurant = await prisma.restaurant.create({
     data: {
-      name: "Avenzo Test Restaurant",
-    },
+      name: "Avenzo Cafe"
+    }
   });
 
-  console.log("Restaurant created:", restaurant);
+  await prisma.menu.createMany({
+    data: [
+      { name: "Garlic Bread", price: 120, category: "Starters", restaurantId: restaurant.id },
+      { name: "Tomato Soup", price: 90, category: "Starters", restaurantId: restaurant.id },
 
-  // Create Menu Items
-  const menu1 = await prisma.menu.create({
-    data: {
-      name: "Dosa",
-      price: 50,
-      restaurantId: restaurant.id,
-    },
+      { name: "Veg Biryani", price: 180, category: "Main Course", restaurantId: restaurant.id },
+      { name: "Paneer Butter Masala", price: 220, category: "Main Course", restaurantId: restaurant.id },
+
+      { name: "Coke", price: 40, category: "Drinks", restaurantId: restaurant.id },
+      { name: "Lime Juice", price: 60, category: "Drinks", restaurantId: restaurant.id }
+    ]
   });
 
-  const menu2 = await prisma.menu.create({
-    data: {
-      name: "Idli",
-      price: 30,
-      restaurantId: restaurant.id,
-    },
-  });
-
-  console.log("Menu created:", menu1, menu2);
+  console.log("✅ Seeded successfully");
 }
 
 main()
-  .then(() => {
-    console.log("Seeding done ✅");
-    process.exit(0);
-  })
-  .catch((err) => {
-    console.error(err);
-    process.exit(1);
-  });
+  .catch(e => console.error(e))
+  .finally(() => prisma.$disconnect());

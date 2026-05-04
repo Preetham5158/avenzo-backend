@@ -19,13 +19,40 @@ app.get("/", (req, res) => {
 });
 
 /* ================================
-   GET MENU
+   GET RESTAURANT DETAILS
+================================ */
+app.get("/restaurant/:id", async (req, res) => {
+  try {
+    const restaurant = await prisma.restaurant.findUnique({
+      where: { id: req.params.id },
+    });
+
+    if (!restaurant) {
+      return res.status(404).json({ error: "Restaurant not found" });
+    }
+
+    res.json(restaurant);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Error fetching restaurant" });
+  }
+});
+
+/* ================================
+   GET MENU (ONLY AVAILABLE ITEMS)
 ================================ */
 app.get("/menu/:restaurantId", async (req, res) => {
   try {
     const menu = await prisma.menu.findMany({
-      where: { restaurantId: req.params.restaurantId },
+      where: {
+        restaurantId: req.params.restaurantId,
+        isAvailable: true, // 🔥 important
+      },
+      orderBy: {
+        category: "asc",
+      },
     });
+
     res.json(menu);
   } catch (err) {
     console.error(err);
@@ -40,8 +67,12 @@ app.post("/order", async (req, res) => {
   try {
     const { items, restaurantId, sessionId, phone } = req.body;
 
-    if (!items || items.length === 0) {
+    if (!items || !Array.isArray(items) || items.length === 0) {
       return res.status(400).json({ error: "Items required" });
+    }
+
+    if (!restaurantId || !sessionId) {
+      return res.status(400).json({ error: "Missing restaurantId/sessionId" });
     }
 
     const pickupCode = Math.floor(1000 + Math.random() * 9000).toString();
@@ -110,10 +141,14 @@ app.get("/order/:orderId", async (req, res) => {
 });
 
 /* ================================
-   UPDATE STATUS
+   UPDATE ORDER STATUS
 ================================ */
 app.patch("/order/:orderId/status", async (req, res) => {
   try {
+    if (!req.body.status) {
+      return res.status(400).json({ error: "Status required" });
+    }
+
     const updated = await prisma.order.update({
       where: { id: req.params.orderId },
       data: { status: req.body.status },
@@ -127,7 +162,7 @@ app.patch("/order/:orderId/status", async (req, res) => {
 });
 
 /* ================================
-   DASHBOARD UI
+   DASHBOARD UI (RESTAURANT VIEW)
 ================================ */
 app.get("/dashboard/:restaurantId", async (req, res) => {
   try {
@@ -156,18 +191,7 @@ app.get("/dashboard/:restaurantId", async (req, res) => {
 
     res.send(`
     <html>
-    <head>
-      <style>
-        body{font-family:Arial;background:#f6f7fb;padding:20px}
-        .order{background:white;padding:15px;margin:10px;border-radius:10px}
-        .code{font-size:20px;font-weight:bold}
-        .status{margin:5px 0}
-        button{margin:5px;padding:6px 10px}
-        .ready{background:green;color:white}
-        .done{background:blue;color:white}
-      </style>
-    </head>
-    <body>
+    <body style="font-family:Arial;background:#f6f7fb;padding:20px">
       <h2>Orders</h2>
       ${html}
       <script>
@@ -191,7 +215,7 @@ app.get("/dashboard/:restaurantId", async (req, res) => {
 });
 
 /* ================================
-   TRACK UI (LIVE)
+   TRACK ORDER UI
 ================================ */
 app.get("/track/:orderId", async (req, res) => {
   try {
@@ -211,19 +235,11 @@ app.get("/track/:orderId", async (req, res) => {
 
     res.send(`
     <html>
-    <head>
-      <style>
-        body{font-family:Arial;background:#f6f7fb;display:flex;justify-content:center;align-items:center;height:100vh}
-        .card{background:white;padding:30px;border-radius:12px;width:300px;text-align:center}
-        .code{font-size:40px;font-weight:bold}
-        .status{margin:10px;padding:5px;color:white;border-radius:10px}
-      </style>
-    </head>
-    <body>
-      <div class="card">
+    <body style="font-family:Arial;background:#f6f7fb;display:flex;justify-content:center;align-items:center;height:100vh">
+      <div style="background:white;padding:30px;border-radius:12px;width:300px;text-align:center">
         <h3>Your Order</h3>
-        <div class="code">#${order.pickupCode}</div>
-        <div id="status" class="status">${order.status}</div>
+        <div style="font-size:40px;font-weight:bold">#${order.pickupCode}</div>
+        <div id="status">${order.status}</div>
         <ul>${items}</ul>
         <h4>₹${order.totalPrice}</h4>
       </div>
@@ -232,15 +248,9 @@ app.get("/track/:orderId", async (req, res) => {
         async function refresh(){
           const r = await fetch('${BASE_URL}/order/${order.id}');
           const d = await r.json();
-          const s = document.getElementById('status');
-          s.innerText = d.status;
-
-          if(d.status==='READY') s.style.background='green';
-          else if(d.status==='COMPLETED') s.style.background='blue';
-          else s.style.background='orange';
+          document.getElementById('status').innerText = d.status;
         }
         setInterval(refresh,4000);
-        refresh();
       </script>
     </body>
     </html>

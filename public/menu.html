@@ -1,8 +1,9 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Avenzo Menu</title>
+  <title>Avenzo</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -23,11 +24,19 @@
       padding: 15px;
     }
 
+    .category {
+      margin-top: 25px;
+      margin-bottom: 10px;
+      font-size: 18px;
+      font-weight: bold;
+      color: #333;
+    }
+
     .menu-item {
       background: white;
       border-radius: 12px;
       padding: 15px;
-      margin-bottom: 12px;
+      margin-bottom: 10px;
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -44,7 +53,7 @@
     }
 
     .price {
-      color: #555;
+      color: #666;
     }
 
     .controls {
@@ -58,8 +67,8 @@
       border: none;
       padding: 6px 10px;
       border-radius: 6px;
-      cursor: pointer;
       font-size: 16px;
+      cursor: pointer;
     }
 
     .qty {
@@ -94,7 +103,7 @@
 
 <body>
 
-<header>🍽 Avenzo Menu</header>
+<header id="restaurantName">Loading...</header>
 
 <div class="container" id="menu"></div>
 
@@ -117,30 +126,54 @@ if (!restaurantId) {
 }
 
 let cart = [];
+let menuData = [];
+
+async function loadRestaurant() {
+  const res = await fetch(`${API}/restaurant/${restaurantId}`);
+  const data = await res.json();
+  document.getElementById("restaurantName").innerText = data.name;
+}
 
 async function loadMenu() {
   const res = await fetch(`${API}/menu/${restaurantId}`);
-  const data = await res.json();
+  menuData = await res.json();
+
+  const grouped = {};
+
+  menuData.forEach(item => {
+    if (!grouped[item.category]) {
+      grouped[item.category] = [];
+    }
+    grouped[item.category].push(item);
+  });
 
   const container = document.getElementById("menu");
+  container.innerHTML = "";
 
-  data.forEach(item => {
-    const div = document.createElement("div");
-    div.className = "menu-item";
+  Object.keys(grouped).forEach(category => {
+    const catTitle = document.createElement("div");
+    catTitle.className = "category";
+    catTitle.innerText = category;
+    container.appendChild(catTitle);
 
-    div.innerHTML = `
-      <div class="info">
-        <div class="name">${item.name}</div>
-        <div class="price">₹${item.price}</div>
-      </div>
-      <div class="controls">
-        <button class="btn" onclick="changeQty('${item.id}', -1)">−</button>
-        <span class="qty" id="qty-${item.id}">0</span>
-        <button class="btn" onclick="changeQty('${item.id}', 1)">+</button>
-      </div>
-    `;
+    grouped[category].forEach(item => {
+      const div = document.createElement("div");
+      div.className = "menu-item";
 
-    container.appendChild(div);
+      div.innerHTML = `
+        <div class="info">
+          <div class="name">${item.name}</div>
+          <div class="price">₹${item.price}</div>
+        </div>
+        <div class="controls">
+          <button class="btn" onclick="changeQty('${item.id}', -1)">−</button>
+          <span class="qty" id="qty-${item.id}">0</span>
+          <button class="btn" onclick="changeQty('${item.id}', 1)">+</button>
+        </div>
+      `;
+
+      container.appendChild(div);
+    });
   });
 }
 
@@ -168,22 +201,18 @@ function updateUI() {
   let totalPrice = 0;
 
   cart.forEach(item => {
-    const qtyEl = document.getElementById(`qty-${item.menuId}`);
-    if (qtyEl) qtyEl.innerText = item.quantity;
+    const data = menuData.find(m => m.id === item.menuId);
+
+    if (!data) return;
 
     totalItems += item.quantity;
+    totalPrice += item.quantity * data.price;
+
+    const el = document.getElementById(`qty-${item.menuId}`);
+    if (el) el.innerText = item.quantity;
   });
 
   document.getElementById("count").innerText = totalItems;
-
-  // calculate price again from DOM (simple approach)
-  document.querySelectorAll(".menu-item").forEach(div => {
-    const id = div.querySelector(".controls button").getAttribute("onclick").split("'")[1];
-    const price = parseFloat(div.querySelector(".price").innerText.replace("₹",""));
-    const item = cart.find(i => i.menuId === id);
-    if (item) totalPrice += item.quantity * price;
-  });
-
   document.getElementById("total").innerText = totalPrice;
 }
 
@@ -199,7 +228,6 @@ async function placeOrder() {
     body: JSON.stringify({
       restaurantId,
       sessionId: "web-" + Date.now(),
-      phone: null,
       items: cart
     })
   });
@@ -209,6 +237,7 @@ async function placeOrder() {
   window.location.href = `${API}/track/${data.orderId}`;
 }
 
+loadRestaurant();
 loadMenu();
 </script>
 

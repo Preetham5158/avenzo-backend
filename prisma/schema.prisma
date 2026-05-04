@@ -22,23 +22,28 @@ model Restaurant {
 }
 
 model Menu {
-  id            String   @id @default(uuid())
-  name          String
-  price         Float
-  restaurantId  String
-  restaurant    Restaurant @relation(fields: [restaurantId], references: [id])
-  orderItems    OrderItem[]
+  id    String @id @default(uuid())
+  name  String
+  price Float
+
+  category    String
+  isAvailable Boolean @default(true)
+
+  restaurantId String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+
+  orderItems OrderItem[]
 }
 
 model Order {
-  id           String   @id @default(uuid())
+  id           String      @id @default(uuid())
   totalPrice   Float
-  status       String   @default("PENDING")
+  status       String      @default("PENDING")
   pickupCode   String
   phone        String?
   sessionId    String
   restaurantId String
-  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+  restaurant   Restaurant  @relation(fields: [restaurantId], references: [id])
   items        OrderItem[]
 }
 
