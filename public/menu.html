@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Avenzo Menu</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    body {
+      font-family: Arial;
+      background: #f5f5f5;
+      padding: 20px;
+    }
+
+    h1 {
+      text-align: center;
+    }
+
+    .menu-item {
+      background: white;
+      padding: 15px;
+      margin-bottom: 10px;
+      border-radius: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    button {
+      padding: 5px 10px;
+      margin: 2px;
+      border: none;
+      background: black;
+      color: white;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .cart {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: black;
+      color: white;
+      padding: 15px;
+      border-radius: 10px;
+    }
+  </style>
+</head>
+<body>
+
+<h1>Menu</h1>
+
+<div id="menu"></div>
+
+<div class="cart">
+  🛒 Items: <span id="count">0</span><br><br>
+  <button onclick="placeOrder()">Place Order</button>
+</div>
+
+<script>
+const API = "https://avenzo.app"; // your domain
+const restaurantId = "b3125c08-7bfb-4b7b-b5f1-ad450298daf3"; // use your real ID
+
+let cart = [];
+
+async function loadMenu() {
+  const res = await fetch(`${API}/menu/${restaurantId}`);
+  const data = await res.json();
+
+  const container = document.getElementById("menu");
+
+  data.forEach(item => {
+    const div = document.createElement("div");
+    div.className = "menu-item";
+
+    div.innerHTML = `
+      <div>
+        <b>${item.name}</b><br>
+        ₹${item.price}
+      </div>
+      <div>
+        <button onclick="addItem('${item.id}')">+</button>
+      </div>
+    `;
+
+    container.appendChild(div);
+  });
+}
+
+function addItem(menuId) {
+  const existing = cart.find(i => i.menuId === menuId);
+
+  if (existing) {
+    existing.quantity += 1;
+  } else {
+    cart.push({ menuId, quantity: 1 });
+  }
+
+  updateCart();
+}
+
+function updateCart() {
+  document.getElementById("count").innerText =
+    cart.reduce((sum, i) => sum + i.quantity, 0);
+}
+
+async function placeOrder() {
+  if (cart.length === 0) {
+    alert("Cart is empty");
+    return;
+  }
+
+  const res = await fetch(`${API}/order`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      restaurantId,
+      sessionId: "web-" + Date.now(),
+      phone: "9999999999",
+      items: cart
+    })
+  });
+
+  const data = await res.json();
+
+  alert("Order placed! Code: " + data.pickupCode);
+
+  window.location.href = `/track.html?orderId=${data.orderId}`;
+}
+
+loadMenu();
+</script>
+
+</body>
+</html>
