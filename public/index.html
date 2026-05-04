@@ -1,212 +1,240 @@
 <!DOCTYPE html>
 <html>
 <head>
-
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
   <title>Avenzo</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+
   <style>
     :root {
-  --primary: #ff6a00;
-  --primary-light: #ff8c33;
-  --dark: #1a1a1a;
-  --text-light: #666;
-  --bg: #ffffff;
-  --card: #f8f9fb;
-}
+      --primary: #ff6a00;
+      --dark: #0f0f10;
+      --light: #ffffff;
+      --text-gray: #777;
+    }
 
-body {
-  margin: 0;
-  font-family: 'Inter', sans-serif;
-  background: var(--bg);
-  color: var(--dark);
-}
+    body {
+      margin: 0;
+      font-family: 'Inter', sans-serif;
+      background: var(--light);
+      color: #111;
+    }
 
-/* HEADER */
-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 18px 40px;
-  border-bottom: 1px solid #eee;
-  background: white;
-  position: sticky;
-  top: 0;
-}
+    /* CONTAINER */
+    .container {
+      max-width: 1200px;
+      margin: auto;
+      padding: 0 20px;
+    }
 
-.logo {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
+    section {
+      padding: 90px 0;
+    }
 
-.logo img {
-  height: 40px;
-}
+    /* HEADER */
+    .header {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      padding: 15px 30px;
+      background: white;
+      border-bottom: 1px solid #eee;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
 
-.logo span {
-  font-weight: 600;
-  font-size: 20px;
-}
+    .icon-logo {
+      height: 34px;
+    }
 
-/* BUTTON */
-.nav button,
-.hero button,
-.cta button {
-  background: linear-gradient(45deg, var(--primary), var(--primary-light));
-  border: none;
-  padding: 10px 18px;
-  border-radius: 8px;
-  cursor: pointer;
-  color: white;
-  font-weight: 600;
-  transition: all 0.3s ease;
-}
+    .main-logo {
+      height: 42px;
+    }
 
-.nav button:hover,
-.hero button:hover,
-.cta button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(255,106,0,0.3);
-}
+    .header button {
+      background: black;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: 0.3s;
+    }
 
-/* HERO */
-.hero {
-  text-align: center;
-  padding: 100px 20px 70px;
-  animation: fadeIn 0.8s ease;
-}
+    .header button:hover {
+      background: var(--primary);
+    }
 
-.hero img {
-  width: 90px;
-  margin-bottom: 20px;
-}
+    /* HERO */
+    .hero {
+      text-align: center;
+    }
 
-.hero h1 {
-  font-size: 42px;
-  margin: 0;
-}
+    .hero img {
+      width: 90px;
+      margin-bottom: 20px;
+    }
 
-.tagline {
-  color: var(--primary);
-  margin-top: 10px;
-  font-weight: 600;
-}
+    .hero h1 {
+      font-size: 48px;
+      margin: 0;
+    }
 
-.hero p {
-  color: var(--text-light);
-  max-width: 500px;
-  margin: 20px auto;
-}
+    .hero span {
+      color: var(--primary);
+    }
 
-/* SECTIONS */
-.section {
-  padding: 70px 20px;
-  text-align: center;
-}
+    .tagline {
+      color: var(--primary);
+      font-weight: 600;
+      margin-top: 10px;
+    }
 
-.section h2 {
-  margin-bottom: 30px;
-}
+    .hero p {
+      color: var(--text-gray);
+      max-width: 600px;
+      margin: 20px auto;
+    }
 
-/* GRID */
-.grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 25px;
-  justify-content: center;
-}
+    .hero button {
+      background: var(--primary);
+      color: white;
+      padding: 14px 28px;
+      border-radius: 8px;
+      border: none;
+      transition: 0.3s;
+    }
 
-/* CARD */
-.card {
-  background: var(--card);
-  padding: 25px;
-  border-radius: 14px;
-  width: 260px;
-  text-align: left;
-  border: 1px solid #eee;
-  transition: all 0.3s ease;
-}
+    .hero button:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 10px 25px rgba(255,106,0,0.3);
+    }
 
-.card:hover {
-  transform: translateY(-8px);
-  box-shadow: 0 12px 30px rgba(0,0,0,0.08);
-}
+    /* SECTION THEMES */
+    .dark {
+      background: var(--dark);
+      color: white;
+    }
 
-.card h3 {
-  margin: 10px 0;
-  color: var(--primary);
-}
+    .light-alt {
+      background: #f7f7f7;
+    }
 
-.card p {
-  color: var(--text-light);
-  font-size: 14px;
-}
+    h2 {
+      text-align: center;
+      margin-bottom: 40px;
+    }
 
-/* LIGHT SECTION ALT */
-.highlight {
-  background: #fafafa;
-}
+    /* GRID */
+    .grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 25px;
+      justify-content: center;
+    }
 
-/* CTA */
-.cta {
-  background: linear-gradient(45deg, var(--primary), var(--primary-light));
-  color: white;
-  padding: 70px 20px;
-  text-align: center;
-}
+    /* CARDS */
+    .card {
+      width: 260px;
+      padding: 25px;
+      border-radius: 14px;
+      transition: 0.3s;
+    }
 
-/* FOOTER */
-footer {
-  padding: 20px;
-  text-align: center;
-  color: #888;
-  font-size: 13px;
-  border-top: 1px solid #eee;
-}
+    .light .card,
+    .light-alt .card {
+      background: white;
+      border: 1px solid #eee;
+    }
 
-/* ANIMATION */
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(30px);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
+    .dark .card {
+      background: #1a1a1a;
+      border: 1px solid #2a2a2a;
+    }
 
-/* MOBILE */
-@media(max-width:600px){
-  .hero h1 {
-    font-size: 30px;
-  }
+    .card:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 12px 30px rgba(0,0,0,0.08);
+    }
 
-  header {
-    padding: 15px 20px;
-  }
-}
+    .card h3 {
+      color: var(--primary);
+    }
+
+    .card p {
+      color: var(--text-gray);
+      font-size: 14px;
+    }
+
+    /* CTA */
+    .cta {
+      background: black;
+      color: white;
+      text-align: center;
+      padding: 80px 20px;
+    }
+
+    .cta button {
+      background: var(--primary);
+      border: none;
+      padding: 14px 26px;
+      border-radius: 8px;
+      color: white;
+      margin-top: 20px;
+    }
+
+    /* FOOTER */
+    footer {
+      background: #111;
+      color: #aaa;
+      text-align: center;
+      padding: 20px;
+    }
+
+    /* ANIMATION */
+    .fade {
+      opacity: 0;
+      transform: translateY(30px);
+      animation: fadeUp 0.8s ease forwards;
+    }
+
+    @keyframes fadeUp {
+      to {
+        opacity: 1;
+        transform: none;
+      }
+    }
+
+    /* MOBILE */
+    @media(max-width:600px) {
+      .hero h1 {
+        font-size: 32px;
+      }
+    }
   </style>
 </head>
 
 <body>
 
-<header>
-  <div class="logo">
-    <img src="/logo.png" alt="Avenzo logo" />
-    <span>Avenzo</span>
+<header class="header">
+  <div>
+    <img src="/Avenzo Logo.png" class="icon-logo" alt="icon"/>
   </div>
 
-  <div class="nav">
+  <div style="text-align:center;">
+    <img src="/logo.png" class="main-logo" alt="logo"/>
+  </div>
+
+  <div style="text-align:right;">
     <button onclick="location.href='/login.html'">Login</button>
   </div>
 </header>
 
-<section class="hero">
-  <img src="/logo.png" />
-  <h1>Scan. Order. <span style="color:#ff6a00;">Done.</span></h1>
+<section class="hero container fade">
+  <img src="/logo.png" alt="logo"/>
+  <h1>Scan. Order. <span>Done.</span></h1>
   <div class="tagline">Order Smart. Skip The Wait.</div>
 
   <p>
@@ -217,65 +245,71 @@ footer {
   <button onclick="location.href='/menu.html'">Try Demo</button>
 </section>
 
-<section class="section">
-  <h2>How It Works</h2>
+<section class="dark">
+  <div class="container">
+    <h2>How It Works</h2>
 
-  <div class="grid">
-    <div class="card">
-      <h3>📱 Scan QR</h3>
-      <p>Customers scan a QR code and instantly open the menu</p>
-    </div>
+    <div class="grid">
+      <div class="card">
+        <h3>📱 Scan QR</h3>
+        <p>Customers scan and instantly open menu</p>
+      </div>
 
-    <div class="card">
-      <h3>🍽 Browse Menu</h3>
-      <p>Live menu with categories and real-time updates</p>
-    </div>
+      <div class="card">
+        <h3>🍽 Browse</h3>
+        <p>Live menu with real-time updates</p>
+      </div>
 
-    <div class="card">
-      <h3>⚡ Order Instantly</h3>
-      <p>Place order in seconds and get pickup code</p>
-    </div>
-  </div>
-</section>
-
-<section class="section highlight">
-  <h2>Built for Restaurants</h2>
-
-  <div class="grid">
-    <div class="card">
-      <h3>⚡ Faster Service</h3>
-      <p>Reduce waiting time and improve efficiency</p>
-    </div>
-
-    <div class="card">
-      <h3>🧠 Smart Menu</h3>
-      <p>Update prices, items and availability anytime</p>
-    </div>
-
-    <div class="card">
-      <h3>📊 Order Control</h3>
-      <p>Track and manage orders in real-time</p>
+      <div class="card">
+        <h3>⚡ Order</h3>
+        <p>Place order in seconds</p>
+      </div>
     </div>
   </div>
 </section>
 
-<section class="section">
-  <h2>Why Avenzo?</h2>
+<section class="light-alt">
+  <div class="container">
+    <h2>Built for Restaurants</h2>
 
-  <div class="grid">
-    <div class="card">
-      <h3>🚀 No App Needed</h3>
-      <p>Works directly in browser — no install required</p>
+    <div class="grid">
+      <div class="card">
+        <h3>⚡ Faster Service</h3>
+        <p>Reduce waiting time and improve efficiency</p>
+      </div>
+
+      <div class="card">
+        <h3>🧠 Smart Menu</h3>
+        <p>Update items anytime</p>
+      </div>
+
+      <div class="card">
+        <h3>📊 Control</h3>
+        <p>Manage orders in real-time</p>
+      </div>
     </div>
+  </div>
+</section>
 
-    <div class="card">
-      <h3>📱 Mobile First</h3>
-      <p>Designed for real-world restaurant usage</p>
-    </div>
+<section class="light">
+  <div class="container">
+    <h2>Why Avenzo?</h2>
 
-    <div class="card">
-      <h3>🔄 Real-Time Updates</h3>
-      <p>Instant status updates for customers and staff</p>
+    <div class="grid">
+      <div class="card">
+        <h3>🚀 No App Needed</h3>
+        <p>Works directly in browser</p>
+      </div>
+
+      <div class="card">
+        <h3>📱 Mobile First</h3>
+        <p>Built for real usage</p>
+      </div>
+
+      <div class="card">
+        <h3>🔄 Real-Time</h3>
+        <p>Instant updates</p>
+      </div>
     </div>
   </div>
 </section>
