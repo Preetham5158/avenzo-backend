@@ -7,105 +7,137 @@
   <style>
     body {
       font-family: Arial, sans-serif;
-      background: #f6f7fb;
       margin: 0;
-      padding: 20px;
+      background: #f6f7fb;
+    }
+
+    .header {
+      background: black;
+      color: white;
+      padding: 15px;
       text-align: center;
+      font-size: 18px;
+      font-weight: bold;
+    }
+
+    .container {
+      padding: 15px;
     }
 
     .card {
-      max-width: 400px;
-      margin: auto;
       background: white;
-      padding: 20px;
       border-radius: 12px;
+      padding: 20px;
       box-shadow: 0 4px 12px rgba(0,0,0,0.08);
     }
 
-    h2 {
-      margin-bottom: 10px;
+    .status {
+      text-align: center;
+      margin-bottom: 15px;
     }
 
-    .status {
-      font-size: 20px;
+    .badge {
+      padding: 8px 16px;
+      border-radius: 20px;
+      color: white;
       font-weight: bold;
-      margin: 10px 0;
+      display: inline-block;
     }
+
+    .pending { background: #ff9800; }
+    .preparing { background: #ff5722; }
+    .ready { background: #4caf50; }
+    .completed { background: #2e7d32; }
 
     .pickup {
-      font-size: 28px;
+      text-align: center;
+      margin: 15px 0;
+    }
+
+    .pickup-code {
+      font-size: 32px;
       font-weight: bold;
-      color: black;
-      margin: 10px 0 20px;
     }
 
     .section {
-      text-align: left;
       margin-top: 15px;
     }
 
     .item {
       display: flex;
       justify-content: space-between;
-      margin-bottom: 8px;
+      margin-bottom: 10px;
+      font-size: 15px;
+    }
+
+    .divider {
+      height: 1px;
+      background: #eee;
+      margin: 15px 0;
     }
 
     .total {
-      border-top: 1px solid #eee;
-      padding-top: 10px;
-      margin-top: 10px;
-      font-weight: bold;
       display: flex;
       justify-content: space-between;
+      font-weight: bold;
+      font-size: 16px;
     }
 
-    .badge {
-      display: inline-block;
-      padding: 6px 12px;
-      border-radius: 20px;
-      font-size: 14px;
-      background: black;
-      color: white;
-    }
-
-    .loader {
-      margin-top: 20px;
+    .footer {
+      text-align: center;
       font-size: 12px;
       color: #888;
+      margin-top: 10px;
     }
   </style>
 </head>
 
 <body>
 
-<div class="card">
-  <h2>🍽 Order Status</h2>
+<div class="header" id="restaurantName">Loading...</div>
 
-  <div class="status">
-    <span id="status" class="badge">Loading...</span>
+<div class="container">
+  <div class="card">
+
+    <div class="status">
+      <div id="statusBadge" class="badge">Loading...</div>
+    </div>
+
+    <div class="pickup">
+      Pickup Code
+      <div class="pickup-code" id="pickup">----</div>
+    </div>
+
+    <div class="section">
+      <h4>Items</h4>
+      <div id="items"></div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="total">
+      <span>Total</span>
+      <span id="total">₹0</span>
+    </div>
+
+    <div class="footer" id="footerText">Updating...</div>
+
   </div>
-
-  <div>
-    Pickup Code
-    <div class="pickup" id="pickup">----</div>
-  </div>
-
-  <div class="section">
-    <h4>Items</h4>
-    <div id="items"></div>
-  </div>
-
-  <div class="total">
-    <span>Total</span>
-    <span id="total">₹0</span>
-  </div>
-
-  <div class="loader">Auto updating...</div>
 </div>
 
 <script>
 const API = "https://avenzo.app";
 const orderId = window.location.pathname.split("/track/")[1];
+
+function getStatusClass(status) {
+  switch(status) {
+    case "PENDING": return "pending";
+    case "PREPARING": return "preparing";
+    case "READY": return "ready";
+    case "COMPLETED": return "completed";
+    default: return "pending";
+  }
+}
 
 async function loadStatus() {
   try {
@@ -113,17 +145,28 @@ async function loadStatus() {
     const data = await res.json();
 
     if (!res.ok) {
-      document.getElementById("status").innerText = "Not Found";
+      document.getElementById("footerText").innerText = "Order not found";
       return;
     }
 
-    // STATUS
-    document.getElementById("status").innerText = data.status;
+    // 🔥 STATUS
+    const badge = document.getElementById("statusBadge");
+    badge.innerText = data.status;
+    badge.className = "badge " + getStatusClass(data.status);
 
-    // PICKUP CODE
+    // 🏪 RESTAURANT NAME
+    if (data.restaurantId) {
+      fetch(`${API}/restaurant/${data.restaurantId}`)
+        .then(r => r.json())
+        .then(r => {
+          document.getElementById("restaurantName").innerText = r.name;
+        });
+    }
+
+    // 🔢 PICKUP CODE
     document.getElementById("pickup").innerText = data.pickupCode;
 
-    // ITEMS
+    // 🧾 ITEMS
     const itemsDiv = document.getElementById("items");
     itemsDiv.innerHTML = "";
 
@@ -145,15 +188,22 @@ async function loadStatus() {
 
     document.getElementById("total").innerText = "₹" + total;
 
+    // ⏱ Footer behavior
+    if (data.status === "READY" || data.status === "COMPLETED") {
+      document.getElementById("footerText").innerText = "Please collect your order";
+    } else {
+      document.getElementById("footerText").innerText = "Updating...";
+    }
+
   } catch (err) {
-    document.getElementById("status").innerText = "Error";
+    document.getElementById("footerText").innerText = "Error loading data";
   }
 }
 
 // initial load
 loadStatus();
 
-// 🔥 auto refresh
+// 🔁 auto refresh only if not completed
 setInterval(loadStatus, 3000);
 </script>
 
