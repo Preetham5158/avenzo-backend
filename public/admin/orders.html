@@ -79,7 +79,7 @@ async function loadOrders() {
 
 async function updateStatus(id, status) {
   await fetch(`${API}/order/${id}/status`, {
-    method:"PUT",
+    method:"PATCH",
     headers:{
       "Content-Type":"application/json",
       Authorization:"Bearer "+token
