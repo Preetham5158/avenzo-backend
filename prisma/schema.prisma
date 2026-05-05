@@ -1,8 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -13,15 +8,67 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
+//////////////////////////////////////////////////////
+// ENUMS (clean + safe)
+//////////////////////////////////////////////////////
+
+enum OrderStatus {
+  PENDING
+  PREPARING
+  READY
+  COMPLETED
+  CANCELLED
+}
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+//////////////////////////////////////////////////////
+// USER
+//////////////////////////////////////////////////////
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  name      String?
+
+  role      UserRole @default(USER)
+
+  restaurants Restaurant[]  // owns restaurants
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+//////////////////////////////////////////////////////
+// RESTAURANT
+//////////////////////////////////////////////////////
+
 model Restaurant {
   id        String   @id @default(uuid())
-  name      String @unique
-  createdAt DateTime @default(now())
+  name      String
+  slug      String   @unique
+
+  ownerId   String
+  owner     User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
   menus     Menu[]
   orders    Order[]
-  ownerId   String 
-  owner     User     @relation(fields: [ownerId], references: [id])
+
+  isActive  Boolean  @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([ownerId])
 }
+
+//////////////////////////////////////////////////////
+// MENU
+//////////////////////////////////////////////////////
 
 model Menu {
   id    String @id @default(uuid())
@@ -32,38 +79,61 @@ model Menu {
   isAvailable Boolean @default(true)
 
   restaurantId String
-  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
 
   orderItems OrderItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([restaurantId])
 }
+
+//////////////////////////////////////////////////////
+// ORDER
+//////////////////////////////////////////////////////
 
 model Order {
   id           String      @id @default(uuid())
+
   totalPrice   Float
-  status       String      @default("PENDING")
+  status       OrderStatus @default(PENDING)
   pickupCode   String
+
   phone        String?
   sessionId    String
+
   restaurantId String
-  restaurant   Restaurant  @relation(fields: [restaurantId], references: [id])
+  restaurant   Restaurant  @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+
   items        OrderItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([restaurantId])
 }
+
+//////////////////////////////////////////////////////
+// ORDER ITEM
+//////////////////////////////////////////////////////
 
 model OrderItem {
   id       String @id @default(uuid())
+
   orderId  String
+  order    Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
   menuId   String
+  menu     Menu   @relation(fields: [menuId], references: [id])
+
   quantity Int
 
-  order Order @relation(fields: [orderId], references: [id])
-  menu  Menu  @relation(fields: [menuId], references: [id])
-}
+  // snapshot (IMPORTANT for real-world)
+  priceAtOrder Float
+  nameAtOrder  String
 
-model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  password  String
-  name      String?
-  restaurants Restaurant[]
   createdAt DateTime @default(now())
+
+  @@index([orderId])
 }
