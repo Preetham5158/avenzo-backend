@@ -167,11 +167,8 @@ app.get("/order/:id", async (req, res) => {
 /* ================================
    RESTAURANTS LIST
 ================================ */
-app.get("/restaurants", authMiddleware, async (req, res) => {
-    const restaurants = await prisma.restaurant.findMany({
-        where: { ownerId: req.user.userId }
-    });
-
+app.get("/restaurants", async (req, res) => {
+    const restaurants = await prisma.restaurant.findMany();
     res.json(restaurants);
 });
 
