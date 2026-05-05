@@ -1,7 +1,150 @@
-<script>
-const token = localStorage.getItem("token");
+<!DOCTYPE html>
+<html>
 
-if (!token) {
-  window.location.href = "/login.html";
-}
-</script>
+<head>
+    <title>Avenzo Admin</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <style>
+        body {
+            font-family: Arial;
+            margin: 0;
+            background: #f6f7fb;
+        }
+
+        header {
+            background: black;
+            color: white;
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .container {
+            padding: 20px;
+        }
+
+        .card {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        button {
+            padding: 6px 10px;
+            margin-right: 5px;
+            border: none;
+            background: black;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .create-btn {
+            background: #ff9800;
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <div>🍽 Avenzo Admin</div>
+        <button onclick="logout()">Logout</button>
+    </header>
+
+    <div class="container">
+
+        <h3>Your Restaurants</h3>
+
+        <button class="create-btn" onclick="createRestaurant()">+ Add Restaurant</button>
+
+        <div id="list"></div>
+
+    </div>
+
+    <script>
+        const API = "https://avenzo.app";
+        const token = localStorage.getItem("token");
+
+        if (!token) {
+            window.location.href = "/login.html";
+        }
+
+        async function loadRestaurants() {
+            const res = await fetch(`${API}/restaurants`, {
+                headers: {
+                    Authorization: "Bearer " + token
+                }
+            });
+
+            const data = await res.json();
+
+            const container = document.getElementById("list");
+            container.innerHTML = "";
+
+            data.forEach(r => {
+                const div = document.createElement("div");
+                div.className = "card";
+
+                div.innerHTML = `
+      <b>${r.name}</b><br><br>
+      <button onclick="openMenu('${r.id}')">Menu</button>
+      <button onclick="openOrders('${r.id}')">Orders</button>
+      <button onclick="deleteRestaurant('${r.id}')">Delete</button>
+    `;
+
+                container.appendChild(div);
+            });
+        }
+
+        function openMenu(id) {
+            window.location.href = `/admin/menu.html?restaurantId=${id}`;
+        }
+
+        function openOrders(id) {
+            window.location.href = `/admin/orders.html?restaurantId=${id}`;
+        }
+
+        async function createRestaurant() {
+            const name = prompt("Enter restaurant name");
+            if (!name) return;
+
+            await fetch(`${API}/restaurant`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: "Bearer " + token
+                },
+                body: JSON.stringify({ name })
+            });
+
+            loadRestaurants();
+        }
+
+        async function deleteRestaurant(id) {
+            if (!confirm("Delete this restaurant?")) return;
+
+            await fetch(`${API}/restaurant/${id}`, {
+                method: "DELETE",
+                headers: {
+                    Authorization: "Bearer " + token
+                }
+            });
+
+            loadRestaurants();
+        }
+
+        function logout() {
+            localStorage.removeItem("token");
+            window.location.href = "/login.html";
+        }
+
+        loadRestaurants();
+    </script>
+
+</body>
+
+</html>
