@@ -1,7 +1,102 @@
-<script>
-const token = localStorage.getItem("token");
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Orders</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 
-if (!token) {
-  window.location.href = "/login.html";
+  <style>
+    body { font-family: Arial; margin:0; background:#f6f7fb; }
+    header { background:black; color:white; padding:15px; display:flex; justify-content:space-between; }
+    .container { padding:15px; }
+
+    .card {
+      background:white;
+      padding:15px;
+      border-radius:10px;
+      margin-bottom:10px;
+      box-shadow:0 4px 10px rgba(0,0,0,0.05);
+    }
+
+    select {
+      padding:5px;
+      margin-top:5px;
+    }
+  </style>
+</head>
+
+<body>
+
+<header>
+  <div>📦 Orders</div>
+  <button onclick="goBack()">Back</button>
+</header>
+
+<div class="container" id="list"></div>
+
+<script>
+const API = "https://avenzo.app";
+const token = localStorage.getItem("token");
+const restaurantId = new URLSearchParams(location.search).get("restaurantId");
+
+async function loadOrders() {
+  const res = await fetch(`${API}/admin/orders/${restaurantId}`, {
+    headers:{ Authorization:"Bearer "+token }
+  });
+
+  const data = await res.json();
+  const container = document.getElementById("list");
+  container.innerHTML = "";
+
+  data.forEach(o => {
+    const div = document.createElement("div");
+    div.className = "card";
+
+    let items = "";
+    o.items.forEach(i => {
+      items += `<div>${i.nameAtOrder} x ${i.quantity}</div>`;
+    });
+
+    div.innerHTML = `
+      <b>Order</b><br>
+      Code: ${o.pickupCode}<br>
+      Status: ${o.status}<br><br>
+
+      ${items}
+
+      <br><br>
+
+      <select onchange="updateStatus('${o.id}', this.value)">
+        <option ${o.status==="PENDING"?"selected":""}>PENDING</option>
+        <option ${o.status==="PREPARING"?"selected":""}>PREPARING</option>
+        <option ${o.status==="READY"?"selected":""}>READY</option>
+        <option ${o.status==="COMPLETED"?"selected":""}>COMPLETED</option>
+      </select>
+    `;
+
+    container.appendChild(div);
+  });
 }
+
+async function updateStatus(id, status) {
+  await fetch(`${API}/order/${id}/status`, {
+    method:"PUT",
+    headers:{
+      "Content-Type":"application/json",
+      Authorization:"Bearer "+token
+    },
+    body: JSON.stringify({ status })
+  });
+
+  loadOrders();
+}
+
+function goBack() {
+  history.back();
+}
+
+setInterval(loadOrders, 3000);
+loadOrders();
 </script>
+
+</body>
+</html>

@@ -1,7 +1,127 @@
-<script>
-const token = localStorage.getItem("token");
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Menu Admin</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 
-if (!token) {
-  window.location.href = "/login.html";
+  <style>
+    body { font-family: Arial; margin:0; background:#f6f7fb; }
+    header { background:black; color:white; padding:15px; display:flex; justify-content:space-between; }
+    .container { padding:15px; }
+
+    .card {
+      background:white;
+      padding:15px;
+      border-radius:10px;
+      margin-bottom:10px;
+      box-shadow:0 4px 10px rgba(0,0,0,0.05);
+    }
+
+    button {
+      padding:6px 10px;
+      margin-right:5px;
+      border:none;
+      background:black;
+      color:white;
+      border-radius:5px;
+      cursor:pointer;
+    }
+
+    .add { background:#ff9800; }
+    .off { background:#ccc; color:black; }
+  </style>
+</head>
+
+<body>
+
+<header>
+  <div>🍽 Menu</div>
+  <button onclick="goBack()">Back</button>
+</header>
+
+<div class="container">
+  <button class="add" onclick="addItem()">+ Add Item</button>
+  <div id="menu"></div>
+</div>
+
+<script>
+const API = "https://avenzo.app";
+const token = localStorage.getItem("token");
+const restaurantId = new URLSearchParams(location.search).get("restaurantId");
+
+async function loadMenu() {
+  const res = await fetch(`${API}/menu/${restaurantId}`);
+  const data = await res.json();
+
+  const container = document.getElementById("menu");
+  container.innerHTML = "";
+
+  data.forEach(i => {
+    const div = document.createElement("div");
+    div.className = "card";
+
+    div.innerHTML = `
+      <b>${i.name}</b> - ₹${i.price} <br>
+      ${i.category}<br><br>
+
+      <button onclick="toggle('${i.id}', ${i.isAvailable})">
+        ${i.isAvailable ? "Disable" : "Enable"}
+      </button>
+
+      <button onclick="deleteItem('${i.id}')">Delete</button>
+    `;
+
+    container.appendChild(div);
+  });
 }
+
+async function addItem() {
+  const name = prompt("Item name");
+  const price = prompt("Price");
+  const category = prompt("Category");
+
+  if (!name || !price || !category) return;
+
+  await fetch(`${API}/menu`, {
+    method:"POST",
+    headers:{
+      "Content-Type":"application/json",
+      Authorization:"Bearer "+token
+    },
+    body: JSON.stringify({ name, price, category, restaurantId })
+  });
+
+  loadMenu();
+}
+
+async function deleteItem(id) {
+  await fetch(`${API}/menu/${id}`, {
+    method:"DELETE",
+    headers:{ Authorization:"Bearer "+token }
+  });
+
+  loadMenu();
+}
+
+async function toggle(id, current) {
+  await fetch(`${API}/menu/${id}`, {
+    method:"PUT",
+    headers:{
+      "Content-Type":"application/json",
+      Authorization:"Bearer "+token
+    },
+    body: JSON.stringify({ isAvailable: !current })
+  });
+
+  loadMenu();
+}
+
+function goBack() {
+  history.back();
+}
+
+loadMenu();
 </script>
+
+</body>
+</html>
