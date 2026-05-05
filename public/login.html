@@ -154,7 +154,7 @@ async function login() {
 
     if (data.token) {
       localStorage.setItem("token", data.token);
-      window.location.href = "/";
+      window.location.href = "/admin/dashboard.html";
     } else {
       errorEl.innerText = data.error || "Login failed";
     }
