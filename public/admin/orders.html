@@ -128,12 +128,16 @@
                     div.innerHTML = `
         <b>#${o.pickupCode}</b>
         <div>${items}</div>
-        <select onchange="updateStatus('${o.id}', this.value)">
-          <option ${o.status === "PENDING" ? "selected" : ""}>PENDING</option>
-          <option ${o.status === "PREPARING" ? "selected" : ""}>PREPARING</option>
-          <option ${o.status === "READY" ? "selected" : ""}>READY</option>
-          <option ${o.status === "COMPLETED" ? "selected" : ""}>COMPLETED</option>
-        </select>
+        <select 
+  onfocus="isInteracting = true"
+  onblur="setTimeout(() => isInteracting = false, 200)"
+  onchange="updateStatus('${o.id}', this.value)">
+  
+  <option ${o.status === "PENDING" ? "selected" : ""}>PENDING</option>
+  <option ${o.status === "PREPARING" ? "selected" : ""}>PREPARING</option>
+  <option ${o.status === "READY" ? "selected" : ""}>READY</option>
+  <option ${o.status === "COMPLETED" ? "selected" : ""}>COMPLETED</option>
+</select>
       `;
 
                     container.appendChild(div);
