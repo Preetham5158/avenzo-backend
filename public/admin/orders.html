@@ -51,20 +51,14 @@
             opacity: 0.85;
         }
 
-        .primary {
-            background: linear-gradient(45deg, #ff7a00, #ffb300);
-            color: white;
-        }
-
-        .danger {
-            background: #ff4d4f;
-            color: white;
-        }
-
         select {
             padding: 6px;
             border-radius: 6px;
             border: 1px solid #ddd;
+        }
+
+        .status {
+            font-weight: bold;
         }
     </style>
 </head>
@@ -76,78 +70,93 @@
         <button onclick="goBack()">Back</button>
     </header>
 
-    <div class="container" id="list"></div>
+    <div class="container" id="list">Loading orders...</div>
 
     <script>
-
         let isInteracting = false;
 
         const API = "https://avenzo.app";
         const token = localStorage.getItem("token");
         const restaurantId = new URLSearchParams(location.search).get("restaurantId");
 
-        document.getElementById("list").innerHTML = "Loading orders...";
-
-        if (data.length === 0) {
-            container.innerHTML = "No orders yet";
-            return;
+        /* ================================
+           STATUS COLOR
+        ================================ */
+        function getColor(status) {
+            return {
+                PENDING: "#ff9800",
+                PREPARING: "#ff5722",
+                READY: "#4caf50",
+                COMPLETED: "#2e7d32"
+            }[status] || "#000";
         }
 
+        /* ================================
+           LOAD ORDERS
+        ================================ */
         async function loadOrders() {
-            const res = await fetch(`${API}/admin/orders/${restaurantId}`, {
-                headers: { Authorization: "Bearer " + token }
-            });
-
-            const data = await res.json();
-            const container = document.getElementById("list");
-            container.innerHTML = "";
-
-            data.forEach(o => {
-                const div = document.createElement("div");
-                div.className = "card";
-
-                let items = "";
-                o.items.forEach(i => {
-                    items += `<div>${i.nameAtOrder} x ${i.quantity}</div>`;
+            try {
+                const res = await fetch(`${API}/admin/orders/${restaurantId}`, {
+                    headers: { Authorization: "Bearer " + token }
                 });
 
-                div.innerHTML = `
-  <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
-    <b>#${o.pickupCode}</b>
-    <span>${o.status}</span>
-  </div>
+                const data = await res.json();
+                const container = document.getElementById("list");
 
-  ${items}
-
-  <div style="margin-top:10px;">
-    <select 
-      onfocus="isInteracting = true" 
-      onblur="isInteracting = false"
-      onchange="updateStatus('${o.id}', this.value)">
-      
-      <option ${o.status === "PENDING" ? "selected" : ""}>PENDING</option>
-      <option ${o.status === "PREPARING" ? "selected" : ""}>PREPARING</option>
-      <option ${o.status === "READY" ? "selected" : ""}>READY</option>
-      <option ${o.status === "COMPLETED" ? "selected" : ""}>COMPLETED</option>
-    </select>
-  </div>
-`;
-
-                function getColor(status) {
-                    return {
-                        PENDING: "#ff9800",
-                        PREPARING: "#ff5722",
-                        READY: "#4caf50",
-                        COMPLETED: "#2e7d32"
-                    }[status];
+                if (!res.ok) {
+                    container.innerHTML = "Error loading orders";
+                    return;
                 }
 
-                <span style="color:${getColor(o.status)}">${o.status}</span>
+                if (!data || data.length === 0) {
+                    container.innerHTML = "No orders yet";
+                    return;
+                }
 
-                container.appendChild(div);
-            });
+                container.innerHTML = "";
+
+                data.forEach(o => {
+                    const div = document.createElement("div");
+                    div.className = "card";
+
+                    let items = "";
+                    o.items.forEach(i => {
+                        items += `<div>${i.nameAtOrder} x ${i.quantity}</div>`;
+                    });
+
+                    div.innerHTML = `
+                <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+                    <b>#${o.pickupCode}</b>
+                    <span class="status" style="color:${getColor(o.status)}">${o.status}</span>
+                </div>
+
+                ${items}
+
+                <div style="margin-top:10px;">
+                    <select 
+                        onfocus="isInteracting = true" 
+                        onblur="isInteracting = false"
+                        onchange="updateStatus('${o.id}', this.value)">
+                        
+                        <option ${o.status === "PENDING" ? "selected" : ""}>PENDING</option>
+                        <option ${o.status === "PREPARING" ? "selected" : ""}>PREPARING</option>
+                        <option ${o.status === "READY" ? "selected" : ""}>READY</option>
+                        <option ${o.status === "COMPLETED" ? "selected" : ""}>COMPLETED</option>
+                    </select>
+                </div>
+            `;
+
+                    container.appendChild(div);
+                });
+
+            } catch (err) {
+                document.getElementById("list").innerHTML = "Error loading orders";
+            }
         }
 
+        /* ================================
+           UPDATE STATUS
+        ================================ */
         async function updateStatus(id, status) {
             await fetch(`${API}/order/${id}/status`, {
                 method: "PATCH",
@@ -161,15 +170,22 @@
             loadOrders();
         }
 
+        /* ================================
+           NAV
+        ================================ */
         function goBack() {
             history.back();
         }
 
+        /* ================================
+           AUTO REFRESH
+        ================================ */
         setInterval(() => {
             if (!isInteracting) {
                 loadOrders();
             }
         }, 3000);
+
         loadOrders();
     </script>
 
