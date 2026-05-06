@@ -87,6 +87,53 @@ button {
   object-fit: contain;
 }
 
+.account {
+  position: relative;
+}
+
+.account-trigger {
+  background: white;
+  border: 1px solid var(--line);
+  color: var(--ink);
+}
+
+.account-menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 10px);
+  width: 260px;
+  display: none;
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  z-index: 50;
+}
+
+.account.open .account-menu {
+  display: block;
+}
+
+.account-info {
+  padding: 14px;
+  border-bottom: 1px solid var(--line);
+}
+
+.account-menu button {
+  width: 100%;
+  min-height: 44px;
+  background: white;
+  color: var(--ink);
+  text-align: left;
+  padding: 0 14px;
+  cursor: pointer;
+}
+
+.account-menu button:hover {
+  background: #f8fafc;
+}
+
 .page {
   padding: 28px 0 36px;
 }
@@ -430,6 +477,30 @@ h3 {
   color: white;
 }
 
+.search-wrap {
+  position: sticky;
+  top: 72px;
+  z-index: 12;
+  background: rgba(245, 247, 251, 0.88);
+  backdrop-filter: blur(12px);
+  padding: 12px 0;
+}
+
+.status-actions {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.status-action {
+  min-height: 46px;
+}
+
+.status-action.active {
+  background: #101114;
+  color: white;
+}
+
 @media (max-width: 760px) {
   .topbar-inner,
   .page,
@@ -457,5 +528,23 @@ h3 {
   .row-between .btn,
   .icon-btn {
     width: auto;
+  }
+
+  .account {
+    width: 100%;
+  }
+
+  .account-trigger {
+    width: 100%;
+  }
+
+  .account-menu {
+    position: static;
+    width: 100%;
+    margin-top: 8px;
+  }
+
+  .status-actions {
+    grid-template-columns: 1fr 1fr;
   }
 }

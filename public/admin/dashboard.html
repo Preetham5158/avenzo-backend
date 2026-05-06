@@ -16,7 +16,7 @@
           <img src="/logo.png" alt="Avenzo">
           <span>AVENZO</span>
         </div>
-        <button class="btn btn-ghost" onclick="logout()">Logout</button>
+        <div id="accountMenu"></div>
       </div>
     </header>
 
@@ -42,7 +42,7 @@
       <div class="modal-head row-between">
         <div>
           <h3 style="margin:0;">Create restaurant</h3>
-          <div class="muted">Only super admins can add new restaurants.</div>
+          <div class="muted">Create a restaurant and assign menu items from the menu manager.</div>
         </div>
         <button type="button" class="btn btn-ghost icon-btn" onclick="closeRestaurantModal()">X</button>
       </div>
@@ -90,8 +90,8 @@
 
         document.getElementById("pageTitle").textContent = canCreateRestaurant ? "All Restaurants" : "Your Restaurants";
         document.getElementById("roleText").textContent = canCreateRestaurant
-          ? "Super admin access across every restaurant."
-          : "Only restaurants assigned to your account are shown.";
+          ? "You can manage every restaurant from this workspace."
+          : "Only restaurants assigned to you are shown here.";
         document.getElementById("createBtn").style.display = canCreateRestaurant ? "inline-flex" : "none";
 
         renderStats(restaurants, data.user);
@@ -106,8 +106,8 @@
       document.getElementById("stats").innerHTML = `
         <div class="card card-pad">
           <div class="muted">Signed in as</div>
-          <h3>${escapeHtml(user?.email || "Unknown")}</h3>
-          <span class="pill pill-dark">${escapeHtml(user?.role || "USER")}</span>
+          <h3>${escapeHtml(user?.name || user?.email || "Avenzo user")}</h3>
+          <span class="pill pill-dark">${canCreateRestaurant ? "Full access" : "Restaurant access"}</span>
         </div>
         <div class="card card-pad">
           <div class="muted">Restaurants</div>
@@ -115,9 +115,9 @@
           <span class="pill">Visible to you</span>
         </div>
         <div class="card card-pad">
-          <div class="muted">Access model</div>
-          <h3>${canCreateRestaurant ? "Global" : "Owner"}</h3>
-          <span class="pill ${canCreateRestaurant ? "pill-success" : "pill-warning"}">${canCreateRestaurant ? "Super admin" : "Scoped"}</span>
+          <div class="muted">Workspace</div>
+          <h3>${canCreateRestaurant ? "All locations" : "Assigned locations"}</h3>
+          <span class="pill ${canCreateRestaurant ? "pill-success" : "pill-warning"}">${canCreateRestaurant ? "Company view" : "Owner view"}</span>
         </div>
       `;
     }
@@ -134,7 +134,7 @@
           <div class="row-between">
             <div>
               <h3 style="margin-bottom:4px;">${escapeHtml(r.name)}</h3>
-              <div class="muted">/${escapeHtml(r.slug || "")}</div>
+              <div class="muted">Manage menu, orders, and QR ordering</div>
             </div>
             <span class="pill ${r.isActive ? "pill-success" : "pill-danger"}">${r.isActive ? "Active" : "Inactive"}</span>
           </div>
@@ -216,6 +216,7 @@
       window.location.href = `/qr.html?restaurantId=${id}`;
     }
 
+    initAccountMenu();
     loadRestaurants();
   </script>
 </body>

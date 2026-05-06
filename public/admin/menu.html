@@ -55,10 +55,7 @@
           <img src="/logo.png" alt="Avenzo">
           <span>AVENZO</span>
         </div>
-        <div class="row">
-          <button class="btn btn-ghost" onclick="goBack()">Back</button>
-          <button class="btn btn-ghost" onclick="logout()">Logout</button>
-        </div>
+        <div id="accountMenu"></div>
       </div>
     </header>
 
@@ -74,6 +71,9 @@
 
       <section class="tabbar" id="categoryTabs"></section>
       <section class="stack" id="menu" style="margin-top:12px;">Loading menu...</section>
+      <div class="bottom-actions" style="padding-top:18px;">
+        <button class="btn btn-dark" onclick="goBack()">Back to dashboard</button>
+      </div>
     </main>
   </div>
 
@@ -325,6 +325,7 @@
       window.location.href = "/admin/dashboard.html";
     }
 
+    initAccountMenu();
     init();
   </script>
 </body>

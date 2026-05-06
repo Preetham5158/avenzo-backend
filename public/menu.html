@@ -103,6 +103,12 @@
   </header>
 
   <main class="page" style="max-width:920px;">
+    <section class="search-wrap">
+      <div class="field">
+        <label for="menuSearch">Search menu</label>
+        <input id="menuSearch" class="input" placeholder="Search biryani, dosa, coffee..." oninput="setSearch(this.value)">
+      </div>
+    </section>
     <section class="tabbar" id="categoryTabs"></section>
     <section class="stack" id="menu" style="margin-top:12px;">Loading menu...</section>
   </main>
@@ -146,6 +152,7 @@
     let cart = [];
     let menuData = [];
     let activeCategory = "ALL";
+    let searchTerm = "";
 
     async function init() {
       try {
@@ -185,10 +192,23 @@
       renderMenu();
     }
 
+    function setSearch(value) {
+      searchTerm = value.trim().toLowerCase();
+      renderMenu();
+    }
+
     function renderMenu() {
-      const visible = activeCategory === "ALL"
+      let visible = activeCategory === "ALL"
         ? menuData
         : menuData.filter(item => categoryName(item) === activeCategory);
+
+      if (searchTerm) {
+        visible = visible.filter(item => [
+          item.name,
+          item.description,
+          categoryName(item)
+        ].join(" ").toLowerCase().includes(searchTerm));
+      }
 
       const grouped = visible.reduce((acc, item) => {
         const name = categoryName(item);
@@ -199,7 +219,7 @@
 
       const container = document.getElementById("menu");
       if (!visible.length) {
-        container.innerHTML = `<div class="empty">No available items here yet.</div>`;
+        container.innerHTML = `<div class="empty">No matching dishes found. Try another search or category.</div>`;
         return;
       }
 

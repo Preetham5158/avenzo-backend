@@ -20,12 +20,13 @@
       border-bottom: 1px solid var(--line);
     }
 
-    .status-select {
-      width: 190px;
+    .order-status-panel {
+      display: grid;
+      gap: 10px;
     }
 
     @media (max-width: 760px) {
-      .status-select {
+      .order-status-panel {
         width: 100%;
       }
     }
@@ -40,10 +41,7 @@
           <img src="/logo.png" alt="Avenzo">
           <span>AVENZO</span>
         </div>
-        <div class="row">
-          <button class="btn btn-ghost" onclick="goBack()">Back</button>
-          <button class="btn btn-ghost" onclick="logout()">Logout</button>
-        </div>
+        <div id="accountMenu"></div>
       </div>
     </header>
 
@@ -52,12 +50,9 @@
         <div>
           <div class="eyebrow">Live orders</div>
           <h1 id="restaurantName">Loading...</h1>
-          <p class="muted">Auto-refresh pauses while you are changing a status.</p>
+          <p class="muted">New and updated orders appear automatically.</p>
         </div>
-        <div class="row">
-          <span class="pill pill-dark" id="orderCount">0 orders</span>
-          <button class="btn btn-soft" onclick="loadOrders(true)">Refresh</button>
-        </div>
+        <span class="pill pill-dark" id="orderCount">0 orders</span>
       </section>
 
       <section class="grid grid-3" id="statusStats"></section>
@@ -73,8 +68,6 @@
     requireAuth();
 
     const restaurantId = new URLSearchParams(location.search).get("restaurantId");
-    let userIsEditingUntil = 0;
-
     const statusMeta = {
       PENDING: ["pill-warning", "Pending"],
       PREPARING: ["pill-warning", "Preparing"],
@@ -83,13 +76,7 @@
       CANCELLED: ["pill-danger", "Cancelled"]
     };
 
-    function holdRefresh() {
-      userIsEditingUntil = Date.now() + 10000;
-    }
-
-    async function loadOrders(force = false) {
-      if (!force && Date.now() < userIsEditingUntil) return;
-
+    async function loadOrders() {
       try {
         const data = await request(`/admin/orders/${restaurantId}`);
         const orders = data.orders || [];
@@ -156,20 +143,22 @@
                 <strong>${money(order.totalPrice)}</strong>
               </div>
               <div>
-                <div class="muted">Session</div>
-                <strong>${escapeHtml(order.sessionId || "Walk-in")}</strong>
+                <div class="muted">Pickup code</div>
+                <strong>${escapeHtml(order.pickupCode)}</strong>
               </div>
             </div>
 
             <div class="items">${items}</div>
 
-            <div class="row-between">
-              <select class="select status-select" onfocus="holdRefresh()" onclick="holdRefresh()" onchange="updateStatus('${order.id}', this.value)">
-                ${["PENDING", "PREPARING", "READY", "COMPLETED", "CANCELLED"].map(status => `
-                  <option value="${status}" ${order.status === status ? "selected" : ""}>${statusMeta[status][1]}</option>
+            <div class="order-status-panel">
+              <div class="muted">Update order</div>
+              <div class="status-actions">
+                ${["PREPARING", "READY", "COMPLETED", "CANCELLED"].map(status => `
+                  <button class="btn status-action ${order.status === status ? "active" : "btn-ghost"}" onclick="updateStatus('${order.id}', '${status}')" ${order.status === status ? "disabled" : ""}>
+                    ${statusMeta[status][1]}
+                  </button>
                 `).join("")}
-              </select>
-              <button class="btn btn-soft" onclick="loadOrders(true)">Sync now</button>
+              </div>
             </div>
           </article>
         `;
@@ -177,7 +166,6 @@
     }
 
     async function updateStatus(id, status) {
-      holdRefresh();
       try {
         await request(`/order/${id}/status`, {
           method: "PATCH",
@@ -187,8 +175,7 @@
       } catch (err) {
         toast(err.message);
       } finally {
-        userIsEditingUntil = 0;
-        loadOrders(true);
+        loadOrders();
       }
     }
 
@@ -196,8 +183,9 @@
       window.location.href = "/admin/dashboard.html";
     }
 
-    setInterval(() => loadOrders(false), 3000);
-    loadOrders(true);
+    initAccountMenu();
+    setInterval(loadOrders, 3000);
+    loadOrders();
   </script>
 </body>
 

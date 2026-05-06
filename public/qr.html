@@ -26,10 +26,7 @@
           <img src="/logo.png" alt="Avenzo">
           <span>AVENZO</span>
         </div>
-        <div class="row">
-          <button class="btn btn-ghost" onclick="window.location.href='/admin/dashboard.html'">Dashboard</button>
-          <button class="btn btn-ghost" onclick="logout()">Logout</button>
-        </div>
+        <div id="accountMenu"></div>
       </div>
     </header>
 
@@ -43,6 +40,9 @@
       </section>
 
       <section class="grid grid-3" id="container">Loading QR codes...</section>
+      <div class="bottom-actions" style="padding-top:18px;">
+        <button class="btn btn-dark" onclick="window.location.href='/admin/dashboard.html'">Back to dashboard</button>
+      </div>
     </main>
   </div>
 
@@ -134,6 +134,7 @@
       qrImage.src = qrUrl(url, 350);
     }
 
+    initAccountMenu();
     loadRestaurants();
   </script>
 </body>

@@ -82,3 +82,43 @@ function logout() {
   localStorage.removeItem("token");
   window.location.href = "/login.html";
 }
+
+async function initAccountMenu(targetId = "accountMenu") {
+  const target = document.getElementById(targetId);
+  if (!target) return null;
+
+  try {
+    const user = await request("/auth/me");
+    const displayName = user.name || user.email || "Avenzo user";
+    target.innerHTML = `
+      <div class="account" id="accountDropdown">
+        <button class="btn account-trigger" onclick="toggleAccountMenu()" type="button">
+          <span>${escapeHtml(displayName)}</span>
+          <span>▾</span>
+        </button>
+        <div class="account-menu">
+          <div class="account-info">
+            <strong>${escapeHtml(displayName)}</strong>
+            <div class="muted">${escapeHtml(user.email || "")}</div>
+          </div>
+          <button type="button" onclick="logout()">Sign out</button>
+        </div>
+      </div>
+    `;
+    return user;
+  } catch {
+    logout();
+    return null;
+  }
+}
+
+function toggleAccountMenu() {
+  document.getElementById("accountDropdown")?.classList.toggle("open");
+}
+
+document.addEventListener("click", (event) => {
+  const dropdown = document.getElementById("accountDropdown");
+  if (dropdown && !dropdown.contains(event.target)) {
+    dropdown.classList.remove("open");
+  }
+});
