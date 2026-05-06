@@ -52,7 +52,8 @@ async function main() {
     data: {
       email: "owner@avenzo.com",
       password: await bcrypt.hash("Owner@123", 10),
-      name: "Restaurant Owner"
+      name: "Restaurant Owner",
+      role: "RESTAURANT_OWNER"
     }
   });
 

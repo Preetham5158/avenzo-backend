@@ -10,32 +10,35 @@
             font-family: 'Inter', Arial, sans-serif;
             margin: 0;
             background: #f5f7fb;
+            color: #111827;
         }
 
         header {
             background: white;
-            padding: 16px;
+            padding: 18px 20px;
             border-bottom: 1px solid #eee;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
         }
 
         .container {
             padding: 20px;
+            max-width: 920px;
+            margin: 0 auto;
         }
 
         .card {
             background: white;
-            border-radius: 14px;
+            border-radius: 8px;
             padding: 18px;
             margin-bottom: 14px;
             box-shadow: 0 6px 20px rgba(0, 0, 0, 0.05);
-            transition: 0.2s;
         }
 
-        .card:hover {
-            transform: translateY(-2px);
+        .order-top {
+            display: flex;
+            justify-content: space-between;
+            gap: 14px;
+            align-items: flex-start;
+            margin-bottom: 14px;
         }
 
         button {
@@ -52,13 +55,48 @@
         }
 
         select {
-            padding: 6px;
+            padding: 8px;
             border-radius: 6px;
             border: 1px solid #ddd;
+            background: white;
         }
 
         .status {
+            display: inline-block;
+            border-radius: 999px;
+            color: white;
+            font-size: 12px;
             font-weight: bold;
+            padding: 5px 9px;
+        }
+
+        .muted {
+            color: #667085;
+            font-size: 13px;
+        }
+
+        .items {
+            border-top: 1px solid #eef0f4;
+            border-bottom: 1px solid #eef0f4;
+            padding: 12px 0;
+            margin: 12px 0;
+        }
+
+        .item-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 6px;
+        }
+
+        .footer-actions {
+            padding: 0 20px 24px;
+            max-width: 920px;
+            margin: 0 auto;
+        }
+
+        .back-btn {
+            background: #111827;
+            color: white;
         }
     </style>
 </head>
@@ -66,14 +104,17 @@
 <body>
 
     <header>
-        <div>📦 Orders</div>
-        <button onclick="goBack()">Back</button>
+        <div class="muted">Orders</div>
+        <h2 id="restaurantName">Loading...</h2>
     </header>
 
     <div class="container" id="list">Loading orders...</div>
+    <div class="footer-actions">
+        <button class="back-btn" onclick="goBack()">Back</button>
+    </div>
 
     <script>
-        let isInteracting = false;
+        let userIsEditingUntil = 0;
 
         const API = "https://avenzo.app";
         const token = localStorage.getItem("token");
@@ -87,57 +128,92 @@
                 PENDING: "#ff9800",
                 PREPARING: "#ff5722",
                 READY: "#4caf50",
-                COMPLETED: "#2e7d32"
+                COMPLETED: "#2e7d32",
+                CANCELLED: "#667085"
             }[status] || "#000";
+        }
+
+        function formatDate(value) {
+            if (!value) return "Not yet";
+            return new Date(value).toLocaleString("en-IN", {
+                dateStyle: "medium",
+                timeStyle: "short"
+            });
+        }
+
+        function holdRefresh() {
+            userIsEditingUntil = Date.now() + 8000;
         }
 
         /* ================================
            LOAD ORDERS
         ================================ */
         async function loadOrders() {
+            if (Date.now() < userIsEditingUntil) return;
+
             try {
                 const res = await fetch(`${API}/admin/orders/${restaurantId}`, {
                     headers: { Authorization: "Bearer " + token }
                 });
 
                 const container = document.getElementById("list");
+                const data = await res.json();
 
                 if (!res.ok) {
-                    container.innerHTML = "Access denied or error";
+                    document.getElementById("restaurantName").innerText = "No access";
+                    container.innerHTML = data.error || "You do not have access to this restaurant.";
                     return;
                 }
 
-                const data = await res.json();
+                const orders = Array.isArray(data) ? data : data.orders || [];
+                document.getElementById("restaurantName").innerText = data.restaurant?.name || "Restaurant Orders";
 
-                if (!Array.isArray(data) || data.length === 0) {
+                if (orders.length === 0) {
                     container.innerHTML = "No orders yet";
                     return;
                 }
 
                 container.innerHTML = "";
 
-                data.forEach(o => {
+                orders.forEach(o => {
                     const div = document.createElement("div");
                     div.className = "card";
 
                     let items = "";
                     o.items.forEach(i => {
-                        items += `<div>${i.nameAtOrder} x ${i.quantity}</div>`;
+                        items += `
+                            <div class="item-row">
+                                <span>${i.nameAtOrder} x ${i.quantity}</span>
+                                <span>₹${i.priceAtOrder * i.quantity}</span>
+                            </div>
+                        `;
                     });
 
                     div.innerHTML = `
-        <b>Order #${o.orderNumber || o.pickupCode}</b>
-        <div>Pickup code: ${o.pickupCode}</div>
-        <div>${items}</div>
+        <div class="order-top">
+            <div>
+                <b>Order #${o.orderNumber || o.pickupCode}</b>
+                <div class="muted">Pickup code: ${o.pickupCode}</div>
+            </div>
+            <span class="status" style="background:${getColor(o.status)}">${o.status}</span>
+        </div>
+
+        <div class="muted">Placed: ${formatDate(o.createdAt)}</div>
+        <div class="muted">Ready to collect: ${formatDate(o.readyAt)}</div>
+
+        <div class="items">${items}</div>
+        <div><b>Total:</b> ₹${o.totalPrice}</div><br>
+
         <select 
-  onfocus="isInteracting = true"
-  onblur="setTimeout(() => isInteracting = false, 200)"
+  onfocus="holdRefresh()"
+  onclick="holdRefresh()"
   onchange="updateStatus('${o.id}', this.value)">
   
   <option ${o.status === "PENDING" ? "selected" : ""}>PENDING</option>
   <option ${o.status === "PREPARING" ? "selected" : ""}>PREPARING</option>
   <option ${o.status === "READY" ? "selected" : ""}>READY</option>
   <option ${o.status === "COMPLETED" ? "selected" : ""}>COMPLETED</option>
+  <option ${o.status === "CANCELLED" ? "selected" : ""}>CANCELLED</option>
 </select>
       `;
 
@@ -153,7 +229,9 @@
            UPDATE STATUS
         ================================ */
         async function updateStatus(id, status) {
-            await fetch(`${API}/order/${id}/status`, {
+            holdRefresh();
+
+            const res = await fetch(`${API}/order/${id}/status`, {
                 method: "PATCH",
                 headers: {
                     "Content-Type": "application/json",
@@ -162,6 +240,12 @@
                 body: JSON.stringify({ status })
             });
 
+            if (!res.ok) {
+                const data = await res.json();
+                alert(data.error || "Could not update status");
+            }
+
+            userIsEditingUntil = 0;
             loadOrders();
         }
 
@@ -176,9 +260,7 @@
            AUTO REFRESH
         ================================ */
         setInterval(() => {
-            if (!isInteracting) {
-                loadOrders();
-            }
+            loadOrders();
         }, 3000);
 
         loadOrders();

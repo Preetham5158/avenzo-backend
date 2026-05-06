@@ -23,6 +23,8 @@
 
         .container {
             padding: 20px;
+            max-width: 900px;
+            margin: 0 auto;
         }
 
         .card {
@@ -56,6 +58,18 @@
             color: white;
         }
 
+        .muted {
+            color: #667085;
+            font-size: 14px;
+            margin: 4px 0 18px;
+        }
+
+        .create-btn {
+            background: #111827;
+            color: white;
+            margin-bottom: 16px;
+        }
+
         .danger {
             background: #ff4d4f;
             color: white;
@@ -78,7 +92,8 @@
 
     <div class="container">
 
-        <h3>Your Restaurants</h3>
+        <h3 id="pageTitle">Restaurants</h3>
+        <div class="muted" id="roleText"></div>
 
         <button class="create-btn" onclick="createRestaurant()">+ Add Restaurant</button>
 
@@ -102,11 +117,30 @@
             });
 
             const data = await res.json();
+            if (!res.ok) {
+                document.getElementById("list").innerHTML = data.error || "No access";
+                return;
+            }
+
+            const restaurants = Array.isArray(data) ? data : data.restaurants || [];
+            const canCreateRestaurant = !!data.canCreateRestaurant;
+            const user = data.user || {};
 
             const container = document.getElementById("list");
             container.innerHTML = "";
+            document.getElementById("pageTitle").innerText = canCreateRestaurant ? "All Restaurants" : "Your Restaurants";
+            document.getElementById("roleText").innerText = user.role === "ADMIN"
+                ? "Super admin access"
+                : "Restaurant owner access";
 
-            data.forEach(r => {
+            document.querySelector(".create-btn").style.display = canCreateRestaurant ? "inline-block" : "none";
+
+            if (restaurants.length === 0) {
+                container.innerHTML = "No restaurants assigned to your account.";
+                return;
+            }
+
+            restaurants.forEach(r => {
                 const div = document.createElement("div");
                 div.className = "card";
 
@@ -114,7 +148,7 @@
       <b>${r.name}</b><br><br>
       <button onclick="openMenu('${r.id}')">Menu</button>
       <button onclick="openOrders('${r.id}')">Orders</button>
-      <button onclick="deleteRestaurant('${r.id}')">Delete</button>
+      ${canCreateRestaurant ? `<button class="danger" onclick="deleteRestaurant('${r.id}')">Delete</button>` : ""}
     `;
 
                 container.appendChild(div);
