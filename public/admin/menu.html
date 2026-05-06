@@ -165,13 +165,24 @@
         }
 
         async function toggle(id, current) {
+            // fetch full item first
+            const res = await fetch(`${API}/menu/${restaurantId}`);
+            const data = await res.json();
+
+            const item = data.find(i => i.id === id);
+
             await fetch(`${API}/menu/${id}`, {
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json",
                     Authorization: "Bearer " + token
                 },
-                body: JSON.stringify({ isAvailable: !current })
+                body: JSON.stringify({
+                    name: item.name,
+                    price: item.price,
+                    category: item.category,
+                    isAvailable: !current
+                })
             });
 
             loadMenu();

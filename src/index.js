@@ -378,7 +378,13 @@ app.delete("/menu/:id", authMiddleware, async (req, res) => {
     const allowed = await isOwner(prisma, item.restaurantId, req.user.userId);
     if (!allowed) return res.status(403).json({ error: "Not allowed" });
 
-    await prisma.menu.delete({ where: { id } });
+    await prisma.orderItem.deleteMany({
+        where: { menuId: id }
+    });
+
+    await prisma.menu.delete({
+        where: { id }
+    });
 
     res.json({ message: "Deleted" });
 });
