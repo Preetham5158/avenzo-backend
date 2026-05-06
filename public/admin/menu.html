@@ -2,199 +2,273 @@
 <html>
 
 <head>
-    <title>Menu Admin</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Menu Admin</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <style>
-        body {
-            font-family: 'Inter', Arial, sans-serif;
-            margin: 0;
-            background: #f5f7fb;
-        }
+  <style>
+    body {
+      font-family: 'Inter', Arial;
+      margin: 0;
+      background: #f5f7fb;
+    }
 
-        header {
-            background: white;
-            padding: 16px;
-            border-bottom: 1px solid #eee;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
+    header {
+      background: white;
+      padding: 16px;
+      border-bottom: 1px solid #eee;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
 
-        .container {
-            padding: 20px;
-        }
+    .container {
+      padding: 20px;
+    }
 
-        .card {
-            background: white;
-            border-radius: 14px;
-            padding: 18px;
-            margin-bottom: 14px;
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.05);
-            transition: 0.2s;
-        }
+    .card {
+      display: flex;
+      gap: 15px;
+      background: white;
+      border-radius: 14px;
+      padding: 15px;
+      margin-bottom: 12px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.05);
+    }
 
-        .card:hover {
-            transform: translateY(-2px);
-        }
+    .img {
+      width: 80px;
+      height: 80px;
+      border-radius: 10px;
+      background: #eee;
+      object-fit: cover;
+    }
 
-        button {
-            border: none;
-            padding: 8px 12px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 14px;
-            transition: 0.2s;
-        }
+    .info {
+      flex: 1;
+    }
 
-        button:hover {
-            opacity: 0.85;
-        }
+    .name {
+      font-weight: bold;
+      margin-bottom: 4px;
+    }
 
-        .primary {
-            background: linear-gradient(45deg, #ff7a00, #ffb300);
-            color: white;
-        }
+    .desc {
+      font-size: 13px;
+      color: #666;
+    }
 
-        .danger {
-            background: #ff4d4f;
-            color: white;
-        }
+    .actions {
+      margin-top: 10px;
+    }
 
-        select {
-            padding: 6px;
-            border-radius: 6px;
-            border: 1px solid #ddd;
-        }
-    </style>
+    button {
+      border: none;
+      padding: 6px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 13px;
+      margin-right: 5px;
+    }
+
+    .primary {
+      background: #ff7a00;
+      color: white;
+    }
+
+    .secondary {
+      background: #ddd;
+    }
+
+    .danger {
+      background: #ff4d4f;
+      color: white;
+    }
+
+    .tag {
+      font-size: 12px;
+      margin-top: 5px;
+    }
+
+    .out {
+      color: red;
+    }
+
+    .hidden {
+      color: gray;
+    }
+  </style>
 </head>
 
 <body>
 
-    <header>
-        <div>🍽 Menu</div>
-        <button onclick="goBack()">Back</button>
-    </header>
+<header>
+  <div>🍽 Menu</div>
+  <button onclick="goBack()">Back</button>
+</header>
 
-    <div class="container">
-        <button class="add" onclick="addItem()">+ Add Item</button>
-        <div id="menu"></div>
-    </div>
+<div class="container">
+  <button class="primary" onclick="addItem()">+ Add Item</button>
+  <div id="menu"></div>
+</div>
 
-    <script>
-        const API = "https://avenzo.app";
-        const token = localStorage.getItem("token");
-        const restaurantId = new URLSearchParams(location.search).get("restaurantId");
+<script>
+const API = "https://avenzo.app";
+const token = localStorage.getItem("token");
+const restaurantId = new URLSearchParams(location.search).get("restaurantId");
 
-        async function loadMenu() {
-            const res = await fetch(`${API}/menu/${restaurantId}`);
-            const data = await res.json();
+/* ================================
+   LOAD MENU (ADMIN API)
+================================ */
+async function loadMenu() {
+  const res = await fetch(`${API}/admin/menu/${restaurantId}`, {
+    headers: { Authorization: "Bearer " + token }
+  });
 
-            const container = document.getElementById("menu");
-            container.innerHTML = "";
+  const data = await res.json();
+  const container = document.getElementById("menu");
 
-            data.forEach(i => {
-                const div = document.createElement("div");
-                div.className = "card";
+  container.innerHTML = "";
 
-                div.innerHTML = `
-      <b>${i.name}</b> - ₹${i.price} <br>
-      ${i.category}<br><br>
+  if (!data || data.length === 0) {
+    container.innerHTML = "No items";
+    return;
+  }
 
-      <button onclick="toggle('${i.id}', ${i.isAvailable})">
-        ${i.isAvailable ? "Disable" : "Enable"}
-      </button>
+  data.forEach(i => {
+    const div = document.createElement("div");
+    div.className = "card";
 
-      <button onclick="editItem('${i.id}', '${i.name}', ${i.price}, '${i.category}')">Edit</button>
-<button onclick="deleteItem('${i.id}')">Delete</button>
+    div.innerHTML = `
+      <img class="img" src="${i.imageUrl || 'https://via.placeholder.com/80'}" />
+
+      <div class="info">
+        <div class="name">${i.name} - ₹${i.price}</div>
+        <div class="desc">${i.description || ""}</div>
+
+        <div class="tag">
+          ${!i.isAvailable ? '<span class="out">Out of stock</span>' : ''}
+          ${!i.isActive ? '<span class="hidden">Hidden</span>' : ''}
+        </div>
+
+        <div class="actions">
+          <button onclick="toggleStock('${i.id}', ${i.isAvailable})">
+            ${i.isAvailable ? "Out of Stock" : "Mark Available"}
+          </button>
+
+          <button onclick="toggleVisibility('${i.id}', ${i.isActive})">
+            ${i.isActive ? "Hide" : "Show"}
+          </button>
+
+          <button onclick="editItem('${i.id}', '${i.name}', ${i.price}, '${i.category}', '${i.description || ""}', '${i.imageUrl || ""}')">
+            Edit
+          </button>
+        </div>
+      </div>
     `;
 
-                container.appendChild(div);
-            });
-        }
+    container.appendChild(div);
+  });
+}
 
-        async function addItem() {
-            const name = prompt("Item name");
-            const price = prompt("Price");
-            const category = prompt("Category");
+/* ================================
+   ADD ITEM
+================================ */
+async function addItem() {
+  const name = prompt("Name");
+  const price = prompt("Price");
+  const category = prompt("Category");
+  const description = prompt("Description");
+  const imageUrl = prompt("Image URL");
 
-            if (!name || !price || !category) return;
+  if (!name || !price || !category) return;
 
-            await fetch(`${API}/menu`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: "Bearer " + token
-                },
-                body: JSON.stringify({ name, price, category, restaurantId })
-            });
+  await fetch(`${API}/menu`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: "Bearer " + token
+    },
+    body: JSON.stringify({
+      name,
+      price,
+      category,
+      description,
+      imageUrl,
+      restaurantId
+    })
+  });
 
-            loadMenu();
-        }
+  loadMenu();
+}
 
-        async function editItem(id, name, price, category) {
-            const newName = prompt("Edit name", name);
-            const newPrice = prompt("Edit price", price);
-            const newCategory = prompt("Edit category", category);
+/* ================================
+   EDIT
+================================ */
+async function editItem(id, name, price, category, description, imageUrl) {
+  const newName = prompt("Name", name);
+  const newPrice = prompt("Price", price);
+  const newCategory = prompt("Category", category);
+  const newDesc = prompt("Description", description);
+  const newImage = prompt("Image URL", imageUrl);
 
-            if (!newName || !newPrice || !newCategory) return;
+  if (!newName || !newPrice || !newCategory) return;
 
-            await fetch(`${API}/menu/${id}`, {
-                method: "PUT",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: "Bearer " + token
-                },
-                body: JSON.stringify({
-                    name: newName,
-                    price: Number(newPrice),
-                    category: newCategory
-                })
-            });
+  await fetch(`${API}/menu/${id}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: "Bearer " + token
+    },
+    body: JSON.stringify({
+      name: newName,
+      price: Number(newPrice),
+      category: newCategory,
+      description: newDesc,
+      imageUrl: newImage
+    })
+  });
 
-            loadMenu();
-        }
+  loadMenu();
+}
 
-        async function deleteItem(id) {
-            await fetch(`${API}/menu/${id}`, {
-                method: "DELETE",
-                headers: { Authorization: "Bearer " + token }
-            });
+/* ================================
+   STOCK TOGGLE
+================================ */
+async function toggleStock(id, current) {
+  await fetch(`${API}/menu/${id}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: "Bearer " + token
+    },
+    body: JSON.stringify({ isAvailable: !current })
+  });
 
-            loadMenu();
-        }
+  loadMenu();
+}
 
-        async function toggle(id, current) {
-            // fetch full item first
-            const res = await fetch(`${API}/menu/${restaurantId}`);
-            const data = await res.json();
+/* ================================
+   VISIBILITY TOGGLE
+================================ */
+async function toggleVisibility(id, current) {
+  await fetch(`${API}/menu/${id}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: "Bearer " + token
+    },
+    body: JSON.stringify({ isActive: !current })
+  });
 
-            const item = data.find(i => i.id === id);
+  loadMenu();
+}
 
-            await fetch(`${API}/menu/${id}`, {
-                method: "PUT",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: "Bearer " + token
-                },
-                body: JSON.stringify({
-                    name: item.name,
-                    price: item.price,
-                    category: item.category,
-                    isAvailable: !current
-                })
-            });
+function goBack() {
+  history.back();
+}
 
-            loadMenu();
-        }
-
-        function goBack() {
-            history.back();
-        }
-
-        loadMenu();
-    </script>
+loadMenu();
+</script>
 
 </body>
-
 </html>

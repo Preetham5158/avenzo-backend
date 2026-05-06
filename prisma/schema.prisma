@@ -76,10 +76,14 @@ model Menu {
   price Float
 
   category    String
+  description String?
+  imageUrl    String?
+  
   isAvailable Boolean @default(true)
+  isActive    Boolean @default(true)
 
   restaurantId String
-  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
 
   orderItems OrderItem[]
 
