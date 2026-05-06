@@ -408,6 +408,25 @@ app.get("/admin/menu/:restaurantId", authMiddleware, async (req, res) => {
     res.json(menu);
 });
 
+app.get("/admin/orders/:restaurantId", authMiddleware, async (req, res) => {
+    try {
+        const { restaurantId } = req.params;
+
+        const allowed = await isOwner(prisma, restaurantId, req.user.userId);
+        if (!allowed) return res.status(403).json({ error: "Not allowed" });
+
+        const orders = await prisma.order.findMany({
+            where: { restaurantId },
+            include: { items: true },
+            orderBy: { createdAt: "desc" }
+        });
+
+        res.json(orders);
+    } catch (err) {
+        res.status(500).json({ error: "Failed to fetch orders" });
+    }
+});
+
 /* ================================
    START SERVER
 ================================ */
