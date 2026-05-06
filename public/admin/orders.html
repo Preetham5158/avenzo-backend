@@ -46,22 +46,20 @@
     </header>
 
     <main class="page">
-      <section class="page-head">
+      <section class="page-head restaurant-sticky">
         <div>
           <div class="eyebrow">Live orders</div>
           <h1 id="restaurantName">Loading...</h1>
-          <p class="muted">New and updated orders appear automatically.</p>
+          <p class="muted" id="restaurantAddress">New and updated orders appear automatically.</p>
         </div>
         <span class="pill pill-dark" id="orderCount">0 orders</span>
       </section>
 
       <section class="grid grid-3" id="statusStats"></section>
       <section class="stack" id="list" style="margin-top:16px;">Loading orders...</section>
-      <div class="bottom-actions" style="padding-top:8px;">
-        <button class="btn btn-dark" onclick="goBack()">Back to dashboard</button>
-      </div>
     </main>
   </div>
+  <button class="btn btn-dark floating-back" onclick="goBack()">Dashboard</button>
 
   <script src="/assets/app.js"></script>
   <script>
@@ -82,6 +80,7 @@
         const orders = data.orders || [];
 
         document.getElementById("restaurantName").textContent = data.restaurant?.name || "Restaurant Orders";
+        document.getElementById("restaurantAddress").textContent = data.restaurant?.address || data.restaurant?.pickupNote || "New and updated orders appear automatically.";
         document.getElementById("orderCount").textContent = `${orders.length} order${orders.length === 1 ? "" : "s"}`;
         renderStats(orders);
         renderOrders(orders);

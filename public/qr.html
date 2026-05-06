@@ -40,11 +40,9 @@
       </section>
 
       <section class="grid grid-3" id="container">Loading QR codes...</section>
-      <div class="bottom-actions" style="padding-top:18px;">
-        <button class="btn btn-dark" onclick="window.location.href='/admin/dashboard.html'">Back to dashboard</button>
-      </div>
     </main>
   </div>
+  <button class="btn btn-dark floating-back" onclick="window.location.href='/admin/dashboard.html'">Dashboard</button>
 
   <script src="/assets/app.js"></script>
   <script>
@@ -73,7 +71,7 @@
             <article class="card card-pad stack" style="align-items:center; text-align:center;">
               <div>
                 <h3>${escapeHtml(r.name)}</h3>
-                <div class="muted">${escapeHtml(url)}</div>
+                <div class="muted">${escapeHtml(r.address || r.locality || "Scan to order")}</div>
               </div>
               <img class="qr-img" src="${qr}" alt="QR code for ${escapeHtml(r.name)}">
               <button class="btn btn-primary" onclick='downloadCard(${JSON.stringify(r.id)}, ${JSON.stringify(r.name)})'>Download card</button>

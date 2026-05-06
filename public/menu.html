@@ -12,11 +12,14 @@
     }
 
     .customer-hero {
+      position: sticky;
+      top: 0;
+      z-index: 24;
       background:
         radial-gradient(circle at 12% 24%, rgba(255, 106, 0, 0.22), transparent 28%),
         linear-gradient(135deg, #0a0a0a, #1c1c1c);
       color: white;
-      padding: 28px 0;
+      padding: 18px 0;
     }
 
     .customer-hero .muted {
@@ -93,7 +96,8 @@
       <div>
         <div class="eyebrow">Avenzo ordering</div>
         <h1 id="restaurantName">Loading...</h1>
-        <p class="muted">Browse, choose, and place your order without waiting in line.</p>
+        <p class="muted" id="restaurantAddress">Order ahead. Skip the billing queue. Collect when ready.</p>
+        <p class="muted" id="pickupNote" style="margin-bottom:0;"></p>
       </div>
       <div class="brand">
         <img src="/logo.png" alt="Avenzo">
@@ -158,6 +162,8 @@
       try {
         const restaurant = await request(`/restaurant/${restaurantId}`, { headers: {} });
         document.getElementById("restaurantName").textContent = restaurant.name;
+        document.getElementById("restaurantAddress").textContent = restaurant.address || restaurant.locality || "Order ahead. Skip the billing queue. Collect when ready.";
+        document.getElementById("pickupNote").textContent = restaurant.pickupNote || "";
         await loadMenu();
       } catch (err) {
         document.getElementById("menu").innerHTML = `<div class="empty">${escapeHtml(err.message)}</div>`;

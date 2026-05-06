@@ -60,22 +60,20 @@
     </header>
 
     <main class="page">
-      <section class="page-head">
+      <section class="page-head restaurant-sticky">
         <div>
           <div class="eyebrow">Menu manager</div>
           <h1 id="restaurantName">Loading...</h1>
-          <p class="muted">Create polished menu items, group them by category, and control what customers can order.</p>
+          <p class="muted" id="restaurantAddress">Create menu items, group by category, and control what customers can order.</p>
         </div>
         <button class="btn btn-primary" onclick="openItemModal()">Add item</button>
       </section>
 
       <section class="tabbar" id="categoryTabs"></section>
       <section class="stack" id="menu" style="margin-top:12px;">Loading menu...</section>
-      <div class="bottom-actions" style="padding-top:18px;">
-        <button class="btn btn-dark" onclick="goBack()">Back to dashboard</button>
-      </div>
     </main>
   </div>
+  <button class="btn btn-dark floating-back" onclick="goBack()">Dashboard</button>
 
   <div class="modal-backdrop" id="itemModal">
     <form class="modal" onsubmit="saveItem(event)">
@@ -153,6 +151,7 @@
       try {
         const restaurant = await request(`/restaurant/${restaurantId}`, { headers: {} });
         document.getElementById("restaurantName").textContent = restaurant.name;
+        document.getElementById("restaurantAddress").textContent = restaurant.address || "Create menu items, group by category, and control what customers can order.";
         await loadMenu();
       } catch (err) {
         document.getElementById("menu").innerHTML = `<div class="empty">${escapeHtml(err.message)}</div>`;

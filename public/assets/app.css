@@ -65,6 +65,14 @@ button {
   margin: 0 auto;
 }
 
+.floating-back {
+  position: fixed;
+  left: 18px;
+  bottom: 18px;
+  z-index: 45;
+  box-shadow: var(--shadow);
+}
+
 .topbar-inner {
   min-height: 72px;
   display: flex;
@@ -144,6 +152,17 @@ button {
   justify-content: space-between;
   gap: 18px;
   margin-bottom: 22px;
+}
+
+.restaurant-sticky {
+  position: sticky;
+  top: 72px;
+  z-index: 14;
+  background: rgba(245, 247, 251, 0.94);
+  backdrop-filter: blur(14px);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 14px;
 }
 
 .eyebrow {
@@ -478,12 +497,7 @@ h3 {
 }
 
 .search-wrap {
-  position: sticky;
-  top: 72px;
-  z-index: 12;
-  background: rgba(245, 247, 251, 0.88);
-  backdrop-filter: blur(12px);
-  padding: 12px 0;
+  padding: 0 0 12px;
 }
 
 .status-actions {

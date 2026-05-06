@@ -52,6 +52,9 @@ model Restaurant {
   id        String   @id @default(uuid())
   name      String
   slug      String   @unique
+  address   String?
+  locality  String?
+  pickupNote String?
 
   ownerId   String
   owner     User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)

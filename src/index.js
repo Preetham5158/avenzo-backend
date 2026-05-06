@@ -322,7 +322,7 @@ app.get("/restaurants", authMiddleware, async (req, res) => {
 });
 
 app.post("/restaurant", authMiddleware, async (req, res) => {
-    const { name } = req.body;
+    const { name, address, locality, pickupNote } = req.body;
     if (!name) {
         return res.status(400).json({ error: "Name required" });
     }
@@ -338,6 +338,9 @@ app.post("/restaurant", authMiddleware, async (req, res) => {
         data: {
             name,
             slug,
+            address: address || null,
+            locality: locality || null,
+            pickupNote: pickupNote || null,
             ownerId: req.user.userId
         }
     });
@@ -347,7 +350,7 @@ app.post("/restaurant", authMiddleware, async (req, res) => {
 
 app.put("/restaurant/:id", authMiddleware, async (req, res) => {
     const { id } = req.params;
-    const { name } = req.body;
+    const { name, address, locality, pickupNote } = req.body;
     if (!name) {
         return res.status(400).json({ error: "Name required" });
     }
@@ -356,7 +359,12 @@ app.put("/restaurant/:id", authMiddleware, async (req, res) => {
 
     const updated = await prisma.restaurant.update({
         where: { id },
-        data: { name }
+        data: {
+            name,
+            ...(typeof address !== "undefined" && { address: address || null }),
+            ...(typeof locality !== "undefined" && { locality: locality || null }),
+            ...(typeof pickupNote !== "undefined" && { pickupNote: pickupNote || null })
+        }
     });
 
     res.json(updated);
@@ -557,7 +565,7 @@ app.get("/admin/orders/:restaurantId", authMiddleware, async (req, res) => {
 
         const restaurant = await prisma.restaurant.findUnique({
             where: { id: restaurantId },
-            select: { id: true, name: true }
+            select: { id: true, name: true, address: true, locality: true, pickupNote: true }
         });
 
         if (!restaurant) return res.status(404).json({ error: "Restaurant not found" });

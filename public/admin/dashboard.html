@@ -51,6 +51,20 @@
           <label for="restaurantName">Restaurant name</label>
           <input id="restaurantName" class="input" required placeholder="Avenzo Cafe">
         </div>
+        <div class="field">
+          <label for="restaurantAddress">Address</label>
+          <input id="restaurantAddress" class="input" placeholder="Street, area, Bengaluru">
+        </div>
+        <div class="grid grid-2">
+          <div class="field">
+            <label for="restaurantLocality">Locality</label>
+            <input id="restaurantLocality" class="input" placeholder="Jayanagar">
+          </div>
+          <div class="field">
+            <label for="restaurantPickupNote">Pickup note</label>
+            <input id="restaurantPickupNote" class="input" placeholder="Collect at counter 2">
+          </div>
+        </div>
       </div>
       <div class="modal-actions">
         <button type="button" class="btn btn-ghost" onclick="closeRestaurantModal()">Cancel</button>
@@ -134,7 +148,7 @@
           <div class="row-between">
             <div>
               <h3 style="margin-bottom:4px;">${escapeHtml(r.name)}</h3>
-              <div class="muted">Manage menu, orders, and QR ordering</div>
+              <div class="muted">${escapeHtml(r.address || r.locality || "Manage menu, orders, and QR ordering")}</div>
             </div>
             <span class="pill ${r.isActive ? "pill-success" : "pill-danger"}">${r.isActive ? "Active" : "Inactive"}</span>
           </div>
@@ -150,6 +164,9 @@
 
     function openRestaurantModal() {
       document.getElementById("restaurantName").value = "";
+      document.getElementById("restaurantAddress").value = "";
+      document.getElementById("restaurantLocality").value = "";
+      document.getElementById("restaurantPickupNote").value = "";
       document.getElementById("restaurantModal").classList.add("open");
       document.getElementById("restaurantName").focus();
     }
@@ -165,7 +182,12 @@
       try {
         await request("/restaurant", {
           method: "POST",
-          body: JSON.stringify({ name: document.getElementById("restaurantName").value.trim() })
+          body: JSON.stringify({
+            name: document.getElementById("restaurantName").value.trim(),
+            address: document.getElementById("restaurantAddress").value.trim() || null,
+            locality: document.getElementById("restaurantLocality").value.trim() || null,
+            pickupNote: document.getElementById("restaurantPickupNote").value.trim() || null
+          })
         });
         closeRestaurantModal();
         toast("Restaurant created");
