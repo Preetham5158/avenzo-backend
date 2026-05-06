@@ -3,6 +3,27 @@ const bcrypt = require("bcrypt");
 
 const prisma = new PrismaClient();
 
+async function createCategories(restaurantId) {
+  const categories = await prisma.category.createMany({
+    data: [
+      { name: "Breakfast", restaurantId },
+      { name: "Starters", restaurantId },
+      { name: "Main Course", restaurantId },
+      { name: "Desserts", restaurantId },
+      { name: "Drinks", restaurantId },
+      { name: "Sides", restaurantId },
+      { name: "Burgers", restaurantId }
+    ],
+    skipDuplicates: true
+  });
+
+  return prisma.category.findMany({ where: { restaurantId } });
+}
+
+function getCatId(cats, name) {
+  return cats.find(c => c.name === name)?.id;
+}
+
 async function main() {
 
   console.log("🧹 Clearing old data...");
@@ -10,22 +31,19 @@ async function main() {
   await prisma.orderItem.deleteMany();
   await prisma.order.deleteMany();
   await prisma.menu.deleteMany();
+  await prisma.category.deleteMany();
   await prisma.restaurant.deleteMany();
   await prisma.user.deleteMany();
 
   console.log("✅ Old data cleared");
 
-  /* ================================
-     USERS (HASHED PASSWORDS)
-  ================================ */
-
-  const password = await bcrypt.hash("Admin@123", 10);
+  /* ================= USERS ================= */
 
   const admin = await prisma.user.create({
     data: {
       email: "admin@avenzo.com",
-      password,
-      name: "Avenzo Admin",
+      password: await bcrypt.hash("Admin@123", 10),
+      name: "Super Admin",
       role: "ADMIN"
     }
   });
@@ -40,121 +58,65 @@ async function main() {
 
   console.log("👤 Users created");
 
-  /* ================================
-     RESTAURANT 1 (VEG)
-  ================================ */
+  /* ================= RESTAURANTS ================= */
 
   const r1 = await prisma.restaurant.create({
-    data: {
-      name: "A2B - Adyar Ananda Bhavan",
-      slug: "a2b-bangalore",
-      ownerId: owner.id
-    }
+    data: { name: "A2B", slug: "a2b", ownerId: owner.id }
   });
-
-  await prisma.menu.createMany({
-    data: [
-      { name: "Masala Dosa", price: 80, category: "Breakfast", restaurantId: r1.id },
-      { name: "Idli Vada", price: 60, category: "Breakfast", restaurantId: r1.id },
-      { name: "Meals", price: 150, category: "Main Course", restaurantId: r1.id },
-      { name: "Paneer Butter Masala", price: 220, category: "Main Course", restaurantId: r1.id },
-      { name: "Gulab Jamun", price: 70, category: "Desserts", restaurantId: r1.id },
-      { name: "Filter Coffee", price: 30, category: "Drinks", restaurantId: r1.id }
-    ]
-  });
-
-  /* ================================
-     RESTAURANT 2 (NON-VEG)
-  ================================ */
 
   const r2 = await prisma.restaurant.create({
-    data: {
-      name: "Empire Restaurant",
-      slug: "empire-bangalore",
-      ownerId: owner.id
-    }
+    data: { name: "Empire", slug: "empire", ownerId: owner.id }
   });
-
-  await prisma.menu.createMany({
-    data: [
-      { name: "Chicken Biryani", price: 250, category: "Main Course", restaurantId: r2.id },
-      { name: "Mutton Biryani", price: 320, category: "Main Course", restaurantId: r2.id },
-      { name: "Tandoori Chicken", price: 300, category: "Starters", restaurantId: r2.id },
-      { name: "Butter Chicken", price: 280, category: "Main Course", restaurantId: r2.id },
-      { name: "Chicken Kebabs", price: 220, category: "Starters", restaurantId: r2.id },
-      { name: "Pepsi", price: 50, category: "Drinks", restaurantId: r2.id }
-    ]
-  });
-
-  /* ================================
-     RESTAURANT 3 (VEG MODERN)
-  ================================ */
 
   const r3 = await prisma.restaurant.create({
-    data: {
-      name: "Sattvam Pure Veg",
-      slug: "sattvam",
-      ownerId: owner.id
-    }
+    data: { name: "Sattvam", slug: "sattvam", ownerId: owner.id }
   });
-
-  await prisma.menu.createMany({
-    data: [
-      { name: "Paneer Tikka", price: 240, category: "Starters", restaurantId: r3.id },
-      { name: "Veg Biryani", price: 180, category: "Main Course", restaurantId: r3.id },
-      { name: "Dal Makhani", price: 160, category: "Main Course", restaurantId: r3.id },
-      { name: "Roti Basket", price: 120, category: "Main Course", restaurantId: r3.id },
-      { name: "Brownie", price: 150, category: "Desserts", restaurantId: r3.id },
-      { name: "Fresh Lime Soda", price: 70, category: "Drinks", restaurantId: r3.id }
-    ]
-  });
-
-  /* ================================
-     RESTAURANT 4 (FAST FOOD)
-  ================================ */
 
   const r4 = await prisma.restaurant.create({
-    data: {
-      name: "Burger King",
-      slug: "burger-king",
-      ownerId: admin.id
-    }
+    data: { name: "Burger King", slug: "bk", ownerId: admin.id } // admin owns this
   });
 
-  await prisma.menu.createMany({
-    data: [
-      { name: "Veg Whopper", price: 180, category: "Burgers", restaurantId: r4.id },
-      { name: "Chicken Whopper", price: 220, category: "Burgers", restaurantId: r4.id },
-      { name: "French Fries", price: 120, category: "Sides", restaurantId: r4.id },
-      { name: "Chicken Nuggets", price: 150, category: "Sides", restaurantId: r4.id },
-      { name: "Coke Float", price: 90, category: "Drinks", restaurantId: r4.id },
-      { name: "Chocolate Sundae", price: 110, category: "Desserts", restaurantId: r4.id }
-    ]
-  });
+  const allRestaurants = [r1, r2, r3, r4];
 
-  /* ================================
-     OUTPUT
-  ================================ */
+  /* ================= MENU + CATEGORIES ================= */
 
-  console.log("\n🎉 Seed completed successfully!\n");
+  for (const r of allRestaurants) {
 
-  console.log("🔐 Login Users:");
-  console.log("admin@avenzo.com / Admin@123");
-  console.log("owner@avenzo.com / Owner@123\n");
+    const cats = await createCategories(r.id);
 
-  console.log("🍽 Restaurant Links:\n");
+    await prisma.menu.createMany({
+      data: [
+        {
+          name: "Masala Dosa",
+          price: 80,
+          categoryId: getCatId(cats, "Breakfast"),
+          restaurantId: r.id
+        },
+        {
+          name: "Paneer Butter Masala",
+          price: 220,
+          categoryId: getCatId(cats, "Main Course"),
+          restaurantId: r.id
+        },
+        {
+          name: "Gulab Jamun",
+          price: 70,
+          categoryId: getCatId(cats, "Desserts"),
+          restaurantId: r.id
+        },
+        {
+          name: "Coke",
+          price: 50,
+          categoryId: getCatId(cats, "Drinks"),
+          restaurantId: r.id
+        }
+      ]
+    });
+  }
 
-  const all = [r1, r2, r3, r4];
-
-  all.forEach(r => {
-    console.log(`${r.name}:
-https://avenzo.app/menu.html?restaurantId=${r.id}\n`);
-  });
-
+  console.log("🎉 Seed completed!");
 }
 
 main()
-  .catch(e => console.error("❌ Seed failed:", e))
-  .finally(async () => {
-    await prisma.$disconnect();
-  });
+  .catch(console.error)
+  .finally(() => prisma.$disconnect());

@@ -116,6 +116,7 @@
             </div>
 
             <div class="pickup">
+                <div id="orderNumber"></div>
                 Pickup Code
                 <div class="pickup-code" id="pickup">----</div>
             </div>
@@ -176,6 +177,7 @@
                 }
 
                 // 🔢 PICKUP CODE
+                document.getElementById("orderNumber").innerText = data.orderNumber ? `Order #${data.orderNumber}` : "";
                 document.getElementById("pickup").innerText = data.pickupCode;
 
                 // 🧾 ITEMS

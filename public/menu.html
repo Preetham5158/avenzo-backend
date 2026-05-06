@@ -201,8 +201,10 @@ async function loadMenu() {
 
   const grouped = {};
   menuData.forEach(i => {
-    if (!grouped[i.category]) grouped[i.category] = [];
-    grouped[i.category].push(i);
+    const categoryName = i.category?.name || "Others";
+
+    if (!grouped[categoryName]) grouped[categoryName] = [];
+    grouped[categoryName].push(i);
   });
 
   const container = document.getElementById("menu");
@@ -292,12 +294,16 @@ async function placeOrder() {
     });
 
     const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.error || "Order failed");
+    }
+
     window.location.href = `${API}/track/${data.orderId}`;
 
-  } catch {
+  } catch (err) {
     btn.disabled = false;
     btn.innerText = "Place Order";
-    alert("Order failed");
+    alert(err.message || "Order failed");
   }
 }
 

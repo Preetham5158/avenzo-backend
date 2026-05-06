@@ -9,7 +9,7 @@ datasource db {
 }
 
 //////////////////////////////////////////////////////
-// ENUMS (clean + safe)
+// ENUMS (UNCHANGED)
 //////////////////////////////////////////////////////
 
 enum OrderStatus {
@@ -37,7 +37,7 @@ model User {
 
   role      UserRole @default(USER)
 
-  restaurants Restaurant[]  // owns restaurants
+  restaurants Restaurant[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -57,13 +57,39 @@ model Restaurant {
 
   menus     Menu[]
   orders    Order[]
+  categories Category[]
 
   isActive  Boolean  @default(true)
+
+  // order numbering
+  orderCounter Int @default(1)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([ownerId])
+}
+
+//////////////////////////////////////////////////////
+// CATEGORY (NEW — CONTROLLED LOOKUP)
+//////////////////////////////////////////////////////
+
+model Category {
+  id        String   @id @default(uuid())
+  name      String
+
+  restaurantId String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  menus     Menu[]
+
+  sortOrder Int @default(0)
+
+  createdAt DateTime @default(now())
+
+  // prevent duplicate categories per restaurant
+  @@unique([restaurantId, name])
+  @@index([restaurantId])
 }
 
 //////////////////////////////////////////////////////
@@ -75,22 +101,27 @@ model Menu {
   name  String
   price Float
 
-  category    String
   description String?
   imageUrl    String?
-  
+
   isAvailable Boolean @default(true)
   isActive    Boolean @default(true)
 
   restaurantId String
   restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
 
+  // 🔥 FIXED: category is now controlled
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id])
+
   orderItems OrderItem[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@unique([restaurantId, name])
   @@index([restaurantId])
+  @@index([categoryId])
 }
 
 //////////////////////////////////////////////////////
@@ -100,12 +131,17 @@ model Menu {
 model Order {
   id           String      @id @default(uuid())
 
+  // per restaurant order number
+  orderNumber  Int
+
   totalPrice   Float
   status       OrderStatus @default(PENDING)
   pickupCode   String
 
   phone        String?
   sessionId    String
+
+  customerId   String?
 
   restaurantId String
   restaurant   Restaurant  @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
@@ -115,7 +151,10 @@ model Order {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@unique([restaurantId, orderNumber])
   @@index([restaurantId])
+  @@index([createdAt])
+  @@index([status])
 }
 
 //////////////////////////////////////////////////////
@@ -133,7 +172,6 @@ model OrderItem {
 
   quantity Int
 
-  // snapshot (IMPORTANT for real-world)
   priceAtOrder Float
   nameAtOrder  String
 

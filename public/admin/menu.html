@@ -115,11 +115,51 @@
 const API = "https://avenzo.app";
 const token = localStorage.getItem("token");
 const restaurantId = new URLSearchParams(location.search).get("restaurantId");
+let categories = [];
+
+async function loadCategories() {
+  const res = await fetch(`${API}/categories/${restaurantId}`);
+  categories = await res.json();
+}
+
+async function getCategoryId(defaultCategoryId) {
+  const defaultCategory = categories.find(c => c.id === defaultCategoryId);
+  const options = categories.map(c => c.name).join(", ");
+  const categoryName = prompt("Category" + (options ? ` (${options})` : ""), defaultCategory?.name || "");
+
+  if (!categoryName) return null;
+
+  const existing = categories.find(c => c.name.toLowerCase() === categoryName.trim().toLowerCase());
+  if (existing) return existing.id;
+
+  const res = await fetch(`${API}/category`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: "Bearer " + token
+    },
+    body: JSON.stringify({
+      name: categoryName.trim(),
+      restaurantId
+    })
+  });
+
+  const created = await res.json();
+  if (!res.ok) {
+    alert(created.error || "Could not create category");
+    return null;
+  }
+
+  categories.push(created);
+  return created.id;
+}
 
 /* ================================
    LOAD MENU (ADMIN API)
 ================================ */
 async function loadMenu() {
+  await loadCategories();
+
   const res = await fetch(`${API}/admin/menu/${restaurantId}`, {
     headers: { Authorization: "Bearer " + token }
   });
@@ -143,6 +183,7 @@ async function loadMenu() {
 
       <div class="info">
         <div class="name">${i.name} - ₹${i.price}</div>
+        <div class="desc">${i.category?.name || "Uncategorized"}</div>
         <div class="desc">${i.description || ""}</div>
 
         <div class="tag">
@@ -159,7 +200,7 @@ async function loadMenu() {
             ${i.isActive ? "Hide" : "Show"}
           </button>
 
-          <button onclick="editItem('${i.id}', '${i.name}', ${i.price}, '${i.category}', '${i.description || ""}', '${i.imageUrl || ""}')">
+          <button onclick='editItem(${JSON.stringify(i.id)}, ${JSON.stringify(i.name)}, ${Number(i.price)}, ${JSON.stringify(i.categoryId)}, ${JSON.stringify(i.description || "")}, ${JSON.stringify(i.imageUrl || "")})'>
             Edit
           </button>
         </div>
@@ -176,11 +217,11 @@ async function loadMenu() {
 async function addItem() {
   const name = prompt("Name");
   const price = prompt("Price");
-  const category = prompt("Category");
+  const categoryId = await getCategoryId();
   const description = prompt("Description");
   const imageUrl = prompt("Image URL");
 
-  if (!name || !price || !category) return;
+  if (!name || !price || !categoryId) return;
 
   await fetch(`${API}/menu`, {
     method: "POST",
@@ -191,7 +232,7 @@ async function addItem() {
     body: JSON.stringify({
       name,
       price,
-      category,
+      categoryId,
       description,
       imageUrl,
       restaurantId
@@ -204,14 +245,14 @@ async function addItem() {
 /* ================================
    EDIT
 ================================ */
-async function editItem(id, name, price, category, description, imageUrl) {
+async function editItem(id, name, price, categoryId, description, imageUrl) {
   const newName = prompt("Name", name);
   const newPrice = prompt("Price", price);
-  const newCategory = prompt("Category", category);
+  const newCategoryId = await getCategoryId(categoryId);
   const newDesc = prompt("Description", description);
   const newImage = prompt("Image URL", imageUrl);
 
-  if (!newName || !newPrice || !newCategory) return;
+  if (!newName || !newPrice || !newCategoryId) return;
 
   await fetch(`${API}/menu/${id}`, {
     method: "PUT",
@@ -222,7 +263,7 @@ async function editItem(id, name, price, category, description, imageUrl) {
     body: JSON.stringify({
       name: newName,
       price: Number(newPrice),
-      category: newCategory,
+      categoryId: newCategoryId,
       description: newDesc,
       imageUrl: newImage
     })

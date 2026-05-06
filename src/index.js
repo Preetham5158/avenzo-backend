@@ -61,13 +61,33 @@ app.get("/menu/:restaurantId", async (req, res) => {
             restaurantId: req.params.restaurantId,
             isActive: true
         },
+        include: { category: true }, // 🔥 important
         orderBy: [
-            { isAvailable: "desc" }, // available first
-            { category: "asc" }
+            { isAvailable: "desc" },
+            { category: { name: "asc" } }
         ]
     });
 
     res.json(menu);
+});
+
+/* ================================
+   GET CATEGORIES
+================================ */
+app.get("/categories/:restaurantId", async (req, res) => {
+    try {
+        const categories = await prisma.category.findMany({
+            where: { restaurantId: req.params.restaurantId },
+            orderBy: [
+                { sortOrder: "asc" },
+                { name: "asc" }
+            ]
+        });
+
+        res.json(categories);
+    } catch {
+        res.status(500).json({ error: "Error fetching categories" });
+    }
 });
 
 /* ================================
@@ -89,7 +109,9 @@ app.post("/order", async (req, res) => {
 
         const menuItems = await prisma.menu.findMany({
             where: {
-                id: { in: items.map(i => i.menuId) }
+                id: { in: items.map(i => i.menuId) },
+                restaurantId,
+                isActive: true
             }
         });
 
@@ -109,30 +131,40 @@ app.post("/order", async (req, res) => {
             totalPrice += menu.price * i.quantity;
         });
 
-        const order = await prisma.order.create({
-            data: {
-                totalPrice,
-                pickupCode,
-                sessionId,
-                phone: phone || null,
-                restaurantId,
-                items: {
-                    create: items.map(i => {
-                        const menu = menuItems.find(m => m.id === i.menuId);
+        const order = await prisma.$transaction(async (tx) => {
+            const counter = await tx.restaurant.update({
+                where: { id: restaurantId },
+                data: { orderCounter: { increment: 1 } },
+                select: { orderCounter: true }
+            });
 
-                        return {
-                            menuId: menu.id,
-                            quantity: i.quantity,
-                            priceAtOrder: menu.price,
-                            nameAtOrder: menu.name
-                        };
-                    })
+            return tx.order.create({
+                data: {
+                    orderNumber: counter.orderCounter - 1,
+                    totalPrice,
+                    pickupCode,
+                    sessionId,
+                    phone: phone || null,
+                    restaurantId,
+                    items: {
+                        create: items.map(i => {
+                            const menu = menuItems.find(m => m.id === i.menuId);
+
+                            return {
+                                menuId: menu.id,
+                                quantity: i.quantity,
+                                priceAtOrder: menu.price,
+                                nameAtOrder: menu.name
+                            };
+                        })
+                    }
                 }
-            }
+            });
         });
 
         res.json({
             orderId: order.id,
+            orderNumber: order.orderNumber,
             pickupCode,
             trackingUrl: `${BASE_URL}/track/${order.id}`
         });
@@ -314,6 +346,10 @@ app.delete("/restaurant/:id", authMiddleware, async (req, res) => {
         where: { restaurantId: id }
     });
 
+    await prisma.category.deleteMany({
+        where: { restaurantId: id }
+    });
+
     await prisma.restaurant.delete({
         where: { id }
     });
@@ -321,17 +357,64 @@ app.delete("/restaurant/:id", authMiddleware, async (req, res) => {
     res.json({ message: "Deleted" });
 });
 
-app.post("/menu", authMiddleware, async (req, res) => {
-    const { name, price, category, restaurantId } = req.body;
-    if (!name || !price || !category || !restaurantId) {
+app.post("/category", authMiddleware, async (req, res) => {
+    const { name, restaurantId, sortOrder } = req.body;
+
+    if (!name || !restaurantId) {
         return res.status(400).json({ error: "Missing fields" });
     }
 
     const allowed = await isOwner(prisma, restaurantId, req.user.userId);
     if (!allowed) return res.status(403).json({ error: "Not allowed" });
 
+    const category = await prisma.category.upsert({
+        where: {
+            restaurantId_name: {
+                restaurantId,
+                name: name.trim()
+            }
+        },
+        update: {
+            ...(typeof sortOrder !== "undefined" && { sortOrder: Number(sortOrder) })
+        },
+        create: {
+            name: name.trim(),
+            restaurantId,
+            ...(typeof sortOrder !== "undefined" && { sortOrder: Number(sortOrder) })
+        }
+    });
+
+    res.json(category);
+});
+
+app.post("/menu", authMiddleware, async (req, res) => {
+    const { name, price, categoryId, restaurantId, description, imageUrl } = req.body;
+    if (!name || !price || !categoryId || !restaurantId) {
+        return res.status(400).json({ error: "Missing fields" });
+    }
+
+    const allowed = await isOwner(prisma, restaurantId, req.user.userId);
+    if (!allowed) return res.status(403).json({ error: "Not allowed" });
+
+    const category = await prisma.category.findFirst({
+        where: { id: categoryId, restaurantId },
+        select: { id: true }
+    });
+
+    if (!category) {
+        return res.status(400).json({ error: "Invalid category" });
+    }
+
     const item = await prisma.menu.create({
-        data: { name, price: Number(price), category, restaurantId }
+        data: {
+            name,
+            price: Number(price),
+            categoryId,
+            restaurantId,
+            description: description || null,
+            imageUrl: imageUrl || null
+        },
+        include: { category: true }
     });
 
     res.json(item);
@@ -339,7 +422,7 @@ app.post("/menu", authMiddleware, async (req, res) => {
 
 app.put("/menu/:id", authMiddleware, async (req, res) => {
     const { id } = req.params;
-    const { name, price, category, isAvailable, isActive, description, imageUrl } = req.body;
+    const { name, price, categoryId, isAvailable, isActive, description, imageUrl } = req.body;
 
     const item = await prisma.menu.findUnique({
         where: { id },
@@ -351,17 +434,29 @@ app.put("/menu/:id", authMiddleware, async (req, res) => {
     const allowed = await isOwner(prisma, item.restaurantId, req.user.userId);
     if (!allowed) return res.status(403).json({ error: "Not allowed" });
 
+    if (categoryId) {
+        const category = await prisma.category.findFirst({
+            where: { id: categoryId, restaurantId: item.restaurantId },
+            select: { id: true }
+        });
+
+        if (!category) {
+            return res.status(400).json({ error: "Invalid category" });
+        }
+    }
+
     const updated = await prisma.menu.update({
         where: { id },
         data: {
             ...(name && { name }),
             ...(price && { price: Number(price) }),
-            ...(category && { category }),
+            ...(categoryId && { categoryId }),
             ...(typeof isAvailable !== "undefined" && { isAvailable }),
             ...(typeof isActive !== "undefined" && { isActive }),
-            ...(description && { description }),
-            ...(imageUrl && { imageUrl })
-        }
+            ...(typeof description !== "undefined" && { description: description || null }),
+            ...(typeof imageUrl !== "undefined" && { imageUrl: imageUrl || null })
+        },
+        include: { category: true }
     });
 
     res.json(updated);
@@ -402,7 +497,11 @@ app.get("/admin/menu/:restaurantId", authMiddleware, async (req, res) => {
 
     const menu = await prisma.menu.findMany({
         where: { restaurantId },
-        orderBy: { createdAt: "desc" }
+        include: { category: true },
+        orderBy: [
+            { category: { sortOrder: "asc" } },
+            { createdAt: "desc" }
+        ]
     });
 
     res.json(menu);

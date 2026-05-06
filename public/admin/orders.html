@@ -126,7 +126,8 @@
                     });
 
                     div.innerHTML = `
-        <b>#${o.pickupCode}</b>
+        <b>Order #${o.orderNumber || o.pickupCode}</b>
+        <div>Pickup code: ${o.pickupCode}</div>
         <div>${items}</div>
         <select 
   onfocus="isInteracting = true"
