@@ -1,12 +1,13 @@
 <!DOCTYPE html>
 <html>
+
 <head>
   <title>Avenzo</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
   <style>
     body {
-      font-family: Arial, sans-serif;
+      font-family: Arial;
       margin: 0;
       background: #f6f7fb;
     }
@@ -26,34 +27,43 @@
 
     .category {
       margin-top: 25px;
-      margin-bottom: 10px;
       font-size: 18px;
       font-weight: bold;
-      color: #333;
     }
 
-    .menu-item {
-      background: white;
-      border-radius: 12px;
-      padding: 15px;
-      margin-bottom: 10px;
+    .card {
       display: flex;
-      justify-content: space-between;
-      align-items: center;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+      gap: 12px;
+      background: white;
+      padding: 12px;
+      border-radius: 12px;
+      margin-bottom: 10px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+    }
+
+    .img {
+      width: 80px;
+      height: 80px;
+      border-radius: 10px;
+      object-fit: cover;
+      background: #eee;
     }
 
     .info {
-      max-width: 60%;
+      flex: 1;
     }
 
     .name {
       font-weight: bold;
-      margin-bottom: 5px;
+    }
+
+    .desc {
+      font-size: 13px;
+      color: #666;
     }
 
     .price {
-      color: #666;
+      margin-top: 5px;
     }
 
     .controls {
@@ -67,13 +77,17 @@
       border: none;
       padding: 6px 10px;
       border-radius: 6px;
-      font-size: 16px;
       cursor: pointer;
     }
 
-    .qty {
-      margin: 0 10px;
-      font-weight: bold;
+    .disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+
+    .out {
+      color: red;
+      font-size: 12px;
     }
 
     .cart-bar {
@@ -86,169 +100,141 @@
       padding: 15px;
       display: flex;
       justify-content: space-between;
-      align-items: center;
-    }
-
-    .cart-btn {
-      background: white;
-      color: black;
-      border: none;
-      padding: 10px 15px;
-      border-radius: 8px;
-      font-weight: bold;
-      cursor: pointer;
     }
   </style>
 </head>
 
 <body>
 
-<header id="restaurantName">Loading...</header>
+  <header id="restaurantName">Loading...</header>
 
-<div class="container" id="menu"></div>
+  <div class="container" id="menu"></div>
 
-<div class="cart-bar">
-  <div>
-    🛒 <span id="count">0</span> items<br>
-    ₹ <span id="total">0</span>
+  <div class="cart-bar">
+    <div>
+      🛒 <span id="count">0</span> | ₹ <span id="total">0</span>
+    </div>
+    <button id="orderBtn" onclick="placeOrder()">Order</button>
   </div>
-  <button id="orderBtn" class="cart-btn" onclick="placeOrder()">Place Order</button>
-</div>
 
-<script>
-const API = "https://avenzo.app";
+  <script>
+    const API = "https://avenzo.app";
+    const restaurantId = new URLSearchParams(location.search).get("restaurantId");
 
-const params = new URLSearchParams(window.location.search);
-const restaurantId = params.get("restaurantId");
+    let cart = [];
+    let menuData = [];
 
-if (!restaurantId) {
-  alert("Invalid QR");
-}
-
-let cart = [];
-let menuData = [];
-
-async function loadRestaurant() {
-  const res = await fetch(`${API}/restaurant/${restaurantId}`);
-  const data = await res.json();
-  document.getElementById("restaurantName").innerText = data.name;
-}
-
-async function loadMenu() {
-  const res = await fetch(`${API}/menu/${restaurantId}`);
-  menuData = await res.json();
-
-  const grouped = {};
-
-  menuData.forEach(item => {
-    if (!grouped[item.category]) {
-      grouped[item.category] = [];
+    async function loadRestaurant() {
+      const res = await fetch(`${API}/restaurant/${restaurantId}`);
+      const data = await res.json();
+      document.getElementById("restaurantName").innerText = data.name;
     }
-    grouped[item.category].push(item);
-  });
 
-  const container = document.getElementById("menu");
-  container.innerHTML = "";
+    async function loadMenu() {
+      const res = await fetch(`${API}/menu/${restaurantId}`);
+      menuData = await res.json();
 
-  Object.keys(grouped).forEach(category => {
-    const catTitle = document.createElement("div");
-    catTitle.className = "category";
-    catTitle.innerText = category;
-    container.appendChild(catTitle);
+      // sort: available first
+      menuData.sort((a, b) => b.isAvailable - a.isAvailable);
 
-    grouped[category].forEach(item => {
-      const div = document.createElement("div");
-      div.className = "menu-item";
+      const grouped = {};
 
-      div.innerHTML = `
-        <div class="info">
-          <div class="name">${item.name}</div>
-          <div class="price">₹${item.price}</div>
-        </div>
-        <div class="controls">
-          <button class="btn" onclick="changeQty('${item.id}', -1)">−</button>
-          <span class="qty" id="qty-${item.id}">0</span>
-          <button class="btn" onclick="changeQty('${item.id}', 1)">+</button>
+      menuData.forEach(item => {
+        if (!grouped[item.category]) grouped[item.category] = [];
+        grouped[item.category].push(item);
+      });
+
+      const container = document.getElementById("menu");
+      container.innerHTML = "";
+
+      Object.keys(grouped).forEach(cat => {
+        container.innerHTML += `<div class="category">${cat}</div>`;
+
+        grouped[cat].forEach(item => {
+          const disabled = !item.isAvailable;
+
+          container.innerHTML += `
+        <div class="card">
+          <img class="img" src="${item.imageUrl || 'https://via.placeholder.com/80'}"/>
+
+          <div class="info">
+            <div class="name">${item.name}</div>
+            <div class="desc">${item.description || ''}</div>
+            <div class="price">₹${item.price}</div>
+            ${disabled ? '<div class="out">Out of stock</div>' : ''}
+          </div>
+
+          <div class="controls">
+            <button class="btn ${disabled ? 'disabled' : ''}" 
+              onclick="${disabled ? '' : 'changeQty(\'' + item.id + '\', -1)'}">−</button>
+
+            <span id="qty-${item.id}">0</span>
+
+            <button class="btn ${disabled ? 'disabled' : ''}" 
+              onclick="${disabled ? '' : 'changeQty(\'' + item.id + '\', 1)'}">+</button>
+          </div>
         </div>
       `;
-
-      container.appendChild(div);
-    });
-  });
-}
-
-function changeQty(menuId, delta) {
-  let item = cart.find(i => i.menuId === menuId);
-
-  if (!item && delta > 0) {
-    item = { menuId, quantity: 0 };
-    cart.push(item);
-  }
-
-  if (item) {
-    item.quantity += delta;
-
-    if (item.quantity <= 0) {
-      cart = cart.filter(i => i.menuId !== menuId);
+        });
+      });
     }
-  }
 
-  updateUI();
-}
+    function changeQty(id, delta) {
+      const itemData = menuData.find(m => m.id === id);
+      if (!itemData || !itemData.isAvailable) return;
 
-function updateUI() {
-  let totalItems = 0;
-  let totalPrice = 0;
+      let item = cart.find(i => i.menuId === id);
 
-  cart.forEach(item => {
-    const data = menuData.find(m => m.id === item.menuId);
+      if (!item && delta > 0) {
+        item = { menuId: id, quantity: 0 };
+        cart.push(item);
+      }
 
-    if (!data) return;
+      if (item) {
+        item.quantity += delta;
+        if (item.quantity <= 0) cart = cart.filter(i => i.menuId !== id);
+      }
 
-    totalItems += item.quantity;
-    totalPrice += item.quantity * data.price;
+      updateUI();
+    }
 
-    const el = document.getElementById(`qty-${item.menuId}`);
-    if (el) el.innerText = item.quantity;
-  });
+    function updateUI() {
+      let totalItems = 0, totalPrice = 0;
 
-  document.getElementById("count").innerText = totalItems;
-  document.getElementById("total").innerText = totalPrice;
-}
+      cart.forEach(i => {
+        const data = menuData.find(m => m.id === i.menuId);
+        totalItems += i.quantity;
+        totalPrice += i.quantity * data.price;
 
-async function placeOrder() {
-  if (cart.length === 0) return alert("Cart empty");
+        const el = document.getElementById(`qty-${i.menuId}`);
+        if (el) el.innerText = i.quantity;
+      });
 
-  const btn = document.getElementById("orderBtn");
+      document.getElementById("count").innerText = totalItems;
+      document.getElementById("total").innerText = totalPrice;
+    }
 
-  btn.disabled = true;
-  btn.innerText = "Placing Order...";
+    async function placeOrder() {
+      if (cart.length === 0) return alert("Cart empty");
 
-  try {
-    const res = await fetch(`${API}/order`, {
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body: JSON.stringify({
-        restaurantId,
-        sessionId:"web-"+Date.now(),
-        items: cart
-      })
-    });
+      const res = await fetch(`${API}/order`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          restaurantId,
+          sessionId: "web-" + Date.now(),
+          items: cart
+        })
+      });
 
-    const data = await res.json();
+      const data = await res.json();
+      window.location.href = `${API}/track/${data.orderId}`;
+    }
 
-    window.location.href = `${API}/track/${data.orderId}`;
-
-  } catch (err) {
-    btn.disabled = false;
-    btn.innerText = "Place Order";
-    alert("Order failed. Please try again.");
-  }
-}
-
-loadRestaurant();
-loadMenu();
-</script>
+    loadRestaurant();
+    loadMenu();
+  </script>
 
 </body>
+
 </html>

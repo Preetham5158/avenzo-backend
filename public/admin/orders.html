@@ -100,15 +100,16 @@
                     headers: { Authorization: "Bearer " + token }
                 });
 
-                const data = await res.json();
                 const container = document.getElementById("list");
 
                 if (!res.ok) {
-                    container.innerHTML = "Error loading orders";
+                    container.innerHTML = "Access denied or error";
                     return;
                 }
 
-                if (!data || data.length === 0) {
+                const data = await res.json();
+
+                if (!Array.isArray(data) || data.length === 0) {
                     container.innerHTML = "No orders yet";
                     return;
                 }
@@ -125,31 +126,20 @@
                     });
 
                     div.innerHTML = `
-                <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
-                    <b>#${o.pickupCode}</b>
-                    <span class="status" style="color:${getColor(o.status)}">${o.status}</span>
-                </div>
-
-                ${items}
-
-                <div style="margin-top:10px;">
-                    <select 
-                        onfocus="isInteracting = true" 
-                        onblur="isInteracting = false"
-                        onchange="updateStatus('${o.id}', this.value)">
-                        
-                        <option ${o.status === "PENDING" ? "selected" : ""}>PENDING</option>
-                        <option ${o.status === "PREPARING" ? "selected" : ""}>PREPARING</option>
-                        <option ${o.status === "READY" ? "selected" : ""}>READY</option>
-                        <option ${o.status === "COMPLETED" ? "selected" : ""}>COMPLETED</option>
-                    </select>
-                </div>
-            `;
+        <b>#${o.pickupCode}</b>
+        <div>${items}</div>
+        <select onchange="updateStatus('${o.id}', this.value)">
+          <option ${o.status === "PENDING" ? "selected" : ""}>PENDING</option>
+          <option ${o.status === "PREPARING" ? "selected" : ""}>PREPARING</option>
+          <option ${o.status === "READY" ? "selected" : ""}>READY</option>
+          <option ${o.status === "COMPLETED" ? "selected" : ""}>COMPLETED</option>
+        </select>
+      `;
 
                     container.appendChild(div);
                 });
 
-            } catch (err) {
+            } catch {
                 document.getElementById("list").innerHTML = "Error loading orders";
             }
         }
