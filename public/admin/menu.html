@@ -2,316 +2,331 @@
 <html>
 
 <head>
-  <title>Menu Admin</title>
+  <title>Avenzo Menu Admin</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/app.css">
   <style>
-    body {
-      font-family: 'Inter', Arial;
-      margin: 0;
-      background: #f5f7fb;
-    }
-
-    header {
-      background: white;
-      padding: 16px;
-      border-bottom: 1px solid #eee;
-      display: flex;
-      justify-content: space-between;
+    .menu-item {
+      display: grid;
+      grid-template-columns: 88px 1fr auto;
+      gap: 16px;
       align-items: center;
     }
 
-    .container {
-      padding: 20px;
-    }
-
-    .card {
-      display: flex;
-      gap: 15px;
-      background: white;
-      border-radius: 14px;
-      padding: 15px;
-      margin-bottom: 12px;
-      box-shadow: 0 6px 20px rgba(0,0,0,0.05);
-    }
-
-    .img {
-      width: 80px;
-      height: 80px;
-      border-radius: 10px;
-      background: #eee;
+    .menu-img {
+      width: 88px;
+      height: 88px;
+      border-radius: var(--radius);
       object-fit: cover;
+      background: #eef0f4;
     }
 
-    .info {
-      flex: 1;
+    .menu-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: flex-end;
     }
 
-    .name {
-      font-weight: bold;
-      margin-bottom: 4px;
-    }
+    @media (max-width: 760px) {
+      .menu-item {
+        grid-template-columns: 72px 1fr;
+      }
 
-    .desc {
-      font-size: 13px;
-      color: #666;
-    }
+      .menu-actions {
+        grid-column: 1 / -1;
+        justify-content: flex-start;
+      }
 
-    .actions {
-      margin-top: 10px;
-    }
-
-    button {
-      border: none;
-      padding: 6px 10px;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 13px;
-      margin-right: 5px;
-    }
-
-    .primary {
-      background: #ff7a00;
-      color: white;
-    }
-
-    .secondary {
-      background: #ddd;
-    }
-
-    .danger {
-      background: #ff4d4f;
-      color: white;
-    }
-
-    .tag {
-      font-size: 12px;
-      margin-top: 5px;
-    }
-
-    .out {
-      color: red;
-    }
-
-    .hidden {
-      color: gray;
+      .menu-img {
+        width: 72px;
+        height: 72px;
+      }
     }
   </style>
 </head>
 
 <body>
-
-<header>
-  <div>🍽 Menu</div>
-  <button onclick="goBack()">Back</button>
-</header>
-
-<div class="container">
-  <button class="primary" onclick="addItem()">+ Add Item</button>
-  <div id="menu"></div>
-</div>
-
-<script>
-const API = "https://avenzo.app";
-const token = localStorage.getItem("token");
-const restaurantId = new URLSearchParams(location.search).get("restaurantId");
-let categories = [];
-
-async function loadCategories() {
-  const res = await fetch(`${API}/categories/${restaurantId}`, {
-    headers: { Authorization: "Bearer " + token }
-  });
-  categories = await res.json();
-}
-
-async function getCategoryId(defaultCategoryId) {
-  const defaultCategory = categories.find(c => c.id === defaultCategoryId);
-  const options = categories.map(c => c.name).join(", ");
-  const categoryName = prompt("Category" + (options ? ` (${options})` : ""), defaultCategory?.name || "");
-
-  if (!categoryName) return null;
-
-  const existing = categories.find(c => c.name.toLowerCase() === categoryName.trim().toLowerCase());
-  if (existing) return existing.id;
-
-  const res = await fetch(`${API}/category`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: "Bearer " + token
-    },
-    body: JSON.stringify({
-      name: categoryName.trim(),
-      restaurantId
-    })
-  });
-
-  const created = await res.json();
-  if (!res.ok) {
-    alert(created.error || "Could not create category");
-    return null;
-  }
-
-  categories.push(created);
-  return created.id;
-}
-
-/* ================================
-   LOAD MENU (ADMIN API)
-================================ */
-async function loadMenu() {
-  await loadCategories();
-
-  const res = await fetch(`${API}/admin/menu/${restaurantId}`, {
-    headers: { Authorization: "Bearer " + token }
-  });
-
-  const data = await res.json();
-  const container = document.getElementById("menu");
-
-  container.innerHTML = "";
-
-  if (!data || data.length === 0) {
-    container.innerHTML = "No items";
-    return;
-  }
-
-  data.forEach(i => {
-    const div = document.createElement("div");
-    div.className = "card";
-
-    div.innerHTML = `
-      <img class="img" src="${i.imageUrl || 'https://via.placeholder.com/80'}" />
-
-      <div class="info">
-        <div class="name">${i.name} - ₹${i.price}</div>
-        <div class="desc">${i.category?.name || "Uncategorized"}</div>
-        <div class="desc">${i.description || ""}</div>
-
-        <div class="tag">
-          ${!i.isAvailable ? '<span class="out">Out of stock</span>' : ''}
-          ${!i.isActive ? '<span class="hidden">Hidden</span>' : ''}
+  <div class="shell">
+    <header class="topbar">
+      <div class="topbar-inner">
+        <div class="brand">
+          <img src="/logo.png" alt="Avenzo">
+          <span>AVENZO</span>
         </div>
-
-        <div class="actions">
-          <button onclick="toggleStock('${i.id}', ${i.isAvailable})">
-            ${i.isAvailable ? "Out of Stock" : "Mark Available"}
-          </button>
-
-          <button onclick="toggleVisibility('${i.id}', ${i.isActive})">
-            ${i.isActive ? "Hide" : "Show"}
-          </button>
-
-          <button onclick='editItem(${JSON.stringify(i.id)}, ${JSON.stringify(i.name)}, ${Number(i.price)}, ${JSON.stringify(i.categoryId)}, ${JSON.stringify(i.description || "")}, ${JSON.stringify(i.imageUrl || "")})'>
-            Edit
-          </button>
+        <div class="row">
+          <button class="btn btn-ghost" onclick="goBack()">Back</button>
+          <button class="btn btn-ghost" onclick="logout()">Logout</button>
         </div>
       </div>
-    `;
+    </header>
 
-    container.appendChild(div);
-  });
-}
+    <main class="page">
+      <section class="page-head">
+        <div>
+          <div class="eyebrow">Menu manager</div>
+          <h1 id="restaurantName">Loading...</h1>
+          <p class="muted">Create polished menu items, group them by category, and control what customers can order.</p>
+        </div>
+        <button class="btn btn-primary" onclick="openItemModal()">Add item</button>
+      </section>
 
-/* ================================
-   ADD ITEM
-================================ */
-async function addItem() {
-  const name = prompt("Name");
-  const price = prompt("Price");
-  const categoryId = await getCategoryId();
-  const description = prompt("Description");
-  const imageUrl = prompt("Image URL");
+      <section class="tabbar" id="categoryTabs"></section>
+      <section class="stack" id="menu" style="margin-top:12px;">Loading menu...</section>
+    </main>
+  </div>
 
-  if (!name || !price || !categoryId) return;
+  <div class="modal-backdrop" id="itemModal">
+    <form class="modal" onsubmit="saveItem(event)">
+      <div class="modal-head row-between">
+        <div>
+          <h3 id="modalTitle" style="margin:0;">Add item</h3>
+          <div class="muted">Menu changes publish immediately.</div>
+        </div>
+        <button type="button" class="btn btn-ghost icon-btn" onclick="closeItemModal()">X</button>
+      </div>
 
-  await fetch(`${API}/menu`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: "Bearer " + token
-    },
-    body: JSON.stringify({
-      name,
-      price,
-      categoryId,
-      description,
-      imageUrl,
-      restaurantId
-    })
-  });
+      <div class="modal-body stack">
+        <input id="itemId" type="hidden">
+        <div class="grid grid-2">
+          <div class="field">
+            <label for="itemName">Name</label>
+            <input id="itemName" class="input" required placeholder="Masala dosa">
+          </div>
+          <div class="field">
+            <label for="itemPrice">Price</label>
+            <input id="itemPrice" class="input" type="number" min="0" step="0.01" required placeholder="120">
+          </div>
+        </div>
 
-  loadMenu();
-}
+        <div class="grid grid-2">
+          <div class="field">
+            <label for="itemCategory">Category</label>
+            <select id="itemCategory" class="select" required></select>
+          </div>
+          <div class="field">
+            <label for="newCategory">New category</label>
+            <input id="newCategory" class="input" placeholder="Type to create one">
+          </div>
+        </div>
 
-/* ================================
-   EDIT
-================================ */
-async function editItem(id, name, price, categoryId, description, imageUrl) {
-  const newName = prompt("Name", name);
-  const newPrice = prompt("Price", price);
-  const newCategoryId = await getCategoryId(categoryId);
-  const newDesc = prompt("Description", description);
-  const newImage = prompt("Image URL", imageUrl);
+        <div class="field">
+          <label for="itemDescription">Description</label>
+          <textarea id="itemDescription" class="textarea" placeholder="Short customer-facing description"></textarea>
+        </div>
 
-  if (!newName || !newPrice || !newCategoryId) return;
+        <div class="field">
+          <label for="itemImageUrl">Image URL</label>
+          <input id="itemImageUrl" class="input" placeholder="https://...">
+        </div>
 
-  await fetch(`${API}/menu/${id}`, {
-    method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: "Bearer " + token
-    },
-    body: JSON.stringify({
-      name: newName,
-      price: Number(newPrice),
-      categoryId: newCategoryId,
-      description: newDesc,
-      imageUrl: newImage
-    })
-  });
+        <div class="grid grid-2">
+          <label class="row card card-pad" style="cursor:pointer;">
+            <input id="itemAvailable" type="checkbox" checked>
+            <span>Available to order</span>
+          </label>
+          <label class="row card card-pad" style="cursor:pointer;">
+            <input id="itemActive" type="checkbox" checked>
+            <span>Visible on customer menu</span>
+          </label>
+        </div>
+      </div>
 
-  loadMenu();
-}
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" onclick="closeItemModal()">Cancel</button>
+        <button id="saveItemBtn" class="btn btn-primary" type="submit">Save item</button>
+      </div>
+    </form>
+  </div>
 
-/* ================================
-   STOCK TOGGLE
-================================ */
-async function toggleStock(id, current) {
-  await fetch(`${API}/menu/${id}`, {
-    method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: "Bearer " + token
-    },
-    body: JSON.stringify({ isAvailable: !current })
-  });
+  <script src="/assets/app.js"></script>
+  <script>
+    requireAuth();
 
-  loadMenu();
-}
+    const restaurantId = new URLSearchParams(location.search).get("restaurantId");
+    let categories = [];
+    let menuItems = [];
+    let activeCategory = "ALL";
 
-/* ================================
-   VISIBILITY TOGGLE
-================================ */
-async function toggleVisibility(id, current) {
-  await fetch(`${API}/menu/${id}`, {
-    method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: "Bearer " + token
-    },
-    body: JSON.stringify({ isActive: !current })
-  });
+    async function init() {
+      try {
+        const restaurant = await request(`/restaurant/${restaurantId}`, { headers: {} });
+        document.getElementById("restaurantName").textContent = restaurant.name;
+        await loadMenu();
+      } catch (err) {
+        document.getElementById("menu").innerHTML = `<div class="empty">${escapeHtml(err.message)}</div>`;
+      }
+    }
 
-  loadMenu();
-}
+    async function loadCategories() {
+      categories = await request(`/categories/${restaurantId}`);
+      renderCategoryOptions();
+    }
 
-function goBack() {
-  history.back();
-}
+    function renderCategoryOptions(selectedId = "") {
+      const select = document.getElementById("itemCategory");
+      select.innerHTML = categories.map(c => `
+        <option value="${c.id}" ${c.id === selectedId ? "selected" : ""}>${escapeHtml(c.name)}</option>
+      `).join("");
+    }
 
-loadMenu();
-</script>
+    async function loadMenu() {
+      await loadCategories();
+      menuItems = await request(`/admin/menu/${restaurantId}`);
+      renderTabs();
+      renderMenu();
+    }
 
+    function renderTabs() {
+      const counts = menuItems.reduce((acc, item) => {
+        const key = item.category?.name || "Uncategorized";
+        acc[key] = (acc[key] || 0) + 1;
+        return acc;
+      }, {});
+
+      document.getElementById("categoryTabs").innerHTML = `
+        <button class="btn tab ${activeCategory === "ALL" ? "active" : ""}" onclick="setCategory('ALL')">All (${menuItems.length})</button>
+        ${Object.keys(counts).sort().map(name => `
+          <button class="btn tab ${activeCategory === name ? "active" : ""}" onclick='setCategory(${JSON.stringify(name)})'>${escapeHtml(name)} (${counts[name]})</button>
+        `).join("")}
+      `;
+    }
+
+    function setCategory(name) {
+      activeCategory = name;
+      renderTabs();
+      renderMenu();
+    }
+
+    function renderMenu() {
+      const container = document.getElementById("menu");
+      const visible = activeCategory === "ALL"
+        ? menuItems
+        : menuItems.filter(item => (item.category?.name || "Uncategorized") === activeCategory);
+
+      if (!visible.length) {
+        container.innerHTML = `<div class="empty">No items in this view yet.</div>`;
+        return;
+      }
+
+      container.innerHTML = visible.map(item => `
+        <article class="card card-pad menu-item">
+          <img class="menu-img" src="${escapeHtml(item.imageUrl || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=300")}" alt="">
+          <div>
+            <div class="row" style="flex-wrap:wrap; margin-bottom:6px;">
+              <h3 style="margin:0;">${escapeHtml(item.name)}</h3>
+              <span class="pill">${escapeHtml(item.category?.name || "Uncategorized")}</span>
+              <span class="pill ${item.isAvailable ? "pill-success" : "pill-danger"}">${item.isAvailable ? "Available" : "Out of stock"}</span>
+              ${item.isActive ? "" : `<span class="pill pill-warning">Hidden</span>`}
+            </div>
+            <div class="muted">${escapeHtml(item.description || "No description")}</div>
+            <strong>${money(item.price)}</strong>
+          </div>
+          <div class="menu-actions">
+            <button class="btn btn-ghost" onclick="toggleStock('${item.id}', ${item.isAvailable})">${item.isAvailable ? "Mark out" : "Mark available"}</button>
+            <button class="btn btn-ghost" onclick="toggleVisibility('${item.id}', ${item.isActive})">${item.isActive ? "Hide" : "Show"}</button>
+            <button class="btn btn-dark" onclick='openItemModal(${JSON.stringify(item)})'>Edit</button>
+          </div>
+        </article>
+      `).join("");
+    }
+
+    function openItemModal(item = null) {
+      document.getElementById("modalTitle").textContent = item ? "Edit item" : "Add item";
+      document.getElementById("itemId").value = item?.id || "";
+      document.getElementById("itemName").value = item?.name || "";
+      document.getElementById("itemPrice").value = item?.price || "";
+      document.getElementById("itemDescription").value = item?.description || "";
+      document.getElementById("itemImageUrl").value = item?.imageUrl || "";
+      document.getElementById("itemAvailable").checked = item ? item.isAvailable : true;
+      document.getElementById("itemActive").checked = item ? item.isActive : true;
+      document.getElementById("newCategory").value = "";
+      renderCategoryOptions(item?.categoryId || categories[0]?.id || "");
+      document.getElementById("itemModal").classList.add("open");
+      document.getElementById("itemName").focus();
+    }
+
+    function closeItemModal() {
+      document.getElementById("itemModal").classList.remove("open");
+    }
+
+    async function ensureCategory() {
+      const newName = document.getElementById("newCategory").value.trim();
+      if (!newName) return document.getElementById("itemCategory").value;
+
+      const existing = categories.find(c => c.name.toLowerCase() === newName.toLowerCase());
+      if (existing) return existing.id;
+
+      const created = await request("/category", {
+        method: "POST",
+        body: JSON.stringify({ name: newName, restaurantId })
+      });
+      categories.push(created);
+      return created.id;
+    }
+
+    async function saveItem(event) {
+      event.preventDefault();
+      const btn = document.getElementById("saveItemBtn");
+      setLoading(btn, true, "Saving...");
+
+      try {
+        const id = document.getElementById("itemId").value;
+        const categoryId = await ensureCategory();
+        const payload = {
+          name: document.getElementById("itemName").value.trim(),
+          price: Number(document.getElementById("itemPrice").value),
+          categoryId,
+          description: document.getElementById("itemDescription").value.trim() || null,
+          imageUrl: document.getElementById("itemImageUrl").value.trim() || null,
+          isAvailable: document.getElementById("itemAvailable").checked,
+          isActive: document.getElementById("itemActive").checked,
+          restaurantId
+        };
+
+        if (id) {
+          await request(`/menu/${id}`, { method: "PUT", body: JSON.stringify(payload) });
+        } else {
+          await request("/menu", { method: "POST", body: JSON.stringify(payload) });
+        }
+
+        closeItemModal();
+        toast("Menu saved");
+        await loadMenu();
+      } catch (err) {
+        toast(err.message);
+      } finally {
+        setLoading(btn, false);
+      }
+    }
+
+    async function toggleStock(id, current) {
+      try {
+        await request(`/menu/${id}`, { method: "PUT", body: JSON.stringify({ isAvailable: !current }) });
+        toast(current ? "Marked out of stock" : "Marked available");
+        await loadMenu();
+      } catch (err) {
+        toast(err.message);
+      }
+    }
+
+    async function toggleVisibility(id, current) {
+      try {
+        await request(`/menu/${id}`, { method: "PUT", body: JSON.stringify({ isActive: !current }) });
+        toast(current ? "Hidden from menu" : "Visible on menu");
+        await loadMenu();
+      } catch (err) {
+        toast(err.message);
+      }
+    }
+
+    function goBack() {
+      window.location.href = "/admin/dashboard.html";
+    }
+
+    init();
+  </script>
 </body>
+
 </html>

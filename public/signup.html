@@ -1,173 +1,88 @@
 <!DOCTYPE html>
 <html>
+
 <head>
   <title>Avenzo Signup</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
-  <style>
-    body {
-      margin: 0;
-      font-family: Arial;
-      background: linear-gradient(135deg, #ffffff, #f4f6fb);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-    }
-
-    .card {
-      background: white;
-      padding: 30px;
-      border-radius: 14px;
-      width: 340px;
-      box-shadow: 0 20px 50px rgba(0,0,0,0.08);
-      text-align: center;
-      transition: 0.3s;
-    }
-
-    .logo {
-      display: flex;
-      justify-content: center;
-      gap: 10px;
-      margin-bottom: 20px;
-    }
-
-    .logo img {
-      height: 35px;
-    }
-
-    .logo span {
-      font-weight: bold;
-      font-size: 20px;
-    }
-
-    h2 {
-      margin-bottom: 20px;
-    }
-
-    input {
-      width: 100%;
-      padding: 12px;
-      margin: 10px 0;
-      border-radius: 8px;
-      border: 1px solid #ddd;
-      background: #fafafa;
-      transition: 0.2s;
-    }
-
-    input:focus {
-      outline: none;
-      border-color: #ff9d00;
-      box-shadow: 0 0 0 2px rgba(255,157,0,0.15);
-    }
-
-    button {
-      width: 100%;
-      padding: 12px;
-      margin-top: 15px;
-      border: none;
-      border-radius: 8px;
-      background: linear-gradient(45deg,#ff7a00,#ffb300);
-      color: black;
-      font-weight: bold;
-      cursor: pointer;
-      transition: 0.2s;
-    }
-
-    button:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 5px 15px rgba(255,157,0,0.3);
-    }
-
-    .success {
-      color: green;
-      margin-top: 10px;
-    }
-
-    .error {
-      color: red;
-      margin-top: 10px;
-    }
-
-    .link {
-      margin-top: 15px;
-      font-size: 14px;
-      color: #666;
-    }
-
-    .link span {
-      color: #ff7a00;
-      cursor: pointer;
-      font-weight: bold;
-    }
-  </style>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/app.css">
 </head>
 
 <body>
+  <main class="auth-page">
+    <section class="card auth-card">
+      <div class="brand">
+        <img src="/logo.png" alt="Avenzo">
+        <span>AVENZO</span>
+      </div>
 
-<div class="card">
+      <div class="stack" style="text-align:center; margin-bottom:20px;">
+        <div class="eyebrow">Create account</div>
+        <h1 style="font-size:30px;">Start with Avenzo</h1>
+        <p class="muted">New accounts begin as standard users. Restaurant access is assigned by the super admin.</p>
+      </div>
 
-  <div class="logo">
-    <img src="/logo.png">
-    <span>Avenzo</span>
-  </div>
+      <form class="stack" onsubmit="signup(event)">
+        <div class="field">
+          <label for="name">Name</label>
+          <input id="name" class="input" placeholder="Your name">
+        </div>
 
-  <h2>Create Account</h2>
+        <div class="field">
+          <label for="email">Email</label>
+          <input id="email" class="input" type="email" autocomplete="email" placeholder="you@example.com" required>
+        </div>
 
-  <input id="email" placeholder="Email">
-  <input id="password" type="password" placeholder="Password">
+        <div class="field">
+          <label for="password">Password</label>
+          <input id="password" class="input" type="password" autocomplete="new-password" placeholder="Create password" required>
+        </div>
 
-  <button id="signupBtn" onclick="signup()">Sign Up</button>
+        <button id="signupBtn" class="btn btn-primary" type="submit">Create account</button>
+        <div id="message" class="muted" style="min-height:20px;"></div>
+      </form>
 
-  <div id="message"></div>
+      <p class="muted" style="text-align:center; margin:18px 0 0;">
+        Already have access?
+        <a href="/login.html" style="color:var(--brand); font-weight:800;">Login</a>
+      </p>
+    </section>
+  </main>
 
-  <div class="link">
-    Already have an account?
-    <span onclick="location.href='/login.html'">Login</span>
-  </div>
+  <script src="/assets/app.js"></script>
+  <script>
+    async function signup(event) {
+      event.preventDefault();
+      const btn = document.getElementById("signupBtn");
+      const msg = document.getElementById("message");
+      msg.textContent = "";
+      setLoading(btn, true, "Creating...");
 
-</div>
+      try {
+        const payload = {
+          name: document.getElementById("name").value.trim() || null,
+          email: document.getElementById("email").value.trim(),
+          password: document.getElementById("password").value
+        };
+        const res = await fetch(`${API}/auth/signup`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (!res.ok || !data.userId) throw new Error(data.error || "Signup failed");
 
-<script>
-const API = "https://avenzo.app";
-
-async function signup() {
-  const btn = document.getElementById("signupBtn");
-  const msg = document.getElementById("message");
-
-  msg.innerHTML = "";
-  btn.innerText = "Creating...";
-  btn.disabled = true;
-
-  try {
-    const email = document.getElementById("email").value;
-    const password = document.getElementById("password").value;
-
-    const res = await fetch(`${API}/auth/signup`, {
-      method: "POST",
-      headers: {"Content-Type":"application/json"},
-      body: JSON.stringify({ email, password })
-    });
-
-    const data = await res.json();
-
-    if (data.userId) {
-      msg.innerHTML = `<div class="success">Account created! Redirecting...</div>`;
-      setTimeout(() => {
-        window.location.href = "/login.html";
-      }, 1500);
-    } else {
-      msg.innerHTML = `<div class="error">${data.error}</div>`;
+        msg.textContent = "Account created. Redirecting to login...";
+        toast("Account created");
+        setTimeout(() => window.location.href = "/login.html", 900);
+      } catch (err) {
+        msg.textContent = err.message;
+        toast(err.message);
+      } finally {
+        setLoading(btn, false);
+      }
     }
-
-  } catch {
-    msg.innerHTML = `<div class="error">Something went wrong</div>`;
-  }
-
-  btn.innerText = "Sign Up";
-  btn.disabled = false;
-}
-</script>
-
+  </script>
 </body>
+
 </html>

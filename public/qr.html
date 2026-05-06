@@ -1,153 +1,141 @@
 <!DOCTYPE html>
 <html>
+
 <head>
-  <title>Avenzo QR Dashboard</title>
+  <title>Avenzo QR Codes</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/app.css">
   <style>
-    body {
-      font-family: Arial;
-      background: #f6f7fb;
-      padding: 20px;
-      text-align: center;
-    }
-
-    h2 {
-      margin-bottom: 20px;
-    }
-
-    .grid {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 20px;
-    }
-
-    .card {
+    .qr-img {
+      width: 210px;
+      height: 210px;
+      border-radius: var(--radius);
       background: white;
-      padding: 20px;
-      border-radius: 12px;
-      width: 240px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-    }
-
-    .title {
-      font-weight: bold;
-      margin-bottom: 10px;
-      font-size: 16px;
-    }
-
-    img {
-      margin: 10px 0;
-      width: 200px;
-      height: 200px;
-    }
-
-    .label {
-      font-size: 14px;
-      margin-top: 10px;
-    }
-
-    button {
-      margin-top: 10px;
-      padding: 8px 12px;
-      border: none;
-      background: black;
-      color: white;
-      border-radius: 6px;
-      cursor: pointer;
-    }
-
-    button:hover {
-      opacity: 0.85;
+      padding: 10px;
+      border: 1px solid var(--line);
     }
   </style>
 </head>
 
 <body>
-
-<h2>QR Codes</h2>
-
-<div class="grid" id="container"></div>
-
-<script>
-const API = "https://avenzo.app";
-
-async function loadRestaurants() {
-  const res = await fetch(`${API}/restaurants`);
-  const data = await res.json();
-
-  const container = document.getElementById("container");
-
-  data.forEach(r => {
-    const url = `${API}/menu.html?restaurantId=${r.id}`;
-
-    const qr = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(url)}`;
-
-    const div = document.createElement("div");
-    div.className = "card";
-
-    div.innerHTML = `
-      <div class="title">${r.name}</div>
-      <img src="${qr}" />
-      <div class="label">
-        Scan to Order 🍽️<br>
-        ${r.name}
+  <div class="shell">
+    <header class="topbar">
+      <div class="topbar-inner">
+        <div class="brand">
+          <img src="/logo.png" alt="Avenzo">
+          <span>AVENZO</span>
+        </div>
+        <div class="row">
+          <button class="btn btn-ghost" onclick="window.location.href='/admin/dashboard.html'">Dashboard</button>
+          <button class="btn btn-ghost" onclick="logout()">Logout</button>
+        </div>
       </div>
-      <button onclick="downloadCard('${r.id}', '${r.name}')">Download</button>
-    `;
+    </header>
 
-    container.appendChild(div);
-  });
-}
+    <main class="page">
+      <section class="page-head">
+        <div>
+          <div class="eyebrow">QR ordering</div>
+          <h1>Restaurant QR codes</h1>
+          <p class="muted">Download polished scan cards for customer self-ordering.</p>
+        </div>
+      </section>
 
-/* 🔥 NEW DOWNLOAD FUNCTION */
-function downloadCard(id, name) {
-  const url = `${API}/menu.html?restaurantId=${id}`;
-  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(url)}`;
+      <section class="grid grid-3" id="container">Loading QR codes...</section>
+    </main>
+  </div>
 
-  const canvas = document.createElement("canvas");
-  const ctx = canvas.getContext("2d");
+  <script src="/assets/app.js"></script>
+  <script>
+    requireAuth();
 
-  canvas.width = 500;
-  canvas.height = 600;
+    const selectedRestaurantId = new URLSearchParams(location.search).get("restaurantId");
 
-  // Background
-  ctx.fillStyle = "#ffffff";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
+    async function loadRestaurants() {
+      try {
+        const data = await request("/restaurants");
+        let restaurants = data.restaurants || [];
+        if (selectedRestaurantId) {
+          restaurants = restaurants.filter(r => r.id === selectedRestaurantId);
+        }
 
-  const qrImage = new Image();
-  qrImage.crossOrigin = "anonymous";
+        const container = document.getElementById("container");
+        if (!restaurants.length) {
+          container.innerHTML = `<div class="empty" style="grid-column:1/-1;">No QR codes available for your account.</div>`;
+          return;
+        }
 
-  qrImage.onload = function () {
-    // Title
-    ctx.fillStyle = "#000";
-    ctx.font = "bold 22px Arial";
-    ctx.textAlign = "center";
-    ctx.fillText(name, 250, 60);
+        container.innerHTML = restaurants.map(r => {
+          const url = `${API}/menu.html?restaurantId=${r.id}`;
+          const qr = qrUrl(url, 220);
+          return `
+            <article class="card card-pad stack" style="align-items:center; text-align:center;">
+              <div>
+                <h3>${escapeHtml(r.name)}</h3>
+                <div class="muted">${escapeHtml(url)}</div>
+              </div>
+              <img class="qr-img" src="${qr}" alt="QR code for ${escapeHtml(r.name)}">
+              <button class="btn btn-primary" onclick='downloadCard(${JSON.stringify(r.id)}, ${JSON.stringify(r.name)})'>Download card</button>
+            </article>
+          `;
+        }).join("");
+      } catch (err) {
+        document.getElementById("container").innerHTML = `<div class="empty" style="grid-column:1/-1;">${escapeHtml(err.message)}</div>`;
+      }
+    }
 
-    // QR Code
-    ctx.drawImage(qrImage, 100, 100, 300, 300);
+    function qrUrl(url, size) {
+      return `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(url)}`;
+    }
 
-    // Label
-    ctx.font = "18px Arial";
-    ctx.fillText("Scan to Order 🍽️", 250, 440);
+    function downloadCard(id, name) {
+      const url = `${API}/menu.html?restaurantId=${id}`;
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+      const qrImage = new Image();
+      qrImage.crossOrigin = "anonymous";
+      canvas.width = 700;
+      canvas.height = 900;
 
-    ctx.font = "16px Arial";
-    ctx.fillText(name, 250, 470);
+      qrImage.onload = function () {
+        const gradient = ctx.createLinearGradient(0, 0, 700, 900);
+        gradient.addColorStop(0, "#ffffff");
+        gradient.addColorStop(1, "#fff1e5");
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, 700, 900);
 
-    // Download as JPEG
-    const link = document.createElement("a");
-    link.download = `${name}-qr.jpg`;
-    link.href = canvas.toDataURL("image/jpeg", 1.0);
-    link.click();
-  };
+        ctx.fillStyle = "#101114";
+        ctx.font = "800 46px Arial";
+        ctx.textAlign = "center";
+        ctx.fillText("AVENZO", 350, 90);
 
-  qrImage.src = qrUrl;
-}
+        ctx.font = "700 34px Arial";
+        ctx.fillText(name, 350, 155);
 
-loadRestaurants();
-</script>
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(150, 230, 400, 400);
+        ctx.drawImage(qrImage, 175, 255, 350, 350);
 
+        ctx.fillStyle = "#ff6a00";
+        ctx.font = "800 28px Arial";
+        ctx.fillText("Scan to order", 350, 700);
+
+        ctx.fillStyle = "#667085";
+        ctx.font = "20px Arial";
+        ctx.fillText("Browse the menu and place your order instantly", 350, 740);
+
+        const link = document.createElement("a");
+        link.download = `${name}-avenzo-qr.jpg`;
+        link.href = canvas.toDataURL("image/jpeg", 1.0);
+        link.click();
+      };
+
+      qrImage.src = qrUrl(url, 350);
+    }
+
+    loadRestaurants();
+  </script>
 </body>
+
 </html>

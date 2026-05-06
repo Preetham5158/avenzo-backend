@@ -2,204 +2,222 @@
 <html>
 
 <head>
-    <title>Avenzo Admin</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
-    <style>
-        body {
-            font-family: 'Inter', Arial, sans-serif;
-            margin: 0;
-            background: #f5f7fb;
-        }
-
-        header {
-            background: white;
-            padding: 16px;
-            border-bottom: 1px solid #eee;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .container {
-            padding: 20px;
-            max-width: 900px;
-            margin: 0 auto;
-        }
-
-        .card {
-            background: white;
-            border-radius: 14px;
-            padding: 18px;
-            margin-bottom: 14px;
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.05);
-            transition: 0.2s;
-        }
-
-        .card:hover {
-            transform: translateY(-2px);
-        }
-
-        button {
-            border: none;
-            padding: 8px 12px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 14px;
-            transition: 0.2s;
-        }
-
-        button:hover {
-            opacity: 0.85;
-        }
-
-        .primary {
-            background: linear-gradient(45deg, #ff7a00, #ffb300);
-            color: white;
-        }
-
-        .muted {
-            color: #667085;
-            font-size: 14px;
-            margin: 4px 0 18px;
-        }
-
-        .create-btn {
-            background: #111827;
-            color: white;
-            margin-bottom: 16px;
-        }
-
-        .danger {
-            background: #ff4d4f;
-            color: white;
-        }
-
-        select {
-            padding: 6px;
-            border-radius: 6px;
-            border: 1px solid #ddd;
-        }
-    </style>
+  <title>Avenzo Admin</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/app.css">
 </head>
 
 <body>
-
-    <header>
-        <div>🍽 Avenzo Admin</div>
-        <button onclick="logout()">Logout</button>
+  <div class="shell">
+    <header class="topbar">
+      <div class="topbar-inner">
+        <div class="brand">
+          <img src="/logo.png" alt="Avenzo">
+          <span>AVENZO</span>
+        </div>
+        <button class="btn btn-ghost" onclick="logout()">Logout</button>
+      </div>
     </header>
 
-    <div class="container">
+    <main class="page">
+      <section class="hero-panel" style="margin-bottom:20px;">
+        <div class="row-between">
+          <div>
+            <div class="eyebrow">Admin workspace</div>
+            <h1 id="pageTitle">Restaurants</h1>
+            <p id="roleText" class="muted">Loading access...</p>
+          </div>
+          <button id="createBtn" class="btn btn-primary" onclick="openRestaurantModal()">Add restaurant</button>
+        </div>
+      </section>
 
-        <h3 id="pageTitle">Restaurants</h3>
-        <div class="muted" id="roleText"></div>
+      <section class="grid grid-3" id="stats"></section>
+      <section class="grid grid-3" id="list" style="margin-top:16px;"></section>
+    </main>
+  </div>
 
-        <button class="create-btn" onclick="createRestaurant()">+ Add Restaurant</button>
+  <div class="modal-backdrop" id="restaurantModal">
+    <form class="modal" onsubmit="createRestaurant(event)">
+      <div class="modal-head row-between">
+        <div>
+          <h3 style="margin:0;">Create restaurant</h3>
+          <div class="muted">Only super admins can add new restaurants.</div>
+        </div>
+        <button type="button" class="btn btn-ghost icon-btn" onclick="closeRestaurantModal()">X</button>
+      </div>
+      <div class="modal-body stack">
+        <div class="field">
+          <label for="restaurantName">Restaurant name</label>
+          <input id="restaurantName" class="input" required placeholder="Avenzo Cafe">
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" onclick="closeRestaurantModal()">Cancel</button>
+        <button id="saveRestaurantBtn" class="btn btn-primary" type="submit">Create</button>
+      </div>
+    </form>
+  </div>
 
-        <div id="list"></div>
-
+  <div class="modal-backdrop" id="deleteModal">
+    <div class="modal">
+      <div class="modal-head">
+        <h3 style="margin:0;">Delete restaurant</h3>
+        <div class="muted" id="deleteText"></div>
+      </div>
+      <div class="modal-body">
+        <p class="muted" style="margin:0;">This removes the restaurant, categories, menu items, and orders.</p>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" onclick="closeDeleteModal()">Cancel</button>
+        <button id="deleteBtn" type="button" class="btn btn-danger" onclick="deleteRestaurant()">Delete</button>
+      </div>
     </div>
+  </div>
 
-    <script>
-        const API = "https://avenzo.app";
-        const token = localStorage.getItem("token");
+  <script src="/assets/app.js"></script>
+  <script>
+    requireAuth();
 
-        if (!token) {
-            window.location.href = "/login.html";
-        }
+    let canCreateRestaurant = false;
+    let deleteTarget = null;
 
-        async function loadRestaurants() {
-            const res = await fetch(`${API}/restaurants`, {
-                headers: {
-                    Authorization: "Bearer " + token
-                }
-            });
+    async function loadRestaurants() {
+      try {
+        const data = await request("/restaurants");
+        const restaurants = data.restaurants || [];
+        canCreateRestaurant = !!data.canCreateRestaurant;
 
-            const data = await res.json();
-            if (!res.ok) {
-                document.getElementById("list").innerHTML = data.error || "No access";
-                return;
-            }
+        document.getElementById("pageTitle").textContent = canCreateRestaurant ? "All Restaurants" : "Your Restaurants";
+        document.getElementById("roleText").textContent = canCreateRestaurant
+          ? "Super admin access across every restaurant."
+          : "Only restaurants assigned to your account are shown.";
+        document.getElementById("createBtn").style.display = canCreateRestaurant ? "inline-flex" : "none";
 
-            const restaurants = Array.isArray(data) ? data : data.restaurants || [];
-            const canCreateRestaurant = !!data.canCreateRestaurant;
-            const user = data.user || {};
+        renderStats(restaurants, data.user);
+        renderRestaurants(restaurants);
+      } catch (err) {
+        document.getElementById("list").innerHTML = `<div class="empty">${escapeHtml(err.message || "No access")}</div>`;
+        toast(err.message);
+      }
+    }
 
-            const container = document.getElementById("list");
-            container.innerHTML = "";
-            document.getElementById("pageTitle").innerText = canCreateRestaurant ? "All Restaurants" : "Your Restaurants";
-            document.getElementById("roleText").innerText = user.role === "ADMIN"
-                ? "Super admin access"
-                : "Restaurant owner access";
+    function renderStats(restaurants, user) {
+      document.getElementById("stats").innerHTML = `
+        <div class="card card-pad">
+          <div class="muted">Signed in as</div>
+          <h3>${escapeHtml(user?.email || "Unknown")}</h3>
+          <span class="pill pill-dark">${escapeHtml(user?.role || "USER")}</span>
+        </div>
+        <div class="card card-pad">
+          <div class="muted">Restaurants</div>
+          <h3>${restaurants.length}</h3>
+          <span class="pill">Visible to you</span>
+        </div>
+        <div class="card card-pad">
+          <div class="muted">Access model</div>
+          <h3>${canCreateRestaurant ? "Global" : "Owner"}</h3>
+          <span class="pill ${canCreateRestaurant ? "pill-success" : "pill-warning"}">${canCreateRestaurant ? "Super admin" : "Scoped"}</span>
+        </div>
+      `;
+    }
 
-            document.querySelector(".create-btn").style.display = canCreateRestaurant ? "inline-block" : "none";
+    function renderRestaurants(restaurants) {
+      const container = document.getElementById("list");
+      if (!restaurants.length) {
+        container.innerHTML = `<div class="empty" style="grid-column:1/-1;">No restaurants are assigned to your account yet.</div>`;
+        return;
+      }
 
-            if (restaurants.length === 0) {
-                container.innerHTML = "No restaurants assigned to your account.";
-                return;
-            }
+      container.innerHTML = restaurants.map(r => `
+        <article class="card card-pad stack">
+          <div class="row-between">
+            <div>
+              <h3 style="margin-bottom:4px;">${escapeHtml(r.name)}</h3>
+              <div class="muted">/${escapeHtml(r.slug || "")}</div>
+            </div>
+            <span class="pill ${r.isActive ? "pill-success" : "pill-danger"}">${r.isActive ? "Active" : "Inactive"}</span>
+          </div>
+          <div class="row" style="flex-wrap:wrap;">
+            <button class="btn btn-dark" onclick="openMenu('${r.id}')">Menu</button>
+            <button class="btn btn-soft" onclick="openOrders('${r.id}')">Orders</button>
+            <button class="btn btn-ghost" onclick="openQr('${r.id}')">QR</button>
+            ${canCreateRestaurant ? `<button class="btn btn-danger" onclick='openDeleteModal(${JSON.stringify(r.id)}, ${JSON.stringify(r.name)})'>Delete</button>` : ""}
+          </div>
+        </article>
+      `).join("");
+    }
 
-            restaurants.forEach(r => {
-                const div = document.createElement("div");
-                div.className = "card";
+    function openRestaurantModal() {
+      document.getElementById("restaurantName").value = "";
+      document.getElementById("restaurantModal").classList.add("open");
+      document.getElementById("restaurantName").focus();
+    }
 
-                div.innerHTML = `
-      <b>${r.name}</b><br><br>
-      <button onclick="openMenu('${r.id}')">Menu</button>
-      <button onclick="openOrders('${r.id}')">Orders</button>
-      ${canCreateRestaurant ? `<button class="danger" onclick="deleteRestaurant('${r.id}')">Delete</button>` : ""}
-    `;
+    function closeRestaurantModal() {
+      document.getElementById("restaurantModal").classList.remove("open");
+    }
 
-                container.appendChild(div);
-            });
-        }
-
-        function openMenu(id) {
-            window.location.href = `/admin/menu.html?restaurantId=${id}`;
-        }
-
-        function openOrders(id) {
-            window.location.href = `/admin/orders.html?restaurantId=${id}`;
-        }
-
-        async function createRestaurant() {
-            const name = prompt("Enter restaurant name");
-            if (!name) return;
-
-            await fetch(`${API}/restaurant`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: "Bearer " + token
-                },
-                body: JSON.stringify({ name })
-            });
-
-            loadRestaurants();
-        }
-
-        async function deleteRestaurant(id) {
-            if (!confirm("Delete this restaurant?")) return;
-
-            await fetch(`${API}/restaurant/${id}`, {
-                method: "DELETE",
-                headers: {
-                    Authorization: "Bearer " + token
-                }
-            });
-
-            loadRestaurants();
-        }
-
-        function logout() {
-            localStorage.removeItem("token");
-            window.location.href = "/login.html";
-        }
-
+    async function createRestaurant(event) {
+      event.preventDefault();
+      const btn = document.getElementById("saveRestaurantBtn");
+      setLoading(btn, true, "Creating...");
+      try {
+        await request("/restaurant", {
+          method: "POST",
+          body: JSON.stringify({ name: document.getElementById("restaurantName").value.trim() })
+        });
+        closeRestaurantModal();
+        toast("Restaurant created");
         loadRestaurants();
-    </script>
+      } catch (err) {
+        toast(err.message);
+      } finally {
+        setLoading(btn, false);
+      }
+    }
 
+    function openDeleteModal(id, name) {
+      deleteTarget = { id, name };
+      document.getElementById("deleteText").textContent = `You are about to delete ${name}.`;
+      document.getElementById("deleteModal").classList.add("open");
+    }
+
+    function closeDeleteModal() {
+      deleteTarget = null;
+      document.getElementById("deleteModal").classList.remove("open");
+    }
+
+    async function deleteRestaurant() {
+      if (!deleteTarget) return;
+      const btn = document.getElementById("deleteBtn");
+      setLoading(btn, true, "Deleting...");
+      try {
+        await request(`/restaurant/${deleteTarget.id}`, { method: "DELETE" });
+        closeDeleteModal();
+        toast("Restaurant deleted");
+        loadRestaurants();
+      } catch (err) {
+        toast(err.message);
+      } finally {
+        setLoading(btn, false);
+      }
+    }
+
+    function openMenu(id) {
+      window.location.href = `/admin/menu.html?restaurantId=${id}`;
+    }
+
+    function openOrders(id) {
+      window.location.href = `/admin/orders.html?restaurantId=${id}`;
+    }
+
+    function openQr(id) {
+      window.location.href = `/qr.html?restaurantId=${id}`;
+    }
+
+    loadRestaurants();
+  </script>
 </body>
 
 </html>

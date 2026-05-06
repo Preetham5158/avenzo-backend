@@ -2,229 +2,137 @@
 <html>
 
 <head>
-    <title>Track Order</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Track Order</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/app.css">
+  <style>
+    .status-steps {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+    }
 
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            background: #f6f7fb;
-        }
+    .step {
+      min-height: 8px;
+      border-radius: 999px;
+      background: #e6e9f0;
+    }
 
-        .header {
-            background: black;
-            color: white;
-            padding: 15px;
-            text-align: center;
-            font-size: 18px;
-            font-weight: bold;
-        }
+    .step.active {
+      background: linear-gradient(45deg, var(--brand), var(--brand-2));
+    }
 
-        .container {
-            padding: 15px;
-        }
-
-        .card {
-            background: white;
-            border-radius: 12px;
-            padding: 20px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-        }
-
-        .status {
-            text-align: center;
-            margin-bottom: 15px;
-        }
-
-        .badge {
-            padding: 8px 16px;
-            border-radius: 20px;
-            color: white;
-            font-weight: bold;
-            display: inline-block;
-        }
-
-        .pending {
-            background: #ff9800;
-        }
-
-        .preparing {
-            background: #ff5722;
-        }
-
-        .ready {
-            background: #4caf50;
-        }
-
-        .completed {
-            background: #2e7d32;
-        }
-
-        .pickup {
-            text-align: center;
-            margin: 15px 0;
-        }
-
-        .pickup-code {
-            font-size: 32px;
-            font-weight: bold;
-        }
-
-        .section {
-            margin-top: 15px;
-        }
-
-        .item {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 10px;
-            font-size: 15px;
-        }
-
-        .divider {
-            height: 1px;
-            background: #eee;
-            margin: 15px 0;
-        }
-
-        .total {
-            display: flex;
-            justify-content: space-between;
-            font-weight: bold;
-            font-size: 16px;
-        }
-
-        .footer {
-            text-align: center;
-            font-size: 12px;
-            color: #888;
-            margin-top: 10px;
-        }
-    </style>
+    .pickup-code {
+      font-size: clamp(44px, 12vw, 72px);
+      line-height: 1;
+      font-weight: 800;
+      letter-spacing: 0;
+    }
+  </style>
 </head>
 
 <body>
+  <main class="page" style="max-width:720px;">
+    <section class="hero-panel stack" style="text-align:center;">
+      <div class="brand" style="justify-content:center;">
+        <img src="/logo.png" alt="Avenzo">
+        <span>AVENZO</span>
+      </div>
+      <div>
+        <div class="eyebrow">Order tracking</div>
+        <h1 id="restaurantName">Loading...</h1>
+        <p class="muted" id="orderNumber">Checking your order status.</p>
+      </div>
+    </section>
 
-    <div class="header" id="restaurantName">Loading...</div>
+    <section class="card card-pad stack" style="margin-top:16px;">
+      <div class="row-between">
+        <span class="pill pill-dark" id="statusBadge">Loading</span>
+        <span class="muted" id="placedAt"></span>
+      </div>
 
-    <div class="container">
-        <div class="card">
+      <div class="status-steps" id="steps">
+        <div class="step"></div>
+        <div class="step"></div>
+        <div class="step"></div>
+        <div class="step"></div>
+      </div>
 
-            <div class="status">
-                <div id="statusBadge" class="badge">Loading...</div>
+      <div style="text-align:center; padding:20px 0;">
+        <div class="muted">Pickup code</div>
+        <div class="pickup-code" id="pickup">----</div>
+        <p class="muted" id="readyText">Updating every few seconds.</p>
+      </div>
+
+      <div class="stack" id="items"></div>
+
+      <div class="row-between" style="border-top:1px solid var(--line); padding-top:14px;">
+        <strong>Total</strong>
+        <strong id="total">₹0</strong>
+      </div>
+    </section>
+  </main>
+
+  <script src="/assets/app.js"></script>
+  <script>
+    const orderId = window.location.pathname.split("/track/")[1];
+    const statuses = ["PENDING", "PREPARING", "READY", "COMPLETED"];
+
+    function badgeClass(status) {
+      if (status === "READY" || status === "COMPLETED") return "pill-success";
+      if (status === "CANCELLED") return "pill-danger";
+      return "pill-warning";
+    }
+
+    async function loadStatus() {
+      try {
+        const data = await request(`/order/${orderId}`, { headers: {} });
+
+        const restaurant = await request(`/restaurant/${data.restaurantId}`, { headers: {} });
+        document.getElementById("restaurantName").textContent = restaurant.name;
+        document.getElementById("orderNumber").textContent = data.orderNumber ? `Order #${data.orderNumber}` : "Order received";
+        document.getElementById("pickup").textContent = data.pickupCode;
+        document.getElementById("placedAt").textContent = formatDate(data.createdAt);
+
+        const badge = document.getElementById("statusBadge");
+        badge.className = `pill ${badgeClass(data.status)}`;
+        badge.textContent = data.status;
+
+        const activeIndex = Math.max(0, statuses.indexOf(data.status));
+        document.querySelectorAll(".step").forEach((step, index) => {
+          step.classList.toggle("active", index <= activeIndex && data.status !== "CANCELLED");
+        });
+
+        document.getElementById("readyText").textContent = data.status === "READY"
+          ? "Your order is ready to collect."
+          : data.status === "COMPLETED"
+            ? "Order completed. Thank you."
+            : data.status === "CANCELLED"
+              ? "This order was cancelled."
+              : "We will update this screen as the restaurant prepares your order.";
+
+        let total = 0;
+        document.getElementById("items").innerHTML = (data.items || []).map(item => {
+          const line = item.priceAtOrder * item.quantity;
+          total += line;
+          return `
+            <div class="row-between">
+              <span>${escapeHtml(item.nameAtOrder)} x ${item.quantity}</span>
+              <strong>${money(line)}</strong>
             </div>
+          `;
+        }).join("");
+        document.getElementById("total").textContent = money(total);
+      } catch (err) {
+        document.getElementById("restaurantName").textContent = "Order not found";
+        document.getElementById("readyText").textContent = err.message || "Unable to load order.";
+      }
+    }
 
-            <div class="pickup">
-                <div id="orderNumber"></div>
-                Pickup Code
-                <div class="pickup-code" id="pickup">----</div>
-            </div>
-
-            <div class="section">
-                <h4>Items</h4>
-                <div id="items"></div>
-            </div>
-
-            <div class="divider"></div>
-
-            <div class="total">
-                <span>Total</span>
-                <span id="total">₹0</span>
-            </div>
-
-            <div class="footer" id="footerText">Updating...</div>
-
-        </div>
-    </div>
-
-    <script>
-        const API = "https://avenzo.app";
-        const orderId = window.location.pathname.split("/track/")[1];
-
-        function getStatusClass(status) {
-            switch (status) {
-                case "PENDING": return "pending";
-                case "PREPARING": return "preparing";
-                case "READY": return "ready";
-                case "COMPLETED": return "completed";
-                default: return "pending";
-            }
-        }
-
-        async function loadStatus() {
-            try {
-                const res = await fetch(`${API}/order/${orderId}`);
-                const data = await res.json();
-
-                if (!res.ok) {
-                    document.getElementById("footerText").innerText = "Order not found";
-                    return;
-                }
-
-                // 🔥 STATUS
-                const badge = document.getElementById("statusBadge");
-                badge.innerText = data.status;
-                badge.className = "badge " + getStatusClass(data.status);
-
-                // 🏪 RESTAURANT NAME
-                if (data.restaurantId) {
-                    fetch(`${API}/restaurant/${data.restaurantId}`)
-                        .then(r => r.json())
-                        .then(r => {
-                            document.getElementById("restaurantName").innerText = r.name;
-                        });
-                }
-
-                // 🔢 PICKUP CODE
-                document.getElementById("orderNumber").innerText = data.orderNumber ? `Order #${data.orderNumber}` : "";
-                document.getElementById("pickup").innerText = data.pickupCode;
-
-                // 🧾 ITEMS
-                const itemsDiv = document.getElementById("items");
-                itemsDiv.innerHTML = "";
-
-                let total = 0;
-                if (!data.items || data.items.length === 0) {
-                    itemsDiv.innerHTML = "<p>No items found</p>";
-                    document.getElementById("total").innerText = "₹0";
-                    return;
-                }
-                data.items.forEach(i => {
-                    const price = i.priceAtOrder * i.quantity;
-                    total += price;
-
-                    const div = document.createElement("div");
-                    div.className = "item";
-                    div.innerHTML = `
-    <span>${i.nameAtOrder} x ${i.quantity}</span>
-    <span>₹${price}</span>
-  `;
-
-                    itemsDiv.appendChild(div);
-                });
-
-                document.getElementById("total").innerText = "₹" + total;
-
-                // ⏱ Footer behavior
-                if (data.status === "READY" || data.status === "COMPLETED") {
-                    document.getElementById("footerText").innerText = "Please collect your order";
-                } else {
-                    document.getElementById("footerText").innerText = "Updating...";
-                }
-
-            } catch (err) {
-                document.getElementById("footerText").innerText = "Error loading data";
-            }
-        }
-
-        // initial load
-        loadStatus();
-
-        // 🔁 auto refresh only if not completed
-        setInterval(loadStatus, 3000);
-    </script>
-
+    loadStatus();
+    setInterval(loadStatus, 3000);
+  </script>
 </body>
 
 </html>

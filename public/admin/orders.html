@@ -2,270 +2,203 @@
 <html>
 
 <head>
-    <title>Orders</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Avenzo Orders</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/app.css">
+  <style>
+    .order-card {
+      display: grid;
+      gap: 14px;
+    }
 
-    <style>
-        body {
-            font-family: 'Inter', Arial, sans-serif;
-            margin: 0;
-            background: #f5f7fb;
-            color: #111827;
-        }
+    .items {
+      display: grid;
+      gap: 8px;
+      padding: 12px 0;
+      border-top: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+    }
 
-        header {
-            background: white;
-            padding: 18px 20px;
-            border-bottom: 1px solid #eee;
-        }
+    .status-select {
+      width: 190px;
+    }
 
-        .container {
-            padding: 20px;
-            max-width: 920px;
-            margin: 0 auto;
-        }
-
-        .card {
-            background: white;
-            border-radius: 8px;
-            padding: 18px;
-            margin-bottom: 14px;
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.05);
-        }
-
-        .order-top {
-            display: flex;
-            justify-content: space-between;
-            gap: 14px;
-            align-items: flex-start;
-            margin-bottom: 14px;
-        }
-
-        button {
-            border: none;
-            padding: 8px 12px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 14px;
-            transition: 0.2s;
-        }
-
-        button:hover {
-            opacity: 0.85;
-        }
-
-        select {
-            padding: 8px;
-            border-radius: 6px;
-            border: 1px solid #ddd;
-            background: white;
-        }
-
-        .status {
-            display: inline-block;
-            border-radius: 999px;
-            color: white;
-            font-size: 12px;
-            font-weight: bold;
-            padding: 5px 9px;
-        }
-
-        .muted {
-            color: #667085;
-            font-size: 13px;
-        }
-
-        .items {
-            border-top: 1px solid #eef0f4;
-            border-bottom: 1px solid #eef0f4;
-            padding: 12px 0;
-            margin: 12px 0;
-        }
-
-        .item-row {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 6px;
-        }
-
-        .footer-actions {
-            padding: 0 20px 24px;
-            max-width: 920px;
-            margin: 0 auto;
-        }
-
-        .back-btn {
-            background: #111827;
-            color: white;
-        }
-    </style>
+    @media (max-width: 760px) {
+      .status-select {
+        width: 100%;
+      }
+    }
+  </style>
 </head>
 
 <body>
-
-    <header>
-        <div class="muted">Orders</div>
-        <h2 id="restaurantName">Loading...</h2>
+  <div class="shell">
+    <header class="topbar">
+      <div class="topbar-inner">
+        <div class="brand">
+          <img src="/logo.png" alt="Avenzo">
+          <span>AVENZO</span>
+        </div>
+        <div class="row">
+          <button class="btn btn-ghost" onclick="goBack()">Back</button>
+          <button class="btn btn-ghost" onclick="logout()">Logout</button>
+        </div>
+      </div>
     </header>
 
-    <div class="container" id="list">Loading orders...</div>
-    <div class="footer-actions">
-        <button class="back-btn" onclick="goBack()">Back</button>
-    </div>
-
-    <script>
-        let userIsEditingUntil = 0;
-
-        const API = "https://avenzo.app";
-        const token = localStorage.getItem("token");
-        const restaurantId = new URLSearchParams(location.search).get("restaurantId");
-
-        /* ================================
-           STATUS COLOR
-        ================================ */
-        function getColor(status) {
-            return {
-                PENDING: "#ff9800",
-                PREPARING: "#ff5722",
-                READY: "#4caf50",
-                COMPLETED: "#2e7d32",
-                CANCELLED: "#667085"
-            }[status] || "#000";
-        }
-
-        function formatDate(value) {
-            if (!value) return "Not yet";
-            return new Date(value).toLocaleString("en-IN", {
-                dateStyle: "medium",
-                timeStyle: "short"
-            });
-        }
-
-        function holdRefresh() {
-            userIsEditingUntil = Date.now() + 8000;
-        }
-
-        /* ================================
-           LOAD ORDERS
-        ================================ */
-        async function loadOrders() {
-            if (Date.now() < userIsEditingUntil) return;
-
-            try {
-                const res = await fetch(`${API}/admin/orders/${restaurantId}`, {
-                    headers: { Authorization: "Bearer " + token }
-                });
-
-                const container = document.getElementById("list");
-                const data = await res.json();
-
-                if (!res.ok) {
-                    document.getElementById("restaurantName").innerText = "No access";
-                    container.innerHTML = data.error || "You do not have access to this restaurant.";
-                    return;
-                }
-
-                const orders = Array.isArray(data) ? data : data.orders || [];
-                document.getElementById("restaurantName").innerText = data.restaurant?.name || "Restaurant Orders";
-
-                if (orders.length === 0) {
-                    container.innerHTML = "No orders yet";
-                    return;
-                }
-
-                container.innerHTML = "";
-
-                orders.forEach(o => {
-                    const div = document.createElement("div");
-                    div.className = "card";
-
-                    let items = "";
-                    o.items.forEach(i => {
-                        items += `
-                            <div class="item-row">
-                                <span>${i.nameAtOrder} x ${i.quantity}</span>
-                                <span>₹${i.priceAtOrder * i.quantity}</span>
-                            </div>
-                        `;
-                    });
-
-                    div.innerHTML = `
-        <div class="order-top">
-            <div>
-                <b>Order #${o.orderNumber || o.pickupCode}</b>
-                <div class="muted">Pickup code: ${o.pickupCode}</div>
-            </div>
-            <span class="status" style="background:${getColor(o.status)}">${o.status}</span>
+    <main class="page">
+      <section class="page-head">
+        <div>
+          <div class="eyebrow">Live orders</div>
+          <h1 id="restaurantName">Loading...</h1>
+          <p class="muted">Auto-refresh pauses while you are changing a status.</p>
         </div>
+        <div class="row">
+          <span class="pill pill-dark" id="orderCount">0 orders</span>
+          <button class="btn btn-soft" onclick="loadOrders(true)">Refresh</button>
+        </div>
+      </section>
 
-        <div class="muted">Placed: ${formatDate(o.createdAt)}</div>
-        <div class="muted">Ready to collect: ${formatDate(o.readyAt)}</div>
+      <section class="grid grid-3" id="statusStats"></section>
+      <section class="stack" id="list" style="margin-top:16px;">Loading orders...</section>
+      <div class="bottom-actions" style="padding-top:8px;">
+        <button class="btn btn-dark" onclick="goBack()">Back to dashboard</button>
+      </div>
+    </main>
+  </div>
 
-        <div class="items">${items}</div>
-        <div><b>Total:</b> ₹${o.totalPrice}</div><br>
+  <script src="/assets/app.js"></script>
+  <script>
+    requireAuth();
 
-        <select 
-  onfocus="holdRefresh()"
-  onclick="holdRefresh()"
-  onchange="updateStatus('${o.id}', this.value)">
-  
-  <option ${o.status === "PENDING" ? "selected" : ""}>PENDING</option>
-  <option ${o.status === "PREPARING" ? "selected" : ""}>PREPARING</option>
-  <option ${o.status === "READY" ? "selected" : ""}>READY</option>
-  <option ${o.status === "COMPLETED" ? "selected" : ""}>COMPLETED</option>
-  <option ${o.status === "CANCELLED" ? "selected" : ""}>CANCELLED</option>
-</select>
-      `;
+    const restaurantId = new URLSearchParams(location.search).get("restaurantId");
+    let userIsEditingUntil = 0;
 
-                    container.appendChild(div);
-                });
+    const statusMeta = {
+      PENDING: ["pill-warning", "Pending"],
+      PREPARING: ["pill-warning", "Preparing"],
+      READY: ["pill-success", "Ready"],
+      COMPLETED: ["pill-success", "Completed"],
+      CANCELLED: ["pill-danger", "Cancelled"]
+    };
 
-            } catch {
-                document.getElementById("list").innerHTML = "Error loading orders";
-            }
-        }
+    function holdRefresh() {
+      userIsEditingUntil = Date.now() + 10000;
+    }
 
-        /* ================================
-           UPDATE STATUS
-        ================================ */
-        async function updateStatus(id, status) {
-            holdRefresh();
+    async function loadOrders(force = false) {
+      if (!force && Date.now() < userIsEditingUntil) return;
 
-            const res = await fetch(`${API}/order/${id}/status`, {
-                method: "PATCH",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: "Bearer " + token
-                },
-                body: JSON.stringify({ status })
-            });
+      try {
+        const data = await request(`/admin/orders/${restaurantId}`);
+        const orders = data.orders || [];
 
-            if (!res.ok) {
-                const data = await res.json();
-                alert(data.error || "Could not update status");
-            }
+        document.getElementById("restaurantName").textContent = data.restaurant?.name || "Restaurant Orders";
+        document.getElementById("orderCount").textContent = `${orders.length} order${orders.length === 1 ? "" : "s"}`;
+        renderStats(orders);
+        renderOrders(orders);
+      } catch (err) {
+        document.getElementById("restaurantName").textContent = "No access";
+        document.getElementById("list").innerHTML = `<div class="empty">${escapeHtml(err.message || "You do not have access to this restaurant.")}</div>`;
+      }
+    }
 
-            userIsEditingUntil = 0;
-            loadOrders();
-        }
+    function renderStats(orders) {
+      const counts = orders.reduce((acc, order) => {
+        acc[order.status] = (acc[order.status] || 0) + 1;
+        return acc;
+      }, {});
 
-        /* ================================
-           NAV
-        ================================ */
-        function goBack() {
-            history.back();
-        }
+      document.getElementById("statusStats").innerHTML = ["PENDING", "PREPARING", "READY"].map(status => `
+        <div class="card card-pad">
+          <div class="muted">${statusMeta[status][1]}</div>
+          <h3>${counts[status] || 0}</h3>
+          <span class="pill ${statusMeta[status][0]}">${status}</span>
+        </div>
+      `).join("");
+    }
 
-        /* ================================
-           AUTO REFRESH
-        ================================ */
-        setInterval(() => {
-            loadOrders();
-        }, 3000);
+    function renderOrders(orders) {
+      const container = document.getElementById("list");
+      if (!orders.length) {
+        container.innerHTML = `<div class="empty">No orders yet.</div>`;
+        return;
+      }
 
-        loadOrders();
-    </script>
+      container.innerHTML = orders.map(order => {
+        const items = (order.items || []).map(item => `
+          <div class="row-between">
+            <span>${escapeHtml(item.nameAtOrder)} x ${item.quantity}</span>
+            <strong>${money(item.priceAtOrder * item.quantity)}</strong>
+          </div>
+        `).join("");
+        const meta = statusMeta[order.status] || ["pill", order.status];
 
+        return `
+          <article class="card card-pad order-card">
+            <div class="row-between">
+              <div>
+                <div class="eyebrow">Order #${order.orderNumber || order.pickupCode}</div>
+                <h3 style="margin-bottom:4px;">Pickup ${escapeHtml(order.pickupCode)}</h3>
+                <div class="muted">Placed ${formatDate(order.createdAt)}</div>
+              </div>
+              <span class="pill ${meta[0]}">${escapeHtml(order.status)}</span>
+            </div>
+
+            <div class="grid grid-3">
+              <div>
+                <div class="muted">Ready to collect</div>
+                <strong>${formatDate(order.readyAt)}</strong>
+              </div>
+              <div>
+                <div class="muted">Total</div>
+                <strong>${money(order.totalPrice)}</strong>
+              </div>
+              <div>
+                <div class="muted">Session</div>
+                <strong>${escapeHtml(order.sessionId || "Walk-in")}</strong>
+              </div>
+            </div>
+
+            <div class="items">${items}</div>
+
+            <div class="row-between">
+              <select class="select status-select" onfocus="holdRefresh()" onclick="holdRefresh()" onchange="updateStatus('${order.id}', this.value)">
+                ${["PENDING", "PREPARING", "READY", "COMPLETED", "CANCELLED"].map(status => `
+                  <option value="${status}" ${order.status === status ? "selected" : ""}>${statusMeta[status][1]}</option>
+                `).join("")}
+              </select>
+              <button class="btn btn-soft" onclick="loadOrders(true)">Sync now</button>
+            </div>
+          </article>
+        `;
+      }).join("");
+    }
+
+    async function updateStatus(id, status) {
+      holdRefresh();
+      try {
+        await request(`/order/${id}/status`, {
+          method: "PATCH",
+          body: JSON.stringify({ status })
+        });
+        toast("Status updated");
+      } catch (err) {
+        toast(err.message);
+      } finally {
+        userIsEditingUntil = 0;
+        loadOrders(true);
+      }
+    }
+
+    function goBack() {
+      window.location.href = "/admin/dashboard.html";
+    }
+
+    setInterval(() => loadOrders(false), 3000);
+    loadOrders(true);
+  </script>
 </body>
 
 </html>
