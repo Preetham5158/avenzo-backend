@@ -1,102 +1,178 @@
 <!DOCTYPE html>
 <html>
+
 <head>
-  <title>Orders</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Orders</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <style>
-    body { font-family: Arial; margin:0; background:#f6f7fb; }
-    header { background:black; color:white; padding:15px; display:flex; justify-content:space-between; }
-    .container { padding:15px; }
+    <style>
+        body {
+            font-family: 'Inter', Arial, sans-serif;
+            margin: 0;
+            background: #f5f7fb;
+        }
 
-    .card {
-      background:white;
-      padding:15px;
-      border-radius:10px;
-      margin-bottom:10px;
-      box-shadow:0 4px 10px rgba(0,0,0,0.05);
-    }
+        header {
+            background: white;
+            padding: 16px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
 
-    select {
-      padding:5px;
-      margin-top:5px;
-    }
-  </style>
+        .container {
+            padding: 20px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 14px;
+            padding: 18px;
+            margin-bottom: 14px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.05);
+            transition: 0.2s;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+        }
+
+        button {
+            border: none;
+            padding: 8px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: 0.2s;
+        }
+
+        button:hover {
+            opacity: 0.85;
+        }
+
+        .primary {
+            background: linear-gradient(45deg, #ff7a00, #ffb300);
+            color: white;
+        }
+
+        .danger {
+            background: #ff4d4f;
+            color: white;
+        }
+
+        select {
+            padding: 6px;
+            border-radius: 6px;
+            border: 1px solid #ddd;
+        }
+    </style>
 </head>
 
 <body>
 
-<header>
-  <div>📦 Orders</div>
-  <button onclick="goBack()">Back</button>
-</header>
+    <header>
+        <div>📦 Orders</div>
+        <button onclick="goBack()">Back</button>
+    </header>
 
-<div class="container" id="list"></div>
+    <div class="container" id="list"></div>
 
-<script>
-const API = "https://avenzo.app";
-const token = localStorage.getItem("token");
-const restaurantId = new URLSearchParams(location.search).get("restaurantId");
+    <script>
 
-async function loadOrders() {
-  const res = await fetch(`${API}/admin/orders/${restaurantId}`, {
-    headers:{ Authorization:"Bearer "+token }
-  });
+        let isInteracting = false;
 
-  const data = await res.json();
-  const container = document.getElementById("list");
-  container.innerHTML = "";
+        const API = "https://avenzo.app";
+        const token = localStorage.getItem("token");
+        const restaurantId = new URLSearchParams(location.search).get("restaurantId");
 
-  data.forEach(o => {
-    const div = document.createElement("div");
-    div.className = "card";
+        document.getElementById("list").innerHTML = "Loading orders...";
 
-    let items = "";
-    o.items.forEach(i => {
-      items += `<div>${i.nameAtOrder} x ${i.quantity}</div>`;
-    });
+        if (data.length === 0) {
+            container.innerHTML = "No orders yet";
+            return;
+        }
 
-    div.innerHTML = `
-      <b>Order</b><br>
-      Code: ${o.pickupCode}<br>
-      Status: ${o.status}<br><br>
+        async function loadOrders() {
+            const res = await fetch(`${API}/admin/orders/${restaurantId}`, {
+                headers: { Authorization: "Bearer " + token }
+            });
 
-      ${items}
+            const data = await res.json();
+            const container = document.getElementById("list");
+            container.innerHTML = "";
 
-      <br><br>
+            data.forEach(o => {
+                const div = document.createElement("div");
+                div.className = "card";
 
-      <select onchange="updateStatus('${o.id}', this.value)">
-        <option ${o.status==="PENDING"?"selected":""}>PENDING</option>
-        <option ${o.status==="PREPARING"?"selected":""}>PREPARING</option>
-        <option ${o.status==="READY"?"selected":""}>READY</option>
-        <option ${o.status==="COMPLETED"?"selected":""}>COMPLETED</option>
-      </select>
-    `;
+                let items = "";
+                o.items.forEach(i => {
+                    items += `<div>${i.nameAtOrder} x ${i.quantity}</div>`;
+                });
 
-    container.appendChild(div);
-  });
-}
+                div.innerHTML = `
+  <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+    <b>#${o.pickupCode}</b>
+    <span>${o.status}</span>
+  </div>
 
-async function updateStatus(id, status) {
-  await fetch(`${API}/order/${id}/status`, {
-    method:"PATCH",
-    headers:{
-      "Content-Type":"application/json",
-      Authorization:"Bearer "+token
-    },
-    body: JSON.stringify({ status })
-  });
+  ${items}
 
-  loadOrders();
-}
+  <div style="margin-top:10px;">
+    <select 
+      onfocus="isInteracting = true" 
+      onblur="isInteracting = false"
+      onchange="updateStatus('${o.id}', this.value)">
+      
+      <option ${o.status === "PENDING" ? "selected" : ""}>PENDING</option>
+      <option ${o.status === "PREPARING" ? "selected" : ""}>PREPARING</option>
+      <option ${o.status === "READY" ? "selected" : ""}>READY</option>
+      <option ${o.status === "COMPLETED" ? "selected" : ""}>COMPLETED</option>
+    </select>
+  </div>
+`;
 
-function goBack() {
-  history.back();
-}
+                function getColor(status) {
+                    return {
+                        PENDING: "#ff9800",
+                        PREPARING: "#ff5722",
+                        READY: "#4caf50",
+                        COMPLETED: "#2e7d32"
+                    }[status];
+                }
 
-setInterval(loadOrders, 3000);
-loadOrders();
-</script>
+                <span style="color:${getColor(o.status)}">${o.status}</span>
+
+                container.appendChild(div);
+            });
+        }
+
+        async function updateStatus(id, status) {
+            await fetch(`${API}/order/${id}/status`, {
+                method: "PATCH",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: "Bearer " + token
+                },
+                body: JSON.stringify({ status })
+            });
+
+            loadOrders();
+        }
+
+        function goBack() {
+            history.back();
+        }
+
+        setInterval(() => {
+            if (!isInteracting) {
+                loadOrders();
+            }
+        }, 3000);
+        loadOrders();
+    </script>
 
 </body>
+
 </html>

@@ -1,66 +1,103 @@
 <!DOCTYPE html>
 <html>
+
 <head>
-  <title>Menu Admin</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Menu Admin</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <style>
-    body { font-family: Arial; margin:0; background:#f6f7fb; }
-    header { background:black; color:white; padding:15px; display:flex; justify-content:space-between; }
-    .container { padding:15px; }
+    <style>
+        body {
+            font-family: 'Inter', Arial, sans-serif;
+            margin: 0;
+            background: #f5f7fb;
+        }
 
-    .card {
-      background:white;
-      padding:15px;
-      border-radius:10px;
-      margin-bottom:10px;
-      box-shadow:0 4px 10px rgba(0,0,0,0.05);
-    }
+        header {
+            background: white;
+            padding: 16px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
 
-    button {
-      padding:6px 10px;
-      margin-right:5px;
-      border:none;
-      background:black;
-      color:white;
-      border-radius:5px;
-      cursor:pointer;
-    }
+        .container {
+            padding: 20px;
+        }
 
-    .add { background:#ff9800; }
-    .off { background:#ccc; color:black; }
-  </style>
+        .card {
+            background: white;
+            border-radius: 14px;
+            padding: 18px;
+            margin-bottom: 14px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.05);
+            transition: 0.2s;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+        }
+
+        button {
+            border: none;
+            padding: 8px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: 0.2s;
+        }
+
+        button:hover {
+            opacity: 0.85;
+        }
+
+        .primary {
+            background: linear-gradient(45deg, #ff7a00, #ffb300);
+            color: white;
+        }
+
+        .danger {
+            background: #ff4d4f;
+            color: white;
+        }
+
+        select {
+            padding: 6px;
+            border-radius: 6px;
+            border: 1px solid #ddd;
+        }
+    </style>
 </head>
 
 <body>
 
-<header>
-  <div>🍽 Menu</div>
-  <button onclick="goBack()">Back</button>
-</header>
+    <header>
+        <div>🍽 Menu</div>
+        <button onclick="goBack()">Back</button>
+    </header>
 
-<div class="container">
-  <button class="add" onclick="addItem()">+ Add Item</button>
-  <div id="menu"></div>
-</div>
+    <div class="container">
+        <button class="add" onclick="addItem()">+ Add Item</button>
+        <div id="menu"></div>
+    </div>
 
-<script>
-const API = "https://avenzo.app";
-const token = localStorage.getItem("token");
-const restaurantId = new URLSearchParams(location.search).get("restaurantId");
+    <script>
+        const API = "https://avenzo.app";
+        const token = localStorage.getItem("token");
+        const restaurantId = new URLSearchParams(location.search).get("restaurantId");
 
-async function loadMenu() {
-  const res = await fetch(`${API}/menu/${restaurantId}`);
-  const data = await res.json();
+        async function loadMenu() {
+            const res = await fetch(`${API}/menu/${restaurantId}`);
+            const data = await res.json();
 
-  const container = document.getElementById("menu");
-  container.innerHTML = "";
+            const container = document.getElementById("menu");
+            container.innerHTML = "";
 
-  data.forEach(i => {
-    const div = document.createElement("div");
-    div.className = "card";
+            data.forEach(i => {
+                const div = document.createElement("div");
+                div.className = "card";
 
-    div.innerHTML = `
+                div.innerHTML = `
       <b>${i.name}</b> - ₹${i.price} <br>
       ${i.category}<br><br>
 
@@ -71,57 +108,58 @@ async function loadMenu() {
       <button onclick="deleteItem('${i.id}')">Delete</button>
     `;
 
-    container.appendChild(div);
-  });
-}
+                container.appendChild(div);
+            });
+        }
 
-async function addItem() {
-  const name = prompt("Item name");
-  const price = prompt("Price");
-  const category = prompt("Category");
+        async function addItem() {
+            const name = prompt("Item name");
+            const price = prompt("Price");
+            const category = prompt("Category");
 
-  if (!name || !price || !category) return;
+            if (!name || !price || !category) return;
 
-  await fetch(`${API}/menu`, {
-    method:"POST",
-    headers:{
-      "Content-Type":"application/json",
-      Authorization:"Bearer "+token
-    },
-    body: JSON.stringify({ name, price, category, restaurantId })
-  });
+            await fetch(`${API}/menu`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: "Bearer " + token
+                },
+                body: JSON.stringify({ name, price, category, restaurantId })
+            });
 
-  loadMenu();
-}
+            loadMenu();
+        }
 
-async function deleteItem(id) {
-  await fetch(`${API}/menu/${id}`, {
-    method:"DELETE",
-    headers:{ Authorization:"Bearer "+token }
-  });
+        async function deleteItem(id) {
+            await fetch(`${API}/menu/${id}`, {
+                method: "DELETE",
+                headers: { Authorization: "Bearer " + token }
+            });
 
-  loadMenu();
-}
+            loadMenu();
+        }
 
-async function toggle(id, current) {
-  await fetch(`${API}/menu/${id}`, {
-    method:"PUT",
-    headers:{
-      "Content-Type":"application/json",
-      Authorization:"Bearer "+token
-    },
-    body: JSON.stringify({ isAvailable: !current })
-  });
+        async function toggle(id, current) {
+            await fetch(`${API}/menu/${id}`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: "Bearer " + token
+                },
+                body: JSON.stringify({ isAvailable: !current })
+            });
 
-  loadMenu();
-}
+            loadMenu();
+        }
 
-function goBack() {
-  history.back();
-}
+        function goBack() {
+            history.back();
+        }
 
-loadMenu();
-</script>
+        loadMenu();
+    </script>
 
 </body>
+
 </html>

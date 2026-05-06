@@ -7,17 +7,18 @@
 
     <style>
         body {
-            font-family: Arial;
+            font-family: 'Inter', Arial, sans-serif;
             margin: 0;
-            background: #f6f7fb;
+            background: #f5f7fb;
         }
 
         header {
-            background: black;
-            color: white;
-            padding: 15px;
+            background: white;
+            padding: 16px;
+            border-bottom: 1px solid #eee;
             display: flex;
             justify-content: space-between;
+            align-items: center;
         }
 
         .container {
@@ -26,24 +27,44 @@
 
         .card {
             background: white;
-            padding: 15px;
-            border-radius: 10px;
-            margin-bottom: 15px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+            border-radius: 14px;
+            padding: 18px;
+            margin-bottom: 14px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.05);
+            transition: 0.2s;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
         }
 
         button {
-            padding: 6px 10px;
-            margin-right: 5px;
             border: none;
-            background: black;
-            color: white;
-            border-radius: 5px;
+            padding: 8px 12px;
+            border-radius: 8px;
             cursor: pointer;
+            font-size: 14px;
+            transition: 0.2s;
         }
 
-        .create-btn {
-            background: #ff9800;
+        button:hover {
+            opacity: 0.85;
+        }
+
+        .primary {
+            background: linear-gradient(45deg, #ff7a00, #ffb300);
+            color: white;
+        }
+
+        .danger {
+            background: #ff4d4f;
+            color: white;
+        }
+
+        select {
+            padding: 6px;
+            border-radius: 6px;
+            border: 1px solid #ddd;
         }
     </style>
 </head>
