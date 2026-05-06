@@ -105,7 +105,8 @@
         ${i.isAvailable ? "Disable" : "Enable"}
       </button>
 
-      <button onclick="deleteItem('${i.id}')">Delete</button>
+      <button onclick="editItem('${i.id}', '${i.name}', ${i.price}, '${i.category}')">Edit</button>
+<button onclick="deleteItem('${i.id}')">Delete</button>
     `;
 
                 container.appendChild(div);
@@ -126,6 +127,29 @@
                     Authorization: "Bearer " + token
                 },
                 body: JSON.stringify({ name, price, category, restaurantId })
+            });
+
+            loadMenu();
+        }
+
+        async function editItem(id, name, price, category) {
+            const newName = prompt("Edit name", name);
+            const newPrice = prompt("Edit price", price);
+            const newCategory = prompt("Edit category", category);
+
+            if (!newName || !newPrice || !newCategory) return;
+
+            await fetch(`${API}/menu/${id}`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: "Bearer " + token
+                },
+                body: JSON.stringify({
+                    name: newName,
+                    price: Number(newPrice),
+                    category: newCategory
+                })
             });
 
             loadMenu();
