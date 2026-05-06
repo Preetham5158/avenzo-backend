@@ -2,6 +2,7 @@ require("dotenv").config();
 
 const express = require("express");
 const path = require("path");
+const crypto = require("crypto");
 const { PrismaClient } = require("@prisma/client");
 
 const bcrypt = require("bcrypt");
@@ -10,10 +11,52 @@ const jwt = require("jsonwebtoken");
 const app = express();
 const prisma = new PrismaClient();
 
-app.use(express.json());
+if (!process.env.JWT_SECRET) {
+    throw new Error("JWT_SECRET is required");
+}
+
+app.disable("x-powered-by");
+app.use((req, res, next) => {
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    res.setHeader("X-Frame-Options", "DENY");
+    res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+    res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+    next();
+});
+app.use(express.json({ limit: "100kb" }));
 app.use(express.static("public"));
 
 const BASE_URL = process.env.BASE_URL || "http://localhost:5000";
+
+function rateLimit({ windowMs, max }) {
+    const hits = new Map();
+    return (req, res, next) => {
+        const key = `${req.ip}:${req.path}`;
+        const now = Date.now();
+        const entry = hits.get(key) || { count: 0, resetAt: now + windowMs };
+
+        if (entry.resetAt < now) {
+            entry.count = 0;
+            entry.resetAt = now + windowMs;
+        }
+
+        entry.count += 1;
+        hits.set(key, entry);
+
+        if (entry.count > max) {
+            return res.status(429).json({ error: "Please wait a moment and try again" });
+        }
+
+        next();
+    };
+}
+
+const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 30 });
+const orderLimiter = rateLimit({ windowMs: 60 * 1000, max: 20 });
+
+function normalizeSlug(value) {
+    return String(value || "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+}
 
 /* ================================
    HELPER: ADMIN AUTH
@@ -33,9 +76,29 @@ app.get("/", (req, res) => {
     res.sendFile(path.join(__dirname, "../public/index.html"));
 });
 
+app.get("/r/:slug", (req, res) => {
+    res.sendFile(path.join(__dirname, "../public/menu.html"));
+});
+
 /* ================================
    GET RESTAURANT
 ================================ */
+app.get("/restaurant/slug/:slug", async (req, res) => {
+    try {
+        const restaurant = await prisma.restaurant.findUnique({
+            where: { slug: req.params.slug },
+        });
+
+        if (!restaurant || !restaurant.isActive) {
+            return res.status(404).json({ error: "Restaurant not found" });
+        }
+
+        res.json(restaurant);
+    } catch {
+        res.status(500).json({ error: "Error fetching restaurant" });
+    }
+});
+
 app.get("/restaurant/:id", async (req, res) => {
     try {
         const restaurant = await prisma.restaurant.findUnique({
@@ -71,6 +134,29 @@ app.get("/menu/:restaurantId", async (req, res) => {
     res.json(menu);
 });
 
+app.get("/menu/by-slug/:slug", async (req, res) => {
+    const restaurant = await prisma.restaurant.findUnique({
+        where: { slug: req.params.slug },
+        select: { id: true, isActive: true }
+    });
+
+    if (!restaurant || !restaurant.isActive) {
+        return res.status(404).json({ error: "Restaurant not found" });
+    }
+
+    const menu = await prisma.menu.findMany({
+        where: { restaurantId: restaurant.id, isActive: true },
+        include: { category: true },
+        orderBy: [
+            { isAvailable: "desc" },
+            { category: { sortOrder: "asc" } },
+            { name: "asc" }
+        ]
+    });
+
+    res.json(menu);
+});
+
 /* ================================
    GET CATEGORIES
 ================================ */
@@ -96,11 +182,11 @@ app.get("/categories/:restaurantId", authMiddleware, async (req, res) => {
 /* ================================
    CREATE ORDER (OPTIMIZED)
 ================================ */
-app.post("/order", async (req, res) => {
+app.post("/order", orderLimiter, async (req, res) => {
     try {
         const { items, restaurantId, sessionId, phone } = req.body;
 
-        if (!items || items.length === 0) {
+        if (!Array.isArray(items) || items.length === 0 || items.length > 40) {
             return res.status(400).json({ error: "Items required" });
         }
 
@@ -108,11 +194,29 @@ app.post("/order", async (req, res) => {
             return res.status(400).json({ error: "Missing data" });
         }
 
-        const pickupCode = Math.floor(1000 + Math.random() * 9000).toString();
+        const normalizedItems = items.map(i => ({
+            menuId: String(i.menuId || ""),
+            quantity: Number(i.quantity)
+        }));
+
+        if (normalizedItems.some(i => !i.menuId || !Number.isInteger(i.quantity) || i.quantity < 1 || i.quantity > 20)) {
+            return res.status(400).json({ error: "Please check item quantities" });
+        }
+
+        const restaurant = await prisma.restaurant.findUnique({
+            where: { id: restaurantId },
+            select: { id: true, isActive: true }
+        });
+
+        if (!restaurant || !restaurant.isActive) {
+            return res.status(404).json({ error: "Restaurant not found" });
+        }
+
+        const pickupCode = crypto.randomInt(1000, 10000).toString();
 
         const menuItems = await prisma.menu.findMany({
             where: {
-                id: { in: items.map(i => i.menuId) },
+                id: { in: normalizedItems.map(i => i.menuId) },
                 restaurantId,
                 isActive: true
             }
@@ -120,7 +224,7 @@ app.post("/order", async (req, res) => {
 
         let totalPrice = 0;
 
-        items.forEach(i => {
+        normalizedItems.forEach(i => {
             const menu = menuItems.find(m => m.id === i.menuId);
 
             if (!menu) {
@@ -150,7 +254,7 @@ app.post("/order", async (req, res) => {
                     phone: phone || null,
                     restaurantId,
                     items: {
-                        create: items.map(i => {
+                        create: normalizedItems.map(i => {
                             const menu = menuItems.find(m => m.id === i.menuId);
 
                             return {
@@ -199,11 +303,15 @@ app.get("/track/:id", (req, res) => {
     res.sendFile(path.join(__dirname, "../public/track.html"));
 });
 
-app.post("/auth/signup", async (req, res) => {
+app.post("/auth/signup", authLimiter, async (req, res) => {
     try {
         const { email, password, name } = req.body;
 
-        const existing = await prisma.user.findUnique({ where: { email } });
+        if (!email || !password || password.length < 8) {
+            return res.status(400).json({ error: "Use a valid email and at least 8 characters for password" });
+        }
+
+        const existing = await prisma.user.findUnique({ where: { email: String(email).toLowerCase().trim() } });
         if (existing) {
             return res.status(400).json({ error: "User already exists" });
         }
@@ -211,7 +319,7 @@ app.post("/auth/signup", async (req, res) => {
         const hashed = await bcrypt.hash(password, 10);
 
         const user = await prisma.user.create({
-            data: { email, password: hashed, name }
+            data: { email: String(email).toLowerCase().trim(), password: hashed, name }
         });
 
         res.json({ message: "User created", userId: user.id });
@@ -221,14 +329,14 @@ app.post("/auth/signup", async (req, res) => {
     }
 });
 
-app.post("/auth/login", async (req, res) => {
+app.post("/auth/login", authLimiter, async (req, res) => {
     try {
         const { email, password } = req.body;
         if (!email || !password) {
             return res.status(400).json({ error: "Email & password required" });
         }
 
-        const user = await prisma.user.findUnique({ where: { email } });
+        const user = await prisma.user.findUnique({ where: { email: String(email).toLowerCase().trim() } });
         if (!user) {
             return res.status(400).json({ error: "Invalid credentials" });
         }
@@ -244,7 +352,15 @@ app.post("/auth/login", async (req, res) => {
             { expiresIn: "7d" }
         );
 
-        res.json({ token });
+        res.json({
+            token,
+            user: {
+                id: user.id,
+                email: user.email,
+                name: user.name,
+                role: user.role
+            }
+        });
 
     } catch {
         res.status(500).json({ error: "Login failed" });
@@ -332,7 +448,7 @@ app.post("/restaurant", authMiddleware, async (req, res) => {
         return res.status(403).json({ error: "Only super admins can create restaurants" });
     }
 
-    const slug = name.toLowerCase().replace(/\s+/g, "-");
+    const slug = normalizeSlug(name);
 
     const restaurant = await prisma.restaurant.create({
         data: {

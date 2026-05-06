@@ -7,8 +7,53 @@ function slugify(value) {
   return value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 }
 
-function imageFor(name) {
-  return `https://source.unsplash.com/900x700/?${encodeURIComponent(`${name} south indian food`)}`;
+function hashLock(value) {
+  return String(value).split("").reduce((sum, char) => sum + char.charCodeAt(0), 100);
+}
+
+const foodImages = {
+  dosa: "https://images.unsplash.com/photo-1630383249896-424e482df921?auto=format&fit=crop&w=900&q=80",
+  thali: "https://images.unsplash.com/photo-1631452180519-c014fe946bc7?auto=format&fit=crop&w=900&q=80",
+  rice: "https://images.unsplash.com/photo-1589302168068-964664d93dc0?auto=format&fit=crop&w=900&q=80",
+  snack: "https://images.unsplash.com/photo-1601050690597-df0568f70950?auto=format&fit=crop&w=900&q=80",
+  coffee: "https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=900&q=80",
+  breakfast: "https://images.unsplash.com/photo-1567188040759-fb8a883dc6d8?auto=format&fit=crop&w=900&q=80",
+  dessert: "https://images.unsplash.com/photo-1596797038530-2c107229654b?auto=format&fit=crop&w=900&q=80",
+  drink: "https://images.unsplash.com/photo-1627662168223-7df99068099a?auto=format&fit=crop&w=900&q=80"
+};
+
+function imageFor(name, category = "south indian food") {
+  const lookup = [
+    ["coffee", "coffee"],
+    ["tea", "drink"],
+    ["buttermilk", "drink"],
+    ["soda", "drink"],
+    ["juice", "drink"],
+    ["dosa", "dosa"],
+    ["dose", "dosa"],
+    ["idli", "breakfast"],
+    ["vada", "snack"],
+    ["vade", "snack"],
+    ["pongal", "breakfast"],
+    ["bath", "breakfast"],
+    ["rice", "rice"],
+    ["meals", "thali"],
+    ["chapati", "thali"],
+    ["paneer", "thali"],
+    ["gobi", "snack"],
+    ["noodles", "rice"],
+    ["samosa", "snack"],
+    ["bajji", "snack"],
+    ["bonda", "snack"],
+    ["jamun", "dessert"],
+    ["halwa", "dessert"],
+    ["payasa", "dessert"]
+  ];
+  const lower = `${name} ${category}`.toLowerCase();
+  const match = lookup.find(([key]) => lower.includes(key));
+  const key = match ? match[1] : "breakfast";
+  const separator = foodImages[key].includes("?") ? "&" : "?";
+  return `${foodImages[key]}${separator}sig=${hashLock(name)}`;
 }
 
 const hotels = [
@@ -201,7 +246,7 @@ async function main() {
         name,
         price,
         description,
-        imageUrl: imageFor(name),
+        imageUrl: imageFor(name, category),
         restaurantId: restaurant.id,
         categoryId: categoryRecords[category].id,
         isAvailable: true,

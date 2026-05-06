@@ -73,7 +73,11 @@
       <section class="stack" id="menu" style="margin-top:12px;">Loading menu...</section>
     </main>
   </div>
-  <button class="btn btn-dark floating-back" onclick="goBack()">Dashboard</button>
+  <nav class="admin-dock">
+    <a href="/admin/dashboard.html">Home</a>
+    <a class="active" href="#">Menu</a>
+    <a href="#" onclick="goOrders(event)">Orders</a>
+  </nav>
 
   <div class="modal-backdrop" id="itemModal">
     <form class="modal" onsubmit="saveItem(event)">
@@ -322,6 +326,11 @@
 
     function goBack() {
       window.location.href = "/admin/dashboard.html";
+    }
+
+    function goOrders(event) {
+      event.preventDefault();
+      window.location.href = `/admin/orders.html?restaurantId=${restaurantId}`;
     }
 
     initAccountMenu();

@@ -42,7 +42,10 @@
       <section class="grid grid-3" id="container">Loading QR codes...</section>
     </main>
   </div>
-  <button class="btn btn-dark floating-back" onclick="window.location.href='/admin/dashboard.html'">Dashboard</button>
+  <nav class="admin-dock">
+    <a href="/admin/dashboard.html">Home</a>
+    <a class="active" href="#">QR</a>
+  </nav>
 
   <script src="/assets/app.js"></script>
   <script>
@@ -64,8 +67,9 @@
           return;
         }
 
+        window.__restaurants = restaurants;
         container.innerHTML = restaurants.map(r => {
-          const url = `${API}/menu.html?restaurantId=${r.id}`;
+          const url = `${API}/r/${r.slug}`;
           const qr = qrUrl(url, 220);
           return `
             <article class="card card-pad stack" style="align-items:center; text-align:center;">
@@ -88,7 +92,8 @@
     }
 
     function downloadCard(id, name) {
-      const url = `${API}/menu.html?restaurantId=${id}`;
+      const restaurant = (window.__restaurants || []).find(r => r.id === id);
+      const url = `${API}/r/${restaurant?.slug || id}`;
       const canvas = document.createElement("canvas");
       const ctx = canvas.getContext("2d");
       const qrImage = new Image();
@@ -111,17 +116,20 @@
         ctx.font = "700 34px Arial";
         ctx.fillText(name, 350, 155);
 
+        ctx.fillStyle = "#ff6a00";
+        ctx.fillRect(70, 185, 560, 12);
+
         ctx.fillStyle = "#ffffff";
         ctx.fillRect(150, 230, 400, 400);
         ctx.drawImage(qrImage, 175, 255, 350, 350);
 
         ctx.fillStyle = "#ff6a00";
-        ctx.font = "800 28px Arial";
-        ctx.fillText("Scan to order", 350, 700);
+        ctx.font = "800 32px Arial";
+        ctx.fillText("Skip the queue", 350, 700);
 
         ctx.fillStyle = "#667085";
         ctx.font = "20px Arial";
-        ctx.fillText("Browse the menu and place your order instantly", 350, 740);
+        ctx.fillText("Scan. Order. Collect when ready.", 350, 740);
 
         const link = document.createElement("a");
         link.download = `${name}-avenzo-qr.jpg`;

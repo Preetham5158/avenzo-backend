@@ -8,7 +8,7 @@
   <link rel="stylesheet" href="/assets/app.css">
   <style>
     body {
-      padding-bottom: 96px;
+      padding-bottom: 92px;
     }
 
     .customer-hero {
@@ -19,26 +19,42 @@
         radial-gradient(circle at 12% 24%, rgba(255, 106, 0, 0.22), transparent 28%),
         linear-gradient(135deg, #0a0a0a, #1c1c1c);
       color: white;
-      padding: 18px 0;
+      padding: 14px 0;
     }
 
     .customer-hero .muted {
       color: rgba(255, 255, 255, 0.72);
     }
 
+    .customer-hero .topbar-inner > div:first-child {
+      min-width: 0;
+    }
+
+    .customer-hero p {
+      overflow-wrap: anywhere;
+    }
+
+    #pickupNote {
+      margin-bottom: 0;
+    }
+
     .menu-card {
       display: grid;
-      grid-template-columns: 96px 1fr auto;
-      gap: 14px;
+      grid-template-columns: 86px 1fr auto;
+      gap: 12px;
       align-items: center;
     }
 
     .food-img {
-      width: 96px;
-      height: 96px;
+      width: 86px;
+      height: 86px;
       border-radius: var(--radius);
       object-fit: cover;
       background: #eef0f4;
+    }
+
+    .item-copy {
+      min-width: 0;
     }
 
     .qty-control {
@@ -48,6 +64,29 @@
       background: #f6f7fb;
       border-radius: var(--radius);
       padding: 6px;
+    }
+
+    .qty-control .icon-btn {
+      flex: 0 0 34px;
+      width: 34px;
+      height: 34px;
+      min-height: 34px;
+      border-radius: 10px;
+    }
+
+    .qty-control .btn-dark {
+      background: #ffffff;
+      color: #101114;
+      border-color: #dfe3ea;
+      box-shadow: none;
+    }
+
+    .food-desc {
+      display: -webkit-box;
+      margin-bottom: 8px;
+      overflow: hidden;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
     }
 
     .cart-bar {
@@ -73,18 +112,91 @@
     }
 
     @media (max-width: 760px) {
+      body {
+        padding-bottom: 88px;
+      }
+
+      .customer-hero {
+        padding: 10px 0;
+      }
+
+      .customer-hero h1 {
+        font-size: 18px;
+        line-height: 1.15;
+        margin-bottom: 3px;
+      }
+
+      .customer-hero .brand {
+        display: none;
+      }
+
+      .customer-hero p {
+        font-size: 13px;
+        line-height: 1.35;
+      }
+
+      #restaurantAddress {
+        display: -webkit-box;
+        overflow: hidden;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+      }
+
+      #pickupNote {
+        display: none;
+      }
+
       .menu-card {
-        grid-template-columns: 76px 1fr;
+        grid-template-columns: 68px minmax(0, 1fr);
+        gap: 10px;
+        align-items: start;
+        padding: 12px;
       }
 
       .food-img {
-        width: 76px;
-        height: 76px;
+        width: 68px;
+        height: 68px;
       }
 
       .qty-control {
-        grid-column: 1 / -1;
-        justify-content: space-between;
+        grid-column: 2;
+        justify-content: flex-start;
+        justify-self: start;
+        width: fit-content;
+        margin-top: 8px;
+        padding: 4px;
+      }
+
+      .qty-control .icon-btn {
+        flex-basis: 32px;
+        width: 32px;
+        height: 32px;
+        min-height: 32px;
+      }
+
+      .menu-card h3 {
+        font-size: 15px;
+        line-height: 1.2;
+      }
+
+      .food-desc {
+        display: none;
+      }
+
+      .cart-inner {
+        width: 100%;
+        min-height: 72px;
+        padding: 0 10px;
+        gap: 10px;
+      }
+
+      .cart-inner > div:first-child {
+        min-width: 52px;
+      }
+
+      .cart-inner .btn {
+        flex: 1;
+        min-width: 0;
       }
     }
   </style>
@@ -94,10 +206,10 @@
   <header class="customer-hero">
     <div class="topbar-inner" style="min-height:auto;">
       <div>
-        <div class="eyebrow">Avenzo ordering</div>
+        <div class="eyebrow">Order without waiting</div>
         <h1 id="restaurantName">Loading...</h1>
-        <p class="muted" id="restaurantAddress">Order ahead. Skip the billing queue. Collect when ready.</p>
-        <p class="muted" id="pickupNote" style="margin-bottom:0;"></p>
+        <p class="muted" id="restaurantAddress">Choose your favourites now. We will keep the pickup simple.</p>
+        <p class="muted" id="pickupNote"></p>
       </div>
       <div class="brand">
         <img src="/logo.png" alt="Avenzo">
@@ -109,8 +221,8 @@
   <main class="page" style="max-width:920px;">
     <section class="search-wrap">
       <div class="field">
-        <label for="menuSearch">Search menu</label>
-        <input id="menuSearch" class="input" placeholder="Search biryani, dosa, coffee..." oninput="setSearch(this.value)">
+        <label for="menuSearch">What would you like today?</label>
+        <input id="menuSearch" class="input" placeholder="Search dosa, idli, coffee..." oninput="setSearch(this.value)">
       </div>
     </section>
     <section class="tabbar" id="categoryTabs"></section>
@@ -123,7 +235,7 @@
         <strong><span id="count">0</span> items</strong>
         <div class="muted" id="total">₹0</div>
       </div>
-      <button id="orderBtn" class="btn btn-primary" onclick="openCheckout()" disabled>Review order</button>
+      <button id="orderBtn" class="btn btn-primary" onclick="openCheckout()" disabled>Continue</button>
     </div>
   </div>
 
@@ -131,28 +243,31 @@
     <form class="modal" onsubmit="placeOrder(event)">
       <div class="modal-head row-between">
         <div>
-          <h3 style="margin:0;">Review order</h3>
-          <div class="muted">Confirm your items before sending to the restaurant.</div>
+          <h3 style="margin:0;">Almost done</h3>
+          <div class="muted">Please check your items. Payment can come in the next step.</div>
         </div>
         <button type="button" class="btn btn-ghost icon-btn" onclick="closeCheckout()">X</button>
       </div>
       <div class="modal-body stack">
         <div id="cartItems" class="stack"></div>
         <div class="field">
-          <label for="phone">Phone number optional</label>
-          <input id="phone" class="input" inputmode="tel" placeholder="For restaurant updates">
+          <label for="phone">Mobile number optional</label>
+          <input id="phone" class="input" inputmode="tel" placeholder="Only if the hotel needs to reach you">
         </div>
       </div>
       <div class="modal-actions">
-        <button type="button" class="btn btn-ghost" onclick="closeCheckout()">Keep browsing</button>
-        <button id="placeBtn" class="btn btn-primary" type="submit">Place order</button>
+        <button type="button" class="btn btn-ghost" onclick="closeCheckout()">Add more</button>
+        <button id="placeBtn" class="btn btn-primary" type="submit">Send to kitchen</button>
       </div>
     </form>
   </div>
 
   <script src="/assets/app.js"></script>
   <script>
-    const restaurantId = new URLSearchParams(location.search).get("restaurantId");
+    let restaurantId = new URLSearchParams(location.search).get("restaurantId");
+    const slug = window.location.pathname.startsWith("/r/")
+      ? decodeURIComponent(window.location.pathname.split("/r/")[1] || "")
+      : new URLSearchParams(location.search).get("slug");
     let cart = [];
     let menuData = [];
     let activeCategory = "ALL";
@@ -160,9 +275,12 @@
 
     async function init() {
       try {
-        const restaurant = await request(`/restaurant/${restaurantId}`, { headers: {} });
+        const restaurant = slug
+          ? await request(`/restaurant/slug/${slug}`, { headers: {} })
+          : await request(`/restaurant/${restaurantId}`, { headers: {} });
+        restaurantId = restaurant.id;
         document.getElementById("restaurantName").textContent = restaurant.name;
-        document.getElementById("restaurantAddress").textContent = restaurant.address || restaurant.locality || "Order ahead. Skip the billing queue. Collect when ready.";
+        document.getElementById("restaurantAddress").textContent = restaurant.address || restaurant.locality || "Choose your favourites now. We will keep the pickup simple.";
         document.getElementById("pickupNote").textContent = restaurant.pickupNote || "";
         await loadMenu();
       } catch (err) {
@@ -171,7 +289,9 @@
     }
 
     async function loadMenu() {
-      menuData = await request(`/menu/${restaurantId}`, { headers: {} });
+      menuData = slug
+        ? await request(`/menu/by-slug/${slug}`, { headers: {} })
+        : await request(`/menu/${restaurantId}`, { headers: {} });
       menuData.sort((a, b) => Number(b.isAvailable) - Number(a.isAvailable));
       renderTabs();
       renderMenu();
@@ -225,7 +345,7 @@
 
       const container = document.getElementById("menu");
       if (!visible.length) {
-        container.innerHTML = `<div class="empty">No matching dishes found. Try another search or category.</div>`;
+        container.innerHTML = `<div class="empty">We could not find that dish here. Try another name or category.</div>`;
         return;
       }
 
@@ -241,12 +361,12 @@
       return `
         <article class="card card-pad menu-card">
           <img class="food-img" src="${escapeHtml(item.imageUrl || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=300")}" alt="">
-          <div>
+          <div class="item-copy">
             <div class="row" style="flex-wrap:wrap; margin-bottom:6px;">
               <h3 style="margin:0;">${escapeHtml(item.name)}</h3>
               ${disabled ? `<span class="pill pill-danger">Out of stock</span>` : ""}
             </div>
-            <p class="muted" style="margin-bottom:8px;">${escapeHtml(item.description || "Freshly prepared by the restaurant.")}</p>
+            <p class="muted food-desc">${escapeHtml(item.description || "Freshly prepared by the restaurant.")}</p>
             <strong>${money(item.price)}</strong>
           </div>
           <div class="qty-control">

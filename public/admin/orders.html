@@ -59,7 +59,11 @@
       <section class="stack" id="list" style="margin-top:16px;">Loading orders...</section>
     </main>
   </div>
-  <button class="btn btn-dark floating-back" onclick="goBack()">Dashboard</button>
+  <nav class="admin-dock">
+    <a href="/admin/dashboard.html">Home</a>
+    <a href="#" onclick="goMenu(event)">Menu</a>
+    <a class="active" href="#">Orders</a>
+  </nav>
 
   <script src="/assets/app.js"></script>
   <script>
@@ -180,6 +184,11 @@
 
     function goBack() {
       window.location.href = "/admin/dashboard.html";
+    }
+
+    function goMenu(event) {
+      event.preventDefault();
+      window.location.href = `/admin/menu.html?restaurantId=${restaurantId}`;
     }
 
     initAccountMenu();
