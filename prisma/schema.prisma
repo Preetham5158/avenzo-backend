@@ -23,7 +23,15 @@ enum OrderStatus {
 enum UserRole {
   USER
   RESTAURANT_OWNER
+  EMPLOYEE
   ADMIN
+}
+
+enum SubscriptionStatus {
+  TRIALING
+  ACTIVE
+  EXPIRED
+  SUSPENDED
 }
 
 //////////////////////////////////////////////////////
@@ -38,10 +46,15 @@ model User {
 
   role      UserRole @default(USER)
 
-  restaurants Restaurant[]
+  ownedRestaurants Restaurant[] @relation("RestaurantOwner")
+
+  staffRestaurantId String?
+  staffRestaurant   Restaurant? @relation("RestaurantStaff", fields: [staffRestaurantId], references: [id], onDelete: SetNull)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([staffRestaurantId])
 }
 
 //////////////////////////////////////////////////////
@@ -57,13 +70,16 @@ model Restaurant {
   pickupNote String?
 
   ownerId   String
-  owner     User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  owner     User     @relation("RestaurantOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  staff     User[]   @relation("RestaurantStaff")
 
   menus     Menu[]
   orders    Order[]
   categories Category[]
 
   isActive  Boolean  @default(true)
+  subscriptionStatus SubscriptionStatus @default(ACTIVE)
+  subscriptionEndsAt DateTime?
 
   // order numbering
   orderCounter Int @default(1)

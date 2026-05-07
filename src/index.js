@@ -89,11 +89,15 @@ app.get("/restaurant/slug/:slug", async (req, res) => {
             where: { slug: req.params.slug },
         });
 
-        if (!restaurant || !restaurant.isActive) {
+        if (!restaurant) {
             return res.status(404).json({ error: "Restaurant not found" });
         }
 
-        res.json(restaurant);
+        res.json({
+            ...restaurant,
+            serviceAvailable: isRestaurantServiceAvailable(restaurant),
+            serviceMessage: restaurantServiceMessage(restaurant)
+        });
     } catch {
         res.status(500).json({ error: "Error fetching restaurant" });
     }
@@ -119,6 +123,12 @@ app.get("/restaurant/:id", async (req, res) => {
    GET MENU
 ================================ */
 app.get("/menu/:restaurantId", async (req, res) => {
+    const restaurant = await prisma.restaurant.findUnique({ where: { id: req.params.restaurantId } });
+    if (!restaurant) return res.status(404).json({ error: "Restaurant not found" });
+    if (!isRestaurantServiceAvailable(restaurant)) {
+        return res.status(423).json({ error: restaurantServiceMessage(restaurant) });
+    }
+
     const menu = await prisma.menu.findMany({
         where: {
             restaurantId: req.params.restaurantId,
@@ -137,11 +147,14 @@ app.get("/menu/:restaurantId", async (req, res) => {
 app.get("/menu/by-slug/:slug", async (req, res) => {
     const restaurant = await prisma.restaurant.findUnique({
         where: { slug: req.params.slug },
-        select: { id: true, isActive: true }
     });
 
-    if (!restaurant || !restaurant.isActive) {
+    if (!restaurant) {
         return res.status(404).json({ error: "Restaurant not found" });
+    }
+
+    if (!isRestaurantServiceAvailable(restaurant)) {
+        return res.status(423).json({ error: restaurantServiceMessage(restaurant) });
     }
 
     const menu = await prisma.menu.findMany({
@@ -162,8 +175,9 @@ app.get("/menu/by-slug/:slug", async (req, res) => {
 ================================ */
 app.get("/categories/:restaurantId", authMiddleware, async (req, res) => {
     try {
-        const allowed = await canAccessRestaurant(req.params.restaurantId, req.user.userId);
-        if (!allowed) return res.status(403).json({ error: "Not allowed" });
+        const access = await getRestaurantAccess(req.params.restaurantId, req.user.userId);
+        if (!access.canAccess) return res.status(403).json({ error: "Not allowed" });
+        if (!ensureWorkspaceService(access, res)) return;
 
         const categories = await prisma.category.findMany({
             where: { restaurantId: req.params.restaurantId },
@@ -205,11 +219,15 @@ app.post("/order", orderLimiter, async (req, res) => {
 
         const restaurant = await prisma.restaurant.findUnique({
             where: { id: restaurantId },
-            select: { id: true, isActive: true }
+            select: { id: true, isActive: true, subscriptionStatus: true, subscriptionEndsAt: true }
         });
 
-        if (!restaurant || !restaurant.isActive) {
+        if (!restaurant) {
             return res.status(404).json({ error: "Restaurant not found" });
+        }
+
+        if (!isRestaurantServiceAvailable(restaurant)) {
+            return res.status(423).json({ error: restaurantServiceMessage(restaurant) });
         }
 
         const pickupCode = crypto.randomInt(1000, 10000).toString();
@@ -397,12 +415,36 @@ app.get("/auth/me", authMiddleware, async (req, res) => {
 async function getAuthUser(userId) {
     return prisma.user.findUnique({
         where: { id: userId },
-        select: { id: true, email: true, role: true }
+        select: { id: true, email: true, role: true, staffRestaurantId: true }
     });
 }
 
 function isSuperAdmin(user) {
     return user?.role === "ADMIN" || user?.email === "admin@avenzo.com";
+}
+
+function isOwner(user) {
+    return user?.role === "RESTAURANT_OWNER";
+}
+
+function isEmployee(user) {
+    return user?.role === "EMPLOYEE";
+}
+
+function isRestaurantServiceAvailable(restaurant) {
+    return !!restaurant?.isActive && !["EXPIRED", "SUSPENDED"].includes(restaurant.subscriptionStatus);
+}
+
+function restaurantServiceMessage(restaurant) {
+    if (!restaurant?.isActive) {
+        return "This restaurant is taking a short pause on Avenzo. Please check back soon for faster ordering and smoother pickup.";
+    }
+
+    if (["EXPIRED", "SUSPENDED"].includes(restaurant.subscriptionStatus)) {
+        return "Ordering is paused for this restaurant right now. Avenzo helps busy counters serve guests faster, and service can resume as soon as the workspace is active again.";
+    }
+
+    return "";
 }
 
 async function canAccessRestaurant(restaurantId, userId) {
@@ -415,7 +457,45 @@ async function canAccessRestaurant(restaurantId, userId) {
         select: { ownerId: true }
     });
 
-    return !!restaurant && restaurant.ownerId === userId;
+    return !!restaurant && (restaurant.ownerId === userId || user.staffRestaurantId === restaurantId);
+}
+
+async function getRestaurantAccess(restaurantId, userId) {
+    const user = await getAuthUser(userId);
+    if (!user) return { user: null, restaurant: null, canAccess: false, canManage: false, canOperate: false };
+
+    const restaurant = await prisma.restaurant.findUnique({
+        where: { id: restaurantId },
+        select: {
+            id: true,
+            ownerId: true,
+            isActive: true,
+            subscriptionStatus: true,
+            subscriptionEndsAt: true
+        }
+    });
+
+    const superAdmin = isSuperAdmin(user);
+    const owner = restaurant?.ownerId === user.id && isOwner(user);
+    const employee = user.staffRestaurantId === restaurantId && isEmployee(user);
+
+    return {
+        user,
+        restaurant,
+        canAccess: !!restaurant && (superAdmin || owner || employee),
+        canManage: !!restaurant && (superAdmin || owner),
+        canOperate: !!restaurant && (superAdmin || owner || employee),
+        isSuperAdmin: superAdmin,
+        isOwner: owner,
+        isEmployee: employee
+    };
+}
+
+function ensureWorkspaceService(access, res) {
+    if (access.isSuperAdmin) return true;
+    if (isRestaurantServiceAvailable(access.restaurant)) return true;
+    res.status(423).json({ error: restaurantServiceMessage(access.restaurant) });
+    return false;
 }
 
 /* ================================
@@ -426,19 +506,27 @@ app.get("/restaurants", authMiddleware, async (req, res) => {
     if (!user) return res.status(401).json({ error: "Invalid user" });
 
     const restaurants = await prisma.restaurant.findMany({
-        where: isSuperAdmin(user) ? {} : { ownerId: user.id },
+        where: isSuperAdmin(user)
+            ? {}
+            : isOwner(user)
+                ? { ownerId: user.id }
+                : { id: user.staffRestaurantId || "__none__" },
+        include: {
+            owner: { select: { id: true, email: true, name: true } }
+        },
         orderBy: { createdAt: "desc" }
     });
 
     res.json({
         user,
         restaurants,
-        canCreateRestaurant: isSuperAdmin(user)
+        canCreateRestaurant: isSuperAdmin(user),
+        canEditRestaurants: isSuperAdmin(user)
     });
 });
 
 app.post("/restaurant", authMiddleware, async (req, res) => {
-    const { name, address, locality, pickupNote } = req.body;
+    const { name, address, locality, pickupNote, ownerEmail, subscriptionStatus, subscriptionEndsAt, isActive } = req.body;
     if (!name) {
         return res.status(400).json({ error: "Name required" });
     }
@@ -449,6 +537,18 @@ app.post("/restaurant", authMiddleware, async (req, res) => {
     }
 
     const slug = normalizeSlug(name);
+    const owner = ownerEmail
+        ? await prisma.user.upsert({
+            where: { email: String(ownerEmail).toLowerCase().trim() },
+            update: { role: "RESTAURANT_OWNER" },
+            create: {
+                email: String(ownerEmail).toLowerCase().trim(),
+                password: await bcrypt.hash("Owner@123", 10),
+                name: name + " Owner",
+                role: "RESTAURANT_OWNER"
+            }
+        })
+        : user;
 
     const restaurant = await prisma.restaurant.create({
         data: {
@@ -457,7 +557,10 @@ app.post("/restaurant", authMiddleware, async (req, res) => {
             address: address || null,
             locality: locality || null,
             pickupNote: pickupNote || null,
-            ownerId: req.user.userId
+            ownerId: owner.id,
+            isActive: typeof isActive === "boolean" ? isActive : true,
+            subscriptionStatus: subscriptionStatus || "ACTIVE",
+            subscriptionEndsAt: subscriptionEndsAt ? new Date(subscriptionEndsAt) : null
         }
     });
 
@@ -466,20 +569,41 @@ app.post("/restaurant", authMiddleware, async (req, res) => {
 
 app.put("/restaurant/:id", authMiddleware, async (req, res) => {
     const { id } = req.params;
-    const { name, address, locality, pickupNote } = req.body;
+    const { name, address, locality, pickupNote, ownerEmail, isActive, subscriptionStatus, subscriptionEndsAt } = req.body;
     if (!name) {
         return res.status(400).json({ error: "Name required" });
     }
-    const allowed = await canAccessRestaurant(id, req.user.userId);
-    if (!allowed) return res.status(403).json({ error: "Not allowed" });
+    const user = await getAuthUser(req.user.userId);
+    if (!isSuperAdmin(user)) {
+        return res.status(403).json({ error: "Only the Avenzo admin team can edit restaurant details" });
+    }
+
+    let ownerId;
+    if (ownerEmail) {
+        const owner = await prisma.user.upsert({
+            where: { email: String(ownerEmail).toLowerCase().trim() },
+            update: { role: "RESTAURANT_OWNER" },
+            create: {
+                email: String(ownerEmail).toLowerCase().trim(),
+                password: await bcrypt.hash("Owner@123", 10),
+                name: name + " Owner",
+                role: "RESTAURANT_OWNER"
+            }
+        });
+        ownerId = owner.id;
+    }
 
     const updated = await prisma.restaurant.update({
         where: { id },
         data: {
             name,
+            ...(ownerId && { ownerId }),
             ...(typeof address !== "undefined" && { address: address || null }),
             ...(typeof locality !== "undefined" && { locality: locality || null }),
-            ...(typeof pickupNote !== "undefined" && { pickupNote: pickupNote || null })
+            ...(typeof pickupNote !== "undefined" && { pickupNote: pickupNote || null }),
+            ...(typeof isActive === "boolean" && { isActive }),
+            ...(subscriptionStatus && { subscriptionStatus }),
+            ...(typeof subscriptionEndsAt !== "undefined" && { subscriptionEndsAt: subscriptionEndsAt ? new Date(subscriptionEndsAt) : null })
         }
     });
 
@@ -487,34 +611,7 @@ app.put("/restaurant/:id", authMiddleware, async (req, res) => {
 });
 
 app.delete("/restaurant/:id", authMiddleware, async (req, res) => {
-    const { id } = req.params;
-
-    const user = await getAuthUser(req.user.userId);
-    if (!isSuperAdmin(user)) {
-        return res.status(403).json({ error: "Only super admins can delete restaurants" });
-    }
-
-    await prisma.orderItem.deleteMany({
-        where: { order: { restaurantId: id } }
-    });
-
-    await prisma.order.deleteMany({
-        where: { restaurantId: id }
-    });
-
-    await prisma.menu.deleteMany({
-        where: { restaurantId: id }
-    });
-
-    await prisma.category.deleteMany({
-        where: { restaurantId: id }
-    });
-
-    await prisma.restaurant.delete({
-        where: { id }
-    });
-
-    res.json({ message: "Deleted" });
+    res.status(405).json({ error: "Restaurants are deactivated instead of deleted" });
 });
 
 app.post("/category", authMiddleware, async (req, res) => {
@@ -524,8 +621,9 @@ app.post("/category", authMiddleware, async (req, res) => {
         return res.status(400).json({ error: "Missing fields" });
     }
 
-    const allowed = await canAccessRestaurant(restaurantId, req.user.userId);
-    if (!allowed) return res.status(403).json({ error: "Not allowed" });
+    const access = await getRestaurantAccess(restaurantId, req.user.userId);
+    if (!access.canManage) return res.status(403).json({ error: "Only owners can manage menu categories" });
+    if (!ensureWorkspaceService(access, res)) return;
 
     const category = await prisma.category.upsert({
         where: {
@@ -553,8 +651,9 @@ app.post("/menu", authMiddleware, async (req, res) => {
         return res.status(400).json({ error: "Missing fields" });
     }
 
-    const allowed = await canAccessRestaurant(restaurantId, req.user.userId);
-    if (!allowed) return res.status(403).json({ error: "Not allowed" });
+    const access = await getRestaurantAccess(restaurantId, req.user.userId);
+    if (!access.canManage) return res.status(403).json({ error: "Only owners can add menu items" });
+    if (!ensureWorkspaceService(access, res)) return;
 
     const category = await prisma.category.findFirst({
         where: { id: categoryId, restaurantId },
@@ -591,8 +690,19 @@ app.put("/menu/:id", authMiddleware, async (req, res) => {
 
     if (!item) return res.status(404).json({ error: "Not found" });
 
-    const allowed = await canAccessRestaurant(item.restaurantId, req.user.userId);
-    if (!allowed) return res.status(403).json({ error: "Not allowed" });
+    const access = await getRestaurantAccess(item.restaurantId, req.user.userId);
+    if (!access.canOperate) return res.status(403).json({ error: "Not allowed" });
+    if (!ensureWorkspaceService(access, res)) return;
+
+    const requestedKeys = Object.keys(req.body);
+    if (access.isEmployee) {
+        const onlyStock = requestedKeys.length === 1 && typeof isAvailable === "boolean";
+        if (!onlyStock) {
+            return res.status(403).json({ error: "Team members can only update stock availability" });
+        }
+    } else if (!access.canManage) {
+        return res.status(403).json({ error: "Only owners can edit menu details" });
+    }
 
     if (categoryId) {
         const category = await prisma.category.findFirst({
@@ -612,7 +722,7 @@ app.put("/menu/:id", authMiddleware, async (req, res) => {
             ...(price && { price: Number(price) }),
             ...(categoryId && { categoryId }),
             ...(typeof isAvailable !== "undefined" && { isAvailable }),
-            ...(typeof isActive !== "undefined" && { isActive }),
+            ...(!access.isEmployee && typeof isActive !== "undefined" && { isActive }),
             ...(typeof description !== "undefined" && { description: description || null }),
             ...(typeof imageUrl !== "undefined" && { imageUrl: imageUrl || null })
         },
@@ -638,8 +748,9 @@ app.patch("/order/:id/status", authMiddleware, async (req, res) => {
 
     if (!order) return res.status(404).json({ error: "Not found" });
 
-    const allowed = await canAccessRestaurant(order.restaurantId, req.user.userId);
-    if (!allowed) return res.status(403).json({ error: "Not allowed" });
+    const access = await getRestaurantAccess(order.restaurantId, req.user.userId);
+    if (!access.canOperate) return res.status(403).json({ error: "Not allowed" });
+    if (!ensureWorkspaceService(access, res)) return;
 
     const data = { status };
     if (status === "READY" && !order.readyAt) {
@@ -657,8 +768,9 @@ app.patch("/order/:id/status", authMiddleware, async (req, res) => {
 app.get("/admin/menu/:restaurantId", authMiddleware, async (req, res) => {
     const { restaurantId } = req.params;
 
-    const allowed = await canAccessRestaurant(restaurantId, req.user.userId);
-    if (!allowed) return res.status(403).json({ error: "Not allowed" });
+    const access = await getRestaurantAccess(restaurantId, req.user.userId);
+    if (!access.canAccess) return res.status(403).json({ error: "Not allowed" });
+    if (!ensureWorkspaceService(access, res)) return;
 
     const menu = await prisma.menu.findMany({
         where: { restaurantId },
@@ -676,12 +788,13 @@ app.get("/admin/orders/:restaurantId", authMiddleware, async (req, res) => {
     try {
         const { restaurantId } = req.params;
 
-        const allowed = await canAccessRestaurant(restaurantId, req.user.userId);
-        if (!allowed) return res.status(403).json({ error: "Not allowed" });
+        const access = await getRestaurantAccess(restaurantId, req.user.userId);
+        if (!access.canAccess) return res.status(403).json({ error: "Not allowed" });
+        if (!ensureWorkspaceService(access, res)) return;
 
         const restaurant = await prisma.restaurant.findUnique({
             where: { id: restaurantId },
-            select: { id: true, name: true, address: true, locality: true, pickupNote: true }
+            select: { id: true, name: true, address: true, locality: true, pickupNote: true, isActive: true, subscriptionStatus: true, subscriptionEndsAt: true }
         });
 
         if (!restaurant) return res.status(404).json({ error: "Restaurant not found" });

@@ -60,10 +60,11 @@
         if (selectedRestaurantId) {
           restaurants = restaurants.filter(r => r.id === selectedRestaurantId);
         }
+        restaurants = restaurants.filter(r => r.isActive && !["EXPIRED", "SUSPENDED"].includes(r.subscriptionStatus));
 
         const container = document.getElementById("container");
         if (!restaurants.length) {
-          container.innerHTML = `<div class="empty" style="grid-column:1/-1;">No QR codes available for your account.</div>`;
+          container.innerHTML = `<div class="empty" style="grid-column:1/-1;">QR cards will be ready here when the restaurant service is active.</div>`;
           return;
         }
 

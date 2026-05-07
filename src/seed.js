@@ -11,49 +11,130 @@ function hashLock(value) {
   return String(value).split("").reduce((sum, char) => sum + char.charCodeAt(0), 100);
 }
 
+function commons(file) {
+  return `https://commons.wikimedia.org/wiki/Special:FilePath/${encodeURIComponent(file)}?width=900`;
+}
+
 const foodImages = {
-  dosa: "https://images.unsplash.com/photo-1630383249896-424e482df921?auto=format&fit=crop&w=900&q=80",
-  thali: "https://images.unsplash.com/photo-1631452180519-c014fe946bc7?auto=format&fit=crop&w=900&q=80",
-  rice: "https://images.unsplash.com/photo-1589302168068-964664d93dc0?auto=format&fit=crop&w=900&q=80",
-  snack: "https://images.unsplash.com/photo-1601050690597-df0568f70950?auto=format&fit=crop&w=900&q=80",
+  thatteIdli: commons("Idli Sambar.JPG"),
+  miniIdli: commons("Idli Sambar.JPG"),
+  ravaIdli: commons("Rava idli.jpg"),
+  softIdli: commons("Idli Sambar.JPG"),
+  meduVada: commons("Medu Vada.JPG"),
+  sambarVada: commons("Medu Vada.JPG"),
+  curdVada: "https://images.unsplash.com/photo-1567188040759-fb8a883dc6d8?auto=format&fit=crop&w=900&q=80",
+  masalaDosa: commons("Masala Dosa.jpg"),
+  plainDosa: commons("Dosa with chutney and sambar.jpg"),
+  setDosa: commons("Set dosa.jpg"),
+  ravaDosa: commons("Rava dosa.jpg"),
+  neerDosa: commons("Neer dosa.jpg"),
+  mysoreDosa: commons("Mysore masala dosa.jpg"),
+  poori: commons("Poori masala.jpg"),
+  pongal: commons("Pongal.jpg"),
+  upma: commons("Upma.jpg"),
+  kesari: commons("Kesari bath.jpg"),
+  bisiBeleBath: commons("Bisi bele bath.jpg"),
+  puliyogare: commons("Puliyogare.jpg"),
+  lemonRice: commons("Lemon rice.jpg"),
+  tomatoRice: commons("Tomato rice.jpg"),
+  curdRice: commons("Curd rice.jpg"),
+  meals: commons("South Indian Meals.jpg"),
+  chapati: commons("Chapati with vegetable kurma.jpg"),
+  paneer: "https://images.unsplash.com/photo-1631452180519-c014fe946bc7?auto=format&fit=crop&w=900&q=80",
+  kurma: commons("Vegetable Kurma.jpg"),
+  dal: commons("Dal tadka.jpg"),
+  gobi: commons("Gobi Manchurian.jpg"),
+  friedRice: commons("Fried Rice (3668697253).jpg"),
+  noodles: commons("Veg Hakka Noodles.jpg"),
+  bajji: commons("Mangalore bajji.jpg"),
+  maddurVade: commons("Maddur vade.jpg"),
+  masalaVada: commons("Masala Vada.jpg"),
+  bonda: commons("Bonda soup.jpg"),
+  samosa: commons("Samosa.jpg"),
+  cutlet: commons("Vegetable cutlet.jpg"),
+  mysorePak: commons("Mysore Pak.jpg"),
+  halwa: commons("Badam Halwa.jpg"),
+  payasa: commons("Payasam.jpg"),
+  gulabJamun: commons("Gulab Jamun.jpg"),
   coffee: "https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=900&q=80",
-  breakfast: "https://images.unsplash.com/photo-1567188040759-fb8a883dc6d8?auto=format&fit=crop&w=900&q=80",
-  dessert: "https://images.unsplash.com/photo-1596797038530-2c107229654b?auto=format&fit=crop&w=900&q=80",
-  drink: "https://images.unsplash.com/photo-1627662168223-7df99068099a?auto=format&fit=crop&w=900&q=80"
+  tea: commons("Indian Tea.jpg"),
+  badamMilk: commons("Badam milk.jpg"),
+  limeSoda: "https://images.unsplash.com/photo-1627662168223-7df99068099a?auto=format&fit=crop&w=900&q=80",
+  buttermilk: commons("Buttermilk.JPG"),
+  fallback: "https://images.unsplash.com/photo-1631452180519-c014fe946bc7?auto=format&fit=crop&w=900&q=80"
 };
 
 function imageFor(name, category = "south indian food") {
   const lookup = [
+    ["thatte idli", "thatteIdli"],
+    ["mini idli", "miniIdli"],
+    ["rava idli", "ravaIdli"],
+    ["soft idli", "softIdli"],
+    ["idli vada", "miniIdli"],
+    ["ghee podi idli", "miniIdli"],
+    ["curd vada", "curdVada"],
+    ["sambar vada", "sambarVada"],
+    ["medu vada", "meduVada"],
+    ["maddur vade", "maddurVade"],
+    ["masala vada", "masalaVada"],
+    ["bonda", "bonda"],
+    ["poori", "poori"],
+    ["pongal", "pongal"],
+    ["avalakki", "upma"],
+    ["shavige", "upma"],
+    ["khara bath", "upma"],
+    ["kesari", "kesari"],
+    ["chow chow", "kesari"],
+    ["bisi bele", "bisiBeleBath"],
+    ["puliyogare", "puliyogare"],
+    ["lemon rice", "lemonRice"],
+    ["tomato bath", "tomatoRice"],
+    ["curd rice", "curdRice"],
+    ["north indian meals", "meals"],
+    ["mini meals", "meals"],
+    ["full meals", "meals"],
+    ["south indian meals", "meals"],
+    ["chapati", "chapati"],
+    ["paneer", "paneer"],
+    ["kurma", "kurma"],
+    ["dal", "dal"],
+    ["gobi", "gobi"],
+    ["fried rice", "friedRice"],
+    ["noodles", "noodles"],
+    ["bajji", "bajji"],
+    ["samosa", "samosa"],
+    ["cutlet", "cutlet"],
+    ["mysore pak", "mysorePak"],
+    ["halwa", "halwa"],
+    ["payasa", "payasa"],
+    ["gulab", "gulabJamun"],
+    ["badam milk", "badamMilk"],
+    ["lime", "limeSoda"],
+    ["buttermilk", "buttermilk"],
+    ["tea", "tea"],
     ["coffee", "coffee"],
-    ["tea", "drink"],
-    ["buttermilk", "drink"],
-    ["soda", "drink"],
-    ["juice", "drink"],
-    ["dosa", "dosa"],
-    ["dose", "dosa"],
-    ["idli", "breakfast"],
-    ["vada", "snack"],
-    ["vade", "snack"],
-    ["pongal", "breakfast"],
-    ["bath", "breakfast"],
-    ["rice", "rice"],
-    ["meals", "thali"],
-    ["chapati", "thali"],
-    ["paneer", "thali"],
-    ["gobi", "snack"],
-    ["noodles", "rice"],
-    ["samosa", "snack"],
-    ["bajji", "snack"],
-    ["bonda", "snack"],
-    ["jamun", "dessert"],
-    ["halwa", "dessert"],
-    ["payasa", "dessert"]
+    ["open butter", "masalaDosa"],
+    ["mysore masala", "mysoreDosa"],
+    ["cheese masala", "masalaDosa"],
+    ["masala dose", "masalaDosa"],
+    ["masala dosa", "masalaDosa"],
+    ["plain dose", "plainDosa"],
+    ["set dose", "setDosa"],
+    ["rava dose", "ravaDosa"],
+    ["neer dose", "neerDosa"],
+    ["podi dose", "masalaDosa"],
+    ["dosa", "masalaDosa"],
+    ["dose", "masalaDosa"],
+    ["idli", "thatteIdli"],
+    ["vada", "meduVada"],
+    ["rice", "lemonRice"]
   ];
   const lower = `${name} ${category}`.toLowerCase();
   const match = lookup.find(([key]) => lower.includes(key));
-  const key = match ? match[1] : "breakfast";
-  const separator = foodImages[key].includes("?") ? "&" : "?";
-  return `${foodImages[key]}${separator}sig=${hashLock(name)}`;
+  const key = match ? match[1] : "fallback";
+  const url = foodImages[key] || foodImages.fallback;
+  const separator = url.includes("?") ? "&" : "?";
+  return `${url}${separator}sig=${hashLock(name)}`;
 }
 
 const hotels = [
@@ -225,7 +306,20 @@ async function main() {
         address: hotel.address,
         locality: hotel.locality,
         pickupNote: hotel.pickupNote,
-        ownerId: owner.id || admin.id
+        ownerId: owner.id || admin.id,
+        isActive: true,
+        subscriptionStatus: "ACTIVE",
+        subscriptionEndsAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+      }
+    });
+
+    await prisma.user.create({
+      data: {
+        email: hotel.ownerEmail.replace("owner.", "staff."),
+        password: await bcrypt.hash("Staff@123", 10),
+        name: `${hotel.name} Counter Team`,
+        role: "EMPLOYEE",
+        staffRestaurantId: restaurant.id
       }
     });
 

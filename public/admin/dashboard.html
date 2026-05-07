@@ -38,18 +38,23 @@
   </div>
 
   <div class="modal-backdrop" id="restaurantModal">
-    <form class="modal" onsubmit="createRestaurant(event)">
+    <form class="modal" onsubmit="saveRestaurant(event)">
       <div class="modal-head row-between">
         <div>
-          <h3 style="margin:0;">Create restaurant</h3>
-          <div class="muted">Create a restaurant and assign menu items from the menu manager.</div>
+          <h3 id="restaurantModalTitle" style="margin:0;">Create restaurant</h3>
+          <div class="muted">Set up the restaurant profile and service status.</div>
         </div>
         <button type="button" class="btn btn-ghost icon-btn" onclick="closeRestaurantModal()">X</button>
       </div>
       <div class="modal-body stack">
+        <input id="restaurantId" type="hidden">
         <div class="field">
           <label for="restaurantName">Restaurant name</label>
           <input id="restaurantName" class="input" required placeholder="Avenzo Cafe">
+        </div>
+        <div class="field">
+          <label for="restaurantOwnerEmail">Owner email</label>
+          <input id="restaurantOwnerEmail" class="input" type="email" placeholder="owner@example.com">
         </div>
         <div class="field">
           <label for="restaurantAddress">Address</label>
@@ -65,28 +70,27 @@
             <input id="restaurantPickupNote" class="input" placeholder="Collect at counter 2">
           </div>
         </div>
+        <div class="grid grid-2">
+          <label class="row card card-pad" style="cursor:pointer;">
+            <input id="restaurantActive" type="checkbox" checked>
+            <span>Service active</span>
+          </label>
+          <div class="field">
+            <label for="subscriptionStatus">Subscription</label>
+            <select id="subscriptionStatus" class="select">
+              <option value="ACTIVE">Active</option>
+              <option value="TRIALING">Trialing</option>
+              <option value="EXPIRED">Expired</option>
+              <option value="SUSPENDED">Paused</option>
+            </select>
+          </div>
+        </div>
       </div>
       <div class="modal-actions">
         <button type="button" class="btn btn-ghost" onclick="closeRestaurantModal()">Cancel</button>
-        <button id="saveRestaurantBtn" class="btn btn-primary" type="submit">Create</button>
+        <button id="saveRestaurantBtn" class="btn btn-primary" type="submit">Save</button>
       </div>
     </form>
-  </div>
-
-  <div class="modal-backdrop" id="deleteModal">
-    <div class="modal">
-      <div class="modal-head">
-        <h3 style="margin:0;">Delete restaurant</h3>
-        <div class="muted" id="deleteText"></div>
-      </div>
-      <div class="modal-body">
-        <p class="muted" style="margin:0;">This removes the restaurant, categories, menu items, and orders.</p>
-      </div>
-      <div class="modal-actions">
-        <button type="button" class="btn btn-ghost" onclick="closeDeleteModal()">Cancel</button>
-        <button id="deleteBtn" type="button" class="btn btn-danger" onclick="deleteRestaurant()">Delete</button>
-      </div>
-    </div>
   </div>
 
   <script src="/assets/app.js"></script>
@@ -94,13 +98,16 @@
     requireAuth();
 
     let canCreateRestaurant = false;
-    let deleteTarget = null;
+    let canEditRestaurants = false;
+    let restaurantCache = [];
 
     async function loadRestaurants() {
       try {
         const data = await request("/restaurants");
         const restaurants = data.restaurants || [];
         canCreateRestaurant = !!data.canCreateRestaurant;
+        canEditRestaurants = !!data.canEditRestaurants;
+        restaurantCache = restaurants;
 
         document.getElementById("pageTitle").textContent = canCreateRestaurant ? "All Restaurants" : "Your Restaurants";
         document.getElementById("roleText").textContent = canCreateRestaurant
@@ -131,7 +138,7 @@
         <div class="card card-pad">
           <div class="muted">Workspace</div>
           <h3>${canCreateRestaurant ? "All locations" : "Assigned locations"}</h3>
-          <span class="pill ${canCreateRestaurant ? "pill-success" : "pill-warning"}">${canCreateRestaurant ? "Company view" : "Owner view"}</span>
+          <span class="pill ${canCreateRestaurant ? "pill-success" : "pill-warning"}">${canCreateRestaurant ? "Company view" : user?.role === "EMPLOYEE" ? "Counter view" : "Owner view"}</span>
         </div>
       `;
     }
@@ -153,20 +160,40 @@
             <span class="pill ${r.isActive ? "pill-success" : "pill-danger"}">${r.isActive ? "Active" : "Inactive"}</span>
           </div>
           <div class="row" style="flex-wrap:wrap;">
+            <span class="pill ${r.subscriptionStatus === "ACTIVE" ? "pill-success" : r.subscriptionStatus === "TRIALING" ? "pill-warning" : "pill-danger"}">${subscriptionLabel(r.subscriptionStatus)}</span>
+            ${r.owner?.email ? `<span class="pill">${escapeHtml(r.owner.email)}</span>` : ""}
+          </div>
+          <div class="row" style="flex-wrap:wrap;">
             <button class="btn btn-dark" onclick="openMenu('${r.id}')">Menu</button>
             <button class="btn btn-soft" onclick="openOrders('${r.id}')">Orders</button>
             <button class="btn btn-ghost" onclick="openQr('${r.id}')">QR</button>
-            ${canCreateRestaurant ? `<button class="btn btn-danger" onclick='openDeleteModal(${JSON.stringify(r.id)}, ${JSON.stringify(r.name)})'>Delete</button>` : ""}
+            ${canEditRestaurants ? `<button class="btn btn-ghost" onclick='openRestaurantModal(${JSON.stringify(r.id)})'>Edit</button>` : ""}
           </div>
         </article>
       `).join("");
     }
 
-    function openRestaurantModal() {
-      document.getElementById("restaurantName").value = "";
-      document.getElementById("restaurantAddress").value = "";
-      document.getElementById("restaurantLocality").value = "";
-      document.getElementById("restaurantPickupNote").value = "";
+    function subscriptionLabel(value) {
+      return {
+        ACTIVE: "Subscription active",
+        TRIALING: "Trial running",
+        EXPIRED: "Subscription expired",
+        SUSPENDED: "Service paused"
+      }[value] || "Subscription active";
+    }
+
+    function openRestaurantModal(id = "") {
+      const restaurant = restaurantCache.find(r => r.id === id);
+      document.getElementById("restaurantModalTitle").textContent = restaurant ? "Edit restaurant" : "Create restaurant";
+      document.getElementById("restaurantId").value = restaurant?.id || "";
+      document.getElementById("restaurantName").value = restaurant?.name || "";
+      document.getElementById("restaurantOwnerEmail").value = restaurant?.owner?.email || "";
+      document.getElementById("restaurantAddress").value = restaurant?.address || "";
+      document.getElementById("restaurantLocality").value = restaurant?.locality || "";
+      document.getElementById("restaurantPickupNote").value = restaurant?.pickupNote || "";
+      document.getElementById("restaurantActive").checked = restaurant ? restaurant.isActive : true;
+      document.getElementById("subscriptionStatus").value = restaurant?.subscriptionStatus || "ACTIVE";
+      document.getElementById("saveRestaurantBtn").textContent = restaurant ? "Save changes" : "Create";
       document.getElementById("restaurantModal").classList.add("open");
       document.getElementById("restaurantName").focus();
     }
@@ -175,49 +202,26 @@
       document.getElementById("restaurantModal").classList.remove("open");
     }
 
-    async function createRestaurant(event) {
+    async function saveRestaurant(event) {
       event.preventDefault();
       const btn = document.getElementById("saveRestaurantBtn");
-      setLoading(btn, true, "Creating...");
+      const id = document.getElementById("restaurantId").value;
+      setLoading(btn, true, "Saving...");
       try {
-        await request("/restaurant", {
-          method: "POST",
+        await request(id ? `/restaurant/${id}` : "/restaurant", {
+          method: id ? "PUT" : "POST",
           body: JSON.stringify({
             name: document.getElementById("restaurantName").value.trim(),
+            ownerEmail: document.getElementById("restaurantOwnerEmail").value.trim() || null,
             address: document.getElementById("restaurantAddress").value.trim() || null,
             locality: document.getElementById("restaurantLocality").value.trim() || null,
-            pickupNote: document.getElementById("restaurantPickupNote").value.trim() || null
+            pickupNote: document.getElementById("restaurantPickupNote").value.trim() || null,
+            isActive: document.getElementById("restaurantActive").checked,
+            subscriptionStatus: document.getElementById("subscriptionStatus").value
           })
         });
         closeRestaurantModal();
-        toast("Restaurant created");
-        loadRestaurants();
-      } catch (err) {
-        toast(err.message);
-      } finally {
-        setLoading(btn, false);
-      }
-    }
-
-    function openDeleteModal(id, name) {
-      deleteTarget = { id, name };
-      document.getElementById("deleteText").textContent = `You are about to delete ${name}.`;
-      document.getElementById("deleteModal").classList.add("open");
-    }
-
-    function closeDeleteModal() {
-      deleteTarget = null;
-      document.getElementById("deleteModal").classList.remove("open");
-    }
-
-    async function deleteRestaurant() {
-      if (!deleteTarget) return;
-      const btn = document.getElementById("deleteBtn");
-      setLoading(btn, true, "Deleting...");
-      try {
-        await request(`/restaurant/${deleteTarget.id}`, { method: "DELETE" });
-        closeDeleteModal();
-        toast("Restaurant deleted");
+        toast(id ? "Restaurant updated" : "Restaurant created");
         loadRestaurants();
       } catch (err) {
         toast(err.message);

@@ -66,7 +66,7 @@
           <h1 id="restaurantName">Loading...</h1>
           <p class="muted" id="restaurantAddress">Create menu items, group by category, and control what customers can order.</p>
         </div>
-        <button class="btn btn-primary" onclick="openItemModal()">Add item</button>
+        <button id="addItemBtn" class="btn btn-primary" onclick="openItemModal()">Add item</button>
       </section>
 
       <section class="tabbar" id="categoryTabs"></section>
@@ -147,19 +147,26 @@
     requireAuth();
 
     const restaurantId = new URLSearchParams(location.search).get("restaurantId");
+    let currentUser = null;
     let categories = [];
     let menuItems = [];
     let activeCategory = "ALL";
 
     async function init() {
       try {
+        currentUser = await request("/auth/me");
         const restaurant = await request(`/restaurant/${restaurantId}`, { headers: {} });
         document.getElementById("restaurantName").textContent = restaurant.name;
         document.getElementById("restaurantAddress").textContent = restaurant.address || "Create menu items, group by category, and control what customers can order.";
+        document.getElementById("addItemBtn").style.display = canManageMenuDetails() ? "inline-flex" : "none";
         await loadMenu();
       } catch (err) {
         document.getElementById("menu").innerHTML = `<div class="empty">${escapeHtml(err.message)}</div>`;
       }
+    }
+
+    function canManageMenuDetails() {
+      return currentUser?.role === "ADMIN" || currentUser?.role === "RESTAURANT_OWNER";
     }
 
     async function loadCategories() {
@@ -215,7 +222,7 @@
 
       container.innerHTML = visible.map(item => `
         <article class="card card-pad menu-item">
-          <img class="menu-img" src="${escapeHtml(item.imageUrl || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=300")}" alt="">
+          <img class="menu-img" src="${escapeHtml(item.imageUrl || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=300")}" alt="" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1631452180519-c014fe946bc7?auto=format&fit=crop&w=900&q=80';">
           <div>
             <div class="row" style="flex-wrap:wrap; margin-bottom:6px;">
               <h3 style="margin:0;">${escapeHtml(item.name)}</h3>
@@ -228,14 +235,18 @@
           </div>
           <div class="menu-actions">
             <button class="btn btn-ghost" onclick="toggleStock('${item.id}', ${item.isAvailable})">${item.isAvailable ? "Mark out" : "Mark available"}</button>
-            <button class="btn btn-ghost" onclick="toggleVisibility('${item.id}', ${item.isActive})">${item.isActive ? "Hide" : "Show"}</button>
-            <button class="btn btn-dark" onclick='openItemModal(${JSON.stringify(item)})'>Edit</button>
+            ${canManageMenuDetails() ? `<button class="btn btn-ghost" onclick="toggleVisibility('${item.id}', ${item.isActive})">${item.isActive ? "Hide" : "Show"}</button>` : ""}
+            ${canManageMenuDetails() ? `<button class="btn btn-dark" onclick='openItemModal(${JSON.stringify(item)})'>Edit</button>` : ""}
           </div>
         </article>
       `).join("");
     }
 
     function openItemModal(item = null) {
+      if (!canManageMenuDetails()) {
+        toast("You can update stock availability from this page.");
+        return;
+      }
       document.getElementById("modalTitle").textContent = item ? "Edit item" : "Add item";
       document.getElementById("itemId").value = item?.id || "";
       document.getElementById("itemName").value = item?.name || "";

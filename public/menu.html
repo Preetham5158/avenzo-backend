@@ -282,9 +282,18 @@
         document.getElementById("restaurantName").textContent = restaurant.name;
         document.getElementById("restaurantAddress").textContent = restaurant.address || restaurant.locality || "Choose your favourites now. We will keep the pickup simple.";
         document.getElementById("pickupNote").textContent = restaurant.pickupNote || "";
+        if (restaurant.serviceAvailable === false) {
+          document.getElementById("menu").innerHTML = `
+            <div class="empty">
+              <h3 style="margin-bottom:8px;">Ordering will be back soon</h3>
+              <p class="muted" style="margin:0;">${escapeHtml(restaurant.serviceMessage || "This restaurant is taking a short pause on Avenzo. Please check back soon.")}</p>
+            </div>`;
+          document.getElementById("orderBtn").disabled = true;
+          return;
+        }
         await loadMenu();
       } catch (err) {
-        document.getElementById("menu").innerHTML = `<div class="empty">${escapeHtml(err.message)}</div>`;
+        document.getElementById("menu").innerHTML = `<div class="empty">${escapeHtml(err.message || "Ordering will be back soon")}</div>`;
       }
     }
 
@@ -360,7 +369,7 @@
       const disabled = !item.isAvailable;
       return `
         <article class="card card-pad menu-card">
-          <img class="food-img" src="${escapeHtml(item.imageUrl || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=300")}" alt="">
+          <img class="food-img" src="${escapeHtml(item.imageUrl || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=300")}" alt="" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1631452180519-c014fe946bc7?auto=format&fit=crop&w=900&q=80';">
           <div class="item-copy">
             <div class="row" style="flex-wrap:wrap; margin-bottom:6px;">
               <h3 style="margin:0;">${escapeHtml(item.name)}</h3>
