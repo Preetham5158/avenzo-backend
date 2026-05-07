@@ -91,7 +91,7 @@
 
         const restaurant = await request(`/restaurant/${data.restaurantId}`, { headers: {} });
         document.getElementById("restaurantName").textContent = restaurant.name;
-        document.getElementById("orderNumber").textContent = data.orderNumber ? `Order #${data.orderNumber}` : "Order received";
+        document.getElementById("orderNumber").textContent = Number.isInteger(data.orderNumber) ? `Order #${data.orderNumber}` : "Order received";
         document.getElementById("orderCode").textContent = data.pickupCode;
         document.getElementById("placedAt").textContent = formatDate(data.createdAt);
 

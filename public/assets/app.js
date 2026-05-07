@@ -19,7 +19,14 @@ async function request(path, options = {}) {
 
   const res = await fetch(`${API}${path}`, { ...options, headers });
   const text = await res.text();
-  const data = text ? JSON.parse(text) : null;
+  let data = null;
+  if (text) {
+    try {
+      data = JSON.parse(text);
+    } catch {
+      data = { error: text };
+    }
+  }
 
   if (!res.ok) {
     throw new Error(data?.error || "Something went wrong");

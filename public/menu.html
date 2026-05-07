@@ -477,8 +477,8 @@
 
       .dine-copy p {
         font-size: 12px;
-        width: calc(100vw - 72px);
-        max-width: 300px;
+        width: 100%;
+        max-width: 100%;
       }
 
       .dine-badge {
@@ -894,6 +894,7 @@
       if (!cart.length) return toast("Your cart is empty");
       document.getElementById("cartItems").innerHTML = cart.map(i => {
         const item = menuData.find(m => m.id === i.menuId);
+        if (!item) return "";
         return `
           <div class="row-between card card-pad">
             <div>
