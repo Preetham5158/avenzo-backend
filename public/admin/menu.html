@@ -96,7 +96,7 @@
         </div>
         <section class="tabbar surface-strip" id="categoryTabs"></section>
       </section>
-      <section class="stack" id="menu" style="margin-top:12px;"></section>
+      <section class="stack mt-12" id="menu"></section>
     </main>
   </div>
   <nav class="admin-dock">
@@ -109,7 +109,7 @@
     <form class="modal" onsubmit="saveItem(event)">
       <div class="modal-head row-between">
         <div>
-          <h3 id="modalTitle" style="margin:0;">Add item</h3>
+          <h3 id="modalTitle" class="section-title">Add item</h3>
           <div class="muted">Saved changes appear for guests right away.</div>
         </div>
         <button type="button" class="btn btn-ghost icon-btn" onclick="closeItemModal()">X</button>
@@ -150,11 +150,11 @@
         </div>
 
         <div class="grid grid-2">
-          <label class="row card card-pad" style="cursor:pointer;">
+          <label class="row card card-pad cursor-pointer">
             <input id="itemAvailable" type="checkbox" checked>
             <span>Available to order</span>
           </label>
-          <label class="row card card-pad" style="cursor:pointer;">
+          <label class="row card card-pad cursor-pointer">
             <input id="itemActive" type="checkbox" checked>
             <span>Visible on customer menu</span>
           </label>
@@ -261,8 +261,8 @@
         <article class="card card-pad menu-item">
           <img class="menu-img" src="${escapeHtml(item.imageUrl || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=300")}" alt="" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1631452180519-c014fe946bc7?auto=format&fit=crop&w=900&q=80';">
           <div class="menu-copy">
-            <div class="row" style="flex-wrap:wrap; margin-bottom:6px;">
-              <h3 style="margin:0;">${escapeHtml(item.name)}</h3>
+            <div class="row row-wrap mb-6">
+              <h3 class="section-title">${escapeHtml(item.name)}</h3>
               <span class="pill">${escapeHtml(item.category?.name || "Uncategorized")}</span>
               <span class="pill ${item.isAvailable ? "pill-success" : "pill-danger"}">${item.isAvailable ? "Available" : "Out of stock"}</span>
               ${item.isActive ? "" : `<span class="pill pill-warning">Hidden</span>`}

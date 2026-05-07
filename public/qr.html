@@ -80,7 +80,7 @@
 
         const container = document.getElementById("container");
         if (!restaurants.length) {
-          container.innerHTML = `<div class="empty" style="grid-column:1/-1;">Scan cards will appear here when the restaurant service is active.</div>`;
+          container.innerHTML = `<div class="empty empty-full">Scan cards will appear here when the restaurant service is active.</div>`;
           return;
         }
 
@@ -100,7 +100,7 @@
           `;
         }).join("");
       } catch (err) {
-        document.getElementById("container").innerHTML = `<div class="empty" style="grid-column:1/-1;">${escapeHtml(err.message)}</div>`;
+        document.getElementById("container").innerHTML = `<div class="empty empty-full">${escapeHtml(err.message)}</div>`;
       }
     }
 

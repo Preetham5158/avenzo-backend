@@ -658,7 +658,7 @@
     <form class="modal" onsubmit="placeOrder(event)">
       <div class="modal-head row-between">
         <div>
-          <h3 style="margin:0;">Ready to enjoy</h3>
+          <h3 class="section-title">Ready to enjoy</h3>
           <div class="muted">Review once. Your order goes straight to the restaurant team.</div>
         </div>
         <button type="button" class="btn btn-ghost icon-btn" onclick="closeCheckout()">X</button>
@@ -702,8 +702,8 @@
         if (restaurant.serviceAvailable === false) {
           document.getElementById("menu").innerHTML = `
             <div class="empty">
-              <h3 style="margin-bottom:8px;">Ordering will be back soon</h3>
-              <p class="muted" style="margin:0;">${escapeHtml(restaurant.serviceMessage || "This restaurant is taking a short pause on Avenzo. Please check back soon.")}</p>
+              <h3 class="card-title-gap">Ordering will be back soon</h3>
+              <p class="muted mb-0">${escapeHtml(restaurant.serviceMessage || "This restaurant is taking a short pause on Avenzo. Please check back soon.")}</p>
             </div>`;
           document.getElementById("orderBtn").disabled = true;
           return;

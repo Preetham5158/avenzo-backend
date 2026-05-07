@@ -33,9 +33,9 @@
 </head>
 
 <body>
-  <main class="page" style="max-width:720px;">
-    <section class="hero-panel stack" style="text-align:center;">
-      <div class="brand" style="justify-content:center;">
+  <main class="page track-page">
+    <section class="hero-panel stack track-hero">
+      <div class="brand center-brand">
         <img src="/logo.png" alt="Avenzo">
         <span>AVENZO</span>
       </div>
@@ -46,7 +46,7 @@
       </div>
     </section>
 
-    <section class="card card-pad stack" style="margin-top:16px;">
+    <section class="card card-pad stack mt-16">
       <div class="row-between">
         <span class="pill pill-dark" id="statusBadge">Checking</span>
         <span class="muted" id="placedAt"></span>
@@ -59,7 +59,7 @@
         <div class="step"></div>
       </div>
 
-      <div style="text-align:center; padding:20px 0;">
+      <div class="track-code-block">
         <div class="muted">Order code</div>
         <div class="order-code" id="orderCode">----</div>
         <p class="muted" id="readyText">This screen updates automatically.</p>
@@ -67,7 +67,7 @@
 
       <div class="stack" id="items"></div>
 
-      <div class="row-between" style="border-top:1px solid var(--line); padding-top:14px;">
+      <div class="row-between top-line">
         <strong>Total</strong>
         <strong id="total">₹0</strong>
       </div>

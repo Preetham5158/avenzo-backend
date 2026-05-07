@@ -77,7 +77,7 @@
       </section>
 
       <section class="grid grid-3" id="stats"></section>
-      <section class="grid grid-3" id="list" style="margin-top:16px;"></section>
+      <section class="grid grid-3 mt-16" id="list"></section>
     </main>
   </div>
 
@@ -85,7 +85,7 @@
     <form class="modal" onsubmit="saveRestaurant(event)">
       <div class="modal-head row-between">
         <div>
-          <h3 id="restaurantModalTitle" style="margin:0;">Create restaurant</h3>
+          <h3 id="restaurantModalTitle" class="section-title">Create restaurant</h3>
           <div class="muted">Set up the restaurant profile and service status.</div>
         </div>
         <button type="button" class="btn btn-ghost icon-btn" onclick="closeRestaurantModal()">X</button>
@@ -115,7 +115,7 @@
           </div>
         </div>
         <div class="grid grid-2">
-          <label class="row card card-pad" style="cursor:pointer;">
+          <label class="row card card-pad cursor-pointer">
             <input id="restaurantActive" type="checkbox" checked>
             <span>Service active</span>
           </label>
@@ -192,7 +192,7 @@
     function renderRestaurants(restaurants) {
       const container = document.getElementById("list");
       if (!restaurants.length) {
-        container.innerHTML = `<div class="empty" style="grid-column:1/-1;">No restaurants are assigned to your account yet.</div>`;
+        container.innerHTML = `<div class="empty empty-full">No restaurants are assigned to your account yet.</div>`;
         return;
       }
 
@@ -200,12 +200,12 @@
         <article class="card card-pad restaurant-card">
           <div class="row-between">
             <div>
-              <h3 style="margin-bottom:4px;">${escapeHtml(r.name)}</h3>
+              <h3 class="h3-tight">${escapeHtml(r.name)}</h3>
               <div class="muted">${escapeHtml(r.address || r.locality || "Manage menu, dine-in orders, and scan cards")}</div>
             </div>
             <span class="pill ${r.isActive ? "pill-success" : "pill-danger"}">${r.isActive ? "Active" : "Inactive"}</span>
           </div>
-          <div class="row" style="flex-wrap:wrap;">
+          <div class="row row-wrap">
             <span class="pill ${r.subscriptionStatus === "ACTIVE" ? "pill-success" : r.subscriptionStatus === "TRIALING" ? "pill-warning" : "pill-danger"}">${subscriptionLabel(r.subscriptionStatus)}</span>
             ${r.owner?.email ? `<span class="pill">${escapeHtml(r.owner.email)}</span>` : ""}
           </div>

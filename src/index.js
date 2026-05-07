@@ -30,6 +30,7 @@ const BASE_URL = process.env.BASE_URL || "http://localhost:5000";
 
 function rateLimit({ windowMs, max }) {
     const hits = new Map();
+    let sweepCounter = 0;
     return (req, res, next) => {
         const key = `${req.ip}:${req.path}`;
         const now = Date.now();
@@ -42,6 +43,15 @@ function rateLimit({ windowMs, max }) {
 
         entry.count += 1;
         hits.set(key, entry);
+        sweepCounter += 1;
+
+        if (sweepCounter % 200 === 0) {
+            for (const [mapKey, mapEntry] of hits.entries()) {
+                if (mapEntry.resetAt < now) {
+                    hits.delete(mapKey);
+                }
+            }
+        }
 
         if (entry.count > max) {
             return res.status(429).json({ error: "Please wait a moment and try again" });
