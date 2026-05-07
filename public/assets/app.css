@@ -1,4 +1,5 @@
 :root {
+  --topbar-height: 64px;
   --bg: #f7f2ea;
   --surface: #ffffff;
   --surface-2: #fff4e2;
@@ -187,7 +188,7 @@ button {
 
 .restaurant-sticky {
   position: sticky;
-  top: 64px;
+  top: var(--topbar-height);
   z-index: 14;
   background: rgba(255, 253, 248, 0.92);
   backdrop-filter: blur(14px);
@@ -664,6 +665,10 @@ h3 {
 }
 
 @media (max-width: 760px) {
+  :root {
+    --topbar-height: 58px;
+  }
+
   .topbar-inner,
   .page,
   .bottom-actions {
@@ -694,7 +699,7 @@ h3 {
   }
 
   .restaurant-sticky {
-    top: 58px;
+    top: var(--topbar-height);
     padding: 12px;
   }
 

@@ -27,7 +27,7 @@
 
     .order-tools {
       position: sticky;
-      top: 174px;
+      top: calc(var(--topbar-height) + 110px);
       z-index: 13;
       display: grid;
       gap: 10px;
@@ -41,7 +41,7 @@
       }
 
       .order-tools {
-        top: 154px;
+        top: calc(var(--topbar-height) + 96px);
         padding: 10px;
       }
     }
@@ -103,8 +103,12 @@
     let activeOrderStatus = "ALL";
     let orderSearch = "";
     let ordersLoaded = false;
+    let isLoadingOrders = false;
+    let ordersPollingTimer = null;
 
     async function loadOrders() {
+      if (isLoadingOrders) return;
+      isLoadingOrders = true;
       try {
         if (!ordersLoaded) {
           document.getElementById("statusStats").innerHTML = skeletonCards(3);
@@ -123,8 +127,24 @@
       } catch (err) {
         document.getElementById("restaurantName").textContent = "No access";
         document.getElementById("list").innerHTML = `<div class="empty">${escapeHtml(err.message || "You do not have access to this restaurant.")}</div>`;
+      } finally {
+        isLoadingOrders = false;
       }
     }
+    function startOrdersPolling() {
+      if (ordersPollingTimer) return;
+      ordersPollingTimer = setInterval(() => {
+        if (document.hidden) return;
+        loadOrders();
+      }, 3000);
+    }
+
+    function stopOrdersPolling() {
+      if (!ordersPollingTimer) return;
+      clearInterval(ordersPollingTimer);
+      ordersPollingTimer = null;
+    }
+
 
     function renderStats(orders) {
       const counts = orders.reduce((acc, order) => {
@@ -263,8 +283,15 @@
     }
 
     initAccountMenu();
-    setInterval(loadOrders, 3000);
     loadOrders();
+    startOrdersPolling();
+
+    document.addEventListener("visibilitychange", () => {
+      if (document.hidden) return;
+      loadOrders();
+    });
+
+    window.addEventListener("pagehide", stopOrdersPolling);
   </script>
 </body>
 

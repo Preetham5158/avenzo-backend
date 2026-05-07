@@ -78,6 +78,8 @@
   <script>
     const orderId = window.location.pathname.split("/track/")[1];
     const statuses = ["PENDING", "PREPARING", "READY", "COMPLETED"];
+    let isLoadingStatus = false;
+    let statusPollingTimer = null;
 
     function badgeClass(status) {
       if (status === "READY" || status === "COMPLETED") return "pill-success";
@@ -86,6 +88,8 @@
     }
 
     async function loadStatus() {
+      if (isLoadingStatus) return;
+      isLoadingStatus = true;
       try {
         const data = await request(`/order/${orderId}`, { headers: {} });
 
@@ -127,11 +131,34 @@
       } catch (err) {
         document.getElementById("restaurantName").textContent = "Order not found";
         document.getElementById("readyText").textContent = err.message || "Unable to load order.";
+      } finally {
+        isLoadingStatus = false;
       }
     }
 
+    function startStatusPolling() {
+      if (statusPollingTimer) return;
+      statusPollingTimer = setInterval(() => {
+        if (document.hidden) return;
+        loadStatus();
+      }, 3000);
+    }
+
+    function stopStatusPolling() {
+      if (!statusPollingTimer) return;
+      clearInterval(statusPollingTimer);
+      statusPollingTimer = null;
+    }
+
     loadStatus();
-    setInterval(loadStatus, 3000);
+    startStatusPolling();
+
+    document.addEventListener("visibilitychange", () => {
+      if (document.hidden) return;
+      loadStatus();
+    });
+
+    window.addEventListener("pagehide", stopStatusPolling);
   </script>
 </body>
 
