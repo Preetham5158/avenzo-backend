@@ -422,6 +422,38 @@
       border-radius: 18px;
     }
 
+    .checkout-modal {
+      position: relative;
+    }
+
+    .checkout-modal .modal-head {
+      position: relative;
+      padding-right: 56px;
+      align-items: flex-start;
+    }
+
+    .checkout-close {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      width: 34px;
+      height: 34px;
+      min-height: 34px;
+      padding: 0;
+      border: 0;
+      border-radius: 999px;
+      background: transparent;
+      color: #6c472f;
+      font-size: 24px;
+      line-height: 1;
+      box-shadow: none;
+    }
+
+    .checkout-close:hover {
+      background: rgba(108, 71, 47, 0.09);
+      transform: none;
+    }
+
     @keyframes card-pop {
       from {
         opacity: 0;
@@ -655,13 +687,13 @@
   </div>
 
   <div class="modal-backdrop" id="checkoutModal">
-    <form class="modal" onsubmit="placeOrder(event)">
+    <form class="modal checkout-modal" onsubmit="placeOrder(event)">
       <div class="modal-head row-between">
         <div>
           <h3 class="section-title">Ready to enjoy</h3>
           <div class="muted">Review once. Your order goes straight to the restaurant team.</div>
         </div>
-        <button type="button" class="btn btn-ghost icon-btn" onclick="closeCheckout()">X</button>
+        <button type="button" class="checkout-close" onclick="closeCheckout()" aria-label="Close checkout">×</button>
       </div>
       <div class="modal-body stack">
         <div id="cartItems" class="stack"></div>
@@ -826,7 +858,7 @@
       return `
         <article class="food-card">
           <div class="food-img-wrap">
-            <img class="food-img" src="${escapeHtml(item.imageUrl || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=300")}" alt="" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1631452180519-c014fe946bc7?auto=format&fit=crop&w=900&q=80';">
+            <img class="food-img" loading="lazy" decoding="async" src="${escapeHtml(item.imageUrl || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=300")}" alt="" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1631452180519-c014fe946bc7?auto=format&fit=crop&w=900&q=80';">
           </div>
           <div class="item-copy">
             <h3>${escapeHtml(item.name)}</h3>

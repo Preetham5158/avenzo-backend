@@ -259,7 +259,7 @@
 
       container.innerHTML = filtered.map(item => `
         <article class="card card-pad menu-item">
-          <img class="menu-img" src="${escapeHtml(item.imageUrl || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=300")}" alt="" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1631452180519-c014fe946bc7?auto=format&fit=crop&w=900&q=80';">
+          <img class="menu-img" loading="lazy" decoding="async" src="${escapeHtml(item.imageUrl || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=300")}" alt="" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1631452180519-c014fe946bc7?auto=format&fit=crop&w=900&q=80';">
           <div class="menu-copy">
             <div class="row row-wrap mb-6">
               <h3 class="section-title">${escapeHtml(item.name)}</h3>

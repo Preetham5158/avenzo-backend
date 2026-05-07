@@ -10,6 +10,8 @@ const jwt = require("jsonwebtoken");
 
 const app = express();
 const prisma = new PrismaClient();
+const JWT_ISSUER = "avenzo-api";
+const JWT_AUDIENCE = "avenzo-admin";
 
 if (!process.env.JWT_SECRET) {
     throw new Error("JWT_SECRET is required");
@@ -21,6 +23,15 @@ app.use((req, res, next) => {
     res.setHeader("X-Frame-Options", "DENY");
     res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
     res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+    res.setHeader("Cross-Origin-Opener-Policy", "same-origin");
+    res.setHeader("Cross-Origin-Resource-Policy", "same-origin");
+    if (req.secure || req.headers["x-forwarded-proto"] === "https") {
+        res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
+    }
+    res.setHeader(
+        "Content-Security-Policy",
+        "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https:; font-src 'self' https://fonts.gstatic.com; connect-src 'self'; object-src 'none'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
+    );
     next();
 });
 app.use(express.json({ limit: "100kb" }));
@@ -226,6 +237,15 @@ app.post("/order", orderLimiter, async (req, res) => {
             return res.status(400).json({ error: "Missing data" });
         }
 
+        if (String(sessionId).length > 80) {
+            return res.status(400).json({ error: "Invalid session" });
+        }
+
+        const normalizedPhone = phone ? String(phone).trim() : null;
+        if (normalizedPhone && !/^[0-9+\-\s()]{7,20}$/.test(normalizedPhone)) {
+            return res.status(400).json({ error: "Invalid phone number" });
+        }
+
         const normalizedItems = items.map(i => ({
             menuId: String(i.menuId || ""),
             quantity: Number(i.quantity)
@@ -287,7 +307,7 @@ app.post("/order", orderLimiter, async (req, res) => {
                     totalPrice,
                     pickupCode,
                     sessionId,
-                    phone: phone || null,
+                    phone: normalizedPhone,
                     restaurantId,
                     items: {
                         create: normalizedItems.map(i => {
@@ -385,7 +405,11 @@ app.post("/auth/login", authLimiter, async (req, res) => {
         const token = jwt.sign(
             { userId: user.id, role: user.role },
             process.env.JWT_SECRET,
-            { expiresIn: "7d" }
+            {
+                expiresIn: "7d",
+                issuer: JWT_ISSUER,
+                audience: JWT_AUDIENCE
+            }
         );
 
         res.json({
@@ -413,7 +437,11 @@ function authMiddleware(req, res, next) {
         : authHeader;
 
     try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const decoded = jwt.verify(token, process.env.JWT_SECRET, {
+            algorithms: ["HS256"],
+            issuer: JWT_ISSUER,
+            audience: JWT_AUDIENCE
+        });
         req.user = decoded;
         next();
     } catch {
@@ -548,88 +576,97 @@ app.get("/restaurants", authMiddleware, async (req, res) => {
 });
 
 app.post("/restaurant", authMiddleware, async (req, res) => {
-    const { name, address, locality, pickupNote, ownerEmail, subscriptionStatus, subscriptionEndsAt, isActive } = req.body;
-    if (!name) {
-        return res.status(400).json({ error: "Name required" });
-    }
-
-    const user = await getAuthUser(req.user.userId);
-    if (!isSuperAdmin(user)) {
-        return res.status(403).json({ error: "Only super admins can create restaurants" });
-    }
-
-    const slug = normalizeSlug(name);
-    const owner = ownerEmail
-        ? await prisma.user.upsert({
-            where: { email: String(ownerEmail).toLowerCase().trim() },
-            update: { role: "RESTAURANT_OWNER" },
-            create: {
-                email: String(ownerEmail).toLowerCase().trim(),
-                password: await bcrypt.hash("Owner@123", 10),
-                name: name + " Owner",
-                role: "RESTAURANT_OWNER"
-            }
-        })
-        : user;
-
-    const restaurant = await prisma.restaurant.create({
-        data: {
-            name,
-            slug,
-            address: address || null,
-            locality: locality || null,
-            pickupNote: pickupNote || null,
-            ownerId: owner.id,
-            isActive: typeof isActive === "boolean" ? isActive : true,
-            subscriptionStatus: subscriptionStatus || "ACTIVE",
-            subscriptionEndsAt: subscriptionEndsAt ? new Date(subscriptionEndsAt) : null
+    try {
+        const { name, address, locality, pickupNote, ownerEmail, subscriptionStatus, subscriptionEndsAt, isActive } = req.body;
+        if (!name) {
+            return res.status(400).json({ error: "Name required" });
         }
-    });
 
-    res.json(restaurant);
+        const user = await getAuthUser(req.user.userId);
+        if (!isSuperAdmin(user)) {
+            return res.status(403).json({ error: "Only super admins can create restaurants" });
+        }
+
+        const slug = normalizeSlug(name);
+        let owner = user;
+        if (ownerEmail) {
+            const ownerRecord = await prisma.user.findUnique({
+                where: { email: String(ownerEmail).toLowerCase().trim() }
+            });
+            if (!ownerRecord) {
+                return res.status(400).json({ error: "Owner email must belong to an existing account" });
+            }
+            owner = await prisma.user.update({
+                where: { id: ownerRecord.id },
+                data: { role: "RESTAURANT_OWNER" }
+            });
+        }
+
+        const restaurant = await prisma.restaurant.create({
+            data: {
+                name,
+                slug,
+                address: address || null,
+                locality: locality || null,
+                pickupNote: pickupNote || null,
+                ownerId: owner.id,
+                isActive: typeof isActive === "boolean" ? isActive : true,
+                subscriptionStatus: subscriptionStatus || "ACTIVE",
+                subscriptionEndsAt: subscriptionEndsAt ? new Date(subscriptionEndsAt) : null
+            }
+        });
+
+        res.json(restaurant);
+    } catch {
+        res.status(500).json({ error: "Error creating restaurant" });
+    }
 });
 
 app.put("/restaurant/:id", authMiddleware, async (req, res) => {
-    const { id } = req.params;
-    const { name, address, locality, pickupNote, ownerEmail, isActive, subscriptionStatus, subscriptionEndsAt } = req.body;
-    if (!name) {
-        return res.status(400).json({ error: "Name required" });
-    }
-    const user = await getAuthUser(req.user.userId);
-    if (!isSuperAdmin(user)) {
-        return res.status(403).json({ error: "Only the Avenzo admin team can edit restaurant details" });
-    }
+    try {
+        const { id } = req.params;
+        const { name, address, locality, pickupNote, ownerEmail, isActive, subscriptionStatus, subscriptionEndsAt } = req.body;
+        if (!name) {
+            return res.status(400).json({ error: "Name required" });
+        }
+        const user = await getAuthUser(req.user.userId);
+        if (!isSuperAdmin(user)) {
+            return res.status(403).json({ error: "Only the Avenzo admin team can edit restaurant details" });
+        }
 
-    let ownerId;
-    if (ownerEmail) {
-        const owner = await prisma.user.upsert({
-            where: { email: String(ownerEmail).toLowerCase().trim() },
-            update: { role: "RESTAURANT_OWNER" },
-            create: {
-                email: String(ownerEmail).toLowerCase().trim(),
-                password: await bcrypt.hash("Owner@123", 10),
-                name: name + " Owner",
-                role: "RESTAURANT_OWNER"
+        let ownerId;
+        if (ownerEmail) {
+            const ownerRecord = await prisma.user.findUnique({
+                where: { email: String(ownerEmail).toLowerCase().trim() }
+            });
+            if (!ownerRecord) {
+                return res.status(400).json({ error: "Owner email must belong to an existing account" });
+            }
+            const owner = await prisma.user.update({
+                where: { id: ownerRecord.id },
+                data: { role: "RESTAURANT_OWNER" }
+            });
+            ownerId = owner.id;
+        }
+
+        const updated = await prisma.restaurant.update({
+            where: { id },
+            data: {
+                name,
+                ...(ownerId && { ownerId }),
+                ...(typeof address !== "undefined" && { address: address || null }),
+                ...(typeof locality !== "undefined" && { locality: locality || null }),
+                ...(typeof pickupNote !== "undefined" && { pickupNote: pickupNote || null }),
+                ...(typeof isActive === "boolean" && { isActive }),
+                ...(subscriptionStatus && { subscriptionStatus }),
+                ...(typeof subscriptionEndsAt !== "undefined" && { subscriptionEndsAt: subscriptionEndsAt ? new Date(subscriptionEndsAt) : null })
             }
         });
-        ownerId = owner.id;
+
+        res.json(updated);
+    } catch {
+        res.status(500).json({ error: "Error updating restaurant" });
     }
-
-    const updated = await prisma.restaurant.update({
-        where: { id },
-        data: {
-            name,
-            ...(ownerId && { ownerId }),
-            ...(typeof address !== "undefined" && { address: address || null }),
-            ...(typeof locality !== "undefined" && { locality: locality || null }),
-            ...(typeof pickupNote !== "undefined" && { pickupNote: pickupNote || null }),
-            ...(typeof isActive === "boolean" && { isActive }),
-            ...(subscriptionStatus && { subscriptionStatus }),
-            ...(typeof subscriptionEndsAt !== "undefined" && { subscriptionEndsAt: subscriptionEndsAt ? new Date(subscriptionEndsAt) : null })
-        }
-    });
-
-    res.json(updated);
 });
 
 app.delete("/restaurant/:id", authMiddleware, async (req, res) => {

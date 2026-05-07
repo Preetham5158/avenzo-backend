@@ -7,6 +7,10 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/assets/app.css">
   <style>
+    .qr-grid {
+      align-items: stretch;
+    }
+
     .qr-img {
       width: 210px;
       height: 210px;
@@ -14,13 +18,53 @@
       background: white;
       padding: 10px;
       border: 1px solid var(--line);
+      display: block;
+      margin: 0 auto;
     }
 
     .qr-card {
+      display: grid;
+      justify-items: center;
       align-items: center;
       text-align: center;
       overflow: hidden;
       position: relative;
+      background:
+        radial-gradient(circle at 16% 10%, rgba(255, 200, 87, 0.22), transparent 35%),
+        linear-gradient(165deg, #fffdf9 0%, #fff4e6 55%, #f8fbff 100%);
+      border: 1px solid rgba(255, 107, 22, 0.15);
+      box-shadow: 0 18px 36px rgba(64, 31, 15, 0.12);
+      min-height: 420px;
+    }
+
+    .qr-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 22px 42px rgba(255, 107, 22, 0.16);
+    }
+
+    .qr-head {
+      width: 100%;
+      display: grid;
+      gap: 4px;
+      justify-items: center;
+    }
+
+    .qr-subtext {
+      max-width: 280px;
+    }
+
+    .qr-sticker {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 28px;
+      padding: 0 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(18, 116, 91, 0.24);
+      background: rgba(18, 116, 91, 0.09);
+      color: #0d5f4a;
+      font-size: 12px;
+      font-weight: 800;
     }
 
     .qr-card::before {
@@ -29,6 +73,17 @@
       inset: 0 0 auto 0;
       height: 7px;
       background: linear-gradient(90deg, var(--brand), var(--brand-2));
+    }
+
+    @media (max-width: 760px) {
+      .qr-card {
+        min-height: 390px;
+      }
+
+      .qr-img {
+        width: 190px;
+        height: 190px;
+      }
     }
   </style>
 </head>
@@ -54,7 +109,7 @@
         </div>
       </section>
 
-      <section class="grid grid-3" id="container"></section>
+      <section class="grid grid-3 qr-grid" id="container"></section>
     </main>
   </div>
   <nav class="admin-dock">
@@ -90,11 +145,12 @@
           const qr = qrUrl(url, 220);
           return `
             <article class="card card-pad stack qr-card">
-              <div>
+              <div class="qr-head">
+                <span class="qr-sticker">Scan to order</span>
                 <h3>${escapeHtml(r.name)}</h3>
-                <div class="muted">${escapeHtml(r.address || r.locality || "Scan and order at the restaurant")}</div>
+                <div class="muted qr-subtext">${escapeHtml(r.address || r.locality || "Scan and order at the restaurant")}</div>
               </div>
-              <img class="qr-img" src="${qr}" alt="Scan card for ${escapeHtml(r.name)}">
+              <img class="qr-img" loading="lazy" decoding="async" src="${qr}" alt="Scan card for ${escapeHtml(r.name)}">
               <button class="btn btn-primary" onclick='downloadCard(${JSON.stringify(r.id)}, ${JSON.stringify(r.name)})'>Download card</button>
             </article>
           `;
