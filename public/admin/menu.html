@@ -82,9 +82,9 @@
     <main class="page">
       <section class="page-head restaurant-sticky">
         <div>
-          <div class="eyebrow">Menu manager</div>
-          <h1 id="restaurantName">Loading...</h1>
-          <p class="muted" id="restaurantAddress">Create menu items, group by category, and control what customers can order.</p>
+          <div class="eyebrow">Menu care</div>
+          <h1 id="restaurantName">Getting menu...</h1>
+          <p class="muted" id="restaurantAddress">Keep dishes, prices, and availability easy for guests to choose.</p>
         </div>
         <button id="addItemBtn" class="btn btn-primary" onclick="openItemModal()">Add item</button>
       </section>
@@ -92,7 +92,7 @@
       <section class="menu-admin-tools app-panel">
         <div class="field">
           <label for="adminMenuSearch">Find an item quickly</label>
-          <input id="adminMenuSearch" class="input" placeholder="Search by dish, category, status..." oninput="setMenuSearch(this.value)">
+          <input id="adminMenuSearch" class="input" placeholder="Dish, category, available, hidden..." oninput="setMenuSearch(this.value)">
         </div>
         <section class="tabbar surface-strip" id="categoryTabs"></section>
       </section>
@@ -110,7 +110,7 @@
       <div class="modal-head row-between">
         <div>
           <h3 id="modalTitle" style="margin:0;">Add item</h3>
-          <div class="muted">Menu changes publish immediately.</div>
+          <div class="muted">Saved changes appear for guests right away.</div>
         </div>
         <button type="button" class="btn btn-ghost icon-btn" onclick="closeItemModal()">X</button>
       </div>
@@ -184,7 +184,7 @@
         currentUser = await request("/auth/me");
         const restaurant = await request(`/restaurant/${restaurantId}`, { headers: {} });
         document.getElementById("restaurantName").textContent = restaurant.name;
-        document.getElementById("restaurantAddress").textContent = restaurant.address || "Create menu items, group by category, and control what customers can order.";
+        document.getElementById("restaurantAddress").textContent = restaurant.address || "Keep dishes, prices, and availability easy for guests to choose.";
         document.getElementById("addItemBtn").style.display = canManageMenuDetails() ? "inline-flex" : "none";
         await loadMenu();
       } catch (err) {

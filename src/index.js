@@ -437,11 +437,11 @@ function isRestaurantServiceAvailable(restaurant) {
 
 function restaurantServiceMessage(restaurant) {
     if (!restaurant?.isActive) {
-        return "This restaurant is taking a short pause on Avenzo. Please check back soon for faster ordering and smoother pickup.";
+        return "This restaurant is taking a short pause on Avenzo. Please check back soon for faster ordering and smoother dine-in service.";
     }
 
     if (["EXPIRED", "SUSPENDED"].includes(restaurant.subscriptionStatus)) {
-        return "Ordering is paused for this restaurant right now. Avenzo helps busy counters serve guests faster, and service can resume as soon as the workspace is active again.";
+        return "Ordering is paused for this restaurant right now. Avenzo helps busy restaurants serve guests faster, and service can resume as soon as the restaurant is active again.";
     }
 
     return "";

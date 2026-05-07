@@ -143,7 +143,7 @@ const hotels = [
     ownerEmail: "owner.udupi@avenzo.com",
     address: "156, Khata 142/141/156, Supradh Building, 11th Main, 3rd Cross Road, Hebbal, Bengaluru",
     locality: "Hebbal",
-    pickupNote: "Show your pickup code at the self-service counter near the coffee section.",
+    pickupNote: "Please stay nearby after ordering. The team will guide you when your food is ready.",
     signatures: [
       ["Dosa", "Udupi Special Masala Dose", 95, "Crisp Udupi-style dose with potato palya, coconut chutney, and sambar."],
       ["Meals", "South Indian Meals", 140, "Rice, sambar, rasam, palya, curd, pickle, papad, and sweet served in hotel style."],
@@ -155,7 +155,7 @@ const hotels = [
     ownerEmail: "owner.taaza@avenzo.com",
     address: "29th Cross Road, 4th Block, Jayanagar, Bengaluru",
     locality: "Jayanagar",
-    pickupNote: "Collect from the pickup shelf beside the open kitchen once your code is called.",
+    pickupNote: "Place your order from the table and enjoy a smoother dine-in experience.",
     signatures: [
       ["Dosa", "Taaza Masala Dose", 60, "Fast-moving crisp dose with fresh potato palya and chutney."],
       ["Combos", "Chow Chow Bath", 70, "A classic serving of khara bath and kesari bath on one plate."],
@@ -167,7 +167,7 @@ const hotels = [
     ownerEmail: "owner.ctr@avenzo.com",
     address: "7th Cross, Margosa Road, Malleshwaram, Bengaluru",
     locality: "Malleshwaram",
-    pickupNote: "Pickup near the tiffin counter. Keep the code ready during rush hours.",
+    pickupNote: "Your order code helps the team serve you quickly during busy hours.",
     signatures: [
       ["Dosa", "Benne Masala Dose", 110, "Butter-roasted Malleshwaram-style dose with crisp edges and soft center."],
       ["Snacks", "Mangalore Bajji", 60, "Hot goli bajji served with coconut chutney."],
@@ -179,10 +179,10 @@ const hotels = [
     ownerEmail: "owner.vidyarthi@avenzo.com",
     address: "32, Gandhi Bazaar Main Road, Basavanagudi, Bengaluru",
     locality: "Basavanagudi",
-    pickupNote: "Collect at the parcel and pickup counter after the code appears as Ready.",
+    pickupNote: "Relax after ordering. The restaurant team will keep your food status updated.",
     signatures: [
       ["Dosa", "Vidyarthi Special Masala Dose", 115, "Thick, buttery heritage-style masala dose with chutney."],
-      ["Snacks", "Maddur Vade", 55, "Crisp onion-rava snack inspired by old Bengaluru tiffin counters."],
+      ["Snacks", "Maddur Vade", 55, "Crisp onion-rava snack inspired by old Bengaluru tiffin shops."],
       ["Beverages", "Degree Filter Coffee", 40, "Strong coffee served in classic steel tumbler style."]
     ]
   },
@@ -191,7 +191,7 @@ const hotels = [
     ownerEmail: "owner.brahmins@avenzo.com",
     address: "Pushp Kiran, 19, Ranga Rao Road, near Shankar Mutt Road, Shankarapura, Bengaluru",
     locality: "Shankarapura",
-    pickupNote: "Collect near the chutney counter. Food is packed for quick standing-service pickup.",
+    pickupNote: "A quick, warm dine-in flow for classic idli, chutney, and coffee orders.",
     signatures: [
       ["Idli & Vada", "Idli Vade Chutney", 85, "Soft idli and crisp vade with generous coconut chutney."],
       ["Bath", "Khara Bath", 45, "Soft rava bath with vegetables, cashew, and Bengaluru-style seasoning."],
@@ -203,7 +203,7 @@ const hotels = [
     ownerEmail: "owner.veena@avenzo.com",
     address: "187, 15th Cross, Margosa Road, Malleshwaram, Bengaluru",
     locality: "Malleshwaram",
-    pickupNote: "Pickup at the standing counter. Best for quick idli, bath, and coffee orders.",
+    pickupNote: "Best enjoyed fresh at the restaurant after a quick Avenzo order.",
     signatures: [
       ["Idli & Vada", "Soft Idli Chutney", 55, "Pillowy idlis served with signature coconut-mint chutney."],
       ["Bath", "Bisi Bele Bath", 75, "Hot lentil-rice bath with vegetables, ghee, and spice blend."],
@@ -317,7 +317,7 @@ async function main() {
       data: {
         email: hotel.ownerEmail.replace("owner.", "staff."),
         password: await bcrypt.hash("Staff@123", 10),
-        name: `${hotel.name} Counter Team`,
+        name: `${hotel.name} Service Team`,
         role: "EMPLOYEE",
         staffRestaurantId: restaurant.id
       }

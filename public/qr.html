@@ -2,7 +2,7 @@
 <html>
 
 <head>
-  <title>Avenzo QR Codes</title>
+  <title>Avenzo Scan Cards</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/assets/app.css">
@@ -48,9 +48,9 @@
     <main class="page">
       <section class="page-head">
         <div>
-          <div class="eyebrow">QR ordering</div>
-          <h1>Restaurant QR codes</h1>
-          <p class="muted">Download polished scan cards for customer self-ordering.</p>
+          <div class="eyebrow">Dine-in scan cards</div>
+          <h1>Restaurant scan cards</h1>
+          <p class="muted">Print friendly table cards so guests can order while seated.</p>
         </div>
       </section>
 
@@ -59,7 +59,7 @@
   </div>
   <nav class="admin-dock">
     <a href="/admin/dashboard.html">Home</a>
-    <a class="active" href="#">QR</a>
+    <a class="active" href="#">Cards</a>
   </nav>
 
   <script src="/assets/app.js"></script>
@@ -80,7 +80,7 @@
 
         const container = document.getElementById("container");
         if (!restaurants.length) {
-          container.innerHTML = `<div class="empty" style="grid-column:1/-1;">QR cards will be ready here when the restaurant service is active.</div>`;
+          container.innerHTML = `<div class="empty" style="grid-column:1/-1;">Scan cards will appear here when the restaurant service is active.</div>`;
           return;
         }
 
@@ -92,9 +92,9 @@
             <article class="card card-pad stack qr-card">
               <div>
                 <h3>${escapeHtml(r.name)}</h3>
-                <div class="muted">${escapeHtml(r.address || r.locality || "Scan to order")}</div>
+                <div class="muted">${escapeHtml(r.address || r.locality || "Scan and order at the restaurant")}</div>
               </div>
-              <img class="qr-img" src="${qr}" alt="QR code for ${escapeHtml(r.name)}">
+              <img class="qr-img" src="${qr}" alt="Scan card for ${escapeHtml(r.name)}">
               <button class="btn btn-primary" onclick='downloadCard(${JSON.stringify(r.id)}, ${JSON.stringify(r.name)})'>Download card</button>
             </article>
           `;
@@ -142,11 +142,11 @@
 
         ctx.fillStyle = "#ff6a00";
         ctx.font = "800 32px Arial";
-        ctx.fillText("Skip the queue", 350, 700);
+        ctx.fillText("Order from your seat", 350, 700);
 
         ctx.fillStyle = "#667085";
         ctx.font = "20px Arial";
-        ctx.fillText("Scan. Order. Collect when ready.", 350, 740);
+        ctx.fillText("Scan. Choose. Enjoy it here.", 350, 740);
 
         const link = document.createElement("a");
         link.download = `${name}-avenzo-qr.jpg`;

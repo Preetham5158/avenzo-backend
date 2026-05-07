@@ -8,7 +8,7 @@
   <link rel="stylesheet" href="/assets/app.css">
   <style>
     :root {
-      --counter-top: 76px;
+      --dine-top: 72px;
       --search-top: 76px;
       --rail-top: 148px;
       --saffron: #ff6b16;
@@ -25,15 +25,15 @@
       overflow-x: hidden;
       background:
         linear-gradient(135deg, rgba(18, 116, 91, 0.18), transparent 42%),
-        linear-gradient(180deg, #2b1711 0, #2b1711 76px, #eaf7ef 76px, #fff6ed 48%, #eef6ff 100%);
+        linear-gradient(180deg, #2b1711 0, #2b1711 72px, #eaf7ef 72px, #fff6ed 48%, #eef6ff 100%);
       color: #20120d;
     }
 
-    .counter-top {
+    .dine-top {
       position: sticky;
       top: 0;
       z-index: 50;
-      height: var(--counter-top);
+      height: var(--dine-top);
       display: flex;
       align-items: center;
       color: white;
@@ -42,7 +42,7 @@
       box-shadow: 0 18px 42px rgba(32, 16, 12, 0.24);
     }
 
-    .counter-inner {
+    .dine-inner {
       width: min(1180px, calc(100% - 24px));
       margin: 0 auto;
       display: flex;
@@ -51,11 +51,13 @@
       gap: 14px;
     }
 
-    .counter-copy {
+    .dine-copy {
+      flex: 1 1 auto;
       min-width: 0;
+      max-width: 100%;
     }
 
-    .counter-copy h1 {
+    .dine-copy h1 {
       margin: 0;
       font-size: 22px;
       line-height: 1.1;
@@ -64,7 +66,7 @@
       text-overflow: ellipsis;
     }
 
-    .counter-copy p {
+    .dine-copy p {
       margin: 4px 0 0;
       color: rgba(255, 255, 255, 0.72);
       font-size: 13px;
@@ -73,7 +75,7 @@
       text-overflow: ellipsis;
     }
 
-    .counter-badge {
+    .dine-badge {
       flex: 0 0 auto;
       display: inline-flex;
       align-items: center;
@@ -148,14 +150,9 @@
 
     .menu-layout {
       display: grid;
-      grid-template-columns: 132px minmax(0, 1fr);
+      grid-template-columns: 122px minmax(0, 1fr);
       gap: 14px;
       align-items: start;
-      transition: grid-template-columns 0.22s ease;
-    }
-
-    .menu-layout.rail-collapsed {
-      grid-template-columns: 44px minmax(0, 1fr);
     }
 
     .category-rail {
@@ -173,14 +170,6 @@
       border: 1px solid rgba(255, 255, 255, 0.78);
       box-shadow: 0 20px 42px rgba(64, 31, 15, 0.12);
       backdrop-filter: blur(18px);
-    }
-
-    .rail-toggle {
-      min-height: 36px;
-      border-radius: 14px;
-      background: #25130e;
-      color: white;
-      font-weight: 900;
     }
 
     .category-button {
@@ -219,20 +208,6 @@
       opacity: 0.72;
       font-size: 11px;
       font-weight: 800;
-    }
-
-    .rail-collapsed .category-button {
-      display: none;
-    }
-
-    .rail-collapsed .category-rail {
-      padding: 6px;
-    }
-
-    .rail-collapsed .rail-toggle {
-      width: 32px;
-      min-height: 54px;
-      padding: 0;
     }
 
     .menu-feed {
@@ -471,7 +446,7 @@
 
     @media (max-width: 760px) {
       :root {
-        --counter-top: 68px;
+        --dine-top: 66px;
         --search-top: 68px;
         --rail-top: 132px;
       }
@@ -483,23 +458,30 @@
           linear-gradient(180deg, #2b1711 0, #2b1711 68px, #eaf7ef 68px, #fff6ed 54%, #eef6ff 100%);
       }
 
-      .counter-top {
-        height: var(--counter-top);
+      .dine-top {
+        height: var(--dine-top);
       }
 
-      .counter-inner {
+      .dine-inner {
         width: min(100% - 18px, 1180px);
       }
 
-      .counter-copy h1 {
+      .dine-copy {
+        width: 100%;
+      }
+
+      .dine-copy h1 {
         font-size: 17px;
+        max-width: 100%;
       }
 
-      .counter-copy p {
+      .dine-copy p {
         font-size: 12px;
+        width: calc(100vw - 72px);
+        max-width: 300px;
       }
 
-      .counter-badge {
+      .dine-badge {
         display: none;
       }
 
@@ -524,12 +506,8 @@
       }
 
       .menu-layout {
-        grid-template-columns: 92px minmax(0, 1fr);
-        gap: 9px;
-      }
-
-      .menu-layout.rail-collapsed {
-        grid-template-columns: 38px minmax(0, 1fr);
+        grid-template-columns: 82px minmax(0, 1fr);
+        gap: 8px;
       }
 
       .category-rail {
@@ -540,13 +518,17 @@
       }
 
       .category-button {
-        min-height: 54px;
-        padding: 7px;
-        border-radius: 14px;
+        min-height: 48px;
+        padding: 6px;
+        border-radius: 13px;
       }
 
       .category-button strong {
-        font-size: 12px;
+        font-size: 11px;
+      }
+
+      .category-button span {
+        font-size: 10px;
       }
 
       .section-head {
@@ -634,14 +616,14 @@
 </head>
 
 <body>
-  <header class="counter-top">
-    <div class="counter-inner">
-      <div class="counter-copy">
-        <div class="eyebrow">Avenzo express pickup</div>
-        <h1 id="restaurantName">Loading...</h1>
-        <p id="restaurantAddress">Fresh food, shorter wait, happier counter.</p>
+  <header class="dine-top">
+    <div class="dine-inner">
+      <div class="dine-copy">
+        <div class="eyebrow">Avenzo dine-in order</div>
+        <h1 id="restaurantName">Opening menu...</h1>
+        <p id="restaurantAddress">Choose here. Eat here. Skip the billing queue.</p>
       </div>
-      <div class="counter-badge" id="pickupNote">Live menu</div>
+      <div class="dine-badge" id="dineNote">Live dine-in menu</div>
     </div>
   </header>
 
@@ -656,9 +638,6 @@
 
     <section class="menu-layout" id="menuLayout">
       <aside class="category-rail">
-        <button class="btn rail-toggle" type="button" onclick="toggleRail()" aria-label="Collapse categories">
-          <span id="railIcon">&lt;</span>
-        </button>
         <div id="categoryRail"></div>
       </aside>
       <section class="menu-feed" id="menu"></section>
@@ -679,8 +658,8 @@
     <form class="modal" onsubmit="placeOrder(event)">
       <div class="modal-head row-between">
         <div>
-          <h3 style="margin:0;">Ready for the kitchen</h3>
-          <div class="muted">Review once. We will keep pickup simple.</div>
+          <h3 style="margin:0;">Ready to enjoy</h3>
+          <div class="muted">Review once. Your order goes straight to the restaurant team.</div>
         </div>
         <button type="button" class="btn btn-ghost icon-btn" onclick="closeCheckout()">X</button>
       </div>
@@ -693,7 +672,7 @@
       </div>
       <div class="modal-actions">
         <button type="button" class="btn btn-ghost" onclick="closeCheckout()">Add more</button>
-        <button id="placeBtn" class="btn btn-primary" type="submit">Send to kitchen</button>
+        <button id="placeBtn" class="btn btn-primary" type="submit">Place order</button>
       </div>
     </form>
   </div>
@@ -718,8 +697,8 @@
           : await request(`/restaurant/${restaurantId}`, { headers: {} });
         restaurantId = restaurant.id;
         document.getElementById("restaurantName").textContent = restaurant.name;
-        document.getElementById("restaurantAddress").textContent = restaurant.address || restaurant.locality || "Fresh food, shorter wait, happier counter.";
-        document.getElementById("pickupNote").textContent = restaurant.pickupNote || "Live counter menu";
+        document.getElementById("restaurantAddress").textContent = restaurant.address || restaurant.locality || "Choose here. Eat here. Skip the billing queue.";
+        document.getElementById("dineNote").textContent = "Live dine-in menu";
         if (restaurant.serviceAvailable === false) {
           document.getElementById("menu").innerHTML = `
             <div class="empty">
@@ -797,12 +776,6 @@
     function setSearch(value) {
       searchTerm = value.trim().toLowerCase();
       renderMenu();
-    }
-
-    function toggleRail() {
-      const layout = document.getElementById("menuLayout");
-      const collapsed = layout.classList.toggle("rail-collapsed");
-      document.getElementById("railIcon").textContent = collapsed ? ">" : "<";
     }
 
     function toggleSection(name) {

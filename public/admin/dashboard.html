@@ -68,9 +68,9 @@
       <section class="hero-panel workspace-hero">
         <div class="row-between">
           <div>
-            <div class="eyebrow">Admin workspace</div>
+            <div class="eyebrow">Restaurant hub</div>
             <h1 id="pageTitle">Restaurants</h1>
-            <p id="roleText" class="muted">Loading access...</p>
+            <p id="roleText" class="muted">Getting your restaurants ready...</p>
           </div>
           <button id="createBtn" class="btn btn-primary" onclick="openRestaurantModal()">Add restaurant</button>
         </div>
@@ -110,8 +110,8 @@
             <input id="restaurantLocality" class="input" placeholder="Jayanagar">
           </div>
           <div class="field">
-            <label for="restaurantPickupNote">Pickup note</label>
-            <input id="restaurantPickupNote" class="input" placeholder="Collect at counter 2">
+            <label for="restaurantPickupNote">Guest note</label>
+            <input id="restaurantPickupNote" class="input" placeholder="Example: Please stay near the dining area after ordering">
           </div>
         </div>
         <div class="grid grid-2">
@@ -157,7 +157,7 @@
 
         document.getElementById("pageTitle").textContent = canCreateRestaurant ? "All Restaurants" : "Your Restaurants";
         document.getElementById("roleText").textContent = canCreateRestaurant
-          ? "You can manage every restaurant from this workspace."
+          ? "You can guide every restaurant from this hub."
           : "Only restaurants assigned to you are shown here.";
         document.getElementById("createBtn").style.display = canCreateRestaurant ? "inline-flex" : "none";
 
@@ -182,9 +182,9 @@
           <span class="pill">Visible to you</span>
         </div>
         <div class="card card-pad metric-card">
-          <div class="muted">Workspace</div>
+          <div class="muted">Access</div>
           <h3>${canCreateRestaurant ? "All locations" : "Assigned locations"}</h3>
-          <span class="pill ${canCreateRestaurant ? "pill-success" : "pill-warning"}">${canCreateRestaurant ? "Company view" : user?.role === "EMPLOYEE" ? "Counter view" : "Owner view"}</span>
+          <span class="pill ${canCreateRestaurant ? "pill-success" : "pill-warning"}">${canCreateRestaurant ? "Company view" : user?.role === "EMPLOYEE" ? "Service view" : "Owner view"}</span>
         </div>
       `;
     }
@@ -201,7 +201,7 @@
           <div class="row-between">
             <div>
               <h3 style="margin-bottom:4px;">${escapeHtml(r.name)}</h3>
-              <div class="muted">${escapeHtml(r.address || r.locality || "Manage menu, orders, and QR ordering")}</div>
+              <div class="muted">${escapeHtml(r.address || r.locality || "Manage menu, dine-in orders, and scan cards")}</div>
             </div>
             <span class="pill ${r.isActive ? "pill-success" : "pill-danger"}">${r.isActive ? "Active" : "Inactive"}</span>
           </div>
@@ -212,7 +212,7 @@
           <div class="restaurant-actions">
             <button class="btn btn-dark" onclick="openMenu('${r.id}')">Menu</button>
             <button class="btn btn-soft" onclick="openOrders('${r.id}')">Orders</button>
-            <button class="btn btn-ghost" onclick="openQr('${r.id}')">QR</button>
+            <button class="btn btn-ghost" onclick="openQr('${r.id}')">Scan card</button>
             ${canEditRestaurants ? `<button class="btn btn-ghost" onclick='openRestaurantModal(${JSON.stringify(r.id)})'>Edit</button>` : ""}
           </div>
         </article>

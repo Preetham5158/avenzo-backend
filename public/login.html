@@ -17,9 +17,9 @@
       </div>
 
       <div class="stack" style="text-align:center; margin-bottom:20px;">
-        <div class="eyebrow">Team access</div>
+        <div class="eyebrow">Restaurant access</div>
         <h1 style="font-size:30px;">Welcome back</h1>
-        <p class="muted">Your restaurant workspace, ready when you are.</p>
+        <p class="muted">Open your Avenzo home and keep service moving smoothly.</p>
       </div>
 
       <form class="stack" onsubmit="login(event)">
@@ -33,7 +33,7 @@
           <input id="password" class="input" type="password" autocomplete="current-password" placeholder="Enter password" required>
         </div>
 
-        <button id="loginBtn" class="btn btn-primary" type="submit">Login</button>
+        <button id="loginBtn" class="btn btn-primary" type="submit">Sign in</button>
         <div id="error" class="muted" style="min-height:20px;"></div>
       </form>
 
@@ -51,7 +51,7 @@
       const btn = document.getElementById("loginBtn");
       const errorEl = document.getElementById("error");
       errorEl.textContent = "";
-      setLoading(btn, true, "Logging in...");
+      setLoading(btn, true, "Signing in...");
 
       try {
         const email = document.getElementById("email").value.trim();
@@ -62,7 +62,7 @@
           body: JSON.stringify({ email, password })
         });
         const data = await res.json();
-        if (!res.ok || !data.token) throw new Error(data.error || "Login failed");
+        if (!res.ok || !data.token) throw new Error(data.error || "Sign in failed");
 
         localStorage.setItem("token", data.token);
         window.location.href = "/admin/dashboard.html";

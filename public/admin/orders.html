@@ -64,8 +64,8 @@
       <section class="page-head restaurant-sticky">
         <div>
           <div class="eyebrow">Live orders</div>
-          <h1 id="restaurantName">Loading...</h1>
-          <p class="muted" id="restaurantAddress">New and updated orders appear automatically.</p>
+          <h1 id="restaurantName">Getting orders...</h1>
+          <p class="muted" id="restaurantAddress">New orders appear here automatically.</p>
         </div>
         <span class="pill pill-dark" id="orderCount">0 orders</span>
       </section>
@@ -74,7 +74,7 @@
       <section class="order-tools app-panel">
         <div class="field">
           <label for="orderSearch">Find an order</label>
-          <input id="orderSearch" class="input" placeholder="Pickup code, order number, item..." oninput="setOrderSearch(this.value)">
+          <input id="orderSearch" class="input" placeholder="Order code, order number, item..." oninput="setOrderSearch(this.value)">
         </div>
         <section class="tabbar surface-strip" id="orderFilters"></section>
       </section>
@@ -115,7 +115,7 @@
         ordersLoaded = true;
 
         document.getElementById("restaurantName").textContent = data.restaurant?.name || "Restaurant Orders";
-        document.getElementById("restaurantAddress").textContent = data.restaurant?.address || data.restaurant?.pickupNote || "New and updated orders appear automatically.";
+        document.getElementById("restaurantAddress").textContent = data.restaurant?.address || "New orders appear here automatically.";
         document.getElementById("orderCount").textContent = `${allOrders.length} order${allOrders.length === 1 ? "" : "s"}`;
         renderStats(allOrders);
         renderOrderFilters();
@@ -188,7 +188,7 @@
             <div class="row-between">
               <div>
                 <div class="eyebrow">Order #${order.orderNumber || order.pickupCode}</div>
-                <h3 style="margin-bottom:4px;">Pickup ${escapeHtml(order.pickupCode)}</h3>
+                <h3 style="margin-bottom:4px;">Code ${escapeHtml(order.pickupCode)}</h3>
                 <div class="muted">Placed ${formatDate(order.createdAt)}</div>
               </div>
               <span class="pill ${meta[0]}">${escapeHtml(order.status)}</span>
@@ -196,7 +196,7 @@
 
             <div class="grid grid-3">
               <div>
-                <div class="muted">Ready to collect</div>
+                <div class="muted">Ready time</div>
                 <strong>${formatDate(order.readyAt)}</strong>
               </div>
               <div>
@@ -204,7 +204,7 @@
                 <strong>${money(order.totalPrice)}</strong>
               </div>
               <div>
-                <div class="muted">Pickup code</div>
+                <div class="muted">Order code</div>
                 <strong>${escapeHtml(order.pickupCode)}</strong>
               </div>
             </div>

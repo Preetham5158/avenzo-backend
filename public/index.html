@@ -9,18 +9,32 @@
 
     <style>
         /* GLOBAL */
+        * {
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            width: 100%;
+            max-width: 100vw;
+        }
+
         body {
             margin: 0;
             font-family: 'Inter', sans-serif;
-            background: linear-gradient(180deg, #f5f7fb, #eef1f7);
+            background:
+                linear-gradient(135deg, rgba(18, 116, 91, 0.10), transparent 42%),
+                linear-gradient(180deg, #fffaf2, #f7f2ea 55%, #eef6ff);
             color: #111;
             scroll-behavior: smooth;
+            overflow-x: hidden;
         }
 
         .container {
             max-width: 1200px;
             margin: auto;
             padding: 0 40px;
+            width: 100%;
         }
 
         section {
@@ -46,12 +60,13 @@
             justify-content: space-between;
             align-items: center;
             padding: 18px 40px;
-            background: rgba(255, 255, 255, 0.85);
+            background: rgba(255, 253, 248, 0.88);
             backdrop-filter: blur(12px);
             border-bottom: 1px solid #eee;
             position: sticky;
             top: 0;
             z-index: 10;
+            width: 100%;
         }
 
         .brand {
@@ -120,7 +135,7 @@
             background:
                 radial-gradient(circle at 20% 20%, rgba(255, 106, 0, 0.25), transparent),
                 radial-gradient(circle at 80% 30%, rgba(255, 180, 0, 0.15), transparent),
-                linear-gradient(180deg, #ffffff, #f3f4f8);
+                linear-gradient(180deg, #fffaf2, #eaf7ef);
         }
 
         .hero-content {
@@ -132,12 +147,14 @@
 
         .hero-text {
             flex: 1;
+            min-width: 0;
             animation: fadeUp 0.8s ease;
         }
 
         .hero-text h1 {
             font-size: 48px;
             line-height: 1.2;
+            overflow-wrap: anywhere;
         }
 
         .hero-text span {
@@ -150,6 +167,8 @@
             font-size: 18px;
             color: #555;
             margin: 20px 0;
+            max-width: 100%;
+            overflow-wrap: anywhere;
         }
 
         .hero-text button {
@@ -169,12 +188,14 @@
 
         .hero-img {
             flex: 1;
+            min-width: 0;
             position: relative;
             animation: fadeUp 1s ease;
         }
 
         .hero-img img {
             width: 100%;
+            max-width: 100%;
             border-radius: 14px;
             transition: 0.4s;
         }
@@ -198,8 +219,8 @@
         /* PROBLEM */
         .problem {
             background:
-                radial-gradient(circle at center, rgba(255, 106, 0, 0.12), transparent),
-                #0a0a0a;
+                radial-gradient(circle at center, rgba(255, 200, 87, 0.16), transparent),
+                linear-gradient(135deg, #2b1711, #12382f);
             color: white;
         }
 
@@ -307,6 +328,12 @@
                 flex-direction: column;
             }
 
+            .hero-text,
+            .hero-img {
+                width: 100%;
+                flex: none;
+            }
+
             .container {
                 padding: 0 20px;
             }
@@ -321,12 +348,66 @@
         }
 
         @media(max-width:600px) {
+            .header {
+                padding: 14px 18px;
+                gap: 12px;
+                overflow: hidden;
+            }
+
+            .brand {
+                font-size: 18px;
+                min-width: 0;
+            }
+
+            .nav button {
+                padding: 10px 14px;
+                white-space: nowrap;
+            }
+
             .nav a {
                 display: none;
             }
 
+            .hero-content {
+                display: grid;
+                grid-template-columns: 1fr;
+                gap: 28px;
+                justify-items: start;
+                padding-left: 20px;
+                padding-right: 52px;
+                overflow: hidden;
+            }
+
+            .hero-text,
+            .hero-img {
+                width: 100%;
+                max-width: 100%;
+            }
+
+            .hero-img {
+                overflow: hidden;
+            }
+
             .hero-text h1 {
-                font-size: 28px;
+                font-size: 24px;
+                line-height: 1.16;
+                width: calc(100vw - 72px);
+                max-width: 330px;
+                word-break: break-word;
+            }
+
+            .hero-text p {
+                font-size: 16px;
+                line-height: 1.45;
+                width: calc(100vw - 72px);
+                max-width: 318px;
+                word-break: break-word;
+            }
+
+            .hero-img img {
+                display: block;
+                width: calc(100vw - 72px);
+                max-width: 318px;
             }
 
             section {
@@ -351,7 +432,7 @@
             <a href="#features">Features</a>
             <a href="#how">How it Works</a>
             <a href="#benefits">Benefits</a>
-            <button onclick="location.href='/login.html'">Login</button>
+            <button onclick="location.href='/login.html'">Sign in</button>
         </div>
     </header>
 
@@ -359,12 +440,11 @@
         <div class="container hero-content">
 
             <div class="hero-text">
-                <h1>Make Ordering Effortless.<br><span>For You and Your Customers.</span></h1>
+                <h1>Dine-in ordering, made joyful.<br><span>For guests and restaurants.</span></h1>
 
                 <p>
-                    No more waiting in queues. No more confusion at counters.
-                    Avenzo helps customers order instantly while helping you serve faster and grow your revenue
-                    smoothly.
+                    Guests scan, choose, and send their dine-in order without pressure.
+                    Your restaurant gets clearer orders and smoother service during rush hours.
                 </p>
 
                 <button onclick="comingSoon(event)">Try Live Demo</button>
@@ -383,17 +463,17 @@
 
             <div class="grid">
                 <div class="card">
-                    <h3>⏳ Waiting Frustrates Customers</h3>
-                    <p>Long queues often lead to poor experience and lost interest</p>
+                    <h3>Busy hours feel lighter</h3>
+                    <p>Guests can start ordering without standing in a billing line first.</p>
                 </div>
 
                 <div class="card">
-                    <h3>📄 Manual Orders Cause Errors</h3>
-                    <p>Miscommunication between counter and kitchen creates delays</p>
+                    <h3>Clearer dine-in orders</h3>
+                    <p>The restaurant team sees what the guest chose, with less back-and-forth.</p>
                 </div>
 
                 <div class="card">
-                    <h3>💸 Missed Opportunities</h3>
+                    <h3>Missed chances</h3>
                     <p>When systems slow down, fewer customers are served</p>
                 </div>
             </div>
@@ -405,8 +485,8 @@
             <div>
                 <h2>A Better Experience for Customers</h2>
                 <p>
-                    Customers can scan, browse, and order at their own pace.
-                    No pressure, no waiting — just a smooth and comfortable ordering experience.
+                    Guests can scan, browse, and order at their own pace while they are at the restaurant.
+                    It feels calm, quick, and easy to understand.
                 </p>
             </div>
 
@@ -420,17 +500,17 @@
 
             <div class="grid">
                 <div class="card">
-                    <h3>🚀 Faster Service</h3>
+                    <h3>Faster service</h3>
                     <p>Serve more customers without increasing staff load</p>
                 </div>
 
                 <div class="card">
-                    <h3>📈 Better Revenue Flow</h3>
+                    <h3>Better order flow</h3>
                     <p>More orders completed in less time</p>
                 </div>
 
                 <div class="card">
-                    <h3>⚡ Smooth Operations</h3>
+                    <h3>Smoother service</h3>
                     <p>Reduce stress and improve coordination</p>
                 </div>
             </div>
@@ -439,10 +519,10 @@
 
     <section class="cta">
         <div class="container">
-            <h2>Bring Simplicity to Your Ordering System</h2>
+            <h2>Bring joy to dine-in ordering</h2>
 
             <p>
-                Avenzo is built to make ordering easier for customers and operations smoother for you.
+                Avenzo is built to make guest ordering feel simple and restaurant service feel lighter.
             </p>
 
             <button onclick="location.href='/signup.html'">Get Started</button>
@@ -450,10 +530,9 @@
     </section>
 
     <footer>
-        © 2026 Avenzo • Simplifying Food Ordering
+        2026 Avenzo - Dine-in ordering made smoother
     </footer>
 
-</body>
 <div id="comingSoonToast" style="
   position: fixed;
   inset: 0;
@@ -472,7 +551,7 @@
     padding: 20px 30px;
     border-radius: 10px;
   ">
-    Feature coming soon 🚀
+    Coming soon
   </div>
 </div>
 
@@ -490,3 +569,6 @@ function comingSoon(e){
   }, 1800);
 }
 </script>
+</body>
+
+</html>
