@@ -8,187 +8,397 @@
   <link rel="stylesheet" href="/assets/app.css">
   <style>
     :root {
-      --customer-hero-height: 96px;
-      --customer-discovery-top: 96px;
-      --customer-section-top: 246px;
+      --counter-top: 76px;
+      --search-top: 76px;
+      --rail-top: 148px;
+      --saffron: #ff6b16;
+      --turmeric: #ffc857;
+      --leaf: #12745b;
+      --cocoa: #25130e;
+      --cream: #fff6e8;
+      --paper: #fffdf8;
     }
 
     body {
-      padding-bottom: 104px;
-      background:
-        linear-gradient(180deg, #15110f 0, #15110f 96px, #fff6ee 96px, #fffaf6 52%, #f6f7fb 100%);
+      min-height: 100vh;
+      padding-bottom: 94px;
       overflow-x: hidden;
+      background:
+        linear-gradient(135deg, rgba(18, 116, 91, 0.18), transparent 42%),
+        linear-gradient(180deg, #2b1711 0, #2b1711 76px, #eaf7ef 76px, #fff6ed 48%, #eef6ff 100%);
+      color: #20120d;
     }
 
-    .customer-hero {
+    .counter-top {
       position: sticky;
       top: 0;
-      z-index: 34;
-      background:
-        radial-gradient(circle at 14% 16%, rgba(255, 138, 36, 0.32), transparent 28%),
-        linear-gradient(135deg, #120d0a, #1b1b1c 62%, #0a0a0a);
+      z-index: 50;
+      height: var(--counter-top);
+      display: flex;
+      align-items: center;
       color: white;
-      padding: 12px 0;
-      box-shadow: 0 16px 36px rgba(16, 17, 20, 0.18);
+      background:
+        linear-gradient(100deg, #20100c 0%, #3a1c11 48%, #102c25 100%);
+      box-shadow: 0 18px 42px rgba(32, 16, 12, 0.24);
     }
 
-    .customer-hero .muted {
-      color: rgba(255, 255, 255, 0.72);
+    .counter-inner {
+      width: min(1180px, calc(100% - 24px));
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
     }
 
-    .customer-hero .topbar-inner > div:first-child {
+    .counter-copy {
       min-width: 0;
     }
 
-    .customer-hero p {
-      overflow-wrap: anywhere;
+    .counter-copy h1 {
+      margin: 0;
+      font-size: 22px;
+      line-height: 1.1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
-    #pickupNote {
-      margin-bottom: 0;
+    .counter-copy p {
+      margin: 4px 0 0;
+      color: rgba(255, 255, 255, 0.72);
+      font-size: 13px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
-    .hero-meta {
-      display: flex;
+    .counter-badge {
+      flex: 0 0 auto;
+      display: inline-flex;
       align-items: center;
-      flex-wrap: wrap;
       gap: 8px;
-      margin-top: 8px;
-    }
-
-    .hero-meta .pill {
+      padding: 9px 12px;
+      border-radius: 999px;
+      color: #ffe9cb;
       background: rgba(255, 255, 255, 0.1);
-      color: white;
-      border: 1px solid rgba(255, 255, 255, 0.14);
+      border: 1px solid rgba(255, 255, 255, 0.13);
+      font-size: 12px;
+      font-weight: 800;
     }
 
-    .discovery-dock {
+    .order-page {
+      width: min(1180px, calc(100% - 24px));
+      margin: 0 auto;
+      padding: 12px 0 96px;
+    }
+
+    .quick-search {
       position: sticky;
-      top: var(--customer-discovery-top);
-      z-index: 28;
+      top: var(--search-top);
+      z-index: 42;
       display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
       gap: 10px;
-      margin-bottom: 14px;
-      padding: 12px;
+      align-items: center;
+      padding: 10px;
+      margin-bottom: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.72);
+      border-radius: 20px;
+      background: rgba(255, 253, 248, 0.86);
+      backdrop-filter: blur(18px);
+      box-shadow: 0 16px 36px rgba(64, 31, 15, 0.12);
     }
 
-    .search-input-wrap {
+    .search-mini {
       position: relative;
+      min-width: 0;
     }
 
-    .search-input-wrap::before {
-      content: "Search";
+    .search-mini span {
       position: absolute;
-      left: 14px;
+      left: 12px;
       top: 50%;
       transform: translateY(-50%);
-      color: #98a2b3;
+      color: #8a5b3a;
       font-size: 12px;
       font-weight: 800;
       pointer-events: none;
     }
 
-    .search-input-wrap .input {
-      min-height: 52px;
-      padding-left: 68px;
-      border-radius: 16px;
-      background: #ffffff;
-      box-shadow: inset 0 0 0 1px rgba(16, 17, 20, 0.02);
-    }
-
-    .category-bar {
-      display: grid;
-      gap: 8px;
-    }
-
-    .category-head {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-    }
-
-    .category-head .btn {
-      min-height: 34px;
+    .search-mini .input {
+      min-height: 40px;
+      padding-left: 62px;
       border-radius: 999px;
-      font-size: 13px;
+      background: #fffaf2;
+      border-color: rgba(108, 71, 47, 0.16);
+      box-shadow: none;
+    }
+
+    .quick-count {
+      white-space: nowrap;
+      padding: 9px 12px;
+      border-radius: 999px;
+      color: #ffffff;
+      background: #12745b;
+      font-size: 12px;
+      font-weight: 800;
+      box-shadow: 0 10px 22px rgba(18, 116, 91, 0.22);
+    }
+
+    .menu-layout {
+      display: grid;
+      grid-template-columns: 132px minmax(0, 1fr);
+      gap: 14px;
+      align-items: start;
+      transition: grid-template-columns 0.22s ease;
+    }
+
+    .menu-layout.rail-collapsed {
+      grid-template-columns: 44px minmax(0, 1fr);
     }
 
     .category-rail {
-      max-height: 92px;
-      transition: max-height 0.22s ease, opacity 0.18s ease;
+      position: sticky;
+      top: var(--rail-top);
+      z-index: 30;
+      max-height: calc(100vh - var(--rail-top) - 98px);
+      display: grid;
+      gap: 8px;
+      padding: 8px;
+      overflow: auto;
+      border-radius: 22px;
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(255, 247, 235, 0.84));
+      border: 1px solid rgba(255, 255, 255, 0.78);
+      box-shadow: 0 20px 42px rgba(64, 31, 15, 0.12);
+      backdrop-filter: blur(18px);
     }
 
-    .categories-collapsed .category-rail {
-      max-height: 0;
-      opacity: 0;
-      overflow: hidden;
-      padding-bottom: 0;
+    .rail-toggle {
+      min-height: 36px;
+      border-radius: 14px;
+      background: #25130e;
+      color: white;
+      font-weight: 900;
+    }
+
+    .category-button {
+      min-height: 60px;
+      width: 100%;
+      display: grid;
+      align-content: center;
+      gap: 3px;
+      padding: 8px;
+      border-radius: 16px;
+      text-align: left;
+      background: rgba(255, 255, 255, 0.74);
+      color: #4f2e20;
+      border: 1px solid rgba(108, 71, 47, 0.12);
+      cursor: pointer;
+      transition: transform 0.18s ease, background 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
+    }
+
+    .category-button:hover {
+      transform: translateY(-1px);
+    }
+
+    .category-button.active {
+      color: white;
+      background: linear-gradient(135deg, var(--saffron), #d44a15);
+      box-shadow: 0 12px 24px rgba(255, 107, 22, 0.22);
+    }
+
+    .category-button strong {
+      font-size: 13px;
+      line-height: 1.12;
+    }
+
+    .category-button span {
+      color: inherit;
+      opacity: 0.72;
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .rail-collapsed .category-button {
+      display: none;
+    }
+
+    .rail-collapsed .category-rail {
+      padding: 6px;
+    }
+
+    .rail-collapsed .rail-toggle {
+      width: 32px;
+      min-height: 54px;
+      padding: 0;
+    }
+
+    .menu-feed {
+      display: grid;
+      gap: 14px;
+      min-width: 0;
     }
 
     .menu-section {
       display: grid;
       gap: 10px;
-      scroll-margin-top: var(--customer-section-top);
+      scroll-margin-top: calc(var(--rail-top) + 4px);
     }
 
-    .category-heading {
+    .section-head {
       position: sticky;
-      top: var(--customer-section-top);
-      z-index: 16;
+      top: var(--rail-top);
+      z-index: 22;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 12px;
-      margin-top: 8px;
+      gap: 10px;
       padding: 10px 12px;
-      border: 1px solid rgba(231, 233, 239, 0.82);
-      border-radius: 999px;
-      background: rgba(255, 250, 246, 0.94);
-      backdrop-filter: blur(12px);
-      box-shadow: 0 8px 26px rgba(16, 17, 20, 0.05);
+      border-radius: 18px;
+      color: #321b12;
+      background: rgba(255, 250, 242, 0.9);
+      border: 1px solid rgba(108, 71, 47, 0.12);
+      box-shadow: 0 12px 28px rgba(64, 31, 15, 0.08);
+      backdrop-filter: blur(14px);
     }
 
-    .category-heading button {
-      min-height: 30px;
-      padding: 0 10px;
-      border-radius: 999px;
-      min-width: 72px;
-      background: #101114;
+    .section-head h2 {
+      margin: 0;
+      font-size: 18px;
+    }
+
+    .section-head p {
+      margin: 2px 0 0;
+      color: #7a5d4c;
+      font-size: 13px;
+    }
+
+    .section-head button {
+      flex: 0 0 38px;
+      width: 38px;
+      min-height: 38px;
+      padding: 0;
+      border-radius: 13px;
       color: white;
-      border-color: #101114;
+      background: #12745b;
+      box-shadow: 0 10px 20px rgba(18, 116, 91, 0.18);
     }
 
-    .menu-card {
+    .food-card {
+      position: relative;
       display: grid;
-      grid-template-columns: 96px minmax(0, 1fr) auto;
+      grid-template-columns: 108px minmax(0, 1fr) auto;
       gap: 14px;
       align-items: center;
-      border-radius: 18px;
+      padding: 12px;
       overflow: hidden;
+      border-radius: 22px;
+      background: rgba(255, 255, 255, 0.88);
+      border: 1px solid rgba(108, 71, 47, 0.1);
+      box-shadow: 0 14px 34px rgba(64, 31, 15, 0.1);
+      transform: translateZ(0);
+      animation: card-pop 0.22s ease both;
+    }
+
+    .food-card::before {
+      content: "";
+      position: absolute;
+      inset: 0 auto 0 0;
+      width: 5px;
+      background: linear-gradient(180deg, var(--saffron), var(--turmeric), var(--leaf));
+      opacity: 0.8;
+    }
+
+    .food-card:hover {
+      transform: translateY(-2px) perspective(800px) rotateX(1deg);
+      box-shadow: 0 20px 42px rgba(64, 31, 15, 0.14);
+    }
+
+    .food-img-wrap {
+      position: relative;
+      width: 108px;
+      height: 108px;
+      border-radius: 20px;
+      overflow: hidden;
+      background: #f1e5d5;
+      box-shadow: 0 12px 24px rgba(64, 31, 15, 0.16);
+    }
+
+    .food-img-wrap::after {
+      content: "";
+      position: absolute;
+      inset: auto 10px 8px;
+      height: 10px;
+      border-radius: 999px;
+      background: rgba(0, 0, 0, 0.18);
+      filter: blur(9px);
     }
 
     .food-img {
-      width: 96px;
-      height: 96px;
-      border-radius: 16px;
+      width: 100%;
+      height: 100%;
       object-fit: cover;
-      background: #eef0f4;
+      transform: scale(1.03);
+      transition: transform 0.24s ease;
+    }
+
+    .food-card:hover .food-img {
+      transform: scale(1.08);
     }
 
     .item-copy {
       min-width: 0;
     }
 
+    .item-copy h3 {
+      margin: 0 0 4px;
+      font-size: 18px;
+    }
+
+    .food-desc {
+      display: -webkit-box;
+      margin-bottom: 8px;
+      overflow: hidden;
+      color: #6f5b4f;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
+    }
+
+    .price-row {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .price-row strong {
+      font-size: 17px;
+    }
+
+    .add-btn {
+      min-width: 92px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, var(--saffron), #ff9f1c);
+      color: #231006;
+      box-shadow: 0 16px 28px rgba(255, 107, 22, 0.22);
+    }
+
+    .add-btn.is-hidden,
+    .qty-control.is-hidden {
+      display: none;
+    }
+
     .qty-control {
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      background: #fff7ef;
-      border: 1px solid rgba(255, 106, 0, 0.18);
-      border-radius: 999px;
       padding: 6px;
-      box-shadow: 0 10px 22px rgba(255, 106, 0, 0.12);
+      border-radius: 999px;
+      background: #fff6e8;
+      border: 1px solid rgba(255, 107, 22, 0.2);
+      box-shadow: 0 14px 24px rgba(255, 107, 22, 0.14);
     }
 
     .qty-control .icon-btn {
@@ -196,35 +406,14 @@
       width: 34px;
       height: 34px;
       min-height: 34px;
-      border-radius: 10px;
-    }
-
-    .qty-control .btn-dark {
-      background: #ffffff;
-      color: #101114;
-      border-color: #dfe3ea;
-      box-shadow: none;
-    }
-
-    .qty-control.is-hidden {
-      display: none;
-    }
-
-    .add-btn {
-      min-width: 96px;
       border-radius: 999px;
     }
 
-    .add-btn.is-hidden {
-      display: none;
-    }
-
-    .food-desc {
-      display: -webkit-box;
-      margin-bottom: 8px;
-      overflow: hidden;
-      -webkit-box-orient: vertical;
-      -webkit-line-clamp: 2;
+    .qty-control .btn-dark {
+      background: white;
+      color: #20120d;
+      border: 1px solid rgba(108, 71, 47, 0.14);
+      box-shadow: none;
     }
 
     .cart-bar {
@@ -232,147 +421,167 @@
       left: 0;
       right: 0;
       bottom: 0;
-      z-index: 30;
-      background: rgba(255, 255, 255, 0.94);
-      backdrop-filter: blur(14px);
-      border-top: 1px solid var(--line);
-      box-shadow: 0 -16px 42px rgba(16, 17, 20, 0.08);
-      transform: translateY(0);
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      z-index: 48;
+      background: rgba(255, 253, 248, 0.92);
+      backdrop-filter: blur(18px);
+      border-top: 1px solid rgba(108, 71, 47, 0.12);
+      box-shadow: 0 -18px 48px rgba(64, 31, 15, 0.1);
     }
 
     .cart-bar.has-items {
-      box-shadow: 0 -18px 48px rgba(255, 106, 0, 0.14);
+      box-shadow: 0 -22px 52px rgba(255, 107, 22, 0.16);
     }
 
     .cart-inner {
-      width: min(920px, calc(100% - 24px));
-      margin: 0 auto;
+      width: min(1180px, calc(100% - 24px));
       min-height: 78px;
+      margin: 0 auto;
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 12px;
     }
 
+    .cart-inner .btn {
+      min-width: 180px;
+      border-radius: 18px;
+    }
+
+    @keyframes card-pop {
+      from {
+        opacity: 0;
+        transform: translateY(8px) scale(0.99);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .food-card,
+      .food-img,
+      .category-button,
+      .menu-layout {
+        animation: none;
+        transition: none;
+      }
+    }
+
     @media (max-width: 760px) {
       :root {
-        --customer-hero-height: 89px;
-        --customer-discovery-top: 89px;
-        --customer-section-top: 243px;
+        --counter-top: 68px;
+        --search-top: 68px;
+        --rail-top: 132px;
       }
 
       body {
-        padding-bottom: 90px;
+        padding-bottom: 88px;
         background:
-          linear-gradient(180deg, #15110f 0, #15110f 89px, #fff3e9 89px, #fffaf6 54%, #f6f7fb 100%);
+          linear-gradient(135deg, rgba(18, 116, 91, 0.18), transparent 50%),
+          linear-gradient(180deg, #2b1711 0, #2b1711 68px, #eaf7ef 68px, #fff6ed 54%, #eef6ff 100%);
       }
 
-      .customer-hero {
-        padding: 10px 0;
+      .counter-top {
+        height: var(--counter-top);
       }
 
-      .customer-hero h1 {
-        font-size: 18px;
-        line-height: 1.15;
-        margin-bottom: 3px;
+      .counter-inner {
+        width: min(100% - 18px, 1180px);
       }
 
-      .customer-hero .brand {
+      .counter-copy h1 {
+        font-size: 17px;
+      }
+
+      .counter-copy p {
+        font-size: 12px;
+      }
+
+      .counter-badge {
         display: none;
       }
 
-      .customer-hero p {
-        font-size: 13px;
-        line-height: 1.35;
+      .order-page {
+        width: min(100% - 16px, 1180px);
+        padding-top: 8px;
       }
 
-      .hero-meta {
+      .quick-search {
+        grid-template-columns: 1fr;
+        gap: 6px;
+        padding: 8px;
+        border-radius: 18px;
+      }
+
+      .quick-count {
         display: none;
       }
 
-      .discovery-dock {
-        top: var(--customer-discovery-top);
-        width: calc(100% + 4px);
-        margin-left: -2px;
+      .search-mini .input {
+        min-height: 38px;
+      }
+
+      .menu-layout {
+        grid-template-columns: 92px minmax(0, 1fr);
+        gap: 9px;
+      }
+
+      .menu-layout.rail-collapsed {
+        grid-template-columns: 38px minmax(0, 1fr);
+      }
+
+      .category-rail {
+        top: var(--rail-top);
+        max-height: calc(100vh - var(--rail-top) - 92px);
+        padding: 6px;
+        border-radius: 18px;
+      }
+
+      .category-button {
+        min-height: 54px;
+        padding: 7px;
+        border-radius: 14px;
+      }
+
+      .category-button strong {
+        font-size: 12px;
+      }
+
+      .section-head {
+        top: var(--rail-top);
+        padding: 9px 10px;
+        border-radius: 16px;
+      }
+
+      .section-head h2 {
+        font-size: 15px;
+      }
+
+      .section-head p {
+        font-size: 12px;
+      }
+
+      .food-card {
+        grid-template-columns: 68px minmax(0, 1fr);
+        gap: 10px;
+        align-items: start;
         padding: 10px;
         border-radius: 18px;
       }
 
-      .discovery-dock .btn,
-      .category-heading .btn,
-      .menu-card .btn {
-        width: auto;
+      .food-card:hover {
+        transform: none;
       }
 
-      .category-rail .tab {
-        flex: 0 0 auto;
-        min-width: max-content;
-        padding: 0 14px;
+      .food-img-wrap {
+        width: 68px;
+        height: 68px;
+        border-radius: 16px;
       }
 
-      .category-head .btn,
-      .category-heading .btn {
-        flex: 0 0 auto;
-      }
-
-      .category-heading {
-        top: var(--customer-section-top);
-      }
-
-      .category-heading button {
-        display: none;
-      }
-
-      #restaurantAddress {
-        display: -webkit-box;
-        overflow: hidden;
-        -webkit-box-orient: vertical;
-        -webkit-line-clamp: 2;
-      }
-
-      #pickupNote {
-        display: none;
-      }
-
-      .menu-card {
-        grid-template-columns: 74px minmax(0, 1fr);
-        gap: 11px;
-        align-items: start;
-        padding: 12px;
-      }
-
-      .food-img {
-        width: 74px;
-        height: 74px;
-      }
-
-      .qty-control {
-        grid-column: 2;
-        justify-content: flex-start;
-        justify-self: start;
-        width: fit-content;
-        margin-top: 6px;
-        padding: 4px;
-      }
-
-      .add-btn {
-        grid-column: 2;
-        justify-self: start;
-        min-width: 64px;
-        min-height: 34px;
-        margin-top: 6px;
-        padding: 0 12px;
-      }
-
-      .qty-control .icon-btn {
-        flex-basis: 32px;
-        width: 32px;
-        height: 32px;
-        min-height: 32px;
-      }
-
-      .menu-card h3 {
+      .item-copy h3 {
         font-size: 15px;
         line-height: 1.2;
       }
@@ -381,66 +590,79 @@
         display: none;
       }
 
+      .add-btn,
+      .qty-control {
+        grid-column: 2;
+        justify-self: start;
+        margin-top: 6px;
+      }
+
+      .add-btn {
+        width: 76px;
+        min-width: 76px;
+        min-height: 34px;
+        padding: 0 14px;
+      }
+
+      .food-card .btn {
+        width: auto;
+      }
+
+      .qty-control {
+        padding: 4px;
+      }
+
+      .qty-control .icon-btn {
+        flex-basis: 30px;
+        width: 30px;
+        height: 30px;
+        min-height: 30px;
+      }
+
       .cart-inner {
         width: 100%;
         min-height: 72px;
         padding: 0 10px;
-        gap: 10px;
-      }
-
-      .cart-inner > div:first-child {
-        min-width: 52px;
       }
 
       .cart-inner .btn {
         flex: 1;
         min-width: 0;
-        width: auto;
       }
     }
   </style>
 </head>
 
 <body>
-  <header class="customer-hero">
-    <div class="topbar-inner" style="min-height:auto;">
-      <div>
-        <div class="eyebrow">Order without waiting</div>
+  <header class="counter-top">
+    <div class="counter-inner">
+      <div class="counter-copy">
+        <div class="eyebrow">Avenzo express pickup</div>
         <h1 id="restaurantName">Loading...</h1>
-        <p class="muted" id="restaurantAddress">Choose your favourites now. We will keep the pickup simple.</p>
-        <p class="muted" id="pickupNote"></p>
-        <div class="hero-meta">
-          <span class="pill">Live counter menu</span>
-          <span class="pill">Fast pickup codes</span>
-        </div>
+        <p id="restaurantAddress">Fresh food, shorter wait, happier counter.</p>
       </div>
-      <div class="brand">
-        <img src="/logo.png" alt="Avenzo">
-        <span>AVENZO</span>
-      </div>
+      <div class="counter-badge" id="pickupNote">Live menu</div>
     </div>
   </header>
 
-  <main class="page" style="max-width:920px;">
-    <section id="discoveryDock" class="discovery-dock app-panel">
-      <div class="field">
-        <label for="menuSearch">What would you like today?</label>
-        <div class="search-input-wrap">
-          <input id="menuSearch" class="input" placeholder="dosa, idli, coffee..." oninput="setSearch(this.value)">
-        </div>
+  <main class="order-page">
+    <section class="quick-search">
+      <div class="search-mini">
+        <span>Find</span>
+        <input id="menuSearch" class="input" placeholder="dosa, idli, coffee..." oninput="setSearch(this.value)">
       </div>
-      <div class="category-bar">
-        <div class="category-head">
-          <div>
-            <strong>Browse menu</strong>
-            <div class="muted" id="matchCount">Finding favourites...</div>
-          </div>
-          <button class="btn btn-ghost" type="button" id="categoryToggle" onclick="toggleCategories()">Hide</button>
-        </div>
-        <section class="tabbar surface-strip category-rail" id="categoryTabs"></section>
-      </div>
+      <div class="quick-count" id="matchCount">Finding favourites...</div>
     </section>
-    <section class="stack" id="menu" style="margin-top:12px;"></section>
+
+    <section class="menu-layout" id="menuLayout">
+      <aside class="category-rail">
+        <button class="btn rail-toggle" type="button" onclick="toggleRail()" aria-label="Collapse categories">
+          <span id="railIcon">&lt;</span>
+        </button>
+        <div id="categoryRail"></div>
+      </aside>
+      <section class="menu-feed" id="menu"></section>
+    </section>
   </main>
 
   <div class="cart-bar">
@@ -457,8 +679,8 @@
     <form class="modal" onsubmit="placeOrder(event)">
       <div class="modal-head row-between">
         <div>
-          <h3 style="margin:0;">Almost done</h3>
-          <div class="muted">Please check your items. Payment can come in the next step.</div>
+          <h3 style="margin:0;">Ready for the kitchen</h3>
+          <div class="muted">Review once. We will keep pickup simple.</div>
         </div>
         <button type="button" class="btn btn-ghost icon-btn" onclick="closeCheckout()">X</button>
       </div>
@@ -496,8 +718,8 @@
           : await request(`/restaurant/${restaurantId}`, { headers: {} });
         restaurantId = restaurant.id;
         document.getElementById("restaurantName").textContent = restaurant.name;
-        document.getElementById("restaurantAddress").textContent = restaurant.address || restaurant.locality || "Choose your favourites now. We will keep the pickup simple.";
-        document.getElementById("pickupNote").textContent = restaurant.pickupNote || "";
+        document.getElementById("restaurantAddress").textContent = restaurant.address || restaurant.locality || "Fresh food, shorter wait, happier counter.";
+        document.getElementById("pickupNote").textContent = restaurant.pickupNote || "Live counter menu";
         if (restaurant.serviceAvailable === false) {
           document.getElementById("menu").innerHTML = `
             <div class="empty">
@@ -518,7 +740,7 @@
         ? await request(`/menu/by-slug/${slug}`, { headers: {} })
         : await request(`/menu/${restaurantId}`, { headers: {} });
       menuData.sort((a, b) => Number(b.isAvailable) - Number(a.isAvailable));
-      renderTabs();
+      renderRail();
       renderMenu();
       updateUI();
     }
@@ -527,41 +749,7 @@
       return item.category?.name || "Others";
     }
 
-    function renderTabs() {
-      const categories = [...new Set(menuData.map(categoryName))].sort();
-      document.getElementById("categoryTabs").innerHTML = `
-        <button class="btn tab ${activeCategory === "ALL" ? "active" : ""}" onclick="setCategory('ALL')">All <span class="pill">${menuData.length}</span></button>
-        ${categories.map(name => `
-          <button class="btn tab ${activeCategory === name ? "active" : ""}" onclick='setCategory(${JSON.stringify(name)})'>${escapeHtml(name)} <span class="pill">${menuData.filter(item => categoryName(item) === name).length}</span></button>
-        `).join("")}
-      `;
-    }
-
-    function setCategory(name) {
-      activeCategory = name;
-      renderTabs();
-      renderMenu();
-      document.getElementById("menu")?.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
-
-    function setSearch(value) {
-      searchTerm = value.trim().toLowerCase();
-      renderMenu();
-    }
-
-    function toggleCategories() {
-      const dock = document.getElementById("discoveryDock");
-      const isCollapsed = dock.classList.toggle("categories-collapsed");
-      document.getElementById("categoryToggle").textContent = isCollapsed ? "Show" : "Hide";
-    }
-
-    function toggleSection(name) {
-      if (collapsedCategories.has(name)) collapsedCategories.delete(name);
-      else collapsedCategories.add(name);
-      renderMenu();
-    }
-
-    function renderMenu() {
+    function visibleItems() {
       let visible = activeCategory === "ALL"
         ? menuData
         : menuData.filter(item => categoryName(item) === activeCategory);
@@ -574,6 +762,57 @@
         ].join(" ").toLowerCase().includes(searchTerm));
       }
 
+      return visible;
+    }
+
+    function renderRail() {
+      const categories = [...new Set(menuData.map(categoryName))].sort();
+      const counts = categories.reduce((acc, name) => {
+        acc[name] = menuData.filter(item => categoryName(item) === name).length;
+        return acc;
+      }, {});
+
+      document.getElementById("categoryRail").innerHTML = `
+        <button class="category-button ${activeCategory === "ALL" ? "active" : ""}" onclick="setCategory('ALL')">
+          <strong>All</strong>
+          <span>${menuData.length} items</span>
+        </button>
+        ${categories.map(name => `
+          <button class="category-button ${activeCategory === name ? "active" : ""}" onclick='setCategory(${JSON.stringify(name)})'>
+            <strong>${escapeHtml(name)}</strong>
+            <span>${counts[name]} items</span>
+          </button>
+        `).join("")}
+      `;
+    }
+
+    function setCategory(name) {
+      activeCategory = name;
+      renderRail();
+      renderMenu();
+      const target = name === "ALL" ? document.getElementById("menu") : document.getElementById(`section-${slugifyLocal(name)}`);
+      target?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
+    function setSearch(value) {
+      searchTerm = value.trim().toLowerCase();
+      renderMenu();
+    }
+
+    function toggleRail() {
+      const layout = document.getElementById("menuLayout");
+      const collapsed = layout.classList.toggle("rail-collapsed");
+      document.getElementById("railIcon").textContent = collapsed ? ">" : "<";
+    }
+
+    function toggleSection(name) {
+      if (collapsedCategories.has(name)) collapsedCategories.delete(name);
+      else collapsedCategories.add(name);
+      renderMenu();
+    }
+
+    function renderMenu() {
+      const visible = visibleItems();
       const grouped = visible.reduce((acc, item) => {
         const name = categoryName(item);
         acc[name] = acc[name] || [];
@@ -581,21 +820,23 @@
         return acc;
       }, {});
 
-      const container = document.getElementById("menu");
-      document.getElementById("matchCount").textContent = `${visible.length} item${visible.length === 1 ? "" : "s"} ready to browse`;
+      document.getElementById("matchCount").textContent = `${visible.length} item${visible.length === 1 ? "" : "s"}`;
+
       if (!visible.length) {
-        container.innerHTML = `<div class="empty">We could not find that dish here. Try another name or category.</div>`;
+        document.getElementById("menu").innerHTML = `<div class="empty">No dish found here. Try a simpler search like dosa, idli, rice, or coffee.</div>`;
         return;
       }
 
-      container.innerHTML = Object.keys(grouped).map(cat => `
+      document.getElementById("menu").innerHTML = Object.keys(grouped).map(cat => `
         <section class="menu-section" id="section-${slugifyLocal(cat)}">
-          <div class="category-heading">
+          <div class="section-head">
             <div>
-              <div class="eyebrow">${escapeHtml(cat)}</div>
-              <div class="muted">${grouped[cat].length} item${grouped[cat].length === 1 ? "" : "s"}</div>
+              <h2>${escapeHtml(cat)}</h2>
+              <p>${grouped[cat].length} tasty pick${grouped[cat].length === 1 ? "" : "s"}</p>
             </div>
-            <button class="btn btn-ghost" type="button" onclick='toggleSection(${JSON.stringify(cat)})'>${collapsedCategories.has(cat) ? "Open" : "Close"}</button>
+            <button class="btn" type="button" onclick='toggleSection(${JSON.stringify(cat)})' aria-label="Toggle ${escapeHtml(cat)}">
+              ${collapsedCategories.has(cat) ? "+" : "-"}
+            </button>
           </div>
           ${collapsedCategories.has(cat) ? "" : grouped[cat].map(item => itemHtml(item)).join("")}
         </section>
@@ -610,15 +851,17 @@
     function itemHtml(item) {
       const disabled = !item.isAvailable;
       return `
-        <article class="card card-pad menu-card">
-          <img class="food-img" src="${escapeHtml(item.imageUrl || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=300")}" alt="" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1631452180519-c014fe946bc7?auto=format&fit=crop&w=900&q=80';">
+        <article class="food-card">
+          <div class="food-img-wrap">
+            <img class="food-img" src="${escapeHtml(item.imageUrl || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=300")}" alt="" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1631452180519-c014fe946bc7?auto=format&fit=crop&w=900&q=80';">
+          </div>
           <div class="item-copy">
-            <div class="row" style="flex-wrap:wrap; margin-bottom:6px;">
-              <h3 style="margin:0;">${escapeHtml(item.name)}</h3>
+            <h3>${escapeHtml(item.name)}</h3>
+            <p class="food-desc">${escapeHtml(item.description || "Freshly prepared by the restaurant.")}</p>
+            <div class="price-row">
+              <strong>${money(item.price)}</strong>
               ${disabled ? `<span class="pill pill-danger">Out of stock</span>` : ""}
             </div>
-            <p class="muted food-desc">${escapeHtml(item.description || "Freshly prepared by the restaurant.")}</p>
-            <strong>${money(item.price)}</strong>
           </div>
           <button class="btn btn-primary add-btn" id="add-${item.id}" ${disabled ? "disabled" : ""} onclick="changeQty('${item.id}', 1)">Add</button>
           <div class="qty-control is-hidden" id="stepper-${item.id}">
@@ -698,7 +941,7 @@
     async function placeOrder(event) {
       event.preventDefault();
       const btn = document.getElementById("placeBtn");
-      setLoading(btn, true, "Placing...");
+      setLoading(btn, true, "Sending...");
 
       try {
         const data = await request("/order", {
