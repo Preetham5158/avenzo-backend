@@ -15,6 +15,21 @@
       padding: 10px;
       border: 1px solid var(--line);
     }
+
+    .qr-card {
+      align-items: center;
+      text-align: center;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .qr-card::before {
+      content: "";
+      position: absolute;
+      inset: 0 0 auto 0;
+      height: 7px;
+      background: linear-gradient(90deg, var(--brand), var(--brand-2));
+    }
   </style>
 </head>
 
@@ -39,7 +54,7 @@
         </div>
       </section>
 
-      <section class="grid grid-3" id="container">Loading QR codes...</section>
+      <section class="grid grid-3" id="container"></section>
     </main>
   </div>
   <nav class="admin-dock">
@@ -55,6 +70,7 @@
 
     async function loadRestaurants() {
       try {
+        document.getElementById("container").innerHTML = skeletonCards(6);
         const data = await request("/restaurants");
         let restaurants = data.restaurants || [];
         if (selectedRestaurantId) {
@@ -73,7 +89,7 @@
           const url = `${API}/r/${r.slug}`;
           const qr = qrUrl(url, 220);
           return `
-            <article class="card card-pad stack" style="align-items:center; text-align:center;">
+            <article class="card card-pad stack qr-card">
               <div>
                 <h3>${escapeHtml(r.name)}</h3>
                 <div class="muted">${escapeHtml(r.address || r.locality || "Scan to order")}</div>

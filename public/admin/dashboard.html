@@ -6,6 +6,50 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/assets/app.css">
+  <style>
+    .workspace-hero {
+      position: sticky;
+      top: 64px;
+      z-index: 12;
+      margin-bottom: 18px;
+    }
+
+    .metric-card h3 {
+      font-size: 30px;
+      margin-bottom: 8px;
+    }
+
+    .restaurant-card {
+      min-height: 230px;
+      display: grid;
+      align-content: space-between;
+      gap: 16px;
+      overflow: hidden;
+    }
+
+    .restaurant-card::before {
+      content: "";
+      height: 5px;
+      margin: -16px -16px 0;
+      background: linear-gradient(90deg, var(--brand), var(--brand-2));
+    }
+
+    .restaurant-actions {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    @media (max-width: 760px) {
+      .workspace-hero {
+        top: 58px;
+      }
+
+      .restaurant-actions {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+  </style>
 </head>
 
 <body>
@@ -21,7 +65,7 @@
     </header>
 
     <main class="page">
-      <section class="hero-panel" style="margin-bottom:20px;">
+      <section class="hero-panel workspace-hero">
         <div class="row-between">
           <div>
             <div class="eyebrow">Admin workspace</div>
@@ -103,6 +147,8 @@
 
     async function loadRestaurants() {
       try {
+        document.getElementById("stats").innerHTML = skeletonCards(3);
+        document.getElementById("list").innerHTML = skeletonCards(6);
         const data = await request("/restaurants");
         const restaurants = data.restaurants || [];
         canCreateRestaurant = !!data.canCreateRestaurant;
@@ -125,17 +171,17 @@
 
     function renderStats(restaurants, user) {
       document.getElementById("stats").innerHTML = `
-        <div class="card card-pad">
+        <div class="card card-pad metric-card">
           <div class="muted">Signed in as</div>
           <h3>${escapeHtml(user?.name || user?.email || "Avenzo user")}</h3>
           <span class="pill pill-dark">${canCreateRestaurant ? "Full access" : "Restaurant access"}</span>
         </div>
-        <div class="card card-pad">
+        <div class="card card-pad metric-card">
           <div class="muted">Restaurants</div>
           <h3>${restaurants.length}</h3>
           <span class="pill">Visible to you</span>
         </div>
-        <div class="card card-pad">
+        <div class="card card-pad metric-card">
           <div class="muted">Workspace</div>
           <h3>${canCreateRestaurant ? "All locations" : "Assigned locations"}</h3>
           <span class="pill ${canCreateRestaurant ? "pill-success" : "pill-warning"}">${canCreateRestaurant ? "Company view" : user?.role === "EMPLOYEE" ? "Counter view" : "Owner view"}</span>
@@ -151,7 +197,7 @@
       }
 
       container.innerHTML = restaurants.map(r => `
-        <article class="card card-pad stack">
+        <article class="card card-pad restaurant-card">
           <div class="row-between">
             <div>
               <h3 style="margin-bottom:4px;">${escapeHtml(r.name)}</h3>
@@ -163,7 +209,7 @@
             <span class="pill ${r.subscriptionStatus === "ACTIVE" ? "pill-success" : r.subscriptionStatus === "TRIALING" ? "pill-warning" : "pill-danger"}">${subscriptionLabel(r.subscriptionStatus)}</span>
             ${r.owner?.email ? `<span class="pill">${escapeHtml(r.owner.email)}</span>` : ""}
           </div>
-          <div class="row" style="flex-wrap:wrap;">
+          <div class="restaurant-actions">
             <button class="btn btn-dark" onclick="openMenu('${r.id}')">Menu</button>
             <button class="btn btn-soft" onclick="openOrders('${r.id}')">Orders</button>
             <button class="btn btn-ghost" onclick="openQr('${r.id}')">QR</button>

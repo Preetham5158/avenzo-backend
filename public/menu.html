@@ -7,19 +7,29 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/assets/app.css">
   <style>
+    :root {
+      --customer-hero-height: 96px;
+      --customer-discovery-top: 96px;
+      --customer-section-top: 246px;
+    }
+
     body {
-      padding-bottom: 92px;
+      padding-bottom: 104px;
+      background:
+        linear-gradient(180deg, #15110f 0, #15110f 96px, #fff6ee 96px, #fffaf6 52%, #f6f7fb 100%);
+      overflow-x: hidden;
     }
 
     .customer-hero {
       position: sticky;
       top: 0;
-      z-index: 24;
+      z-index: 34;
       background:
-        radial-gradient(circle at 12% 24%, rgba(255, 106, 0, 0.22), transparent 28%),
-        linear-gradient(135deg, #0a0a0a, #1c1c1c);
+        radial-gradient(circle at 14% 16%, rgba(255, 138, 36, 0.32), transparent 28%),
+        linear-gradient(135deg, #120d0a, #1b1b1c 62%, #0a0a0a);
       color: white;
-      padding: 14px 0;
+      padding: 12px 0;
+      box-shadow: 0 16px 36px rgba(16, 17, 20, 0.18);
     }
 
     .customer-hero .muted {
@@ -38,17 +48,130 @@
       margin-bottom: 0;
     }
 
+    .hero-meta {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .hero-meta .pill {
+      background: rgba(255, 255, 255, 0.1);
+      color: white;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+    }
+
+    .discovery-dock {
+      position: sticky;
+      top: var(--customer-discovery-top);
+      z-index: 28;
+      display: grid;
+      gap: 10px;
+      margin-bottom: 14px;
+      padding: 12px;
+    }
+
+    .search-input-wrap {
+      position: relative;
+    }
+
+    .search-input-wrap::before {
+      content: "Search";
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #98a2b3;
+      font-size: 12px;
+      font-weight: 800;
+      pointer-events: none;
+    }
+
+    .search-input-wrap .input {
+      min-height: 52px;
+      padding-left: 68px;
+      border-radius: 16px;
+      background: #ffffff;
+      box-shadow: inset 0 0 0 1px rgba(16, 17, 20, 0.02);
+    }
+
+    .category-bar {
+      display: grid;
+      gap: 8px;
+    }
+
+    .category-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .category-head .btn {
+      min-height: 34px;
+      border-radius: 999px;
+      font-size: 13px;
+    }
+
+    .category-rail {
+      max-height: 92px;
+      transition: max-height 0.22s ease, opacity 0.18s ease;
+    }
+
+    .categories-collapsed .category-rail {
+      max-height: 0;
+      opacity: 0;
+      overflow: hidden;
+      padding-bottom: 0;
+    }
+
+    .menu-section {
+      display: grid;
+      gap: 10px;
+      scroll-margin-top: var(--customer-section-top);
+    }
+
+    .category-heading {
+      position: sticky;
+      top: var(--customer-section-top);
+      z-index: 16;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 8px;
+      padding: 10px 12px;
+      border: 1px solid rgba(231, 233, 239, 0.82);
+      border-radius: 999px;
+      background: rgba(255, 250, 246, 0.94);
+      backdrop-filter: blur(12px);
+      box-shadow: 0 8px 26px rgba(16, 17, 20, 0.05);
+    }
+
+    .category-heading button {
+      min-height: 30px;
+      padding: 0 10px;
+      border-radius: 999px;
+      min-width: 72px;
+      background: #101114;
+      color: white;
+      border-color: #101114;
+    }
+
     .menu-card {
       display: grid;
-      grid-template-columns: 86px 1fr auto;
-      gap: 12px;
+      grid-template-columns: 96px minmax(0, 1fr) auto;
+      gap: 14px;
       align-items: center;
+      border-radius: 18px;
+      overflow: hidden;
     }
 
     .food-img {
-      width: 86px;
-      height: 86px;
-      border-radius: var(--radius);
+      width: 96px;
+      height: 96px;
+      border-radius: 16px;
       object-fit: cover;
       background: #eef0f4;
     }
@@ -61,9 +184,11 @@
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      background: #f6f7fb;
-      border-radius: var(--radius);
+      background: #fff7ef;
+      border: 1px solid rgba(255, 106, 0, 0.18);
+      border-radius: 999px;
       padding: 6px;
+      box-shadow: 0 10px 22px rgba(255, 106, 0, 0.12);
     }
 
     .qty-control .icon-btn {
@@ -79,6 +204,19 @@
       color: #101114;
       border-color: #dfe3ea;
       box-shadow: none;
+    }
+
+    .qty-control.is-hidden {
+      display: none;
+    }
+
+    .add-btn {
+      min-width: 96px;
+      border-radius: 999px;
+    }
+
+    .add-btn.is-hidden {
+      display: none;
     }
 
     .food-desc {
@@ -99,6 +237,12 @@
       backdrop-filter: blur(14px);
       border-top: 1px solid var(--line);
       box-shadow: 0 -16px 42px rgba(16, 17, 20, 0.08);
+      transform: translateY(0);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .cart-bar.has-items {
+      box-shadow: 0 -18px 48px rgba(255, 106, 0, 0.14);
     }
 
     .cart-inner {
@@ -112,8 +256,16 @@
     }
 
     @media (max-width: 760px) {
+      :root {
+        --customer-hero-height: 89px;
+        --customer-discovery-top: 89px;
+        --customer-section-top: 243px;
+      }
+
       body {
-        padding-bottom: 88px;
+        padding-bottom: 90px;
+        background:
+          linear-gradient(180deg, #15110f 0, #15110f 89px, #fff3e9 89px, #fffaf6 54%, #f6f7fb 100%);
       }
 
       .customer-hero {
@@ -135,6 +287,43 @@
         line-height: 1.35;
       }
 
+      .hero-meta {
+        display: none;
+      }
+
+      .discovery-dock {
+        top: var(--customer-discovery-top);
+        width: calc(100% + 4px);
+        margin-left: -2px;
+        padding: 10px;
+        border-radius: 18px;
+      }
+
+      .discovery-dock .btn,
+      .category-heading .btn,
+      .menu-card .btn {
+        width: auto;
+      }
+
+      .category-rail .tab {
+        flex: 0 0 auto;
+        min-width: max-content;
+        padding: 0 14px;
+      }
+
+      .category-head .btn,
+      .category-heading .btn {
+        flex: 0 0 auto;
+      }
+
+      .category-heading {
+        top: var(--customer-section-top);
+      }
+
+      .category-heading button {
+        display: none;
+      }
+
       #restaurantAddress {
         display: -webkit-box;
         overflow: hidden;
@@ -147,15 +336,15 @@
       }
 
       .menu-card {
-        grid-template-columns: 68px minmax(0, 1fr);
-        gap: 10px;
+        grid-template-columns: 74px minmax(0, 1fr);
+        gap: 11px;
         align-items: start;
         padding: 12px;
       }
 
       .food-img {
-        width: 68px;
-        height: 68px;
+        width: 74px;
+        height: 74px;
       }
 
       .qty-control {
@@ -163,8 +352,17 @@
         justify-content: flex-start;
         justify-self: start;
         width: fit-content;
-        margin-top: 8px;
+        margin-top: 6px;
         padding: 4px;
+      }
+
+      .add-btn {
+        grid-column: 2;
+        justify-self: start;
+        min-width: 64px;
+        min-height: 34px;
+        margin-top: 6px;
+        padding: 0 12px;
       }
 
       .qty-control .icon-btn {
@@ -197,6 +395,7 @@
       .cart-inner .btn {
         flex: 1;
         min-width: 0;
+        width: auto;
       }
     }
   </style>
@@ -210,6 +409,10 @@
         <h1 id="restaurantName">Loading...</h1>
         <p class="muted" id="restaurantAddress">Choose your favourites now. We will keep the pickup simple.</p>
         <p class="muted" id="pickupNote"></p>
+        <div class="hero-meta">
+          <span class="pill">Live counter menu</span>
+          <span class="pill">Fast pickup codes</span>
+        </div>
       </div>
       <div class="brand">
         <img src="/logo.png" alt="Avenzo">
@@ -219,14 +422,25 @@
   </header>
 
   <main class="page" style="max-width:920px;">
-    <section class="search-wrap">
+    <section id="discoveryDock" class="discovery-dock app-panel">
       <div class="field">
         <label for="menuSearch">What would you like today?</label>
-        <input id="menuSearch" class="input" placeholder="Search dosa, idli, coffee..." oninput="setSearch(this.value)">
+        <div class="search-input-wrap">
+          <input id="menuSearch" class="input" placeholder="dosa, idli, coffee..." oninput="setSearch(this.value)">
+        </div>
+      </div>
+      <div class="category-bar">
+        <div class="category-head">
+          <div>
+            <strong>Browse menu</strong>
+            <div class="muted" id="matchCount">Finding favourites...</div>
+          </div>
+          <button class="btn btn-ghost" type="button" id="categoryToggle" onclick="toggleCategories()">Hide</button>
+        </div>
+        <section class="tabbar surface-strip category-rail" id="categoryTabs"></section>
       </div>
     </section>
-    <section class="tabbar" id="categoryTabs"></section>
-    <section class="stack" id="menu" style="margin-top:12px;">Loading menu...</section>
+    <section class="stack" id="menu" style="margin-top:12px;"></section>
   </main>
 
   <div class="cart-bar">
@@ -272,9 +486,11 @@
     let menuData = [];
     let activeCategory = "ALL";
     let searchTerm = "";
+    const collapsedCategories = new Set();
 
     async function init() {
       try {
+        document.getElementById("menu").innerHTML = skeletonCards(6, "food");
         const restaurant = slug
           ? await request(`/restaurant/slug/${slug}`, { headers: {} })
           : await request(`/restaurant/${restaurantId}`, { headers: {} });
@@ -314,9 +530,9 @@
     function renderTabs() {
       const categories = [...new Set(menuData.map(categoryName))].sort();
       document.getElementById("categoryTabs").innerHTML = `
-        <button class="btn tab ${activeCategory === "ALL" ? "active" : ""}" onclick="setCategory('ALL')">All</button>
+        <button class="btn tab ${activeCategory === "ALL" ? "active" : ""}" onclick="setCategory('ALL')">All <span class="pill">${menuData.length}</span></button>
         ${categories.map(name => `
-          <button class="btn tab ${activeCategory === name ? "active" : ""}" onclick='setCategory(${JSON.stringify(name)})'>${escapeHtml(name)}</button>
+          <button class="btn tab ${activeCategory === name ? "active" : ""}" onclick='setCategory(${JSON.stringify(name)})'>${escapeHtml(name)} <span class="pill">${menuData.filter(item => categoryName(item) === name).length}</span></button>
         `).join("")}
       `;
     }
@@ -325,10 +541,23 @@
       activeCategory = name;
       renderTabs();
       renderMenu();
+      document.getElementById("menu")?.scrollIntoView({ behavior: "smooth", block: "start" });
     }
 
     function setSearch(value) {
       searchTerm = value.trim().toLowerCase();
+      renderMenu();
+    }
+
+    function toggleCategories() {
+      const dock = document.getElementById("discoveryDock");
+      const isCollapsed = dock.classList.toggle("categories-collapsed");
+      document.getElementById("categoryToggle").textContent = isCollapsed ? "Show" : "Hide";
+    }
+
+    function toggleSection(name) {
+      if (collapsedCategories.has(name)) collapsedCategories.delete(name);
+      else collapsedCategories.add(name);
       renderMenu();
     }
 
@@ -353,16 +582,29 @@
       }, {});
 
       const container = document.getElementById("menu");
+      document.getElementById("matchCount").textContent = `${visible.length} item${visible.length === 1 ? "" : "s"} ready to browse`;
       if (!visible.length) {
         container.innerHTML = `<div class="empty">We could not find that dish here. Try another name or category.</div>`;
         return;
       }
 
       container.innerHTML = Object.keys(grouped).map(cat => `
-        <div class="eyebrow" style="margin-top:12px;">${escapeHtml(cat)}</div>
-        ${grouped[cat].map(item => itemHtml(item)).join("")}
+        <section class="menu-section" id="section-${slugifyLocal(cat)}">
+          <div class="category-heading">
+            <div>
+              <div class="eyebrow">${escapeHtml(cat)}</div>
+              <div class="muted">${grouped[cat].length} item${grouped[cat].length === 1 ? "" : "s"}</div>
+            </div>
+            <button class="btn btn-ghost" type="button" onclick='toggleSection(${JSON.stringify(cat)})'>${collapsedCategories.has(cat) ? "Open" : "Close"}</button>
+          </div>
+          ${collapsedCategories.has(cat) ? "" : grouped[cat].map(item => itemHtml(item)).join("")}
+        </section>
       `).join("");
       updateUI();
+    }
+
+    function slugifyLocal(value) {
+      return String(value).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
     }
 
     function itemHtml(item) {
@@ -378,7 +620,8 @@
             <p class="muted food-desc">${escapeHtml(item.description || "Freshly prepared by the restaurant.")}</p>
             <strong>${money(item.price)}</strong>
           </div>
-          <div class="qty-control">
+          <button class="btn btn-primary add-btn" id="add-${item.id}" ${disabled ? "disabled" : ""} onclick="changeQty('${item.id}', 1)">Add</button>
+          <div class="qty-control is-hidden" id="stepper-${item.id}">
             <button class="btn btn-dark icon-btn" ${disabled ? "disabled" : ""} onclick="changeQty('${item.id}', -1)">-</button>
             <strong id="qty-${item.id}">0</strong>
             <button class="btn btn-primary icon-btn" ${disabled ? "disabled" : ""} onclick="changeQty('${item.id}', 1)">+</button>
@@ -414,6 +657,8 @@
         const qty = found?.quantity || 0;
         const qtyEl = document.getElementById(`qty-${item.id}`);
         if (qtyEl) qtyEl.textContent = qty;
+        document.getElementById(`add-${item.id}`)?.classList.toggle("is-hidden", qty > 0);
+        document.getElementById(`stepper-${item.id}`)?.classList.toggle("is-hidden", qty === 0);
       });
 
       cart.forEach(i => {
@@ -426,6 +671,7 @@
       document.getElementById("count").textContent = totalItems;
       document.getElementById("total").textContent = money(totalPrice);
       document.getElementById("orderBtn").disabled = totalItems === 0;
+      document.querySelector(".cart-bar")?.classList.toggle("has-items", totalItems > 0);
     }
 
     function openCheckout() {

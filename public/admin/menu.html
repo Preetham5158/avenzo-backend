@@ -29,19 +29,39 @@
       justify-content: flex-end;
     }
 
+    .menu-admin-tools {
+      position: sticky;
+      top: 174px;
+      z-index: 13;
+      display: grid;
+      gap: 10px;
+      margin-bottom: 12px;
+      padding: 12px;
+    }
+
+    .menu-copy {
+      min-width: 0;
+    }
+
     @media (max-width: 760px) {
       .menu-item {
-        grid-template-columns: 72px 1fr;
+        grid-template-columns: 72px minmax(0, 1fr);
       }
 
       .menu-actions {
         grid-column: 1 / -1;
-        justify-content: flex-start;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
       }
 
       .menu-img {
         width: 72px;
         height: 72px;
+      }
+
+      .menu-admin-tools {
+        top: 154px;
+        padding: 10px;
       }
     }
   </style>
@@ -69,8 +89,14 @@
         <button id="addItemBtn" class="btn btn-primary" onclick="openItemModal()">Add item</button>
       </section>
 
-      <section class="tabbar" id="categoryTabs"></section>
-      <section class="stack" id="menu" style="margin-top:12px;">Loading menu...</section>
+      <section class="menu-admin-tools app-panel">
+        <div class="field">
+          <label for="adminMenuSearch">Find an item quickly</label>
+          <input id="adminMenuSearch" class="input" placeholder="Search by dish, category, status..." oninput="setMenuSearch(this.value)">
+        </div>
+        <section class="tabbar surface-strip" id="categoryTabs"></section>
+      </section>
+      <section class="stack" id="menu" style="margin-top:12px;"></section>
     </main>
   </div>
   <nav class="admin-dock">
@@ -151,6 +177,7 @@
     let categories = [];
     let menuItems = [];
     let activeCategory = "ALL";
+    let menuSearch = "";
 
     async function init() {
       try {
@@ -182,6 +209,7 @@
     }
 
     async function loadMenu() {
+      document.getElementById("menu").innerHTML = skeletonCards(6, "food");
       await loadCategories();
       menuItems = await request(`/admin/menu/${restaurantId}`);
       renderTabs();
@@ -214,16 +242,25 @@
       const visible = activeCategory === "ALL"
         ? menuItems
         : menuItems.filter(item => (item.category?.name || "Uncategorized") === activeCategory);
+      const filtered = menuSearch
+        ? visible.filter(item => [
+          item.name,
+          item.description,
+          item.category?.name,
+          item.isAvailable ? "available" : "out of stock",
+          item.isActive ? "visible" : "hidden"
+        ].join(" ").toLowerCase().includes(menuSearch))
+        : visible;
 
-      if (!visible.length) {
+      if (!filtered.length) {
         container.innerHTML = `<div class="empty">No items in this view yet.</div>`;
         return;
       }
 
-      container.innerHTML = visible.map(item => `
+      container.innerHTML = filtered.map(item => `
         <article class="card card-pad menu-item">
           <img class="menu-img" src="${escapeHtml(item.imageUrl || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=300")}" alt="" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1631452180519-c014fe946bc7?auto=format&fit=crop&w=900&q=80';">
-          <div>
+          <div class="menu-copy">
             <div class="row" style="flex-wrap:wrap; margin-bottom:6px;">
               <h3 style="margin:0;">${escapeHtml(item.name)}</h3>
               <span class="pill">${escapeHtml(item.category?.name || "Uncategorized")}</span>
@@ -240,6 +277,11 @@
           </div>
         </article>
       `).join("");
+    }
+
+    function setMenuSearch(value) {
+      menuSearch = value.trim().toLowerCase();
+      renderMenu();
     }
 
     function openItemModal(item = null) {

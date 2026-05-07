@@ -75,7 +75,35 @@ function setLoading(button, loading, text) {
   if (!button) return;
   if (!button.dataset.defaultText) button.dataset.defaultText = button.textContent;
   button.disabled = loading;
-  button.textContent = loading ? text : button.dataset.defaultText;
+  button.setAttribute("aria-busy", loading ? "true" : "false");
+  button.classList.toggle("is-busy", loading);
+  button.textContent = loading ? (text || button.dataset.defaultText) : button.dataset.defaultText;
+}
+
+function skeletonCards(count = 3, variant = "card") {
+  return Array.from({ length: count }).map(() => {
+    if (variant === "food") {
+      return `
+        <article class="card card-pad skeleton-food">
+          <div class="skeleton-block skeleton-img"></div>
+          <div class="skeleton-stack">
+            <div class="skeleton-line wide"></div>
+            <div class="skeleton-line"></div>
+            <div class="skeleton-line short"></div>
+          </div>
+          <div class="skeleton-pill"></div>
+        </article>
+      `;
+    }
+
+    return `
+      <article class="card card-pad skeleton-card">
+        <div class="skeleton-line wide"></div>
+        <div class="skeleton-line"></div>
+        <div class="skeleton-line short"></div>
+      </article>
+    `;
+  }).join("");
 }
 
 function logout() {

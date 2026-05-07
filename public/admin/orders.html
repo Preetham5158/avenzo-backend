@@ -25,9 +25,24 @@
       gap: 10px;
     }
 
+    .order-tools {
+      position: sticky;
+      top: 174px;
+      z-index: 13;
+      display: grid;
+      gap: 10px;
+      margin-top: 14px;
+      padding: 12px;
+    }
+
     @media (max-width: 760px) {
       .order-status-panel {
         width: 100%;
+      }
+
+      .order-tools {
+        top: 154px;
+        padding: 10px;
       }
     }
   </style>
@@ -56,7 +71,14 @@
       </section>
 
       <section class="grid grid-3" id="statusStats"></section>
-      <section class="stack" id="list" style="margin-top:16px;">Loading orders...</section>
+      <section class="order-tools app-panel">
+        <div class="field">
+          <label for="orderSearch">Find an order</label>
+          <input id="orderSearch" class="input" placeholder="Pickup code, order number, item..." oninput="setOrderSearch(this.value)">
+        </div>
+        <section class="tabbar surface-strip" id="orderFilters"></section>
+      </section>
+      <section class="stack" id="list" style="margin-top:16px;"></section>
     </main>
   </div>
   <nav class="admin-dock">
@@ -77,17 +99,27 @@
       COMPLETED: ["pill-success", "Completed"],
       CANCELLED: ["pill-danger", "Cancelled"]
     };
+    let allOrders = [];
+    let activeOrderStatus = "ALL";
+    let orderSearch = "";
+    let ordersLoaded = false;
 
     async function loadOrders() {
       try {
+        if (!ordersLoaded) {
+          document.getElementById("statusStats").innerHTML = skeletonCards(3);
+          document.getElementById("list").innerHTML = skeletonCards(4);
+        }
         const data = await request(`/admin/orders/${restaurantId}`);
-        const orders = data.orders || [];
+        allOrders = data.orders || [];
+        ordersLoaded = true;
 
         document.getElementById("restaurantName").textContent = data.restaurant?.name || "Restaurant Orders";
         document.getElementById("restaurantAddress").textContent = data.restaurant?.address || data.restaurant?.pickupNote || "New and updated orders appear automatically.";
-        document.getElementById("orderCount").textContent = `${orders.length} order${orders.length === 1 ? "" : "s"}`;
-        renderStats(orders);
-        renderOrders(orders);
+        document.getElementById("orderCount").textContent = `${allOrders.length} order${allOrders.length === 1 ? "" : "s"}`;
+        renderStats(allOrders);
+        renderOrderFilters();
+        renderOrders();
       } catch (err) {
         document.getElementById("restaurantName").textContent = "No access";
         document.getElementById("list").innerHTML = `<div class="empty">${escapeHtml(err.message || "You do not have access to this restaurant.")}</div>`;
@@ -109,10 +141,36 @@
       `).join("");
     }
 
-    function renderOrders(orders) {
+    function renderOrderFilters() {
+      const counts = allOrders.reduce((acc, order) => {
+        acc[order.status] = (acc[order.status] || 0) + 1;
+        return acc;
+      }, {});
+      document.getElementById("orderFilters").innerHTML = `
+        <button class="btn tab ${activeOrderStatus === "ALL" ? "active" : ""}" onclick="setOrderStatus('ALL')">All <span class="pill">${allOrders.length}</span></button>
+        ${Object.keys(statusMeta).map(status => `
+          <button class="btn tab ${activeOrderStatus === status ? "active" : ""}" onclick="setOrderStatus('${status}')">${statusMeta[status][1]} <span class="pill">${counts[status] || 0}</span></button>
+        `).join("")}
+      `;
+    }
+
+    function renderOrders() {
       const container = document.getElementById("list");
+      let orders = activeOrderStatus === "ALL"
+        ? allOrders
+        : allOrders.filter(order => order.status === activeOrderStatus);
+
+      if (orderSearch) {
+        orders = orders.filter(order => [
+          order.orderNumber,
+          order.pickupCode,
+          order.status,
+          ...(order.items || []).map(item => item.nameAtOrder)
+        ].join(" ").toLowerCase().includes(orderSearch));
+      }
+
       if (!orders.length) {
-        container.innerHTML = `<div class="empty">No orders yet.</div>`;
+        container.innerHTML = `<div class="empty">No orders found in this view.</div>`;
         return;
       }
 
@@ -157,7 +215,7 @@
               <div class="muted">Update order</div>
               <div class="status-actions">
                 ${["PREPARING", "READY", "COMPLETED", "CANCELLED"].map(status => `
-                  <button class="btn status-action ${order.status === status ? "active" : "btn-ghost"}" onclick="updateStatus('${order.id}', '${status}')" ${order.status === status ? "disabled" : ""}>
+                  <button class="btn status-action ${order.status === status ? "active" : "btn-ghost"}" onclick="updateStatus(this, '${order.id}', '${status}')" ${order.status === status ? "disabled" : ""}>
                     ${statusMeta[status][1]}
                   </button>
                 `).join("")}
@@ -168,7 +226,19 @@
       }).join("");
     }
 
-    async function updateStatus(id, status) {
+    function setOrderStatus(status) {
+      activeOrderStatus = status;
+      renderOrderFilters();
+      renderOrders();
+    }
+
+    function setOrderSearch(value) {
+      orderSearch = value.trim().toLowerCase();
+      renderOrders();
+    }
+
+    async function updateStatus(button, id, status) {
+      setLoading(button, true, statusMeta[status]?.[1] || "Updating");
       try {
         await request(`/order/${id}/status`, {
           method: "PATCH",
@@ -178,6 +248,7 @@
       } catch (err) {
         toast(err.message);
       } finally {
+        setLoading(button, false);
         loadOrders();
       }
     }

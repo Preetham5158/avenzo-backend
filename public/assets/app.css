@@ -14,6 +14,8 @@
   --shadow: 0 18px 55px rgba(16, 17, 20, 0.08);
   --shadow-soft: 0 8px 28px rgba(16, 17, 20, 0.06);
   --radius: 14px;
+  --radius-sm: 10px;
+  --glass: rgba(255, 255, 255, 0.84);
 }
 
 * {
@@ -260,6 +262,12 @@ h3 {
   border: 1px solid var(--line);
   border-radius: var(--radius);
   box-shadow: var(--shadow-soft);
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+
+.card:hover {
+  border-color: #dde2ea;
+  box-shadow: 0 12px 34px rgba(16, 17, 20, 0.08);
 }
 
 .card-pad {
@@ -294,11 +302,27 @@ h3 {
   gap: 8px;
   cursor: pointer;
   font-weight: 750;
-  transition: transform 0.18s ease, box-shadow 0.18s ease, opacity 0.18s ease;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, opacity 0.18s ease, background 0.18s ease;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .btn:hover {
   transform: translateY(-1px);
+}
+
+.btn:active {
+  transform: translateY(1px) scale(0.98);
+}
+
+.btn.is-busy::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(110deg, transparent 0%, rgba(255, 255, 255, 0.28) 45%, transparent 78%);
+  transform: translateX(-100%);
+  animation: sheen 0.9s ease infinite;
 }
 
 .btn:disabled {
@@ -511,6 +535,7 @@ h3 {
 }
 
 .tab {
+  flex: 0 0 auto;
   white-space: nowrap;
   background: white;
   border: 1px solid var(--line);
@@ -540,6 +565,99 @@ h3 {
 .status-action.active {
   background: #101114;
   color: white;
+}
+
+.app-panel {
+  background: var(--glass);
+  border: 1px solid rgba(231, 233, 239, 0.88);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-soft);
+  backdrop-filter: blur(18px);
+}
+
+.surface-strip {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+}
+
+.surface-strip::-webkit-scrollbar {
+  display: none;
+}
+
+.skeleton-card,
+.skeleton-food {
+  pointer-events: none;
+}
+
+.skeleton-food {
+  display: grid;
+  grid-template-columns: 86px 1fr 96px;
+  gap: 14px;
+  align-items: center;
+}
+
+.skeleton-stack {
+  display: grid;
+  gap: 10px;
+}
+
+.skeleton-block,
+.skeleton-line,
+.skeleton-pill {
+  overflow: hidden;
+  position: relative;
+  background: #eceff4;
+  border-radius: 999px;
+}
+
+.skeleton-img {
+  width: 86px;
+  height: 86px;
+  border-radius: var(--radius-sm);
+}
+
+.skeleton-line {
+  height: 14px;
+  width: 70%;
+}
+
+.skeleton-line.wide {
+  width: 88%;
+}
+
+.skeleton-line.short {
+  width: 42%;
+}
+
+.skeleton-pill {
+  width: 86px;
+  height: 38px;
+}
+
+.skeleton-block::after,
+.skeleton-line::after,
+.skeleton-pill::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(110deg, transparent 0%, rgba(255, 255, 255, 0.72) 48%, transparent 82%);
+  transform: translateX(-100%);
+  animation: skeleton-shimmer 1.2s ease-in-out infinite;
+}
+
+@keyframes skeleton-shimmer {
+  to {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes sheen {
+  to {
+    transform: translateX(100%);
+  }
 }
 
 @media (max-width: 760px) {
@@ -627,6 +745,21 @@ h3 {
 
   .status-actions {
     grid-template-columns: 1fr 1fr;
+  }
+
+  .skeleton-food {
+    grid-template-columns: 68px 1fr;
+  }
+
+  .skeleton-img {
+    width: 68px;
+    height: 68px;
+  }
+
+  .skeleton-pill {
+    grid-column: 2;
+    width: 96px;
+    height: 34px;
   }
 
   .admin-dock {
