@@ -25,6 +25,11 @@
       gap: 10px;
     }
 
+    .status-help {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
     .order-tools {
       position: sticky;
       top: calc(var(--topbar-height) + 110px);
@@ -98,6 +103,13 @@
       READY: ["pill-success", "Ready"],
       COMPLETED: ["pill-success", "Completed"],
       CANCELLED: ["pill-danger", "Cancelled"]
+    };
+    const allowedTransitions = {
+      PENDING: ["PREPARING", "CANCELLED"],
+      PREPARING: ["READY", "CANCELLED"],
+      READY: ["COMPLETED"],
+      COMPLETED: [],
+      CANCELLED: []
     };
     let allOrders = [];
     let activeOrderStatus = "ALL";
@@ -203,6 +215,15 @@
         `).join("");
         const meta = statusMeta[order.status] || ["pill", order.status];
 
+        const nextStatuses = allowedTransitions[order.status] || [];
+        const statusActions = nextStatuses.length
+          ? nextStatuses.map(status => `
+              <button class="btn status-action btn-ghost" onclick="updateStatus(this, '${order.id}', '${status}')">
+                ${statusMeta[status][1]}
+              </button>
+            `).join("")
+          : `<div class="status-help">No further status changes are allowed for this order.</div>`;
+
         return `
           <article class="card card-pad order-card">
             <div class="row-between">
@@ -234,11 +255,7 @@
             <div class="order-status-panel">
               <div class="muted">Update order</div>
               <div class="status-actions">
-                ${["PREPARING", "READY", "COMPLETED", "CANCELLED"].map(status => `
-                  <button class="btn status-action ${order.status === status ? "active" : "btn-ghost"}" onclick="updateStatus(this, '${order.id}', '${status}')" ${order.status === status ? "disabled" : ""}>
-                    ${statusMeta[status][1]}
-                  </button>
-                `).join("")}
+                ${statusActions}
               </div>
             </div>
           </article>

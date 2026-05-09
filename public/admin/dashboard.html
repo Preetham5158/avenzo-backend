@@ -72,7 +72,7 @@
             <h1 id="pageTitle">Restaurants</h1>
             <p id="roleText" class="muted">Getting your restaurants ready...</p>
           </div>
-          <button id="createBtn" class="btn btn-primary" onclick="openRestaurantModal()">Add restaurant</button>
+          <button id="createBtn" class="btn btn-primary" onclick="openRestaurantModal()" hidden>Add restaurant</button>
         </div>
       </section>
 
@@ -169,7 +169,7 @@
         document.getElementById("roleText").textContent = canCreateRestaurant
           ? "You can guide every restaurant from this hub."
           : "Only restaurants assigned to you are shown here.";
-        document.getElementById("createBtn").style.display = canCreateRestaurant ? "inline-flex" : "none";
+        document.getElementById("createBtn").hidden = !canCreateRestaurant;
 
         renderStats(restaurants, data.user);
         renderRestaurants(restaurants);

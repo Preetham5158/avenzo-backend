@@ -148,30 +148,56 @@
       box-shadow: 0 10px 22px rgba(18, 116, 91, 0.22);
     }
 
-    .food-filter {
-      display: inline-flex;
-      gap: 6px;
+    .food-toggle {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 3px;
       padding: 4px;
+      min-width: 260px;
       border-radius: 999px;
-      background: rgba(255, 255, 255, 0.82);
-      border: 1px solid rgba(108, 71, 47, 0.12);
+      background: #fffdf8;
+      border: 1px solid rgba(108, 71, 47, 0.16);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.82);
     }
 
-    .filter-chip {
+    .toggle-option {
       min-height: 34px;
       padding: 0 12px;
       border-radius: 999px;
       background: transparent;
-      color: #5a3a2a;
+      color: #614231;
       font-size: 12px;
       font-weight: 800;
       cursor: pointer;
       white-space: nowrap;
+      transition: background 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
     }
 
-    .filter-chip.active {
+    .toggle-option.active {
       background: #25130e;
       color: white;
+      box-shadow: 0 8px 18px rgba(37, 19, 14, 0.16);
+    }
+
+    .recent-order {
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 12px;
+      padding: 12px;
+      border-radius: 18px;
+      background: rgba(255, 253, 248, 0.9);
+      border: 1px solid rgba(108, 71, 47, 0.14);
+      box-shadow: 0 14px 30px rgba(64, 31, 15, 0.08);
+    }
+
+    .recent-order.show {
+      display: flex;
+    }
+
+    .recent-order .btn {
+      min-height: 38px;
     }
 
     .menu-layout {
@@ -559,13 +585,18 @@
         justify-self: start;
       }
 
-      .food-filter {
+      .food-toggle {
         width: 100%;
-        overflow-x: auto;
+        min-width: 0;
       }
 
-      .filter-chip {
-        flex: 1;
+      .toggle-option {
+        padding: 0 8px;
+      }
+
+      .recent-order {
+        align-items: flex-start;
+        flex-direction: column;
       }
 
       .search-mini .input {
@@ -681,49 +712,21 @@
     }
 
     @media (max-width: 520px) {
-      :root {
-        --rail-top: 184px;
-      }
-
-      .quick-search {
-        position: static;
-      }
-
-      .menu-layout {
-        display: block;
-      }
-
       .category-rail {
-        position: sticky;
-        top: var(--dine-top);
-        z-index: 38;
-        max-height: none;
-        display: block;
-        margin-bottom: 10px;
-        overflow-x: auto;
-        overflow-y: hidden;
-        white-space: nowrap;
-      }
-
-      #categoryRail {
-        display: inline-flex;
-        gap: 6px;
-        min-width: max-content;
+        width: 88px;
       }
 
       .category-button {
-        width: auto;
-        min-width: 84px;
-        min-height: 42px;
-        text-align: center;
+        width: 100%;
+        text-align: left;
       }
 
       .section-head {
-        top: calc(var(--dine-top) + 58px);
+        top: var(--rail-top);
       }
 
       .menu-section {
-        scroll-margin-top: calc(var(--dine-top) + 70px);
+        scroll-margin-top: calc(var(--rail-top) + 4px);
       }
     }
   </style>
@@ -747,13 +750,14 @@
         <span>Find</span>
         <input id="menuSearch" class="input" placeholder="dosa, idli, coffee..." oninput="setSearch(this.value)">
       </div>
-      <div class="food-filter" id="foodFilter">
-        <button class="filter-chip active" data-food-filter="ALL" type="button" onclick="setFoodFilter('ALL')">All</button>
-        <button class="filter-chip" data-food-filter="VEG" type="button" onclick="setFoodFilter('VEG')">Veg</button>
-        <button class="filter-chip" data-food-filter="NON_VEG" type="button" onclick="setFoodFilter('NON_VEG')">Non-veg</button>
+      <div class="food-toggle" id="foodFilter" role="group" aria-label="Food type filter">
+        <button class="toggle-option active" data-food-filter="VEG" type="button" onclick="setFoodFilter('VEG')">Veg</button>
+        <button class="toggle-option" data-food-filter="NON_VEG" type="button" onclick="setFoodFilter('NON_VEG')">Non-veg</button>
       </div>
       <div class="quick-count" id="matchCount">Finding favourites...</div>
     </section>
+
+    <section class="recent-order" id="recentOrder"></section>
 
     <section class="menu-layout" id="menuLayout">
       <aside class="category-rail">
@@ -796,6 +800,29 @@
     </form>
   </div>
 
+  <div class="modal-backdrop" id="findOrderModal">
+    <form class="modal" onsubmit="findOrders(event)">
+      <div class="modal-head row-between">
+        <div>
+          <h3 class="section-title">Find your order</h3>
+          <div class="muted">Use the mobile number you entered while ordering.</div>
+        </div>
+        <button type="button" class="btn btn-ghost icon-btn" onclick="closeFindOrder()">X</button>
+      </div>
+      <div class="modal-body stack">
+        <div class="field">
+          <label for="lookupPhone">Mobile number</label>
+          <input id="lookupPhone" class="input" inputmode="tel" placeholder="Same number used on order">
+        </div>
+        <div id="lookupResults" class="stack"></div>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" onclick="closeFindOrder()">Cancel</button>
+        <button id="findOrderBtn" class="btn btn-primary" type="submit">Find order</button>
+      </div>
+    </form>
+  </div>
+
   <script src="/assets/app.js"></script>
   <script>
     let restaurantId = new URLSearchParams(location.search).get("restaurantId");
@@ -805,7 +832,7 @@
     let cart = [];
     let menuData = [];
     let activeCategory = "ALL";
-    let activeFoodType = "ALL";
+    let activeFoodType = "VEG";
     let searchTerm = "";
     const collapsedCategories = new Set();
 
@@ -819,6 +846,8 @@
         document.getElementById("restaurantName").textContent = restaurant.name;
         document.getElementById("restaurantAddress").textContent = restaurant.address || restaurant.locality || "Choose here. Eat here. Skip the billing queue.";
         document.getElementById("dineNote").textContent = restaurantFoodTypeLabel(restaurant.foodType);
+        activeFoodType = restaurant.foodType === "NON_VEG" ? "NON_VEG" : "VEG";
+        setFoodFilter(activeFoodType, false);
         if (restaurant.serviceAvailable === false) {
           document.getElementById("menu").innerHTML = `
             <div class="empty">
@@ -829,6 +858,7 @@
           return;
         }
         await loadMenu();
+        renderRecentOrder();
       } catch (err) {
         document.getElementById("menu").innerHTML = `<div class="empty">${escapeHtml(err.message || "Ordering will be back soon")}</div>`;
       }
@@ -853,9 +883,7 @@
         ? menuData
         : menuData.filter(item => categoryName(item) === activeCategory);
 
-      if (activeFoodType !== "ALL") {
-        visible = visible.filter(item => (item.foodType || "VEG") === activeFoodType);
-      }
+      visible = visible.filter(item => (item.foodType || "VEG") === activeFoodType);
 
       if (searchTerm) {
         visible = visible.filter(item => [
@@ -868,25 +896,32 @@
       return visible;
     }
 
-    function setFoodFilter(value) {
+    function setFoodFilter(value, shouldRender = true) {
       activeFoodType = value;
-      document.querySelectorAll(".filter-chip").forEach(button => {
+      document.querySelectorAll(".toggle-option").forEach(button => {
         button.classList.toggle("active", button.dataset.foodFilter === value);
       });
-      renderMenu();
+      if (shouldRender) {
+        renderRail();
+        renderMenu();
+      }
     }
 
     function renderRail() {
-      const categories = [...new Set(menuData.map(categoryName))].sort();
+      const filteredByType = menuData.filter(item => (item.foodType || "VEG") === activeFoodType);
+      const categories = [...new Set(filteredByType.map(categoryName))].sort();
+      if (activeCategory !== "ALL" && !categories.includes(activeCategory)) {
+        activeCategory = "ALL";
+      }
       const counts = categories.reduce((acc, name) => {
-        acc[name] = menuData.filter(item => categoryName(item) === name).length;
+        acc[name] = filteredByType.filter(item => categoryName(item) === name).length;
         return acc;
       }, {});
 
       document.getElementById("categoryRail").innerHTML = `
         <button class="category-button ${activeCategory === "ALL" ? "active" : ""}" onclick="setCategory('ALL')">
           <strong>All</strong>
-          <span>${menuData.length} items</span>
+          <span>${filteredByType.length} items</span>
         </button>
         ${categories.map(name => `
           <button class="category-button ${activeCategory === name ? "active" : ""}" onclick='setCategory(${JSON.stringify(name)})'>
@@ -1041,6 +1076,80 @@
       document.getElementById("checkoutModal").classList.add("open");
     }
 
+    function recentOrders() {
+      try {
+        return JSON.parse(localStorage.getItem("avenzoRecentOrders") || "[]");
+      } catch {
+        return [];
+      }
+    }
+
+    function saveRecentOrder(order) {
+      const next = [
+        order,
+        ...recentOrders().filter(item => item.orderId !== order.orderId)
+      ].slice(0, 8);
+      localStorage.setItem("avenzoRecentOrders", JSON.stringify(next));
+    }
+
+    function renderRecentOrder() {
+      const el = document.getElementById("recentOrder");
+      const order = recentOrders().find(item => item.restaurantId === restaurantId);
+      if (!order) {
+        el.classList.remove("show");
+        el.innerHTML = "";
+        return;
+      }
+
+      el.innerHTML = `
+        <div>
+          <strong>Last order ${order.orderNumber ? `#${order.orderNumber}` : ""}</strong>
+          <div class="muted">Code ${escapeHtml(order.pickupCode || "----")}</div>
+        </div>
+        <div class="row row-wrap">
+          <button class="btn btn-ghost" type="button" onclick="openFindOrder()">Find order</button>
+          <button class="btn btn-dark" type="button" onclick="location.href='/track/${order.orderId}'">Track</button>
+        </div>
+      `;
+      el.classList.add("show");
+    }
+
+    function openFindOrder() {
+      document.getElementById("lookupResults").innerHTML = "";
+      document.getElementById("findOrderModal").classList.add("open");
+      document.getElementById("lookupPhone").focus();
+    }
+
+    function closeFindOrder() {
+      document.getElementById("findOrderModal").classList.remove("open");
+    }
+
+    async function findOrders(event) {
+      event.preventDefault();
+      const btn = document.getElementById("findOrderBtn");
+      const phone = document.getElementById("lookupPhone").value.trim();
+      setLoading(btn, true, "Finding...");
+      try {
+        const data = await request(`/orders/lookup?restaurantId=${encodeURIComponent(restaurantId)}&phone=${encodeURIComponent(phone)}`, { headers: {} });
+        const orders = data.orders || [];
+        document.getElementById("lookupResults").innerHTML = orders.length
+          ? orders.map(order => `
+            <button class="card card-pad row-between cursor-pointer" type="button" onclick="location.href='/track/${order.id}'">
+              <span>
+                <strong>Order #${order.orderNumber}</strong>
+                <span class="muted">Code ${escapeHtml(order.pickupCode)}</span>
+              </span>
+              <span class="pill">${escapeHtml(order.status)}</span>
+            </button>
+          `).join("")
+          : `<div class="empty">No recent order found for this number.</div>`;
+      } catch (err) {
+        toast(err.message);
+      } finally {
+        setLoading(btn, false);
+      }
+    }
+
     function closeCheckout() {
       document.getElementById("checkoutModal").classList.remove("open");
     }
@@ -1059,6 +1168,13 @@
             phone: document.getElementById("phone").value.trim() || null,
             items: cart
           })
+        });
+        saveRecentOrder({
+          orderId: data.orderId,
+          orderNumber: data.orderNumber,
+          pickupCode: data.pickupCode,
+          restaurantId,
+          createdAt: new Date().toISOString()
         });
         window.location.href = `/track/${data.orderId}`;
       } catch (err) {

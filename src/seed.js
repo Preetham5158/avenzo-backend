@@ -232,6 +232,32 @@ const hotels = [
       ["Rice", "Chicken Biryani", 260, "Aromatic rice layered with chicken, fried onions, mint, and warm spices.", "NON_VEG"],
       ["North Indian", "Paneer Tikka", 210, "Smoky paneer cubes with capsicum, onion, and mild tandoor spices.", "VEG"]
     ]
+  },
+  {
+    name: "Coastal Chicken Corner Koramangala",
+    ownerEmail: "owner.coastalchicken@avenzo.com",
+    address: "80 Feet Road, Koramangala, Bengaluru",
+    locality: "Koramangala",
+    foodType: "NON_VEG",
+    pickupNote: "Keep your order code ready. The counter team will call it when your food is ready.",
+    signatures: [
+      ["Starters", "Pepper Chicken", 230, "Boneless chicken tossed with pepper, curry leaves, and coastal spices.", "NON_VEG"],
+      ["Rice", "Chicken Ghee Roast Biryani", 280, "Spiced chicken biryani finished with ghee roast masala.", "NON_VEG"],
+      ["Curries", "Mangalore Chicken Curry", 260, "Chicken simmered in coconut, chilli, coriander, and coastal masala.", "NON_VEG"]
+    ]
+  },
+  {
+    name: "Nandana Family Kitchen HSR",
+    ownerEmail: "owner.nandana@avenzo.com",
+    address: "27th Main Road, HSR Layout, Bengaluru",
+    locality: "HSR Layout",
+    foodType: "BOTH",
+    pickupNote: "Track your order on Avenzo and collect it using the pickup code.",
+    signatures: [
+      ["Starters", "Andhra Chilli Chicken", 250, "Chicken tossed with green chilli, curry leaves, and Andhra-style spices.", "NON_VEG"],
+      ["Meals", "Veg Andhra Meals", 180, "Rice, dal, sambar, rasam, vegetable curry, curd, pickle, and papad.", "VEG"],
+      ["North Indian", "Paneer Pepper Fry", 190, "Paneer tossed with pepper, onion, capsicum, and curry leaves.", "VEG"]
+    ]
   }
 ];
 
@@ -294,6 +320,16 @@ const commonMenu = [
   ["Beverages", "Masala Buttermilk", 35, "Chilled buttermilk with cumin, ginger, coriander, and curry leaves."]
 ];
 
+const commonNonVegMenu = [
+  ["Starters", "Chicken Kabab", 180, "Crisp chicken pieces marinated with chilli, ginger, garlic, and house spices.", "NON_VEG"],
+  ["Starters", "Chicken Lollipop", 220, "Fried chicken wings tossed with garlic and chilli sauce.", "NON_VEG"],
+  ["Starters", "Tandoori Chicken Half", 260, "Smoky tandoor-roasted chicken with yogurt and spice marinade.", "NON_VEG"],
+  ["Rice", "Chicken Biryani", 260, "Aromatic rice layered with chicken, herbs, fried onion, and warm spices.", "NON_VEG"],
+  ["Rice", "Egg Biryani", 180, "Biryani rice served with boiled egg, raita, and salna.", "NON_VEG"],
+  ["Curries", "Butter Chicken", 280, "Chicken in a buttery tomato gravy with cream and mild spices.", "NON_VEG"],
+  ["Curries", "Chicken Chettinad", 270, "Chicken curry with roasted spices, pepper, coconut, and curry leaves.", "NON_VEG"]
+];
+
 async function main() {
   console.log("Clearing existing data...");
   await prisma.orderItem.deleteMany();
@@ -347,7 +383,13 @@ async function main() {
       }
     });
 
-    const merged = [...hotel.signatures, ...commonMenu].filter((row, index, rows) =>
+    const baseMenu = hotel.foodType === "NON_VEG"
+      ? commonNonVegMenu
+      : hotel.foodType === "BOTH"
+        ? [...commonMenu, ...commonNonVegMenu]
+        : commonMenu;
+
+    const merged = [...hotel.signatures, ...baseMenu].filter((row, index, rows) =>
       rows.findIndex(other => other[1] === row[1]) === index
     );
     const categories = [...new Set(merged.map(row => row[0]))];

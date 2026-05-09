@@ -14,6 +14,13 @@ const JWT_ISSUER = "avenzo-api";
 const JWT_AUDIENCE = "avenzo-admin";
 const FOOD_TYPES = ["VEG", "NON_VEG"];
 const RESTAURANT_FOOD_TYPES = ["PURE_VEG", "NON_VEG", "BOTH"];
+const ORDER_STATUS_TRANSITIONS = {
+    PENDING: ["PREPARING", "CANCELLED"],
+    PREPARING: ["READY", "CANCELLED"],
+    READY: ["COMPLETED"],
+    COMPLETED: [],
+    CANCELLED: []
+};
 
 if (!process.env.JWT_SECRET) {
     throw new Error("JWT_SECRET is required");
@@ -95,6 +102,22 @@ function menuFoodFilter(value) {
     if (!value || String(value).toUpperCase() === "ALL") return {};
     const foodType = String(value).toUpperCase();
     return FOOD_TYPES.includes(foodType) ? { foodType } : {};
+}
+
+function allowedNextOrderStatuses(status) {
+    return ORDER_STATUS_TRANSITIONS[status] || [];
+}
+
+function restaurantFoodTypeAllowsItem(restaurantFoodType, itemFoodType) {
+    if (restaurantFoodType === "PURE_VEG") return itemFoodType === "VEG";
+    if (restaurantFoodType === "NON_VEG") return itemFoodType === "NON_VEG";
+    return true;
+}
+
+function incompatibleFoodTypeMessage(restaurantFoodType) {
+    if (restaurantFoodType === "PURE_VEG") return "Pure veg restaurants can only add veg items";
+    if (restaurantFoodType === "NON_VEG") return "Non-veg restaurants can only add non-veg items";
+    return "This item food type is not allowed for the restaurant";
 }
 
 function logRouteError(route, err) {
@@ -414,6 +437,40 @@ app.get("/order/:id", async (req, res) => {
         logRouteError("GET /order/:id", err);
         res.status(500).json({ error: "Error fetching order" });
     }
+});
+
+app.get("/orders/lookup", async (req, res) => {
+    try {
+        const restaurantId = String(req.query.restaurantId || "");
+        const phone = String(req.query.phone || "").trim();
+
+        if (!restaurantId || !phone || !/^[0-9+\-\s()]{7,20}$/.test(phone)) {
+            return res.status(400).json({ error: "Enter the same mobile number used for ordering" });
+        }
+
+        const orders = await prisma.order.findMany({
+            where: { restaurantId, phone },
+            select: {
+                id: true,
+                orderNumber: true,
+                pickupCode: true,
+                status: true,
+                totalPrice: true,
+                createdAt: true
+            },
+            orderBy: { createdAt: "desc" },
+            take: 5
+        });
+
+        res.json({ orders });
+    } catch (err) {
+        logRouteError("GET /orders/lookup", err);
+        res.status(500).json({ error: "Error finding orders" });
+    }
+});
+
+app.get("/track", (req, res) => {
+    res.sendFile(path.join(__dirname, "../public/track.html"));
 });
 
 app.get("/track/:id", (req, res) => {
@@ -807,8 +864,8 @@ app.post("/menu", authMiddleware, async (req, res) => {
             select: { foodType: true }
         });
         const normalizedFoodType = normalizeFoodType(foodType);
-        if (restaurant?.foodType === "PURE_VEG" && normalizedFoodType === "NON_VEG") {
-            return res.status(400).json({ error: "Pure veg restaurants can only add veg items" });
+        if (!restaurantFoodTypeAllowsItem(restaurant?.foodType, normalizedFoodType)) {
+            return res.status(400).json({ error: incompatibleFoodTypeMessage(restaurant?.foodType) });
         }
 
         const item = await prisma.menu.create({
@@ -875,8 +932,8 @@ app.put("/menu/:id", authMiddleware, async (req, res) => {
                 where: { id: item.restaurantId },
                 select: { foodType: true }
             });
-            if (restaurant?.foodType === "PURE_VEG" && normalizedFoodType === "NON_VEG") {
-                return res.status(400).json({ error: "Pure veg restaurants can only add veg items" });
+            if (!restaurantFoodTypeAllowsItem(restaurant?.foodType, normalizedFoodType)) {
+                return res.status(400).json({ error: incompatibleFoodTypeMessage(restaurant?.foodType) });
             }
         }
 
@@ -914,7 +971,7 @@ app.patch("/order/:id/status", authMiddleware, async (req, res) => {
 
         const order = await prisma.order.findUnique({
             where: { id },
-            select: { restaurantId: true, readyAt: true }
+            select: { id: true, restaurantId: true, readyAt: true, status: true }
         });
 
         if (!order) return res.status(404).json({ error: "Not found" });
@@ -922,6 +979,18 @@ app.patch("/order/:id/status", authMiddleware, async (req, res) => {
         const access = await getRestaurantAccess(order.restaurantId, req.user.userId);
         if (!access.canOperate) return res.status(403).json({ error: "Not allowed" });
         if (!ensureWorkspaceService(access, res)) return;
+
+        if (order.status === status) {
+            return res.json(order);
+        }
+
+        const allowed = allowedNextOrderStatuses(order.status);
+        if (!allowed.includes(status)) {
+            return res.status(409).json({
+                error: `Cannot change order from ${order.status} to ${status}`,
+                allowedStatuses: allowed
+            });
+        }
 
         const data = { status };
         if (status === "READY" && !order.readyAt) {

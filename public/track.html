@@ -29,6 +29,17 @@
       font-weight: 800;
       letter-spacing: 0;
     }
+
+    .saved-orders {
+      display: grid;
+      gap: 10px;
+    }
+
+    .saved-order {
+      width: 100%;
+      text-align: left;
+      background: white;
+    }
   </style>
 </head>
 
@@ -72,11 +83,19 @@
         <strong id="total">₹0</strong>
       </div>
     </section>
+
+    <section class="card card-pad stack mt-16" id="savedOrdersCard" hidden>
+      <div>
+        <h3 class="section-title">Recent orders on this device</h3>
+        <div class="muted">No login needed. Orders placed from this browser appear here.</div>
+      </div>
+      <div class="saved-orders" id="savedOrders"></div>
+    </section>
   </main>
 
   <script src="/assets/app.js"></script>
   <script>
-    const orderId = window.location.pathname.split("/track/")[1];
+    const orderId = window.location.pathname.split("/track/")[1] || "";
     const statuses = ["PENDING", "PREPARING", "READY", "COMPLETED"];
     let isLoadingStatus = false;
     let statusPollingTimer = null;
@@ -88,6 +107,11 @@
     }
 
     async function loadStatus() {
+      if (!orderId) {
+        showSavedOrders();
+        return;
+      }
+
       if (isLoadingStatus) return;
       isLoadingStatus = true;
       try {
@@ -136,6 +160,38 @@
       }
     }
 
+    function showSavedOrders() {
+      let orders = [];
+      try {
+        orders = JSON.parse(localStorage.getItem("avenzoRecentOrders") || "[]");
+      } catch {
+        orders = [];
+      }
+
+      document.getElementById("restaurantName").textContent = "Find your order";
+      document.getElementById("orderNumber").textContent = "Recent orders from this browser are listed below.";
+      document.getElementById("statusBadge").textContent = "Recent";
+      document.getElementById("orderCode").textContent = "----";
+      document.getElementById("readyText").textContent = orders.length ? "Choose an order to continue tracking." : "No recent orders are saved on this device.";
+      document.getElementById("items").innerHTML = "";
+      document.getElementById("total").textContent = money(0);
+
+      const card = document.getElementById("savedOrdersCard");
+      const list = document.getElementById("savedOrders");
+      card.hidden = false;
+      list.innerHTML = orders.length
+        ? orders.map(order => `
+          <button class="saved-order card card-pad row-between cursor-pointer" type="button" onclick="location.href='/track/${order.orderId}'">
+            <span>
+              <strong>${order.orderNumber ? `Order #${order.orderNumber}` : "Order"}</strong>
+              <span class="muted">Code ${escapeHtml(order.pickupCode || "----")}</span>
+            </span>
+            <span class="pill">Track</span>
+          </button>
+        `).join("")
+        : `<div class="empty">Place an order from this same browser, or use the restaurant menu's Find order option with your mobile number.</div>`;
+    }
+
     function startStatusPolling() {
       if (statusPollingTimer) return;
       statusPollingTimer = setInterval(() => {
@@ -151,7 +207,7 @@
     }
 
     loadStatus();
-    startStatusPolling();
+    if (orderId) startStatusPolling();
 
     document.addEventListener("visibilitychange", () => {
       if (document.hidden) return;

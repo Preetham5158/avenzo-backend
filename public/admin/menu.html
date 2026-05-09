@@ -43,6 +43,31 @@
       min-width: 0;
     }
 
+    .food-toggle {
+      width: min(320px, 100%);
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 4px;
+      padding: 4px;
+      border-radius: 999px;
+      background: #fffdf8;
+      border: 1px solid var(--line);
+    }
+
+    .toggle-option {
+      min-height: 36px;
+      border-radius: 999px;
+      background: transparent;
+      color: #614231;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .toggle-option.active {
+      background: var(--cocoa);
+      color: white;
+    }
+
     @media (max-width: 760px) {
       .menu-item {
         grid-template-columns: 72px minmax(0, 1fr);
@@ -86,7 +111,7 @@
           <h1 id="restaurantName">Getting menu...</h1>
           <p class="muted" id="restaurantAddress">Keep dishes, prices, and availability easy for guests to choose.</p>
         </div>
-        <button id="addItemBtn" class="btn btn-primary" onclick="openItemModal()">Add item</button>
+        <button id="addItemBtn" class="btn btn-primary" onclick="openItemModal()" hidden>Add item</button>
       </section>
 
       <section class="menu-admin-tools app-panel">
@@ -94,7 +119,7 @@
           <label for="adminMenuSearch">Find an item quickly</label>
           <input id="adminMenuSearch" class="input" placeholder="Dish, category, available, hidden..." oninput="setMenuSearch(this.value)">
         </div>
-        <section class="tabbar surface-strip" id="foodTypeTabs"></section>
+        <section class="food-toggle" id="foodTypeTabs" aria-label="Food type filter"></section>
         <section class="tabbar surface-strip" id="categoryTabs"></section>
       </section>
       <section class="stack mt-12" id="menu"></section>
@@ -197,9 +222,10 @@
         currentUser = await request("/auth/me");
         const restaurant = await request(`/restaurant/${restaurantId}`, { headers: {} });
         restaurantFoodType = restaurant.foodType || "BOTH";
+        activeFoodType = restaurantFoodType === "NON_VEG" ? "NON_VEG" : "VEG";
         document.getElementById("restaurantName").textContent = restaurant.name;
         document.getElementById("restaurantAddress").textContent = `${restaurant.address || "Keep dishes, prices, and availability easy for guests to choose."} - ${restaurantFoodTypeLabel(restaurantFoodType)}`;
-        document.getElementById("addItemBtn").style.display = canManageMenuDetails() ? "inline-flex" : "none";
+        document.getElementById("addItemBtn").hidden = !canManageMenuDetails();
         await loadMenu();
       } catch (err) {
         document.getElementById("menu").innerHTML = `<div class="empty">${escapeHtml(err.message)}</div>`;
@@ -239,27 +265,31 @@
       }, {});
 
       document.getElementById("foodTypeTabs").innerHTML = `
-        <button class="btn tab ${activeFoodType === "ALL" ? "active" : ""}" onclick="setFoodType('ALL')">All foods (${menuItems.length})</button>
-        <button class="btn tab ${activeFoodType === "VEG" ? "active" : ""}" onclick="setFoodType('VEG')">Veg (${counts.VEG || 0})</button>
-        <button class="btn tab ${activeFoodType === "NON_VEG" ? "active" : ""}" onclick="setFoodType('NON_VEG')">Non-veg (${counts.NON_VEG || 0})</button>
+        <button class="toggle-option ${activeFoodType === "VEG" ? "active" : ""}" onclick="setFoodType('VEG')">Veg (${counts.VEG || 0})</button>
+        <button class="toggle-option ${activeFoodType === "NON_VEG" ? "active" : ""}" onclick="setFoodType('NON_VEG')">Non-veg (${counts.NON_VEG || 0})</button>
       `;
     }
 
     function setFoodType(value) {
       activeFoodType = value;
       renderFoodTypeTabs();
+      renderTabs();
       renderMenu();
     }
 
     function renderTabs() {
-      const counts = menuItems.reduce((acc, item) => {
+      const filteredByType = menuItems.filter(item => (item.foodType || "VEG") === activeFoodType);
+      const counts = filteredByType.reduce((acc, item) => {
         const key = item.category?.name || "Uncategorized";
         acc[key] = (acc[key] || 0) + 1;
         return acc;
       }, {});
+      if (activeCategory !== "ALL" && !counts[activeCategory]) {
+        activeCategory = "ALL";
+      }
 
       document.getElementById("categoryTabs").innerHTML = `
-        <button class="btn tab ${activeCategory === "ALL" ? "active" : ""}" onclick="setCategory('ALL')">All (${menuItems.length})</button>
+        <button class="btn tab ${activeCategory === "ALL" ? "active" : ""}" onclick="setCategory('ALL')">All (${filteredByType.length})</button>
         ${Object.keys(counts).sort().map(name => `
           <button class="btn tab ${activeCategory === name ? "active" : ""}" onclick='setCategory(${JSON.stringify(name)})'>${escapeHtml(name)} (${counts[name]})</button>
         `).join("")}
@@ -277,9 +307,7 @@
       const visible = activeCategory === "ALL"
         ? menuItems
         : menuItems.filter(item => (item.category?.name || "Uncategorized") === activeCategory);
-      const typeFiltered = activeFoodType === "ALL"
-        ? visible
-        : visible.filter(item => (item.foodType || "VEG") === activeFoodType);
+      const typeFiltered = visible.filter(item => (item.foodType || "VEG") === activeFoodType);
       const filtered = menuSearch
         ? typeFiltered.filter(item => [
           item.name,
@@ -336,7 +364,10 @@
       document.getElementById("itemDescription").value = item?.description || "";
       document.getElementById("itemImageUrl").value = item?.imageUrl || "";
       document.getElementById("itemFoodType").value = item?.foodType || "VEG";
+      document.getElementById("itemFoodType").querySelector('option[value="VEG"]').disabled = restaurantFoodType === "NON_VEG";
       document.getElementById("itemFoodType").querySelector('option[value="NON_VEG"]').disabled = restaurantFoodType === "PURE_VEG";
+      if (restaurantFoodType === "NON_VEG") document.getElementById("itemFoodType").value = "NON_VEG";
+      if (restaurantFoodType === "PURE_VEG") document.getElementById("itemFoodType").value = "VEG";
       document.getElementById("itemAvailable").checked = item ? item.isAvailable : true;
       document.getElementById("itemActive").checked = item ? item.isActive : true;
       document.getElementById("newCategory").value = "";
