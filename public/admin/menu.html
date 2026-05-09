@@ -397,6 +397,10 @@
 
     async function saveItem(event) {
       event.preventDefault();
+      if (!canManageMenuDetails()) {
+        toast("Only restaurant owners and the Avenzo admin team can change menu details.");
+        return;
+      }
       const btn = document.getElementById("saveItemBtn");
       setLoading(btn, true, "Saving...");
 
@@ -442,6 +446,10 @@
     }
 
     async function toggleVisibility(id, current) {
+      if (!canManageMenuDetails()) {
+        toast("Only restaurant owners and the Avenzo admin team can hide or show menu items.");
+        return;
+      }
       try {
         await request(`/menu/${id}`, { method: "PUT", body: JSON.stringify({ isActive: !current }) });
         toast(current ? "Hidden from menu" : "Visible on menu");

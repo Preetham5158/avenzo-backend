@@ -618,6 +618,30 @@ function restaurantServiceMessage(restaurant) {
     return "";
 }
 
+function getUserPermissions(user) {
+    if (!user) {
+        return {
+            canCreateRestaurant: false,
+            canEditRestaurants: false,
+            canManageMenuDetails: false,
+            canToggleStock: false,
+            canUpdateOrders: false
+        };
+    }
+
+    const superAdmin = isSuperAdmin(user);
+    const owner = isOwner(user);
+    const employee = isEmployee(user);
+
+    return {
+        canCreateRestaurant: superAdmin,
+        canEditRestaurants: superAdmin,
+        canManageMenuDetails: superAdmin || owner,
+        canToggleStock: superAdmin || owner || employee,
+        canUpdateOrders: superAdmin || owner || employee
+    };
+}
+
 async function canAccessRestaurant(restaurantId, userId) {
     const user = await getAuthUser(userId);
     if (!user) return false;
@@ -689,11 +713,12 @@ app.get("/restaurants", authMiddleware, async (req, res) => {
             orderBy: { createdAt: "desc" }
         });
 
+        const permissions = getUserPermissions(user);
         res.json({
             user,
             restaurants,
-            canCreateRestaurant: isSuperAdmin(user),
-            canEditRestaurants: isSuperAdmin(user)
+            canCreateRestaurant: permissions.canCreateRestaurant,
+            canEditRestaurants: permissions.canEditRestaurants
         });
     } catch (err) {
         logRouteError("GET /restaurants", err);

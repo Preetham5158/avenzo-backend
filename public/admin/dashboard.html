@@ -240,6 +240,16 @@
     }
 
     function openRestaurantModal(id = "") {
+      if (id && !canEditRestaurants) {
+        toast("Only the Avenzo admin team can edit restaurant details.");
+        return;
+      }
+
+      if (!id && !canCreateRestaurant) {
+        toast("Only the Avenzo admin team can add a new restaurant.");
+        return;
+      }
+
       const restaurant = restaurantCache.find(r => r.id === id);
       document.getElementById("restaurantModalTitle").textContent = restaurant ? "Edit restaurant" : "Create restaurant";
       document.getElementById("restaurantId").value = restaurant?.id || "";
@@ -264,6 +274,14 @@
       event.preventDefault();
       const btn = document.getElementById("saveRestaurantBtn");
       const id = document.getElementById("restaurantId").value;
+      if (id && !canEditRestaurants) {
+        toast("Only the Avenzo admin team can edit restaurant details.");
+        return;
+      }
+      if (!id && !canCreateRestaurant) {
+        toast("Only the Avenzo admin team can add a new restaurant.");
+        return;
+      }
       setLoading(btn, true, "Saving...");
       try {
         await request(id ? `/restaurant/${id}` : "/restaurant", {
