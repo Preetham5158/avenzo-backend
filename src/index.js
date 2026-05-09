@@ -1113,18 +1113,58 @@ app.get("/admin/orders/:restaurantId", authMiddleware, async (req, res) => {
 
         const restaurant = await prisma.restaurant.findUnique({
             where: { id: restaurantId },
-            select: { id: true, name: true, address: true, locality: true, pickupNote: true, foodType: true, isActive: true, subscriptionStatus: true, subscriptionEndsAt: true }
+            select: {
+                id: true,
+                name: true,
+                address: true,
+                locality: true,
+                pickupNote: true,
+                foodType: true,
+                isActive: true,
+                subscriptionStatus: true,
+                subscriptionEndsAt: true
+            }
         });
 
         if (!restaurant) return res.status(404).json({ error: "Restaurant not found" });
 
-        const orders = await prisma.order.findMany({
-            where: { restaurantId },
-            include: { items: true },
-            orderBy: { createdAt: "desc" }
-        });
+        const validStatuses = ["PENDING", "PREPARING", "READY", "COMPLETED", "CANCELLED"];
+        const requestedStatus = req.query.status ? String(req.query.status).toUpperCase() : "";
 
-        res.json({ restaurant, orders });
+        if (requestedStatus && !validStatuses.includes(requestedStatus)) {
+            return res.status(400).json({ error: "Invalid order status filter" });
+        }
+
+        const page = Math.max(parseInt(req.query.page || "1", 10), 1);
+        const limit = Math.min(Math.max(parseInt(req.query.limit || "50", 10), 1), 100);
+        const skip = (page - 1) * limit;
+
+        const where = {
+            restaurantId,
+            ...(requestedStatus && { status: requestedStatus })
+        };
+
+        const [orders, total] = await Promise.all([
+            prisma.order.findMany({
+                where,
+                include: { items: true },
+                orderBy: { createdAt: "desc" },
+                skip,
+                take: limit
+            }),
+            prisma.order.count({ where })
+        ]);
+
+        res.json({
+            restaurant,
+            orders,
+            pagination: {
+                page,
+                limit,
+                total,
+                totalPages: Math.ceil(total / limit)
+            }
+        });
     } catch (err) {
         logRouteError("GET /admin/orders/:restaurantId", err);
         res.status(500).json({ error: "Failed to fetch orders" });
