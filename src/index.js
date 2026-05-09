@@ -191,11 +191,7 @@ app.get("/restaurant/slug/:slug", async (req, res) => {
             return res.status(404).json({ error: "Restaurant not found" });
         }
 
-        res.json({
-            ...restaurant,
-            serviceAvailable: isRestaurantServiceAvailable(restaurant),
-            serviceMessage: restaurantServiceMessage(restaurant)
-        });
+        res.json(publicRestaurantResponse(restaurant));
     } catch (err) {
         logRouteError("GET /restaurant/slug/:slug", err);
         res.status(500).json({ error: "Error fetching restaurant" });
@@ -212,13 +208,12 @@ app.get("/restaurant/:id", async (req, res) => {
             return res.status(404).json({ error: "Restaurant not found" });
         }
 
-        res.json(restaurant);
+        res.json(publicRestaurantResponse(restaurant));
     } catch (err) {
         logRouteError("GET /restaurant/:id", err);
         res.status(500).json({ error: "Error fetching restaurant" });
     }
 });
-
 /* ================================
    GET MENU
 ================================ */
@@ -649,6 +644,23 @@ function restaurantServiceMessage(restaurant) {
     }
 
     return "";
+}
+
+function publicRestaurantResponse(restaurant) {
+    if (!restaurant) return null;
+
+    return {
+        id: restaurant.id,
+        name: restaurant.name,
+        slug: restaurant.slug,
+        address: restaurant.address,
+        locality: restaurant.locality,
+        pickupNote: restaurant.pickupNote,
+        foodType: restaurant.foodType,
+        isActive: restaurant.isActive,
+        serviceAvailable: isRestaurantServiceAvailable(restaurant),
+        serviceMessage: restaurantServiceMessage(restaurant)
+    };
 }
 
 function getUserPermissions(user) {
