@@ -115,14 +115,12 @@
       if (isLoadingStatus) return;
       isLoadingStatus = true;
       try {
-        const data = await request(`/order/${orderId}`, { headers: {} });
+  const data = await request(`/order/${orderId}`, { headers: {} });
 
-        const restaurant = await request(`/restaurant/${data.restaurantId}`, { headers: {} });
-        document.getElementById("restaurantName").textContent = restaurant.name;
-        document.getElementById("orderNumber").textContent = Number.isInteger(data.orderNumber) ? `Order #${data.orderNumber}` : "Order received";
-        document.getElementById("orderCode").textContent = data.pickupCode;
-        document.getElementById("placedAt").textContent = formatDate(data.createdAt);
-
+  document.getElementById("restaurantName").textContent = data.restaurant?.name || "Restaurant";
+  document.getElementById("orderNumber").textContent = Number.isInteger(data.orderNumber) ? `Order #${data.orderNumber}` : "Order received";
+  document.getElementById("orderCode").textContent = data.pickupCode;
+  document.getElementById("placedAt").textContent = formatDate(data.createdAt);
         const badge = document.getElementById("statusBadge");
         badge.className = `pill ${badgeClass(data.status)}`;
         badge.textContent = data.status;
