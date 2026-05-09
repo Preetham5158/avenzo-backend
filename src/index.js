@@ -591,7 +591,7 @@ async function getAuthUser(userId) {
 }
 
 function isSuperAdmin(user) {
-    return user?.role === "ADMIN" || user?.email === "admin@avenzo.com";
+    return user?.role === "ADMIN";
 }
 
 function isOwner(user) {
@@ -602,8 +602,16 @@ function isEmployee(user) {
     return user?.role === "EMPLOYEE";
 }
 
+function isSubscriptionExpired(restaurant) {
+    return !!restaurant?.subscriptionEndsAt && new Date(restaurant.subscriptionEndsAt) < new Date();
+}
+
 function isRestaurantServiceAvailable(restaurant) {
-    return !!restaurant?.isActive && !["EXPIRED", "SUSPENDED"].includes(restaurant.subscriptionStatus);
+    return (
+        !!restaurant?.isActive &&
+        !["EXPIRED", "SUSPENDED"].includes(restaurant.subscriptionStatus) &&
+        !isSubscriptionExpired(restaurant)
+    );
 }
 
 function restaurantServiceMessage(restaurant) {
@@ -611,7 +619,7 @@ function restaurantServiceMessage(restaurant) {
         return "This restaurant is taking a short pause on Avenzo. Please check back soon for faster ordering and smoother dine-in service.";
     }
 
-    if (["EXPIRED", "SUSPENDED"].includes(restaurant.subscriptionStatus)) {
+    if (["EXPIRED", "SUSPENDED"].includes(restaurant.subscriptionStatus) || isSubscriptionExpired(restaurant)) {
         return "Ordering is paused for this restaurant right now. Avenzo helps busy restaurants serve guests faster, and service can resume as soon as the restaurant is active again.";
     }
 
@@ -1091,13 +1099,19 @@ app.get("/admin/orders/:restaurantId", authMiddleware, async (req, res) => {
 ================================ */
 const PORT = process.env.PORT || 5000;
 
-ensureFoodTypeSchema()
-    .then(() => {
+async function startServer() {
+    try {
+        if (process.env.ENABLE_BOOTSTRAP_SCHEMA === "true") {
+            await ensureFoodTypeSchema();
+        }
+
         app.listen(PORT, () => {
             console.log("Server running on port " + PORT);
         });
-    })
-    .catch((err) => {
-        logRouteError("BOOT ensureFoodTypeSchema", err);
+    } catch (err) {
+        logRouteError("BOOT", err);
         process.exit(1);
-    });
+    }
+}
+
+startServer();
