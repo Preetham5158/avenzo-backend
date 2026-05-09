@@ -321,6 +321,25 @@ h3 {
   min-width: 0;
 }
 
+[hidden] {
+  display: none !important;
+}
+
+.row-between > * {
+  min-width: 0;
+}
+
+.metric-card {
+  min-width: 0;
+}
+
+.metric-card h3,
+.metric-card .muted,
+.metric-card .pill {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
 .btn {
   min-height: 44px;
   padding: 0 15px;

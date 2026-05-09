@@ -111,7 +111,7 @@
           <h1 id="restaurantName">Getting menu...</h1>
           <p class="muted" id="restaurantAddress">Keep dishes, prices, and availability easy for guests to choose.</p>
         </div>
-        <button id="addItemBtn" class="btn btn-primary" onclick="openItemModal()" hidden>Add item</button>
+        <button id="addItemBtn" class="btn btn-primary" onclick="openItemModal()" hidden style="display:none">Add item</button>
       </section>
 
       <section class="menu-admin-tools app-panel">
@@ -225,7 +225,9 @@
         activeFoodType = restaurantFoodType === "NON_VEG" ? "NON_VEG" : "VEG";
         document.getElementById("restaurantName").textContent = restaurant.name;
         document.getElementById("restaurantAddress").textContent = `${restaurant.address || "Keep dishes, prices, and availability easy for guests to choose."} - ${restaurantFoodTypeLabel(restaurantFoodType)}`;
-        document.getElementById("addItemBtn").hidden = !canManageMenuDetails();
+        const canManage = canManageMenuDetails();
+        document.getElementById("addItemBtn").hidden = !canManage;
+        document.getElementById("addItemBtn").style.display = canManage ? "inline-flex" : "none";
         await loadMenu();
       } catch (err) {
         document.getElementById("menu").innerHTML = `<div class="empty">${escapeHtml(err.message)}</div>`;
