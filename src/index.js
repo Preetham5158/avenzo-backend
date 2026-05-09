@@ -427,12 +427,37 @@ app.get("/order/:id", async (req, res) => {
     try {
         const order = await prisma.order.findUnique({
             where: { id: req.params.id },
-            include: { items: true }
+            include: {
+                items: true,
+                restaurant: true
+            }
         });
 
         if (!order) return res.status(404).json({ error: "Not found" });
 
-        res.json(order);
+        res.json({
+            id: order.id,
+            orderNumber: order.orderNumber,
+            pickupCode: order.pickupCode,
+            totalPrice: order.totalPrice,
+            status: order.status,
+            readyAt: order.readyAt,
+            createdAt: order.createdAt,
+            updatedAt: order.updatedAt,
+            restaurant: order.restaurant
+                ? {
+                      name: order.restaurant.name,
+                      slug: order.restaurant.slug,
+                      pickupNote: order.restaurant.pickupNote
+                  }
+                : null,
+            items: (order.items || []).map((item) => ({
+                id: item.id,
+                nameAtOrder: item.nameAtOrder,
+                quantity: item.quantity,
+                priceAtOrder: item.priceAtOrder
+            }))
+        });
     } catch (err) {
         logRouteError("GET /order/:id", err);
         res.status(500).json({ error: "Error fetching order" });
