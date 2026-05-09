@@ -97,6 +97,12 @@ function menuFoodFilter(value) {
     return FOOD_TYPES.includes(foodType) ? { foodType } : {};
 }
 
+function logRouteError(route, err) {
+    const message = err?.message || String(err);
+    const code = err?.code ? ` code=${err.code}` : "";
+    console.error(`[${route}]${code} ${message}`);
+}
+
 /* ================================
    HELPER: ADMIN AUTH
 ================================ */
@@ -137,7 +143,8 @@ app.get("/restaurant/slug/:slug", async (req, res) => {
             serviceAvailable: isRestaurantServiceAvailable(restaurant),
             serviceMessage: restaurantServiceMessage(restaurant)
         });
-    } catch {
+    } catch (err) {
+        logRouteError("GET /restaurant/slug/:slug", err);
         res.status(500).json({ error: "Error fetching restaurant" });
     }
 });
@@ -154,6 +161,7 @@ app.get("/restaurant/:id", async (req, res) => {
 
         res.json(restaurant);
     } catch (err) {
+        logRouteError("GET /restaurant/:id", err);
         res.status(500).json({ error: "Error fetching restaurant" });
     }
 });
@@ -183,7 +191,8 @@ app.get("/menu/:restaurantId", async (req, res) => {
         });
 
         res.json(menu);
-    } catch {
+    } catch (err) {
+        logRouteError("GET /menu/:restaurantId", err);
         res.status(500).json({ error: "Error fetching menu" });
     }
 });
@@ -213,7 +222,8 @@ app.get("/menu/by-slug/:slug", async (req, res) => {
         });
 
         res.json(menu);
-    } catch {
+    } catch (err) {
+        logRouteError("GET /menu/by-slug/:slug", err);
         res.status(500).json({ error: "Error fetching menu" });
     }
 });
@@ -236,7 +246,8 @@ app.get("/categories/:restaurantId", authMiddleware, async (req, res) => {
         });
 
         res.json(categories);
-    } catch {
+    } catch (err) {
+        logRouteError("GET /categories/:restaurantId", err);
         res.status(500).json({ error: "Error fetching categories" });
     }
 });
@@ -369,7 +380,8 @@ app.get("/order/:id", async (req, res) => {
         if (!order) return res.status(404).json({ error: "Not found" });
 
         res.json(order);
-    } catch {
+    } catch (err) {
+        logRouteError("GET /order/:id", err);
         res.status(500).json({ error: "Error fetching order" });
     }
 });
@@ -400,6 +412,7 @@ app.post("/auth/signup", authLimiter, async (req, res) => {
         res.json({ message: "User created", userId: user.id });
 
     } catch (err) {
+        logRouteError("POST /auth/signup", err);
         res.status(500).json({ error: "Signup failed" });
     }
 });
@@ -441,7 +454,8 @@ app.post("/auth/login", authLimiter, async (req, res) => {
             }
         });
 
-    } catch {
+    } catch (err) {
+        logRouteError("POST /auth/login", err);
         res.status(500).json({ error: "Login failed" });
     }
 });
@@ -469,12 +483,17 @@ function authMiddleware(req, res, next) {
 }
 
 app.get("/auth/me", authMiddleware, async (req, res) => {
-    const user = await prisma.user.findUnique({
-        where: { id: req.user.userId },
-        select: { id: true, email: true, name: true, role: true }
-    });
+    try {
+        const user = await prisma.user.findUnique({
+            where: { id: req.user.userId },
+            select: { id: true, email: true, name: true, role: true }
+        });
 
-    res.json(user);
+        res.json(user);
+    } catch (err) {
+        logRouteError("GET /auth/me", err);
+        res.status(500).json({ error: "Error fetching account" });
+    }
 });
 
 async function getAuthUser(userId) {
@@ -589,7 +608,8 @@ app.get("/restaurants", authMiddleware, async (req, res) => {
             canCreateRestaurant: isSuperAdmin(user),
             canEditRestaurants: isSuperAdmin(user)
         });
-    } catch {
+    } catch (err) {
+        logRouteError("GET /restaurants", err);
         res.status(500).json({ error: "Error fetching restaurants" });
     }
 });
@@ -637,7 +657,8 @@ app.post("/restaurant", authMiddleware, async (req, res) => {
         });
 
         res.json(restaurant);
-    } catch {
+    } catch (err) {
+        logRouteError("POST /restaurant", err);
         res.status(500).json({ error: "Error creating restaurant" });
     }
 });
@@ -685,7 +706,8 @@ app.put("/restaurant/:id", authMiddleware, async (req, res) => {
         });
 
         res.json(updated);
-    } catch {
+    } catch (err) {
+        logRouteError("PUT /restaurant/:id", err);
         res.status(500).json({ error: "Error updating restaurant" });
     }
 });
@@ -695,34 +717,39 @@ app.delete("/restaurant/:id", authMiddleware, async (req, res) => {
 });
 
 app.post("/category", authMiddleware, async (req, res) => {
-    const { name, restaurantId, sortOrder } = req.body;
+    try {
+        const { name, restaurantId, sortOrder } = req.body;
 
-    if (!name || !restaurantId) {
-        return res.status(400).json({ error: "Missing fields" });
-    }
-
-    const access = await getRestaurantAccess(restaurantId, req.user.userId);
-    if (!access.canManage) return res.status(403).json({ error: "Only owners can manage menu categories" });
-    if (!ensureWorkspaceService(access, res)) return;
-
-    const category = await prisma.category.upsert({
-        where: {
-            restaurantId_name: {
-                restaurantId,
-                name: name.trim()
-            }
-        },
-        update: {
-            ...(typeof sortOrder !== "undefined" && { sortOrder: Number(sortOrder) })
-        },
-        create: {
-            name: name.trim(),
-            restaurantId,
-            ...(typeof sortOrder !== "undefined" && { sortOrder: Number(sortOrder) })
+        if (!name || !restaurantId) {
+            return res.status(400).json({ error: "Missing fields" });
         }
-    });
 
-    res.json(category);
+        const access = await getRestaurantAccess(restaurantId, req.user.userId);
+        if (!access.canManage) return res.status(403).json({ error: "Only owners can manage menu categories" });
+        if (!ensureWorkspaceService(access, res)) return;
+
+        const category = await prisma.category.upsert({
+            where: {
+                restaurantId_name: {
+                    restaurantId,
+                    name: name.trim()
+                }
+            },
+            update: {
+                ...(typeof sortOrder !== "undefined" && { sortOrder: Number(sortOrder) })
+            },
+            create: {
+                name: name.trim(),
+                restaurantId,
+                ...(typeof sortOrder !== "undefined" && { sortOrder: Number(sortOrder) })
+            }
+        });
+
+        res.json(category);
+    } catch (err) {
+        logRouteError("POST /category", err);
+        res.status(500).json({ error: "Error saving category" });
+    }
 });
 
 app.post("/menu", authMiddleware, async (req, res) => {
@@ -768,7 +795,8 @@ app.post("/menu", authMiddleware, async (req, res) => {
         });
 
         res.json(item);
-    } catch {
+    } catch (err) {
+        logRouteError("POST /menu", err);
         res.status(500).json({ error: "Error saving menu item" });
     }
 });
@@ -838,61 +866,72 @@ app.put("/menu/:id", authMiddleware, async (req, res) => {
         });
 
         res.json(updated);
-    } catch {
+    } catch (err) {
+        logRouteError("PUT /menu/:id", err);
         res.status(500).json({ error: "Error updating menu item" });
     }
 });
 
 app.patch("/order/:id/status", authMiddleware, async (req, res) => {
-    const { id } = req.params;
-    const { status } = req.body;
-    const validStatuses = ["PENDING", "PREPARING", "READY", "COMPLETED", "CANCELLED"];
+    try {
+        const { id } = req.params;
+        const { status } = req.body;
+        const validStatuses = ["PENDING", "PREPARING", "READY", "COMPLETED", "CANCELLED"];
 
-    if (!validStatuses.includes(status)) {
-        return res.status(400).json({ error: "Invalid status" });
+        if (!validStatuses.includes(status)) {
+            return res.status(400).json({ error: "Invalid status" });
+        }
+
+        const order = await prisma.order.findUnique({
+            where: { id },
+            select: { restaurantId: true, readyAt: true }
+        });
+
+        if (!order) return res.status(404).json({ error: "Not found" });
+
+        const access = await getRestaurantAccess(order.restaurantId, req.user.userId);
+        if (!access.canOperate) return res.status(403).json({ error: "Not allowed" });
+        if (!ensureWorkspaceService(access, res)) return;
+
+        const data = { status };
+        if (status === "READY" && !order.readyAt) {
+            data.readyAt = new Date();
+        }
+
+        const updated = await prisma.order.update({
+            where: { id },
+            data
+        });
+
+        res.json(updated);
+    } catch (err) {
+        logRouteError("PATCH /order/:id/status", err);
+        res.status(500).json({ error: "Error updating order status" });
     }
-
-    const order = await prisma.order.findUnique({
-        where: { id },
-        select: { restaurantId: true, readyAt: true }
-    });
-
-    if (!order) return res.status(404).json({ error: "Not found" });
-
-    const access = await getRestaurantAccess(order.restaurantId, req.user.userId);
-    if (!access.canOperate) return res.status(403).json({ error: "Not allowed" });
-    if (!ensureWorkspaceService(access, res)) return;
-
-    const data = { status };
-    if (status === "READY" && !order.readyAt) {
-        data.readyAt = new Date();
-    }
-
-    const updated = await prisma.order.update({
-        where: { id },
-        data
-    });
-
-    res.json(updated);
 });
 
 app.get("/admin/menu/:restaurantId", authMiddleware, async (req, res) => {
-    const { restaurantId } = req.params;
+    try {
+        const { restaurantId } = req.params;
 
-    const access = await getRestaurantAccess(restaurantId, req.user.userId);
-    if (!access.canAccess) return res.status(403).json({ error: "Not allowed" });
-    if (!ensureWorkspaceService(access, res)) return;
+        const access = await getRestaurantAccess(restaurantId, req.user.userId);
+        if (!access.canAccess) return res.status(403).json({ error: "Not allowed" });
+        if (!ensureWorkspaceService(access, res)) return;
 
-    const menu = await prisma.menu.findMany({
-        where: { restaurantId },
-        include: { category: true },
-        orderBy: [
-            { category: { sortOrder: "asc" } },
-            { createdAt: "desc" }
-        ]
-    });
+        const menu = await prisma.menu.findMany({
+            where: { restaurantId },
+            include: { category: true },
+            orderBy: [
+                { category: { sortOrder: "asc" } },
+                { createdAt: "desc" }
+            ]
+        });
 
-    res.json(menu);
+        res.json(menu);
+    } catch (err) {
+        logRouteError("GET /admin/menu/:restaurantId", err);
+        res.status(500).json({ error: "Error fetching admin menu" });
+    }
 });
 
 app.get("/admin/orders/:restaurantId", authMiddleware, async (req, res) => {
@@ -918,6 +957,7 @@ app.get("/admin/orders/:restaurantId", authMiddleware, async (req, res) => {
 
         res.json({ restaurant, orders });
     } catch (err) {
+        logRouteError("GET /admin/orders/:restaurantId", err);
         res.status(500).json({ error: "Failed to fetch orders" });
     }
 });
