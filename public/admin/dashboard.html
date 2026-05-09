@@ -110,15 +110,25 @@
             <input id="restaurantLocality" class="input" placeholder="Jayanagar">
           </div>
           <div class="field">
-            <label for="restaurantPickupNote">Guest note</label>
-            <input id="restaurantPickupNote" class="input" placeholder="Example: Please stay near the dining area after ordering">
+            <label for="restaurantFoodType">Restaurant food category</label>
+            <select id="restaurantFoodType" class="select">
+              <option value="PURE_VEG">Pure veg</option>
+              <option value="NON_VEG">Non-veg</option>
+              <option value="BOTH">Veg & non-veg</option>
+            </select>
           </div>
         </div>
         <div class="grid grid-2">
+          <div class="field">
+            <label for="restaurantPickupNote">Guest note</label>
+            <input id="restaurantPickupNote" class="input" placeholder="Example: Please stay near the dining area after ordering">
+          </div>
           <label class="row card card-pad cursor-pointer">
             <input id="restaurantActive" type="checkbox" checked>
             <span>Service active</span>
           </label>
+        </div>
+        <div class="grid grid-2">
           <div class="field">
             <label for="subscriptionStatus">Subscription</label>
             <select id="subscriptionStatus" class="select">
@@ -207,6 +217,7 @@
           </div>
           <div class="row row-wrap">
             <span class="pill ${r.subscriptionStatus === "ACTIVE" ? "pill-success" : r.subscriptionStatus === "TRIALING" ? "pill-warning" : "pill-danger"}">${subscriptionLabel(r.subscriptionStatus)}</span>
+            <span class="pill ${r.foodType === "NON_VEG" ? "pill-nonveg" : "pill-veg"}">${restaurantFoodTypeLabel(r.foodType)}</span>
             ${r.owner?.email ? `<span class="pill">${escapeHtml(r.owner.email)}</span>` : ""}
           </div>
           <div class="restaurant-actions">
@@ -237,6 +248,7 @@
       document.getElementById("restaurantAddress").value = restaurant?.address || "";
       document.getElementById("restaurantLocality").value = restaurant?.locality || "";
       document.getElementById("restaurantPickupNote").value = restaurant?.pickupNote || "";
+      document.getElementById("restaurantFoodType").value = restaurant?.foodType || "BOTH";
       document.getElementById("restaurantActive").checked = restaurant ? restaurant.isActive : true;
       document.getElementById("subscriptionStatus").value = restaurant?.subscriptionStatus || "ACTIVE";
       document.getElementById("saveRestaurantBtn").textContent = restaurant ? "Save changes" : "Create";
@@ -262,6 +274,7 @@
             address: document.getElementById("restaurantAddress").value.trim() || null,
             locality: document.getElementById("restaurantLocality").value.trim() || null,
             pickupNote: document.getElementById("restaurantPickupNote").value.trim() || null,
+            foodType: document.getElementById("restaurantFoodType").value,
             isActive: document.getElementById("restaurantActive").checked,
             subscriptionStatus: document.getElementById("subscriptionStatus").value
           })

@@ -100,7 +100,7 @@
       top: var(--search-top);
       z-index: 42;
       display: grid;
-      grid-template-columns: minmax(0, 1fr) auto;
+      grid-template-columns: minmax(0, 1fr) auto auto;
       gap: 10px;
       align-items: center;
       padding: 10px;
@@ -146,6 +146,32 @@
       font-size: 12px;
       font-weight: 800;
       box-shadow: 0 10px 22px rgba(18, 116, 91, 0.22);
+    }
+
+    .food-filter {
+      display: inline-flex;
+      gap: 6px;
+      padding: 4px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.82);
+      border: 1px solid rgba(108, 71, 47, 0.12);
+    }
+
+    .filter-chip {
+      min-height: 34px;
+      padding: 0 12px;
+      border-radius: 999px;
+      background: transparent;
+      color: #5a3a2a;
+      font-size: 12px;
+      font-weight: 800;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .filter-chip.active {
+      background: #25130e;
+      color: white;
     }
 
     .menu-layout {
@@ -530,7 +556,16 @@
       }
 
       .quick-count {
-        display: none;
+        justify-self: start;
+      }
+
+      .food-filter {
+        width: 100%;
+        overflow-x: auto;
+      }
+
+      .filter-chip {
+        flex: 1;
       }
 
       .search-mini .input {
@@ -644,6 +679,53 @@
         min-width: 0;
       }
     }
+
+    @media (max-width: 520px) {
+      :root {
+        --rail-top: 184px;
+      }
+
+      .quick-search {
+        position: static;
+      }
+
+      .menu-layout {
+        display: block;
+      }
+
+      .category-rail {
+        position: sticky;
+        top: var(--dine-top);
+        z-index: 38;
+        max-height: none;
+        display: block;
+        margin-bottom: 10px;
+        overflow-x: auto;
+        overflow-y: hidden;
+        white-space: nowrap;
+      }
+
+      #categoryRail {
+        display: inline-flex;
+        gap: 6px;
+        min-width: max-content;
+      }
+
+      .category-button {
+        width: auto;
+        min-width: 84px;
+        min-height: 42px;
+        text-align: center;
+      }
+
+      .section-head {
+        top: calc(var(--dine-top) + 58px);
+      }
+
+      .menu-section {
+        scroll-margin-top: calc(var(--dine-top) + 70px);
+      }
+    }
   </style>
 </head>
 
@@ -664,6 +746,11 @@
       <div class="search-mini">
         <span>Find</span>
         <input id="menuSearch" class="input" placeholder="dosa, idli, coffee..." oninput="setSearch(this.value)">
+      </div>
+      <div class="food-filter" id="foodFilter">
+        <button class="filter-chip active" data-food-filter="ALL" type="button" onclick="setFoodFilter('ALL')">All</button>
+        <button class="filter-chip" data-food-filter="VEG" type="button" onclick="setFoodFilter('VEG')">Veg</button>
+        <button class="filter-chip" data-food-filter="NON_VEG" type="button" onclick="setFoodFilter('NON_VEG')">Non-veg</button>
       </div>
       <div class="quick-count" id="matchCount">Finding favourites...</div>
     </section>
@@ -718,6 +805,7 @@
     let cart = [];
     let menuData = [];
     let activeCategory = "ALL";
+    let activeFoodType = "ALL";
     let searchTerm = "";
     const collapsedCategories = new Set();
 
@@ -730,7 +818,7 @@
         restaurantId = restaurant.id;
         document.getElementById("restaurantName").textContent = restaurant.name;
         document.getElementById("restaurantAddress").textContent = restaurant.address || restaurant.locality || "Choose here. Eat here. Skip the billing queue.";
-        document.getElementById("dineNote").textContent = "Live dine-in menu";
+        document.getElementById("dineNote").textContent = restaurantFoodTypeLabel(restaurant.foodType);
         if (restaurant.serviceAvailable === false) {
           document.getElementById("menu").innerHTML = `
             <div class="empty">
@@ -765,6 +853,10 @@
         ? menuData
         : menuData.filter(item => categoryName(item) === activeCategory);
 
+      if (activeFoodType !== "ALL") {
+        visible = visible.filter(item => (item.foodType || "VEG") === activeFoodType);
+      }
+
       if (searchTerm) {
         visible = visible.filter(item => [
           item.name,
@@ -774,6 +866,14 @@
       }
 
       return visible;
+    }
+
+    function setFoodFilter(value) {
+      activeFoodType = value;
+      document.querySelectorAll(".filter-chip").forEach(button => {
+        button.classList.toggle("active", button.dataset.foodFilter === value);
+      });
+      renderMenu();
     }
 
     function renderRail() {
@@ -865,6 +965,7 @@
             <p class="food-desc">${escapeHtml(item.description || "Freshly prepared by the restaurant.")}</p>
             <div class="price-row">
               <strong>${money(item.price)}</strong>
+              <span class="pill ${foodTypePillClass(item.foodType)}">${foodTypeLabel(item.foodType)}</span>
               ${disabled ? `<span class="pill pill-danger">Out of stock</span>` : ""}
             </div>
           </div>

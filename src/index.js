@@ -12,6 +12,8 @@ const app = express();
 const prisma = new PrismaClient();
 const JWT_ISSUER = "avenzo-api";
 const JWT_AUDIENCE = "avenzo-admin";
+const FOOD_TYPES = ["VEG", "NON_VEG"];
+const RESTAURANT_FOOD_TYPES = ["PURE_VEG", "NON_VEG", "BOTH"];
 
 if (!process.env.JWT_SECRET) {
     throw new Error("JWT_SECRET is required");
@@ -77,6 +79,22 @@ const orderLimiter = rateLimit({ windowMs: 60 * 1000, max: 20 });
 
 function normalizeSlug(value) {
     return String(value || "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+}
+
+function normalizeFoodType(value, fallback = "VEG") {
+    const normalized = String(value || fallback).toUpperCase();
+    return FOOD_TYPES.includes(normalized) ? normalized : fallback;
+}
+
+function normalizeRestaurantFoodType(value, fallback = "BOTH") {
+    const normalized = String(value || fallback).toUpperCase();
+    return RESTAURANT_FOOD_TYPES.includes(normalized) ? normalized : fallback;
+}
+
+function menuFoodFilter(value) {
+    if (!value || String(value).toUpperCase() === "ALL") return {};
+    const foodType = String(value).toUpperCase();
+    return FOOD_TYPES.includes(foodType) ? { foodType } : {};
 }
 
 /* ================================
@@ -154,7 +172,8 @@ app.get("/menu/:restaurantId", async (req, res) => {
         const menu = await prisma.menu.findMany({
             where: {
                 restaurantId: req.params.restaurantId,
-                isActive: true
+                isActive: true,
+                ...menuFoodFilter(req.query.foodType)
             },
             include: { category: true }, // 🔥 important
             orderBy: [
@@ -184,7 +203,7 @@ app.get("/menu/by-slug/:slug", async (req, res) => {
         }
 
         const menu = await prisma.menu.findMany({
-            where: { restaurantId: restaurant.id, isActive: true },
+            where: { restaurantId: restaurant.id, isActive: true, ...menuFoodFilter(req.query.foodType) },
             include: { category: true },
             orderBy: [
                 { isAvailable: "desc" },
@@ -577,7 +596,7 @@ app.get("/restaurants", authMiddleware, async (req, res) => {
 
 app.post("/restaurant", authMiddleware, async (req, res) => {
     try {
-        const { name, address, locality, pickupNote, ownerEmail, subscriptionStatus, subscriptionEndsAt, isActive } = req.body;
+        const { name, address, locality, pickupNote, ownerEmail, subscriptionStatus, subscriptionEndsAt, isActive, foodType } = req.body;
         if (!name) {
             return res.status(400).json({ error: "Name required" });
         }
@@ -609,6 +628,7 @@ app.post("/restaurant", authMiddleware, async (req, res) => {
                 address: address || null,
                 locality: locality || null,
                 pickupNote: pickupNote || null,
+                foodType: normalizeRestaurantFoodType(foodType),
                 ownerId: owner.id,
                 isActive: typeof isActive === "boolean" ? isActive : true,
                 subscriptionStatus: subscriptionStatus || "ACTIVE",
@@ -625,7 +645,7 @@ app.post("/restaurant", authMiddleware, async (req, res) => {
 app.put("/restaurant/:id", authMiddleware, async (req, res) => {
     try {
         const { id } = req.params;
-        const { name, address, locality, pickupNote, ownerEmail, isActive, subscriptionStatus, subscriptionEndsAt } = req.body;
+        const { name, address, locality, pickupNote, ownerEmail, isActive, subscriptionStatus, subscriptionEndsAt, foodType } = req.body;
         if (!name) {
             return res.status(400).json({ error: "Name required" });
         }
@@ -657,6 +677,7 @@ app.put("/restaurant/:id", authMiddleware, async (req, res) => {
                 ...(typeof address !== "undefined" && { address: address || null }),
                 ...(typeof locality !== "undefined" && { locality: locality || null }),
                 ...(typeof pickupNote !== "undefined" && { pickupNote: pickupNote || null }),
+                ...(typeof foodType !== "undefined" && { foodType: normalizeRestaurantFoodType(foodType) }),
                 ...(typeof isActive === "boolean" && { isActive }),
                 ...(subscriptionStatus && { subscriptionStatus }),
                 ...(typeof subscriptionEndsAt !== "undefined" && { subscriptionEndsAt: subscriptionEndsAt ? new Date(subscriptionEndsAt) : null })
@@ -706,7 +727,7 @@ app.post("/category", authMiddleware, async (req, res) => {
 
 app.post("/menu", authMiddleware, async (req, res) => {
     try {
-        const { name, price, categoryId, restaurantId, description, imageUrl } = req.body;
+        const { name, price, categoryId, restaurantId, description, imageUrl, foodType } = req.body;
         if (!name || !Number.isFinite(Number(price)) || !categoryId || !restaurantId) {
             return res.status(400).json({ error: "Missing or invalid fields" });
         }
@@ -724,12 +745,22 @@ app.post("/menu", authMiddleware, async (req, res) => {
             return res.status(400).json({ error: "Invalid category" });
         }
 
+        const restaurant = await prisma.restaurant.findUnique({
+            where: { id: restaurantId },
+            select: { foodType: true }
+        });
+        const normalizedFoodType = normalizeFoodType(foodType);
+        if (restaurant?.foodType === "PURE_VEG" && normalizedFoodType === "NON_VEG") {
+            return res.status(400).json({ error: "Pure veg restaurants can only add veg items" });
+        }
+
         const item = await prisma.menu.create({
             data: {
                 name,
                 price: Number(price),
                 categoryId,
                 restaurantId,
+                foodType: normalizedFoodType,
                 description: description || null,
                 imageUrl: imageUrl || null
             },
@@ -745,7 +776,7 @@ app.post("/menu", authMiddleware, async (req, res) => {
 app.put("/menu/:id", authMiddleware, async (req, res) => {
     try {
         const { id } = req.params;
-        const { name, price, categoryId, isAvailable, isActive, description, imageUrl } = req.body;
+        const { name, price, categoryId, isAvailable, isActive, description, imageUrl, foodType } = req.body;
 
         const item = await prisma.menu.findUnique({
             where: { id },
@@ -779,12 +810,25 @@ app.put("/menu/:id", authMiddleware, async (req, res) => {
             }
         }
 
+        let normalizedFoodType;
+        if (typeof foodType !== "undefined") {
+            normalizedFoodType = normalizeFoodType(foodType);
+            const restaurant = await prisma.restaurant.findUnique({
+                where: { id: item.restaurantId },
+                select: { foodType: true }
+            });
+            if (restaurant?.foodType === "PURE_VEG" && normalizedFoodType === "NON_VEG") {
+                return res.status(400).json({ error: "Pure veg restaurants can only add veg items" });
+            }
+        }
+
         const updated = await prisma.menu.update({
             where: { id },
             data: {
                 ...(typeof name !== "undefined" && { name }),
                 ...(typeof price !== "undefined" && Number.isFinite(Number(price)) && { price: Number(price) }),
                 ...(categoryId && { categoryId }),
+                ...(normalizedFoodType && { foodType: normalizedFoodType }),
                 ...(typeof isAvailable !== "undefined" && { isAvailable }),
                 ...(!access.isEmployee && typeof isActive !== "undefined" && { isActive }),
                 ...(typeof description !== "undefined" && { description: description || null }),
@@ -861,7 +905,7 @@ app.get("/admin/orders/:restaurantId", authMiddleware, async (req, res) => {
 
         const restaurant = await prisma.restaurant.findUnique({
             where: { id: restaurantId },
-            select: { id: true, name: true, address: true, locality: true, pickupNote: true, isActive: true, subscriptionStatus: true, subscriptionEndsAt: true }
+            select: { id: true, name: true, address: true, locality: true, pickupNote: true, foodType: true, isActive: true, subscriptionStatus: true, subscriptionEndsAt: true }
         });
 
         if (!restaurant) return res.status(404).json({ error: "Restaurant not found" });

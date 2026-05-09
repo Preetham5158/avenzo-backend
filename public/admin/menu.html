@@ -94,6 +94,7 @@
           <label for="adminMenuSearch">Find an item quickly</label>
           <input id="adminMenuSearch" class="input" placeholder="Dish, category, available, hidden..." oninput="setMenuSearch(this.value)">
         </div>
+        <section class="tabbar surface-strip" id="foodTypeTabs"></section>
         <section class="tabbar surface-strip" id="categoryTabs"></section>
       </section>
       <section class="stack mt-12" id="menu"></section>
@@ -133,6 +134,16 @@
             <label for="itemCategory">Category</label>
             <select id="itemCategory" class="select" required></select>
           </div>
+          <div class="field">
+            <label for="itemFoodType">Food type</label>
+            <select id="itemFoodType" class="select" required>
+              <option value="VEG">Veg</option>
+              <option value="NON_VEG">Non-veg</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-2">
           <div class="field">
             <label for="newCategory">New category</label>
             <input id="newCategory" class="input" placeholder="Type to create one">
@@ -177,14 +188,17 @@
     let categories = [];
     let menuItems = [];
     let activeCategory = "ALL";
+    let activeFoodType = "ALL";
     let menuSearch = "";
+    let restaurantFoodType = "BOTH";
 
     async function init() {
       try {
         currentUser = await request("/auth/me");
         const restaurant = await request(`/restaurant/${restaurantId}`, { headers: {} });
+        restaurantFoodType = restaurant.foodType || "BOTH";
         document.getElementById("restaurantName").textContent = restaurant.name;
-        document.getElementById("restaurantAddress").textContent = restaurant.address || "Keep dishes, prices, and availability easy for guests to choose.";
+        document.getElementById("restaurantAddress").textContent = `${restaurant.address || "Keep dishes, prices, and availability easy for guests to choose."} - ${restaurantFoodTypeLabel(restaurantFoodType)}`;
         document.getElementById("addItemBtn").style.display = canManageMenuDetails() ? "inline-flex" : "none";
         await loadMenu();
       } catch (err) {
@@ -212,7 +226,28 @@
       document.getElementById("menu").innerHTML = skeletonCards(6, "food");
       await loadCategories();
       menuItems = await request(`/admin/menu/${restaurantId}`);
+      renderFoodTypeTabs();
       renderTabs();
+      renderMenu();
+    }
+
+    function renderFoodTypeTabs() {
+      const counts = menuItems.reduce((acc, item) => {
+        const key = item.foodType || "VEG";
+        acc[key] = (acc[key] || 0) + 1;
+        return acc;
+      }, {});
+
+      document.getElementById("foodTypeTabs").innerHTML = `
+        <button class="btn tab ${activeFoodType === "ALL" ? "active" : ""}" onclick="setFoodType('ALL')">All foods (${menuItems.length})</button>
+        <button class="btn tab ${activeFoodType === "VEG" ? "active" : ""}" onclick="setFoodType('VEG')">Veg (${counts.VEG || 0})</button>
+        <button class="btn tab ${activeFoodType === "NON_VEG" ? "active" : ""}" onclick="setFoodType('NON_VEG')">Non-veg (${counts.NON_VEG || 0})</button>
+      `;
+    }
+
+    function setFoodType(value) {
+      activeFoodType = value;
+      renderFoodTypeTabs();
       renderMenu();
     }
 
@@ -242,15 +277,19 @@
       const visible = activeCategory === "ALL"
         ? menuItems
         : menuItems.filter(item => (item.category?.name || "Uncategorized") === activeCategory);
+      const typeFiltered = activeFoodType === "ALL"
+        ? visible
+        : visible.filter(item => (item.foodType || "VEG") === activeFoodType);
       const filtered = menuSearch
-        ? visible.filter(item => [
+        ? typeFiltered.filter(item => [
           item.name,
           item.description,
           item.category?.name,
+          foodTypeLabel(item.foodType),
           item.isAvailable ? "available" : "out of stock",
           item.isActive ? "visible" : "hidden"
         ].join(" ").toLowerCase().includes(menuSearch))
-        : visible;
+        : typeFiltered;
 
       if (!filtered.length) {
         container.innerHTML = `<div class="empty">No items in this view yet.</div>`;
@@ -264,6 +303,7 @@
             <div class="row row-wrap mb-6">
               <h3 class="section-title">${escapeHtml(item.name)}</h3>
               <span class="pill">${escapeHtml(item.category?.name || "Uncategorized")}</span>
+              <span class="pill ${foodTypePillClass(item.foodType)}">${foodTypeLabel(item.foodType)}</span>
               <span class="pill ${item.isAvailable ? "pill-success" : "pill-danger"}">${item.isAvailable ? "Available" : "Out of stock"}</span>
               ${item.isActive ? "" : `<span class="pill pill-warning">Hidden</span>`}
             </div>
@@ -295,6 +335,8 @@
       document.getElementById("itemPrice").value = item?.price || "";
       document.getElementById("itemDescription").value = item?.description || "";
       document.getElementById("itemImageUrl").value = item?.imageUrl || "";
+      document.getElementById("itemFoodType").value = item?.foodType || "VEG";
+      document.getElementById("itemFoodType").querySelector('option[value="NON_VEG"]').disabled = restaurantFoodType === "PURE_VEG";
       document.getElementById("itemAvailable").checked = item ? item.isAvailable : true;
       document.getElementById("itemActive").checked = item ? item.isActive : true;
       document.getElementById("newCategory").value = "";
@@ -334,6 +376,7 @@
           name: document.getElementById("itemName").value.trim(),
           price: Number(document.getElementById("itemPrice").value),
           categoryId,
+          foodType: document.getElementById("itemFoodType").value,
           description: document.getElementById("itemDescription").value.trim() || null,
           imageUrl: document.getElementById("itemImageUrl").value.trim() || null,
           isAvailable: document.getElementById("itemAvailable").checked,

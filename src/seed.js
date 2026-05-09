@@ -57,6 +57,8 @@ const foodImages = {
   payasa: commons("Payasam.jpg"),
   gulabJamun: commons("Gulab Jamun.jpg"),
   coffee: "https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=900&q=80",
+  chicken: "https://images.unsplash.com/photo-1598515214211-89d3c73ae83b?auto=format&fit=crop&w=900&q=80",
+  biryani: "https://images.unsplash.com/photo-1563379091339-03246963d96c?auto=format&fit=crop&w=900&q=80",
   tea: commons("Indian Tea.jpg"),
   badamMilk: commons("Badam milk.jpg"),
   limeSoda: "https://images.unsplash.com/photo-1627662168223-7df99068099a?auto=format&fit=crop&w=900&q=80",
@@ -113,6 +115,8 @@ function imageFor(name, category = "south indian food") {
     ["buttermilk", "buttermilk"],
     ["tea", "tea"],
     ["coffee", "coffee"],
+    ["chicken", "chicken"],
+    ["biryani", "biryani"],
     ["open butter", "masalaDosa"],
     ["mysore masala", "mysoreDosa"],
     ["cheese masala", "masalaDosa"],
@@ -143,6 +147,7 @@ const hotels = [
     ownerEmail: "owner.udupi@avenzo.com",
     address: "156, Khata 142/141/156, Supradh Building, 11th Main, 3rd Cross Road, Hebbal, Bengaluru",
     locality: "Hebbal",
+    foodType: "PURE_VEG",
     pickupNote: "Please stay nearby after ordering. The team will guide you when your food is ready.",
     signatures: [
       ["Dosa", "Udupi Special Masala Dose", 95, "Crisp Udupi-style dose with potato palya, coconut chutney, and sambar."],
@@ -155,6 +160,7 @@ const hotels = [
     ownerEmail: "owner.taaza@avenzo.com",
     address: "29th Cross Road, 4th Block, Jayanagar, Bengaluru",
     locality: "Jayanagar",
+    foodType: "PURE_VEG",
     pickupNote: "Place your order from the table and enjoy a smoother dine-in experience.",
     signatures: [
       ["Dosa", "Taaza Masala Dose", 60, "Fast-moving crisp dose with fresh potato palya and chutney."],
@@ -167,6 +173,7 @@ const hotels = [
     ownerEmail: "owner.ctr@avenzo.com",
     address: "7th Cross, Margosa Road, Malleshwaram, Bengaluru",
     locality: "Malleshwaram",
+    foodType: "PURE_VEG",
     pickupNote: "Your order code helps the team serve you quickly during busy hours.",
     signatures: [
       ["Dosa", "Benne Masala Dose", 110, "Butter-roasted Malleshwaram-style dose with crisp edges and soft center."],
@@ -179,6 +186,7 @@ const hotels = [
     ownerEmail: "owner.vidyarthi@avenzo.com",
     address: "32, Gandhi Bazaar Main Road, Basavanagudi, Bengaluru",
     locality: "Basavanagudi",
+    foodType: "PURE_VEG",
     pickupNote: "Relax after ordering. The restaurant team will keep your food status updated.",
     signatures: [
       ["Dosa", "Vidyarthi Special Masala Dose", 115, "Thick, buttery heritage-style masala dose with chutney."],
@@ -191,6 +199,7 @@ const hotels = [
     ownerEmail: "owner.brahmins@avenzo.com",
     address: "Pushp Kiran, 19, Ranga Rao Road, near Shankar Mutt Road, Shankarapura, Bengaluru",
     locality: "Shankarapura",
+    foodType: "PURE_VEG",
     pickupNote: "A quick, warm dine-in flow for classic idli, chutney, and coffee orders.",
     signatures: [
       ["Idli & Vada", "Idli Vade Chutney", 85, "Soft idli and crisp vade with generous coconut chutney."],
@@ -203,11 +212,25 @@ const hotels = [
     ownerEmail: "owner.veena@avenzo.com",
     address: "187, 15th Cross, Margosa Road, Malleshwaram, Bengaluru",
     locality: "Malleshwaram",
+    foodType: "PURE_VEG",
     pickupNote: "Best enjoyed fresh at the restaurant after a quick Avenzo order.",
     signatures: [
       ["Idli & Vada", "Soft Idli Chutney", 55, "Pillowy idlis served with signature coconut-mint chutney."],
       ["Bath", "Bisi Bele Bath", 75, "Hot lentil-rice bath with vegetables, ghee, and spice blend."],
       ["Beverages", "Veena Filter Coffee", 35, "Classic Malleshwaram coffee for a quick finish."]
+    ]
+  },
+  {
+    name: "Avenzo Tandoor House Indiranagar",
+    ownerEmail: "owner.tandoor@avenzo.com",
+    address: "100 Feet Road, Indiranagar, Bengaluru",
+    locality: "Indiranagar",
+    foodType: "BOTH",
+    pickupNote: "Use your order code at the dine-in counter when the team marks it ready.",
+    signatures: [
+      ["Starters", "Chicken Tikka", 240, "Char-grilled chicken pieces marinated with yogurt, chilli, ginger, and tandoor spices.", "NON_VEG"],
+      ["Rice", "Chicken Biryani", 260, "Aromatic rice layered with chicken, fried onions, mint, and warm spices.", "NON_VEG"],
+      ["North Indian", "Paneer Tikka", 210, "Smoky paneer cubes with capsicum, onion, and mild tandoor spices.", "VEG"]
     ]
   }
 ];
@@ -306,6 +329,7 @@ async function main() {
         address: hotel.address,
         locality: hotel.locality,
         pickupNote: hotel.pickupNote,
+        foodType: hotel.foodType || "BOTH",
         ownerId: owner.id || admin.id,
         isActive: true,
         subscriptionStatus: "ACTIVE",
@@ -336,10 +360,11 @@ async function main() {
     }
 
     await prisma.menu.createMany({
-      data: merged.map(([category, name, price, description]) => ({
+      data: merged.map(([category, name, price, description, foodType = "VEG"]) => ({
         name,
         price,
         description,
+        foodType,
         imageUrl: imageFor(name, category),
         restaurantId: restaurant.id,
         categoryId: categoryRecords[category].id,

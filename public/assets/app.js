@@ -55,6 +55,25 @@ function formatDate(value) {
   });
 }
 
+function foodTypeLabel(value) {
+  return {
+    VEG: "Veg",
+    NON_VEG: "Non-veg"
+  }[value] || "Veg";
+}
+
+function restaurantFoodTypeLabel(value) {
+  return {
+    PURE_VEG: "Pure veg",
+    NON_VEG: "Non-veg",
+    BOTH: "Veg & non-veg"
+  }[value] || "Veg & non-veg";
+}
+
+function foodTypePillClass(value) {
+  return value === "NON_VEG" ? "pill-nonveg" : "pill-veg";
+}
+
 function escapeHtml(value = "") {
   return String(value)
     .replaceAll("&", "&amp;")

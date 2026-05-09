@@ -34,6 +34,17 @@ enum SubscriptionStatus {
   SUSPENDED
 }
 
+enum FoodType {
+  VEG
+  NON_VEG
+}
+
+enum RestaurantFoodType {
+  PURE_VEG
+  NON_VEG
+  BOTH
+}
+
 //////////////////////////////////////////////////////
 // USER
 //////////////////////////////////////////////////////
@@ -68,6 +79,7 @@ model Restaurant {
   address   String?
   locality  String?
   pickupNote String?
+  foodType RestaurantFoodType @default(BOTH)
 
   ownerId   String
   owner     User     @relation("RestaurantOwner", fields: [ownerId], references: [id], onDelete: Cascade)
@@ -123,6 +135,7 @@ model Menu {
 
   description String?
   imageUrl    String?
+  foodType    FoodType @default(VEG)
 
   isAvailable Boolean @default(true)
   isActive    Boolean @default(true)

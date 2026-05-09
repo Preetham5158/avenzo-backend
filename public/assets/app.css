@@ -318,6 +318,7 @@ h3 {
   align-items: center;
   justify-content: space-between;
   gap: 14px;
+  min-width: 0;
 }
 
 .btn {
@@ -334,6 +335,8 @@ h3 {
   overflow: hidden;
   transition: transform 0.18s ease, box-shadow 0.18s ease, opacity 0.18s ease, background 0.18s ease;
   -webkit-tap-highlight-color: transparent;
+  text-align: center;
+  white-space: normal;
 }
 
 .btn:hover {
@@ -456,6 +459,18 @@ h3 {
 .pill-danger {
   background: #fff0f0;
   color: #b42318;
+}
+
+.pill-veg {
+  background: #e8f7ed;
+  color: #116a35;
+  border: 1px solid rgba(17, 106, 53, 0.14);
+}
+
+.pill-nonveg {
+  background: #fff0ed;
+  color: #a4341f;
+  border: 1px solid rgba(164, 52, 31, 0.14);
 }
 
 .pill-dark {
@@ -707,6 +722,8 @@ h3 {
 
   .topbar-inner {
     min-height: 58px;
+    flex-wrap: wrap;
+    padding: 8px 0;
   }
 
   .brand span {
@@ -747,7 +764,8 @@ h3 {
   }
 
   .account {
-    width: 100%;
+    width: min(100%, 260px);
+    margin-left: auto;
   }
 
   .account-trigger {
@@ -784,6 +802,33 @@ h3 {
     grid-template-columns: 1fr 1fr;
   }
 
+  .modal-backdrop {
+    align-items: flex-end;
+    padding: 10px;
+  }
+
+  .modal {
+    width: 100%;
+    max-height: calc(100vh - 20px);
+    border-radius: 18px 18px 12px 12px;
+  }
+
+  .modal-head,
+  .modal-body,
+  .modal-actions {
+    padding: 14px;
+  }
+
+  .modal-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .tabbar {
+    margin-right: -10px;
+    padding-right: 10px;
+  }
+
   .skeleton-food {
     grid-template-columns: 68px 1fr;
   }
@@ -808,6 +853,28 @@ h3 {
     flex: 1;
     justify-content: center;
     padding: 0 8px;
+    min-width: 0;
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 440px) {
+  .topbar-inner {
+    align-items: flex-start;
+  }
+
+  .account {
+    width: 100%;
+  }
+
+  .page-head h1,
+  .hero-panel h1,
+  .metric-card h3 {
+    overflow-wrap: anywhere;
+  }
+
+  .modal-actions {
+    grid-template-columns: 1fr;
   }
 }
 
