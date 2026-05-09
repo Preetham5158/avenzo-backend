@@ -103,6 +103,36 @@ function logRouteError(route, err) {
     console.error(`[${route}]${code} ${message}`);
 }
 
+async function ensureFoodTypeSchema() {
+    await prisma.$executeRawUnsafe(`
+        DO $$
+        BEGIN
+            CREATE TYPE "FoodType" AS ENUM ('VEG', 'NON_VEG');
+        EXCEPTION
+            WHEN duplicate_object THEN NULL;
+        END $$;
+    `);
+
+    await prisma.$executeRawUnsafe(`
+        DO $$
+        BEGIN
+            CREATE TYPE "RestaurantFoodType" AS ENUM ('PURE_VEG', 'NON_VEG', 'BOTH');
+        EXCEPTION
+            WHEN duplicate_object THEN NULL;
+        END $$;
+    `);
+
+    await prisma.$executeRawUnsafe(`
+        ALTER TABLE "Restaurant"
+        ADD COLUMN IF NOT EXISTS "foodType" "RestaurantFoodType" NOT NULL DEFAULT 'BOTH';
+    `);
+
+    await prisma.$executeRawUnsafe(`
+        ALTER TABLE "Menu"
+        ADD COLUMN IF NOT EXISTS "foodType" "FoodType" NOT NULL DEFAULT 'VEG';
+    `);
+}
+
 /* ================================
    HELPER: ADMIN AUTH
 ================================ */
@@ -967,6 +997,13 @@ app.get("/admin/orders/:restaurantId", authMiddleware, async (req, res) => {
 ================================ */
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => {
-    console.log("Server running on port " + PORT);
-});
+ensureFoodTypeSchema()
+    .then(() => {
+        app.listen(PORT, () => {
+            console.log("Server running on port " + PORT);
+        });
+    })
+    .catch((err) => {
+        logRouteError("BOOT ensureFoodTypeSchema", err);
+        process.exit(1);
+    });
