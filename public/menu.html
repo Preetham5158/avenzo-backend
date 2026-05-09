@@ -148,6 +148,45 @@
       box-shadow: 0 10px 22px rgba(18, 116, 91, 0.22);
     }
 
+    .filter-row {
+      width: 100%;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      margin-top: 8px;
+    }
+
+    .filter-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .filter-pill {
+      min-height: 34px;
+      border-radius: 999px;
+      background: #fff6e8;
+      border: 1px solid rgba(108, 71, 47, 0.16);
+      color: #4e321f;
+      font-weight: 700;
+      padding: 8px 14px;
+      cursor: pointer;
+      transition: transform 0.18s ease, background 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
+    }
+
+    .filter-pill:hover {
+      transform: translateY(-1px);
+    }
+
+    .filter-pill.active {
+      background: linear-gradient(135deg, var(--saffron), var(--turmeric));
+      color: white;
+      border-color: transparent;
+      box-shadow: 0 10px 22px rgba(255, 107, 22, 0.22);
+    }
+
     .menu-layout {
       display: grid;
       grid-template-columns: 122px minmax(0, 1fr);
@@ -538,29 +577,39 @@
       }
 
       .menu-layout {
-        grid-template-columns: 82px minmax(0, 1fr);
+        grid-template-columns: 1fr;
         gap: 8px;
       }
 
       .category-rail {
-        top: var(--rail-top);
-        max-height: calc(100vh - var(--rail-top) - 92px);
-        padding: 6px;
+        position: relative;
+        top: auto;
+        max-height: none;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: flex-start;
+        align-items: center;
+        overflow: visible;
+        padding: 6px 0;
         border-radius: 18px;
+        background: transparent;
+        border: none;
+        box-shadow: none;
       }
 
       .category-button {
-        min-height: 48px;
-        padding: 6px;
-        border-radius: 13px;
+        min-height: 44px;
+        width: auto;
+        padding: 10px 14px;
+        border-radius: 16px;
       }
 
       .category-button strong {
-        font-size: 11px;
+        font-size: 12px;
       }
 
       .category-button span {
-        font-size: 10px;
+        display: none;
       }
 
       .section-head {
@@ -666,6 +715,17 @@
         <input id="menuSearch" class="input" placeholder="dosa, idli, coffee..." oninput="setSearch(this.value)">
       </div>
       <div class="quick-count" id="matchCount">Finding favourites...</div>
+      <div class="filter-row">
+        <div class="filter-group">
+          <button id="dietAll" type="button" class="filter-pill active" onclick="setDietFilter('ALL')">Show all</button>
+          <button id="dietVeg" type="button" class="filter-pill" onclick="setDietFilter('VEG')">Veg only</button>
+          <button id="dietNonVeg" type="button" class="filter-pill" onclick="setDietFilter('NON_VEG')">Non-veg only</button>
+        </div>
+        <div class="filter-group">
+          <button id="hideVeg" type="button" class="filter-pill" onclick="toggleHideFilter('VEG')">Hide veg</button>
+          <button id="hideNonVeg" type="button" class="filter-pill" onclick="toggleHideFilter('NON_VEG')">Hide non-veg</button>
+        </div>
+      </div>
     </section>
 
     <section class="menu-layout" id="menuLayout">
@@ -718,6 +778,8 @@
     let cart = [];
     let menuData = [];
     let activeCategory = "ALL";
+    let dietFilter = "ALL";
+    let hideFilters = { VEG: false, NON_VEG: false };
     let searchTerm = "";
     const collapsedCategories = new Set();
 
@@ -750,10 +812,23 @@
       menuData = slug
         ? await request(`/menu/by-slug/${slug}`, { headers: {} })
         : await request(`/menu/${restaurantId}`, { headers: {} });
+      menuData = menuData.map(item => ({
+        ...item,
+        dietType: guessDietType(item)
+      }));
       menuData.sort((a, b) => Number(b.isAvailable) - Number(a.isAvailable));
       renderRail();
       renderMenu();
       updateUI();
+    }
+
+    function guessDietType(item) {
+      const text = [item.name, item.description, categoryName(item)].join(" ").toLowerCase();
+      const hasVeg = /(veg|vegetarian|vegetable|paneer|tofu|mushroom|aloo|potato|palak|dhokla|dosa|idli|sambar|chutney|dal|rice|roti|chapati|upma|khara|pulao|sabji|kurma|milk|cheese|yogurt|yoghurt|curry|korma)/i.test(text);
+      const hasNonVeg = /(chicken|mutton|lamb|fish|prawn|shrimp|egg|beef|pork|crab|lobster|goat|meat|seafood|keema|tikka|kebab)/i.test(text);
+      if (hasVeg && !hasNonVeg) return "VEG";
+      if (hasNonVeg) return "NON_VEG";
+      return "UNKNOWN";
     }
 
     function categoryName(item) {
@@ -764,6 +839,20 @@
       let visible = activeCategory === "ALL"
         ? menuData
         : menuData.filter(item => categoryName(item) === activeCategory);
+
+      if (dietFilter === "VEG") {
+        visible = visible.filter(item => item.dietType === "VEG");
+      }
+      if (dietFilter === "NON_VEG") {
+        visible = visible.filter(item => item.dietType === "NON_VEG");
+      }
+
+      if (hideFilters.VEG) {
+        visible = visible.filter(item => item.dietType !== "VEG");
+      }
+      if (hideFilters.NON_VEG) {
+        visible = visible.filter(item => item.dietType !== "NON_VEG");
+      }
 
       if (searchTerm) {
         visible = visible.filter(item => [
@@ -795,6 +884,7 @@
           </button>
         `).join("")}
       `;
+      renderFilterControls();
     }
 
     function setCategory(name) {
@@ -816,6 +906,25 @@
       renderMenu();
     }
 
+    function setDietFilter(value) {
+      dietFilter = value;
+      renderMenu();
+    }
+
+    function toggleHideFilter(type) {
+      hideFilters[type] = !hideFilters[type];
+      renderMenu();
+    }
+
+    function renderFilterControls() {
+      document.getElementById("dietAll")?.classList.toggle("active", dietFilter === "ALL");
+      document.getElementById("dietVeg")?.classList.toggle("active", dietFilter === "VEG");
+      document.getElementById("dietNonVeg")?.classList.toggle("active", dietFilter === "NON_VEG");
+
+      document.getElementById("hideVeg")?.classList.toggle("active", hideFilters.VEG);
+      document.getElementById("hideNonVeg")?.classList.toggle("active", hideFilters.NON_VEG);
+    }
+
     function renderMenu() {
       const visible = visibleItems();
       const grouped = visible.reduce((acc, item) => {
@@ -826,6 +935,7 @@
       }, {});
 
       document.getElementById("matchCount").textContent = `${visible.length} item${visible.length === 1 ? "" : "s"}`;
+      renderFilterControls();
 
       if (!visible.length) {
         document.getElementById("menu").innerHTML = `<div class="empty">No dish found here. Try a simpler search like dosa, idli, rice, or coffee.</div>`;
@@ -867,6 +977,7 @@
               <strong>${money(item.price)}</strong>
               ${disabled ? `<span class="pill pill-danger">Out of stock</span>` : ""}
             </div>
+            ${item.dietType === "VEG" ? `<span class="pill pill-success">Veg</span>` : item.dietType === "NON_VEG" ? `<span class="pill pill-warning">Non-veg</span>` : ""}
           </div>
           <button class="btn btn-primary add-btn" id="add-${item.id}" ${disabled ? "disabled" : ""} onclick="changeQty('${item.id}', 1)">Add</button>
           <div class="qty-control is-hidden" id="stepper-${item.id}">
