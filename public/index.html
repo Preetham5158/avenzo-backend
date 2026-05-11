@@ -426,8 +426,10 @@
             <a href="#features">Features</a>
             <a href="#how">How it Works</a>
             <a href="#benefits">Benefits</a>
+            <a href="/login.html?mode=customer">Customer Login</a>
+            <a href="/login.html?mode=restaurant">Restaurant Login</a>
             <a href="/restaurant-interest.html">List your restaurant</a>
-            <button onclick="location.href='/login.html'">Sign in</button>
+            <button onclick="location.href='/signup.html'">Customer Signup</button>
         </div>
     </header>
 
@@ -442,7 +444,11 @@
                     Your restaurant gets clearer orders and smoother service during rush hours.
                 </p>
 
-                <button onclick="location.href='/restaurant-interest.html'">List your restaurant on Avenzo</button>
+                <div style="display:flex;gap:10px;flex-wrap:wrap">
+                    <button onclick="location.href='/signup.html'">Customer Signup</button>
+                    <button onclick="location.href='/login.html?mode=restaurant'">Restaurant Login</button>
+                    <button onclick="location.href='/restaurant-interest.html'">List your restaurant on Avenzo</button>
+                </div>
             </div>
 
             <div class="hero-img">
@@ -526,6 +532,11 @@
 
     <footer>
         2026 Avenzo - Dine-in ordering made smoother
+        <div style="margin-top:8px">
+            <a href="/privacy.html">Privacy</a> |
+            <a href="/terms.html">Terms</a> |
+            <a href="/refund-policy.html">Refund Policy</a>
+        </div>
     </footer>
 
 <div id="comingSoonToast" style="

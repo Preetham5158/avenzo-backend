@@ -6,6 +6,31 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/assets/app.css">
+  <style>
+    .login-mode {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+      padding: 5px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #fffaf2;
+    }
+
+    .mode-btn {
+      min-height: 42px;
+      border-radius: 10px;
+      background: transparent;
+      color: var(--ink);
+      cursor: pointer;
+      font-weight: 800;
+    }
+
+    .mode-btn.active {
+      background: var(--cocoa);
+      color: white;
+    }
+  </style>
 </head>
 
 <body>
@@ -17,12 +42,16 @@
       </div>
 
       <div class="stack text-center mb-20">
-        <div class="eyebrow">Avenzo account</div>
+        <div class="eyebrow" id="loginEyebrow">Customer Login</div>
         <h1 class="h1-auth">Welcome back</h1>
-        <p class="muted">Open your Avenzo home and keep service moving smoothly.</p>
+        <p class="muted" id="loginHelp">Open your customer dashboard, order history, and tracking links.</p>
       </div>
 
       <form class="stack" onsubmit="login(event)">
+        <div class="login-mode" aria-label="Login path">
+          <button class="mode-btn active" id="customerModeBtn" type="button" data-login-mode="customer">Customer Login</button>
+          <button class="mode-btn" id="restaurantModeBtn" type="button" data-login-mode="restaurant">Restaurant Login</button>
+        </div>
         <div class="field">
           <label for="email">Email</label>
           <input id="email" class="input" type="email" autocomplete="email" placeholder="you@avenzo.com" required>
@@ -38,14 +67,35 @@
       </form>
 
       <p class="muted auth-footnote">
-        Need an account?
+        Need a customer account?
         <a href="/signup.html" class="auth-link">Sign up</a>
+      </p>
+      <p class="muted auth-footnote">
+        Want to list a restaurant?
+        <a href="/restaurant-interest.html" class="auth-link">Partner with Avenzo</a>
       </p>
     </section>
   </main>
 
   <script src="/assets/app.js"></script>
   <script>
+    let loginMode = new URLSearchParams(location.search).get("mode") === "restaurant" ? "restaurant" : "customer";
+
+    document.querySelectorAll("[data-login-mode]").forEach(button => {
+      button.addEventListener("click", () => setLoginMode(button.dataset.loginMode));
+    });
+
+    function setLoginMode(mode) {
+      loginMode = mode;
+      document.querySelectorAll("[data-login-mode]").forEach(button => {
+        button.classList.toggle("active", button.dataset.loginMode === mode);
+      });
+      document.getElementById("loginEyebrow").textContent = mode === "restaurant" ? "Restaurant Login" : "Customer Login";
+      document.getElementById("loginHelp").textContent = mode === "restaurant"
+        ? "For Avenzo admins, restaurant owners, and assigned employees."
+        : "Open your customer dashboard, order history, and tracking links.";
+    }
+
     async function login(event) {
       event.preventDefault();
       const btn = document.getElementById("loginBtn");
@@ -64,6 +114,10 @@
         const data = await res.json();
         if (!res.ok || !data.token) throw new Error(data.error || "Sign in failed");
 
+        if (loginMode === "restaurant" && data.user?.role === "USER") {
+          throw new Error("This account is a customer account. Please use Customer Login, or contact Avenzo if you need restaurant access.");
+        }
+
         localStorage.setItem("token", data.token);
         window.location.href = data.user?.role === "USER" ? "/customer.html" : "/admin/dashboard.html";
       } catch (err) {
@@ -73,6 +127,8 @@
         setLoading(btn, false);
       }
     }
+
+    setLoginMode(loginMode);
   </script>
 </body>
 
