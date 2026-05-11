@@ -72,7 +72,10 @@
             <h1 id="pageTitle">Restaurants</h1>
             <p id="roleText" class="muted">Getting your restaurants ready...</p>
           </div>
-<button id="createBtn" class="btn btn-primary" onclick="openRestaurantModal()" hidden style="display:none">Add restaurant</button>
+          <div class="row row-wrap">
+            <button id="leadsBtn" class="btn btn-ghost" onclick="openLeads()" hidden style="display:none">Restaurant leads</button>
+            <button id="createBtn" class="btn btn-primary" onclick="openRestaurantModal()" hidden style="display:none">Add restaurant</button>
+          </div>
         </div>
       </section>
 
@@ -138,7 +141,12 @@
               <option value="SUSPENDED">Paused</option>
             </select>
           </div>
+          <div class="field">
+            <label for="subscriptionEndsAt">Subscription ends</label>
+            <input id="subscriptionEndsAt" class="input" type="date">
+          </div>
         </div>
+        <button type="button" class="btn btn-soft" onclick="renewSubscription30Days()">Renew 30 days</button>
       </div>
       <div class="modal-actions">
         <button type="button" class="btn btn-ghost" onclick="closeRestaurantModal()">Cancel</button>
@@ -153,6 +161,7 @@
 
     let canCreateRestaurant = false;
     let canEditRestaurants = false;
+    let currentUser = null;
     let restaurantCache = [];
 
     async function loadRestaurants() {
@@ -163,7 +172,13 @@
         const restaurants = data.restaurants || [];
         canCreateRestaurant = !!data.canCreateRestaurant;
         canEditRestaurants = !!data.canEditRestaurants;
+        currentUser = data.user || null;
         restaurantCache = restaurants;
+
+        if (data.user?.role === "USER") {
+          renderCustomerPlaceholder(data.user);
+          return;
+        }
 
         document.getElementById("pageTitle").textContent = canCreateRestaurant ? "All Restaurants" : "Your Restaurants";
         document.getElementById("roleText").textContent = canCreateRestaurant
@@ -171,6 +186,8 @@
           : "Only restaurants assigned to you are shown here.";
         document.getElementById("createBtn").hidden = !canCreateRestaurant;
         document.getElementById("createBtn").style.display = canCreateRestaurant ? "inline-flex" : "none";
+        document.getElementById("leadsBtn").hidden = !canCreateRestaurant;
+        document.getElementById("leadsBtn").style.display = canCreateRestaurant ? "inline-flex" : "none";
 
         renderStats(restaurants, data.user);
         renderRestaurants(restaurants);
@@ -178,6 +195,28 @@
         document.getElementById("list").innerHTML = `<div class="empty">${escapeHtml(err.message || "No access")}</div>`;
         toast(err.message);
       }
+    }
+
+    function renderCustomerPlaceholder(user) {
+      document.getElementById("pageTitle").textContent = "Your Avenzo account";
+      document.getElementById("roleText").textContent = "Welcome to Avenzo. Your customer account is ready.";
+      document.getElementById("createBtn").hidden = true;
+      document.getElementById("createBtn").style.display = "none";
+      document.getElementById("leadsBtn").hidden = true;
+      document.getElementById("leadsBtn").style.display = "none";
+      document.getElementById("stats").innerHTML = `
+        <div class="card card-pad metric-card empty-full">
+          <div class="muted">Signed in as</div>
+          <h3>${escapeHtml(user?.name || user?.email || "Avenzo customer")}</h3>
+          <p class="muted mb-0">Customer features like order history, saved preferences, and faster repeat ordering will be available here soon.</p>
+        </div>
+      `;
+      document.getElementById("list").innerHTML = `
+        <div class="empty empty-full">
+          <p>Restaurant management is available only to assigned restaurant owners, employees, and the Avenzo admin team.</p>
+          <a class="btn btn-primary" href="/">Explore Avenzo</a>
+        </div>
+      `;
     }
 
     function renderStats(restaurants, user) {
@@ -214,7 +253,7 @@
               <h3 class="h3-tight">${escapeHtml(r.name)}</h3>
               <div class="muted">${escapeHtml(r.address || r.locality || "Manage menu, dine-in orders, and scan cards")}</div>
             </div>
-            <span class="pill ${r.isActive ? "pill-success" : "pill-danger"}">${r.isActive ? "Active" : "Inactive"}</span>
+            <span class="pill ${servicePillClass(r)}">${serviceStatusLabel(r)}</span>
           </div>
           <div class="row row-wrap">
             <span class="pill ${r.subscriptionStatus === "ACTIVE" ? "pill-success" : r.subscriptionStatus === "TRIALING" ? "pill-warning" : "pill-danger"}">${subscriptionLabel(r.subscriptionStatus)}</span>
@@ -225,6 +264,7 @@
             <button class="btn btn-dark" onclick="openMenu('${r.id}')">Menu</button>
             <button class="btn btn-soft" onclick="openOrders('${r.id}')">Orders</button>
             <button class="btn btn-ghost" onclick="openQr('${r.id}')">Scan card</button>
+            ${canManageStaff(r) ? `<button class="btn btn-ghost" onclick="openStaff('${r.id}')">Staff</button>` : ""}
             ${canEditRestaurants ? `<button class="btn btn-ghost" onclick='openRestaurantModal(${JSON.stringify(r.id)})'>Edit</button>` : ""}
           </div>
         </article>
@@ -238,6 +278,33 @@
         EXPIRED: "Subscription expired",
         SUSPENDED: "Service paused"
       }[value] || "Subscription active";
+    }
+
+    function isDateExpired(value) {
+      return value && new Date(value) < new Date();
+    }
+
+    function serviceStatusLabel(restaurant) {
+      if (!restaurant.isActive) return "Paused";
+      if (restaurant.subscriptionStatus === "SUSPENDED") return "Suspended";
+      if (restaurant.subscriptionStatus === "EXPIRED" || isDateExpired(restaurant.subscriptionEndsAt)) return "Expired";
+      return "Active";
+    }
+
+    function servicePillClass(restaurant) {
+      const label = serviceStatusLabel(restaurant);
+      if (label === "Active") return "pill-success";
+      if (label === "Paused") return "pill-warning";
+      return "pill-danger";
+    }
+
+    function dateInputValue(value) {
+      if (!value) return "";
+      return new Date(value).toISOString().slice(0, 10);
+    }
+
+    function canManageStaff(restaurant) {
+      return canCreateRestaurant || (currentUser?.role === "RESTAURANT_OWNER" && restaurant.owner?.id === currentUser.id);
     }
 
     function openRestaurantModal(id = "") {
@@ -262,6 +329,7 @@
       document.getElementById("restaurantFoodType").value = restaurant?.foodType || "BOTH";
       document.getElementById("restaurantActive").checked = restaurant ? restaurant.isActive : true;
       document.getElementById("subscriptionStatus").value = restaurant?.subscriptionStatus || "ACTIVE";
+      document.getElementById("subscriptionEndsAt").value = dateInputValue(restaurant?.subscriptionEndsAt);
       document.getElementById("saveRestaurantBtn").textContent = restaurant ? "Save changes" : "Create";
       document.getElementById("restaurantModal").classList.add("open");
       document.getElementById("restaurantName").focus();
@@ -295,7 +363,8 @@
             pickupNote: document.getElementById("restaurantPickupNote").value.trim() || null,
             foodType: document.getElementById("restaurantFoodType").value,
             isActive: document.getElementById("restaurantActive").checked,
-            subscriptionStatus: document.getElementById("subscriptionStatus").value
+            subscriptionStatus: document.getElementById("subscriptionStatus").value,
+            subscriptionEndsAt: document.getElementById("subscriptionEndsAt").value || null
           })
         });
         closeRestaurantModal();
@@ -318,6 +387,21 @@
 
     function openQr(id) {
       window.location.href = `/qr.html?restaurantId=${id}`;
+    }
+
+    function openStaff(id) {
+      window.location.href = `/admin/staff.html?restaurantId=${id}`;
+    }
+
+    function openLeads() {
+      window.location.href = "/admin/leads.html";
+    }
+
+    function renewSubscription30Days() {
+      const date = new Date();
+      date.setDate(date.getDate() + 30);
+      document.getElementById("subscriptionStatus").value = "ACTIVE";
+      document.getElementById("subscriptionEndsAt").value = date.toISOString().slice(0, 10);
     }
 
     initAccountMenu();

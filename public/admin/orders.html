@@ -83,6 +83,7 @@
         </div>
         <section class="tabbar surface-strip" id="orderFilters"></section>
       </section>
+      <section class="row-between mt-12" id="paginationControls"></section>
       <section class="stack mt-16" id="list"></section>
     </main>
   </div>
@@ -117,6 +118,9 @@
     let ordersLoaded = false;
     let isLoadingOrders = false;
     let ordersPollingTimer = null;
+    let orderPage = 1;
+    const orderLimit = 50;
+    let orderPagination = { page: 1, totalPages: 1, total: 0 };
 
     async function loadOrders() {
       if (isLoadingOrders) return;
@@ -126,22 +130,49 @@
           document.getElementById("statusStats").innerHTML = skeletonCards(3);
           document.getElementById("list").innerHTML = skeletonCards(4);
         }
-        const data = await request(`/admin/orders/${restaurantId}`);
+        const params = new URLSearchParams({
+          page: String(orderPage),
+          limit: String(orderLimit)
+        });
+        if (activeOrderStatus !== "ALL") params.set("status", activeOrderStatus);
+        const data = await request(`/admin/orders/${restaurantId}?${params.toString()}`);
         allOrders = data.orders || [];
+        orderPagination = data.pagination || { page: orderPage, totalPages: 1, total: allOrders.length };
+        orderPage = orderPagination.page || orderPage;
         ordersLoaded = true;
 
         document.getElementById("restaurantName").textContent = data.restaurant?.name || "Restaurant Orders";
         document.getElementById("restaurantAddress").textContent = data.restaurant?.address || "New orders appear here automatically.";
-        document.getElementById("orderCount").textContent = `${allOrders.length} order${allOrders.length === 1 ? "" : "s"}`;
+        document.getElementById("orderCount").textContent = `${orderPagination.total || 0} order${orderPagination.total === 1 ? "" : "s"}`;
         renderStats(allOrders);
         renderOrderFilters();
+        renderPagination();
         renderOrders();
       } catch (err) {
         document.getElementById("restaurantName").textContent = "No access";
-        document.getElementById("list").innerHTML = `<div class="empty">${escapeHtml(err.message || "You do not have access to this restaurant.")}</div>`;
+        if (err.status === 423) {
+          showWorkspaceBlocked(err.message);
+        } else {
+          document.getElementById("list").innerHTML = `<div class="empty">${escapeHtml(err.message || "You do not have access to this restaurant.")}</div>`;
+        }
       } finally {
         isLoadingOrders = false;
       }
+    }
+
+    function showWorkspaceBlocked(message) {
+      stopOrdersPolling();
+      document.getElementById("orderCount").textContent = "Paused";
+      document.querySelector(".order-tools").hidden = true;
+      document.getElementById("statusStats").innerHTML = "";
+      document.getElementById("paginationControls").innerHTML = "";
+      document.getElementById("list").innerHTML = `
+        <div class="card card-pad">
+          <h3>This restaurant workspace is currently paused.</h3>
+          <p class="muted mb-0">Please contact the Avenzo team to activate or renew the subscription.</p>
+          ${message ? `<p class="muted mt-12 mb-0">${escapeHtml(message)}</p>` : ""}
+        </div>
+      `;
     }
     function startOrdersPolling() {
       if (ordersPollingTimer) return;
@@ -186,11 +217,20 @@
       `;
     }
 
+    function renderPagination() {
+      const totalPages = Math.max(orderPagination.totalPages || 1, 1);
+      document.getElementById("paginationControls").innerHTML = `
+        <button class="btn btn-ghost" onclick="changePage(-1)" ${orderPage <= 1 ? "disabled" : ""}>Previous</button>
+        <span class="pill">Page ${orderPage} of ${totalPages}</span>
+        <button class="btn btn-ghost" onclick="changePage(1)" ${orderPage >= totalPages ? "disabled" : ""}>Next</button>
+      `;
+    }
+
     function renderOrders() {
       const container = document.getElementById("list");
       let orders = activeOrderStatus === "ALL"
         ? allOrders
-        : allOrders.filter(order => order.status === activeOrderStatus);
+        : allOrders;
 
       if (orderSearch) {
         orders = orders.filter(order => [
@@ -265,8 +305,14 @@
 
     function setOrderStatus(status) {
       activeOrderStatus = status;
-      renderOrderFilters();
-      renderOrders();
+      orderPage = 1;
+      loadOrders();
+    }
+
+    function changePage(delta) {
+      const totalPages = Math.max(orderPagination.totalPages || 1, 1);
+      orderPage = Math.min(Math.max(orderPage + delta, 1), totalPages);
+      loadOrders();
     }
 
     function setOrderSearch(value) {

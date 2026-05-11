@@ -230,8 +230,25 @@
         document.getElementById("addItemBtn").style.display = canManage ? "inline-flex" : "none";
         await loadMenu();
       } catch (err) {
-        document.getElementById("menu").innerHTML = `<div class="empty">${escapeHtml(err.message)}</div>`;
+        if (err.status === 423) {
+          showWorkspaceBlocked(err.message);
+        } else {
+          document.getElementById("menu").innerHTML = `<div class="empty">${escapeHtml(err.message)}</div>`;
+        }
       }
+    }
+
+    function showWorkspaceBlocked(message) {
+      document.getElementById("addItemBtn").hidden = true;
+      document.getElementById("addItemBtn").style.display = "none";
+      document.querySelector(".menu-admin-tools").hidden = true;
+      document.getElementById("menu").innerHTML = `
+        <div class="card card-pad">
+          <h3>This restaurant workspace is currently paused.</h3>
+          <p class="muted mb-0">Please contact the Avenzo team to activate or renew the subscription.</p>
+          ${message ? `<p class="muted mt-12 mb-0">${escapeHtml(message)}</p>` : ""}
+        </div>
+      `;
     }
 
     function canManageMenuDetails() {

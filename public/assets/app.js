@@ -29,7 +29,9 @@ async function request(path, options = {}) {
   }
 
   if (!res.ok) {
-    throw new Error(data?.error || "Something went wrong");
+    const error = new Error(data?.error || "Something went wrong");
+    error.status = res.status;
+    throw error;
   }
 
   return data;

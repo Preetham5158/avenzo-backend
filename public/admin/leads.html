@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Avenzo Leads</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/app.css">
+</head>
+
+<body>
+  <div class="shell">
+    <header class="topbar">
+      <div class="topbar-inner">
+        <div class="brand">
+          <img src="/logo.png" alt="Avenzo">
+          <span>AVENZO</span>
+        </div>
+        <div id="accountMenu"></div>
+      </div>
+    </header>
+
+    <main class="page">
+      <section class="page-head restaurant-sticky">
+        <div>
+          <div class="eyebrow">Restaurant leads</div>
+          <h1>Partner requests</h1>
+          <p class="muted">New restaurant interest submissions for Avenzo follow-up.</p>
+        </div>
+        <a class="btn btn-ghost" href="/admin/dashboard.html">Dashboard</a>
+      </section>
+
+      <section class="stack mt-16" id="leads"></section>
+    </main>
+  </div>
+
+  <script src="/assets/app.js"></script>
+  <script>
+    requireAuth();
+
+    async function loadLeads() {
+      try {
+        const user = await initAccountMenu();
+        if (user?.role !== "ADMIN") {
+          document.getElementById("leads").innerHTML = `<div class="empty">Only Avenzo admins can view restaurant leads.</div>`;
+          return;
+        }
+
+        document.getElementById("leads").innerHTML = skeletonCards(4);
+        const data = await request("/admin/restaurant-leads?limit=50");
+        const leads = data.leads || [];
+        if (!leads.length) {
+          document.getElementById("leads").innerHTML = `<div class="empty">No restaurant leads yet.</div>`;
+          return;
+        }
+
+        document.getElementById("leads").innerHTML = leads.map(lead => `
+          <article class="card card-pad">
+            <div class="row-between">
+              <div>
+                <h3 class="h3-tight">${escapeHtml(lead.restaurantName)}</h3>
+                <div class="muted">${escapeHtml(lead.location || "Location not shared")}</div>
+              </div>
+              <span class="pill pill-warning">${escapeHtml(lead.status)}</span>
+            </div>
+            <div class="grid grid-3 mt-12">
+              <div><div class="muted">Contact</div><strong>${escapeHtml(lead.contactName)}</strong></div>
+              <div><div class="muted">Phone</div><strong>${escapeHtml(lead.phone)}</strong></div>
+              <div><div class="muted">Email</div><strong>${escapeHtml(lead.email)}</strong></div>
+            </div>
+            <div class="grid grid-2 mt-12">
+              <div><div class="muted">Type</div><strong>${escapeHtml(lead.restaurantType || "Not shared")}</strong></div>
+              <div><div class="muted">Daily orders</div><strong>${escapeHtml(lead.approxDailyOrders || "Not shared")}</strong></div>
+            </div>
+            ${lead.message ? `<p class="muted mt-12 mb-0">${escapeHtml(lead.message)}</p>` : ""}
+          </article>
+        `).join("");
+      } catch (err) {
+        document.getElementById("leads").innerHTML = `<div class="empty">${escapeHtml(err.message)}</div>`;
+      }
+    }
+
+    loadLeads();
+  </script>
+</body>
+
+</html>

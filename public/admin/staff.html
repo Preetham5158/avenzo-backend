@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Avenzo Staff</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/app.css">
+</head>
+
+<body>
+  <div class="shell">
+    <header class="topbar">
+      <div class="topbar-inner">
+        <div class="brand">
+          <img src="/logo.png" alt="Avenzo">
+          <span>AVENZO</span>
+        </div>
+        <div id="accountMenu"></div>
+      </div>
+    </header>
+
+    <main class="page">
+      <section class="page-head restaurant-sticky">
+        <div>
+          <div class="eyebrow">Staff access</div>
+          <h1 id="pageTitle">Restaurant staff</h1>
+          <p class="muted" id="pageHelp">Assign existing Avenzo users to help operate this restaurant.</p>
+        </div>
+        <a class="btn btn-ghost" href="/admin/dashboard.html">Dashboard</a>
+      </section>
+
+      <section class="card card-pad mb-20">
+        <form class="grid grid-2" onsubmit="addStaff(event)">
+          <div class="field">
+            <label for="staffEmail">Employee email</label>
+            <input id="staffEmail" class="input" type="email" required placeholder="employee@example.com">
+          </div>
+          <button id="addStaffBtn" class="btn btn-primary" type="submit">Add employee</button>
+        </form>
+      </section>
+
+      <section class="stack" id="staffList"></section>
+    </main>
+  </div>
+
+  <script src="/assets/app.js"></script>
+  <script>
+    requireAuth();
+    const restaurantId = new URLSearchParams(location.search).get("restaurantId");
+    let currentUser = null;
+
+    async function init() {
+      currentUser = await initAccountMenu();
+      await loadStaff();
+    }
+
+    async function loadStaff() {
+      try {
+        document.getElementById("staffList").innerHTML = skeletonCards(3);
+        const data = await request(`/admin/staff/${restaurantId}`);
+        const staff = data.staff || [];
+        if (!staff.length) {
+          document.getElementById("staffList").innerHTML = `<div class="empty">No employees assigned yet.</div>`;
+          return;
+        }
+
+        document.getElementById("staffList").innerHTML = staff.map(member => `
+          <article class="card card-pad row-between">
+            <div>
+              <h3 class="h3-tight">${escapeHtml(member.name || member.email)}</h3>
+              <div class="muted">${escapeHtml(member.email)}</div>
+            </div>
+            <button class="btn btn-danger" onclick="removeStaff('${member.id}')">Remove</button>
+          </article>
+        `).join("");
+      } catch (err) {
+        document.getElementById("staffList").innerHTML = `<div class="empty">${escapeHtml(err.message)}</div>`;
+      }
+    }
+
+    async function addStaff(event) {
+      event.preventDefault();
+      const btn = document.getElementById("addStaffBtn");
+      setLoading(btn, true, "Adding...");
+      try {
+        await request(`/admin/staff/${restaurantId}`, {
+          method: "POST",
+          body: JSON.stringify({ email: document.getElementById("staffEmail").value.trim() })
+        });
+        document.getElementById("staffEmail").value = "";
+        toast("Employee added");
+        await loadStaff();
+      } catch (err) {
+        toast(err.message);
+      } finally {
+        setLoading(btn, false);
+      }
+    }
+
+    async function removeStaff(userId) {
+      try {
+        await request(`/admin/staff/${restaurantId}/${userId}`, { method: "DELETE" });
+        toast("Employee removed");
+        await loadStaff();
+      } catch (err) {
+        toast(err.message);
+      }
+    }
+
+    init();
+  </script>
+</body>
+
+</html>
