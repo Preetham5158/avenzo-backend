@@ -104,6 +104,52 @@ function menuFoodFilter(value) {
     return FOOD_TYPES.includes(foodType) ? { foodType } : {};
 }
 
+function rupeesToPaise(value) {
+    const amount = Number(value);
+    if (!Number.isFinite(amount) || amount < 0) return null;
+    return Math.round(amount * 100);
+}
+
+function paiseToRupees(value) {
+    return Number(value || 0) / 100;
+}
+
+function publicMenuItem(item) {
+    if (!item) return item;
+
+    const { pricePaise, ...safeItem } = item;
+
+    return {
+        ...safeItem,
+        price: paiseToRupees(pricePaise)
+    };
+}
+function publicOrderResponse(order) {
+    return {
+        id: order.id,
+        orderNumber: order.orderNumber,
+        pickupCode: order.pickupCode,
+        totalPrice: paiseToRupees(order.totalPricePaise),
+        status: order.status,
+        readyAt: order.readyAt,
+        createdAt: order.createdAt,
+        updatedAt: order.updatedAt,
+        restaurant: order.restaurant
+            ? {
+                  name: order.restaurant.name,
+                  slug: order.restaurant.slug,
+                  pickupNote: order.restaurant.pickupNote
+              }
+            : null,
+        items: (order.items || []).map((item) => ({
+            id: item.id,
+            nameAtOrder: item.nameAtOrder,
+            quantity: item.quantity,
+            priceAtOrder: paiseToRupees(item.priceAtOrderPaise)
+        }))
+    };
+}
+
 function allowedNextOrderStatuses(status) {
     return ORDER_STATUS_TRANSITIONS[status] || [];
 }
@@ -238,7 +284,7 @@ app.get("/menu/:restaurantId", async (req, res) => {
             ]
         });
 
-        res.json(menu);
+        res.json(menu.map(publicMenuItem));
     } catch (err) {
         logRouteError("GET /menu/:restaurantId", err);
         res.status(500).json({ error: "Error fetching menu" });
@@ -269,7 +315,7 @@ app.get("/menu/by-slug/:slug", async (req, res) => {
             ]
         });
 
-        res.json(menu);
+        res.json(menu.map(publicMenuItem));
     } catch (err) {
         logRouteError("GET /menu/by-slug/:slug", err);
         res.status(500).json({ error: "Error fetching menu" });
@@ -356,7 +402,7 @@ app.post("/order", orderLimiter, async (req, res) => {
             }
         });
 
-        let totalPrice = 0;
+        let totalPricePaise = 0;
 
         normalizedItems.forEach(i => {
             const menu = menuItems.find(m => m.id === i.menuId);
@@ -369,7 +415,7 @@ app.post("/order", orderLimiter, async (req, res) => {
                 throw new Error(`${menu.name} is unavailable`);
             }
 
-            totalPrice += menu.price * i.quantity;
+            totalPricePaise += menu.pricePaise * i.quantity;
         });
 
         const order = await prisma.$transaction(async (tx) => {
@@ -382,7 +428,7 @@ app.post("/order", orderLimiter, async (req, res) => {
             return tx.order.create({
                 data: {
                     orderNumber: counter.orderCounter - 1,
-                    totalPrice,
+                    totalPricePaise,
                     pickupCode,
                     sessionId,
                     phone: normalizedPhone,
@@ -394,7 +440,7 @@ app.post("/order", orderLimiter, async (req, res) => {
                             return {
                                 menuId: menu.id,
                                 quantity: i.quantity,
-                                priceAtOrder: menu.price,
+                                priceAtOrderPaise: menu.pricePaise,
                                 nameAtOrder: menu.name
                             };
                         })
@@ -430,29 +476,7 @@ app.get("/order/:id", async (req, res) => {
 
         if (!order) return res.status(404).json({ error: "Not found" });
 
-        res.json({
-            id: order.id,
-            orderNumber: order.orderNumber,
-            pickupCode: order.pickupCode,
-            totalPrice: order.totalPrice,
-            status: order.status,
-            readyAt: order.readyAt,
-            createdAt: order.createdAt,
-            updatedAt: order.updatedAt,
-            restaurant: order.restaurant
-                ? {
-                      name: order.restaurant.name,
-                      slug: order.restaurant.slug,
-                      pickupNote: order.restaurant.pickupNote
-                  }
-                : null,
-            items: (order.items || []).map((item) => ({
-                id: item.id,
-                nameAtOrder: item.nameAtOrder,
-                quantity: item.quantity,
-                priceAtOrder: item.priceAtOrder
-            }))
-        });
+        res.json(publicOrderResponse(order));
     } catch (err) {
         logRouteError("GET /order/:id", err);
         res.status(500).json({ error: "Error fetching order" });
@@ -475,14 +499,20 @@ app.get("/orders/lookup", async (req, res) => {
                 orderNumber: true,
                 pickupCode: true,
                 status: true,
-                totalPrice: true,
+                totalPricePaise: true,
                 createdAt: true
             },
             orderBy: { createdAt: "desc" },
             take: 5
         });
 
-        res.json({ orders });
+        res.json({
+    orders: orders.map((order) => ({
+        ...order,
+        totalPrice: paiseToRupees(order.totalPricePaise),
+        totalPricePaise: undefined
+    }))
+});
     } catch (err) {
         logRouteError("GET /orders/lookup", err);
         res.status(500).json({ error: "Error finding orders" });
@@ -912,7 +942,8 @@ app.post("/category", authMiddleware, async (req, res) => {
 app.post("/menu", authMiddleware, async (req, res) => {
     try {
         const { name, price, categoryId, restaurantId, description, imageUrl, foodType } = req.body;
-        if (!name || !Number.isFinite(Number(price)) || !categoryId || !restaurantId) {
+const pricePaise = rupeesToPaise(price);
+        if (!name || pricePaise === null || !categoryId || !restaurantId) {
             return res.status(400).json({ error: "Missing or invalid fields" });
         }
 
@@ -941,7 +972,7 @@ app.post("/menu", authMiddleware, async (req, res) => {
         const item = await prisma.menu.create({
             data: {
                 name,
-                price: Number(price),
+                pricePaise,
                 categoryId,
                 restaurantId,
                 foodType: normalizedFoodType,
@@ -951,7 +982,7 @@ app.post("/menu", authMiddleware, async (req, res) => {
             include: { category: true }
         });
 
-        res.json(item);
+        res.json(publicMenuItem(item));
     } catch (err) {
         logRouteError("POST /menu", err);
         res.status(500).json({ error: "Error saving menu item" });
@@ -962,6 +993,10 @@ app.put("/menu/:id", authMiddleware, async (req, res) => {
     try {
         const { id } = req.params;
         const { name, price, categoryId, isAvailable, isActive, description, imageUrl, foodType } = req.body;
+const pricePaise = typeof price !== "undefined" ? rupeesToPaise(price) : undefined;
+	if (typeof price !== "undefined" && pricePaise === null) {
+    return res.status(400).json({ error: "Invalid price" });
+}
 
         const item = await prisma.menu.findUnique({
             where: { id },
@@ -1011,7 +1046,7 @@ app.put("/menu/:id", authMiddleware, async (req, res) => {
             where: { id },
             data: {
                 ...(typeof name !== "undefined" && { name }),
-                ...(typeof price !== "undefined" && Number.isFinite(Number(price)) && { price: Number(price) }),
+                ...(typeof price !== "undefined" && pricePaise !== null && { pricePaise }),
                 ...(categoryId && { categoryId }),
                 ...(normalizedFoodType && { foodType: normalizedFoodType }),
                 ...(typeof isAvailable !== "undefined" && { isAvailable }),
@@ -1022,7 +1057,7 @@ app.put("/menu/:id", authMiddleware, async (req, res) => {
             include: { category: true }
         });
 
-        res.json(updated);
+        res.json(publicMenuItem(updated));
     } catch (err) {
         logRouteError("PUT /menu/:id", err);
         res.status(500).json({ error: "Error updating menu item" });
@@ -1096,7 +1131,7 @@ app.get("/admin/menu/:restaurantId", authMiddleware, async (req, res) => {
             ]
         });
 
-        res.json(menu);
+        res.json(menu.map(publicMenuItem));
     } catch (err) {
         logRouteError("GET /admin/menu/:restaurantId", err);
         res.status(500).json({ error: "Error fetching admin menu" });
@@ -1157,7 +1192,7 @@ app.get("/admin/orders/:restaurantId", authMiddleware, async (req, res) => {
 
         res.json({
             restaurant,
-            orders,
+            orders: orders.map(publicOrderResponse),
             pagination: {
                 page,
                 limit,

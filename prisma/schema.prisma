@@ -131,7 +131,7 @@ model Category {
 model Menu {
   id    String @id @default(uuid())
   name  String
-  price Float
+  pricePaise Int
 
   description String?
   imageUrl    String?
@@ -167,7 +167,7 @@ model Order {
   // per restaurant order number
   orderNumber  Int
 
-  totalPrice   Float
+  totalPricePaise Int
   status       OrderStatus @default(PENDING)
   pickupCode   String
 
@@ -206,7 +206,7 @@ model OrderItem {
 
   quantity Int
 
-  priceAtOrder Float
+  priceAtOrderPaise Int
   nameAtOrder  String
 
   createdAt DateTime @default(now())
