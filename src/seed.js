@@ -3,6 +3,10 @@ const bcrypt = require("bcrypt");
 
 const prisma = new PrismaClient();
 
+if (process.env.NODE_ENV === "production") {
+  throw new Error("Refusing to run seed in production");
+}
+
 function slugify(value) {
   return value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 }
@@ -404,7 +408,7 @@ async function main() {
     await prisma.menu.createMany({
       data: merged.map(([category, name, price, description, foodType = "VEG"]) => ({
         name,
-        price,
+        pricePaise: Math.round(Number(price) * 100),
         description,
         foodType,
         imageUrl: imageFor(name, category),

@@ -15,11 +15,12 @@ npm start
 
 1. Sign up a new account from `/signup.html`.
    - Confirm the created user has role `USER`.
-   - Login should redirect to `/customer.html`.
-   - The page should show the customer placeholder, not restaurant-owner pending access.
+   - Customer Login should redirect to `/customer.html`.
+   - The customer dashboard should show account info and order history.
 
 2. Login as an admin from `/login.html`.
    - `/auth/me` should return role `ADMIN`.
+   - Restaurant Login should redirect to `/admin/dashboard.html`.
    - `/admin/dashboard.html` should show all restaurants.
 
 3. Submit `/restaurant-interest.html`.
@@ -33,8 +34,11 @@ npm start
    - Public menu prices should be returned as rupees.
 
 5. Create an order from a public menu.
+   - Checkout should require a valid phone number.
    - Response should include `trackingToken`.
    - Response should not require an internal order ID.
+   - Response should include notification wording, not a false SMS/email promise.
+   - Notification intent should be logged in development/no-op mode.
 
 6. Open `/order/:trackingToken`.
    - Response should not include internal `id`.
@@ -61,3 +65,22 @@ npm start
     - Status filter requests the backend with `status`.
     - Previous/Next changes pages.
     - Status update buttons still work.
+
+11. Customer order history.
+    - Place an order while logged in as a customer.
+    - `/customer/orders` should list it.
+    - The response should include `trackingToken` and should not expose internal order ID.
+
+12. Dirty-order checks.
+    - Missing phone should fail.
+    - Invalid phone should fail.
+    - Missing/short session ID should fail.
+    - Blocked phone/device records should reject order attempts.
+
+13. Mobile menu.
+    - Category navigation should render as horizontal sticky chips on mobile.
+    - Menu list should be full width.
+    - Cart bar should only enable ordering when items are in cart.
+
+14. Legal pages.
+    - `/privacy.html`, `/terms.html`, and `/refund-policy.html` should load.
