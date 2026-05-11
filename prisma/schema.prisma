@@ -45,6 +45,13 @@ enum RestaurantFoodType {
   BOTH
 }
 
+enum LeadStatus {
+  NEW
+  CONTACTED
+  QUALIFIED
+  CLOSED
+}
+
 //////////////////////////////////////////////////////
 // USER
 //////////////////////////////////////////////////////
@@ -66,6 +73,26 @@ model User {
   updatedAt DateTime @updatedAt
 
   @@index([staffRestaurantId])
+}
+
+model RestaurantLead {
+  id String @id @default(uuid())
+
+  restaurantName String
+  contactName String
+  phone String
+  email String
+  location String?
+  restaurantType String?
+  approxDailyOrders String?
+  message String?
+  status LeadStatus @default(NEW)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([createdAt])
 }
 
 //////////////////////////////////////////////////////

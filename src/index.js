@@ -14,6 +14,8 @@ const JWT_ISSUER = "avenzo-api";
 const JWT_AUDIENCE = "avenzo-admin";
 const FOOD_TYPES = ["VEG", "NON_VEG"];
 const RESTAURANT_FOOD_TYPES = ["PURE_VEG", "NON_VEG", "BOTH"];
+const SUBSCRIPTION_STATUSES = ["TRIALING", "ACTIVE", "EXPIRED", "SUSPENDED"];
+const LEAD_STATUSES = ["NEW", "CONTACTED", "QUALIFIED", "CLOSED"];
 const ORDER_STATUS_TRANSITIONS = {
     PENDING: ["PREPARING", "CANCELLED"],
     PREPARING: ["READY", "CANCELLED"],
@@ -83,6 +85,7 @@ function rateLimit({ windowMs, max }) {
 
 const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 30 });
 const orderLimiter = rateLimit({ windowMs: 60 * 1000, max: 20 });
+const restaurantInterestLimiter = rateLimit({ windowMs: 60 * 60 * 1000, max: 8 });
 
 function normalizeSlug(value) {
     return String(value || "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
@@ -96,6 +99,21 @@ function normalizeFoodType(value, fallback = "VEG") {
 function normalizeRestaurantFoodType(value, fallback = "BOTH") {
     const normalized = String(value || fallback).toUpperCase();
     return RESTAURANT_FOOD_TYPES.includes(normalized) ? normalized : fallback;
+}
+
+function normalizeSubscriptionStatus(value, fallback = "ACTIVE") {
+    const normalized = String(value || fallback).toUpperCase();
+    return SUBSCRIPTION_STATUSES.includes(normalized) ? normalized : fallback;
+}
+
+function cleanString(value, maxLength = 500) {
+    if (typeof value === "undefined" || value === null) return null;
+    const cleaned = String(value).trim();
+    return cleaned ? cleaned.slice(0, maxLength) : null;
+}
+
+function isValidEmail(value) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || "").trim());
 }
 
 function menuFoodFilter(value) {
@@ -536,6 +554,55 @@ app.get("/track/:id", (req, res) => {
     res.sendFile(path.join(__dirname, "../public/track.html"));
 });
 
+app.get("/restaurant-interest", (req, res) => {
+    res.sendFile(path.join(__dirname, "../public/restaurant-interest.html"));
+});
+
+app.post("/restaurant-interest", restaurantInterestLimiter, async (req, res) => {
+    try {
+        const restaurantName = cleanString(req.body.restaurantName, 140);
+        const contactName = cleanString(req.body.contactName, 140);
+        const phone = cleanString(req.body.phone, 40);
+        const email = cleanString(req.body.email, 180);
+        const location = cleanString(req.body.location, 180);
+        const restaurantType = cleanString(req.body.restaurantType, 120);
+        const approxDailyOrders = cleanString(req.body.approxDailyOrders, 80);
+        const message = cleanString(req.body.message, 1000);
+
+        if (!restaurantName || !contactName || !phone || !email || !location) {
+            return res.status(400).json({ error: "Restaurant name, contact name, phone, email, and location are required" });
+        }
+
+        if (!isValidEmail(email)) {
+            return res.status(400).json({ error: "Use a valid email address" });
+        }
+
+        if (!/^[0-9+\-\s()]{7,20}$/.test(phone)) {
+            return res.status(400).json({ error: "Use a valid phone number" });
+        }
+
+        await prisma.restaurantLead.create({
+            data: {
+                restaurantName,
+                contactName,
+                phone,
+                email: email.toLowerCase(),
+                location,
+                restaurantType,
+                approxDailyOrders,
+                message
+            }
+        });
+
+        res.status(201).json({
+            message: "Thanks for your interest. The Avenzo team will get back to you soon."
+        });
+    } catch (err) {
+        logRouteError("POST /restaurant-interest", err);
+        res.status(500).json({ error: "Could not save your interest right now" });
+    }
+});
+
 app.post("/auth/signup", authLimiter, async (req, res) => {
     try {
         const { email, password, name } = req.body;
@@ -847,7 +914,7 @@ app.post("/restaurant", authMiddleware, async (req, res) => {
                 foodType: normalizeRestaurantFoodType(foodType),
                 ownerId: owner.id,
                 isActive: typeof isActive === "boolean" ? isActive : true,
-                subscriptionStatus: subscriptionStatus || "ACTIVE",
+                subscriptionStatus: normalizeSubscriptionStatus(subscriptionStatus),
                 subscriptionEndsAt: subscriptionEndsAt ? new Date(subscriptionEndsAt) : null
             }
         });
@@ -896,7 +963,7 @@ app.put("/restaurant/:id", authMiddleware, async (req, res) => {
                 ...(typeof pickupNote !== "undefined" && { pickupNote: pickupNote || null }),
                 ...(typeof foodType !== "undefined" && { foodType: normalizeRestaurantFoodType(foodType) }),
                 ...(typeof isActive === "boolean" && { isActive }),
-                ...(subscriptionStatus && { subscriptionStatus }),
+                ...(subscriptionStatus && { subscriptionStatus: normalizeSubscriptionStatus(subscriptionStatus) }),
                 ...(typeof subscriptionEndsAt !== "undefined" && { subscriptionEndsAt: subscriptionEndsAt ? new Date(subscriptionEndsAt) : null })
             }
         });
@@ -1212,6 +1279,136 @@ app.get("/admin/orders/:restaurantId", authMiddleware, async (req, res) => {
     } catch (err) {
         logRouteError("GET /admin/orders/:restaurantId", err);
         res.status(500).json({ error: "Failed to fetch orders" });
+    }
+});
+
+app.get("/admin/restaurant-leads", authMiddleware, async (req, res) => {
+    try {
+        const user = await getAuthUser(req.user.userId);
+        if (!isSuperAdmin(user)) {
+            return res.status(403).json({ error: "Only admins can view restaurant leads" });
+        }
+
+        const status = req.query.status ? String(req.query.status).toUpperCase() : "";
+        if (status && !LEAD_STATUSES.includes(status)) {
+            return res.status(400).json({ error: "Invalid lead status" });
+        }
+
+        const page = Math.max(parseInt(req.query.page || "1", 10), 1);
+        const limit = Math.min(Math.max(parseInt(req.query.limit || "50", 10), 1), 100);
+        const where = status ? { status } : {};
+
+        const [leads, total] = await Promise.all([
+            prisma.restaurantLead.findMany({
+                where,
+                orderBy: { createdAt: "desc" },
+                skip: (page - 1) * limit,
+                take: limit
+            }),
+            prisma.restaurantLead.count({ where })
+        ]);
+
+        res.json({
+            leads,
+            pagination: {
+                page,
+                limit,
+                total,
+                totalPages: Math.ceil(total / limit)
+            }
+        });
+    } catch (err) {
+        logRouteError("GET /admin/restaurant-leads", err);
+        res.status(500).json({ error: "Error fetching restaurant leads" });
+    }
+});
+
+app.get("/admin/staff/:restaurantId", authMiddleware, async (req, res) => {
+    try {
+        const access = await getRestaurantAccess(req.params.restaurantId, req.user.userId);
+        if (!access.canManage) return res.status(403).json({ error: "Only admins and restaurant owners can manage staff" });
+        if (!ensureWorkspaceService(access, res)) return;
+
+        const staff = await prisma.user.findMany({
+            where: { staffRestaurantId: req.params.restaurantId },
+            select: { id: true, email: true, name: true, role: true, createdAt: true },
+            orderBy: { email: "asc" }
+        });
+
+        res.json({ staff });
+    } catch (err) {
+        logRouteError("GET /admin/staff/:restaurantId", err);
+        res.status(500).json({ error: "Error fetching staff" });
+    }
+});
+
+app.post("/admin/staff/:restaurantId", authMiddleware, async (req, res) => {
+    try {
+        const access = await getRestaurantAccess(req.params.restaurantId, req.user.userId);
+        if (!access.canManage) return res.status(403).json({ error: "Only admins and restaurant owners can manage staff" });
+        if (!ensureWorkspaceService(access, res)) return;
+
+        const email = cleanString(req.body.email, 180);
+        if (!email || !isValidEmail(email)) {
+            return res.status(400).json({ error: "Use an existing employee email address" });
+        }
+
+        const staffUser = await prisma.user.findUnique({
+            where: { email: email.toLowerCase() }
+        });
+
+        if (!staffUser) {
+            return res.status(404).json({ error: "That user account does not exist yet" });
+        }
+
+        if (["ADMIN", "RESTAURANT_OWNER"].includes(staffUser.role)) {
+            return res.status(409).json({ error: "Admins and restaurant owners cannot be reassigned as staff" });
+        }
+
+        const updated = await prisma.user.update({
+            where: { id: staffUser.id },
+            data: {
+                role: "EMPLOYEE",
+                staffRestaurantId: req.params.restaurantId
+            },
+            select: { id: true, email: true, name: true, role: true, staffRestaurantId: true }
+        });
+
+        res.status(201).json({ staff: updated });
+    } catch (err) {
+        logRouteError("POST /admin/staff/:restaurantId", err);
+        res.status(500).json({ error: "Error assigning staff" });
+    }
+});
+
+app.delete("/admin/staff/:restaurantId/:userId", authMiddleware, async (req, res) => {
+    try {
+        const access = await getRestaurantAccess(req.params.restaurantId, req.user.userId);
+        if (!access.canManage) return res.status(403).json({ error: "Only admins and restaurant owners can manage staff" });
+        if (!ensureWorkspaceService(access, res)) return;
+
+        const staffUser = await prisma.user.findUnique({
+            where: { id: req.params.userId },
+            select: { id: true, role: true, staffRestaurantId: true }
+        });
+
+        if (!staffUser || staffUser.staffRestaurantId !== req.params.restaurantId) {
+            return res.status(404).json({ error: "Staff member not found for this restaurant" });
+        }
+
+        const updated = await prisma.user.update({
+            where: { id: staffUser.id },
+            data: {
+                staffRestaurantId: null,
+                ...(staffUser.role === "EMPLOYEE" && { role: "USER" })
+            },
+            select: { id: true, email: true, name: true, role: true, staffRestaurantId: true }
+        });
+
+        res.json({ staff: updated });
+    } catch (err) {
+        logRouteError("DELETE /admin/staff/:restaurantId/:userId", err);
+        res.status(500).json({ error: "Error removing staff" });
     }
 });
 
