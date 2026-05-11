@@ -604,21 +604,32 @@
       }
 
       .menu-layout {
-        grid-template-columns: 82px minmax(0, 1fr);
-        gap: 8px;
+        display: block;
       }
 
       .category-rail {
         top: var(--rail-top);
-        max-height: calc(100vh - var(--rail-top) - 92px);
+        max-height: none;
+        width: auto;
+        margin-bottom: 10px;
         padding: 6px;
         border-radius: 18px;
+        overflow-x: auto;
+        overflow-y: hidden;
+      }
+
+      #categoryRail {
+        display: flex;
+        gap: 8px;
       }
 
       .category-button {
-        min-height: 48px;
-        padding: 6px;
-        border-radius: 13px;
+        flex: 0 0 auto;
+        min-height: 42px;
+        width: auto;
+        min-width: 92px;
+        padding: 6px 10px;
+        border-radius: 999px;
       }
 
       .category-button strong {
@@ -630,7 +641,7 @@
       }
 
       .section-head {
-        top: var(--rail-top);
+        top: calc(var(--rail-top) + 56px);
         padding: 9px 10px;
         border-radius: 16px;
       }
@@ -713,7 +724,7 @@
 
     @media (max-width: 520px) {
       .category-rail {
-        width: 88px;
+        width: auto;
       }
 
       .category-button {
@@ -726,7 +737,7 @@
       }
 
       .menu-section {
-        scroll-margin-top: calc(var(--rail-top) + 4px);
+        scroll-margin-top: calc(var(--rail-top) + 64px);
       }
     }
   </style>
@@ -789,8 +800,9 @@
       <div class="modal-body stack">
         <div id="cartItems" class="stack"></div>
         <div class="field">
-          <label for="phone">Mobile number optional</label>
-          <input id="phone" class="input" inputmode="tel" placeholder="Only if the hotel needs to reach you">
+          <label for="phone">Mobile number</label>
+          <input id="phone" class="input" inputmode="tel" required placeholder="10 digit mobile number">
+          <div class="muted">We use this number to help you track your dine-in order and send order updates.</div>
         </div>
       </div>
       <div class="modal-actions">
@@ -1134,7 +1146,7 @@
         const orders = data.orders || [];
         document.getElementById("lookupResults").innerHTML = orders.length
           ? orders.map(order => `
-            <button class="card card-pad row-between cursor-pointer" type="button" onclick="location.href='/track/${order.id}'">
+            <button class="card card-pad row-between cursor-pointer" type="button" onclick="location.href='/track/${order.trackingToken}'">
               <span>
                 <strong>Order #${order.orderNumber}</strong>
                 <span class="muted">Code ${escapeHtml(order.pickupCode)}</span>
@@ -1160,12 +1172,16 @@
       setLoading(btn, true, "Sending...");
 
       try {
+        const phone = document.getElementById("phone").value.trim();
+        if (!/^[0-9+\-\s()]{10,20}$/.test(phone)) {
+          throw new Error("Enter a valid mobile number to place your order.");
+        }
         const data = await request("/order", {
           method: "POST",
           body: JSON.stringify({
             restaurantId,
-            sessionId: "web-" + Date.now(),
-            phone: document.getElementById("phone").value.trim() || null,
+            sessionId: getDeviceId(),
+            phone,
             items: cart
           })
         });
@@ -1176,12 +1192,22 @@
           restaurantId,
           createdAt: new Date().toISOString()
         });
+        toast(data.message || "Order placed. We will send confirmation updates when available.");
         window.location.href = `/track/${data.trackingToken}`;
       } catch (err) {
         toast(err.message);
       } finally {
         setLoading(btn, false);
       }
+    }
+
+    function getDeviceId() {
+      let id = localStorage.getItem("avenzoDeviceId");
+      if (!id) {
+        id = `web-${crypto.randomUUID ? crypto.randomUUID() : Date.now()}`;
+        localStorage.setItem("avenzoDeviceId", id);
+      }
+      return id;
     }
 
     init();

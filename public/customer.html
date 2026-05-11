@@ -6,6 +6,35 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/assets/app.css">
+  <style>
+    .customer-hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1.4fr) minmax(260px, 0.6fr);
+      gap: 16px;
+      align-items: stretch;
+    }
+
+    .customer-hero .hero-panel {
+      height: 100%;
+    }
+
+    .order-card {
+      display: grid;
+      gap: 12px;
+    }
+
+    .order-items {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    @media (max-width: 760px) {
+      .customer-hero {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
 </head>
 
 <body>
@@ -21,29 +50,115 @@
     </header>
 
     <main class="page">
-      <section class="hero-panel">
-        <div class="eyebrow">Customer account</div>
-        <h1>Welcome to Avenzo.</h1>
-        <p class="muted">
-          Your customer account is ready. Customer features like order history,
-          saved preferences, and faster repeat ordering will be available here soon.
-        </p>
-        <div class="row row-wrap mt-18">
-          <a class="btn btn-primary" href="/">Explore Avenzo</a>
-          <a class="btn btn-ghost" href="/restaurant-interest.html">List your restaurant</a>
+      <section class="customer-hero mb-20">
+        <div class="hero-panel">
+          <div class="eyebrow">Customer account</div>
+          <h1 id="welcomeTitle">Welcome to Avenzo.</h1>
+          <p class="muted">
+            Your customer account keeps your dine-in orders, tracking links, and future repeat-ordering features in one calm place.
+          </p>
+          <div class="row row-wrap mt-18">
+            <a class="btn btn-primary" href="/">Explore Avenzo</a>
+            <a class="btn btn-ghost" href="/restaurant-interest.html">List your restaurant</a>
+          </div>
         </div>
+        <article class="card card-pad">
+          <div class="muted">Account</div>
+          <h3 id="accountName">Loading...</h3>
+          <p class="muted mb-0" id="accountEmail"></p>
+          <span class="pill pill-dark mt-12">Customer</span>
+        </article>
       </section>
+
+      <section class="page-head">
+        <div>
+          <div class="eyebrow">Recent orders</div>
+          <h2 class="section-title">Order history</h2>
+          <p class="muted">Orders placed while signed in appear here automatically.</p>
+        </div>
+        <button class="btn btn-ghost" id="refreshOrdersBtn" type="button">Refresh</button>
+      </section>
+
+      <section class="stack" id="orders"></section>
     </main>
   </div>
 
   <script src="/assets/app.js"></script>
   <script>
     requireAuth();
+    let page = 1;
+
     initAccountMenu().then((user) => {
       if (user && user.role !== "USER") {
         window.location.href = "/admin/dashboard.html";
+        return;
       }
+      document.getElementById("welcomeTitle").textContent = `Welcome${user?.name ? `, ${user.name}` : ""}.`;
+      document.getElementById("accountName").textContent = user?.name || "Avenzo customer";
+      document.getElementById("accountEmail").textContent = user?.email || "";
+      loadOrders();
     });
+
+    document.getElementById("refreshOrdersBtn").addEventListener("click", () => loadOrders());
+
+    async function loadOrders() {
+      const target = document.getElementById("orders");
+      target.innerHTML = skeletonCards(3);
+      try {
+        const data = await request(`/customer/orders?page=${page}&limit=20`);
+        const orders = data.orders || [];
+        if (!orders.length) {
+          target.innerHTML = `<div class="empty">You have not placed any orders yet.</div>`;
+          return;
+        }
+
+        target.innerHTML = orders.map(order => {
+          const preview = (order.items || []).slice(0, 4).map(item => `
+            <span class="pill">${escapeHtml(item.nameAtOrder)} x ${item.quantity}</span>
+          `).join("");
+          return `
+            <article class="card card-pad order-card">
+              <div class="row-between">
+                <div>
+                  <div class="eyebrow">${escapeHtml(order.restaurant?.name || "Avenzo restaurant")}</div>
+                  <h3 class="h3-tight">Order #${order.orderNumber}</h3>
+                  <div class="muted">${formatDate(order.createdAt)}</div>
+                </div>
+                <span class="pill ${statusPill(order.status)}">${escapeHtml(order.status)}</span>
+              </div>
+              <div class="grid grid-3">
+                <div><div class="muted">Total</div><strong>${money(order.totalPrice)}</strong></div>
+                <div><div class="muted">Pickup code</div><strong>${escapeHtml(order.pickupCode)}</strong></div>
+                <div><div class="muted">Payment</div><strong>${paymentLabel(order.paymentStatus)}</strong></div>
+              </div>
+              <div class="order-items">${preview}</div>
+              <div class="row row-wrap">
+                <a class="btn btn-dark" href="/track/${order.trackingToken}">Track</a>
+              </div>
+            </article>
+          `;
+        }).join("");
+      } catch (err) {
+        target.innerHTML = `<div class="empty">${escapeHtml(err.message)}</div>`;
+      }
+    }
+
+    function statusPill(status) {
+      if (["READY", "COMPLETED"].includes(status)) return "pill-success";
+      if (status === "CANCELLED") return "pill-danger";
+      return "pill-warning";
+    }
+
+    function paymentLabel(value) {
+      return {
+        PAYMENT_NOT_REQUIRED: "Not required",
+        PAYMENT_PENDING: "Pending",
+        PAID: "Paid",
+        PAYMENT_FAILED: "Failed",
+        REFUNDED: "Refunded",
+        PARTIALLY_REFUNDED: "Partial refund"
+      }[value] || "Not required";
+    }
   </script>
 </body>
 

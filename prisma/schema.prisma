@@ -52,6 +52,43 @@ enum LeadStatus {
   CLOSED
 }
 
+enum PaymentStatus {
+  PAYMENT_NOT_REQUIRED
+  PAYMENT_PENDING
+  PAID
+  PAYMENT_FAILED
+  REFUNDED
+  PARTIALLY_REFUNDED
+}
+
+enum NotificationStatus {
+  LOGGED
+  SKIPPED
+  FAILED
+}
+
+enum NotificationChannel {
+  LOG
+  EMAIL
+  SMS
+  WHATSAPP
+}
+
+enum OrderAttemptStatus {
+  ACCEPTED
+  REJECTED
+}
+
+enum AuditAction {
+  RESTAURANT_CREATED
+  RESTAURANT_UPDATED
+  SUBSCRIPTION_UPDATED
+  STAFF_ADDED
+  STAFF_REMOVED
+  ORDER_STATUS_UPDATED
+  ORDER_ATTEMPT_REJECTED
+}
+
 //////////////////////////////////////////////////////
 // USER
 //////////////////////////////////////////////////////
@@ -61,10 +98,12 @@ model User {
   email     String   @unique
   password  String
   name      String?
+  phone     String?
 
   role      UserRole @default(USER)
 
   ownedRestaurants Restaurant[] @relation("RestaurantOwner")
+  orders Order[] @relation("CustomerOrders")
 
   staffRestaurantId String?
   staffRestaurant   Restaurant? @relation("RestaurantStaff", fields: [staffRestaurantId], references: [id], onDelete: SetNull)
@@ -195,20 +234,23 @@ model Order {
   orderNumber  Int
 
   totalPricePaise Int
+  paymentStatus PaymentStatus @default(PAYMENT_NOT_REQUIRED)
   status       OrderStatus @default(PENDING)
   pickupCode   String
   trackingToken String @unique
 
-  phone        String?
+  phone        String
   sessionId    String
 
   customerId   String?
+  customer     User? @relation("CustomerOrders", fields: [customerId], references: [id], onDelete: SetNull)
   readyAt      DateTime?
 
   restaurantId String
   restaurant   Restaurant  @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
 
   items        OrderItem[]
+  notificationLogs NotificationLog[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -217,6 +259,9 @@ model Order {
   @@index([restaurantId])
   @@index([createdAt])
   @@index([status])
+  @@index([paymentStatus])
+  @@index([customerId])
+  @@index([phone])
 }
 
 //////////////////////////////////////////////////////
@@ -240,4 +285,71 @@ model OrderItem {
   createdAt DateTime @default(now())
 
   @@index([orderId])
+}
+
+model NotificationLog {
+  id String @id @default(uuid())
+
+  orderId String?
+  order Order? @relation(fields: [orderId], references: [id], onDelete: SetNull)
+
+  recipientPhone String?
+  recipientEmail String?
+  channel NotificationChannel
+  status NotificationStatus
+  error String?
+
+  createdAt DateTime @default(now())
+
+  @@index([orderId])
+  @@index([createdAt])
+}
+
+model OrderAttempt {
+  id String @id @default(uuid())
+
+  restaurantId String?
+  phone String?
+  deviceId String?
+  ipHash String?
+  status OrderAttemptStatus
+  reason String?
+
+  createdAt DateTime @default(now())
+
+  @@index([restaurantId])
+  @@index([phone])
+  @@index([deviceId])
+  @@index([createdAt])
+}
+
+model BlockedPhone {
+  id String @id @default(uuid())
+  phone String @unique
+  reason String?
+  createdAt DateTime @default(now())
+}
+
+model BlockedDevice {
+  id String @id @default(uuid())
+  deviceId String @unique
+  reason String?
+  createdAt DateTime @default(now())
+}
+
+model AuditLog {
+  id String @id @default(uuid())
+
+  actorUserId String?
+  action AuditAction
+  restaurantId String?
+  orderId String?
+  targetUserId String?
+  metadata Json?
+  createdAt DateTime @default(now())
+
+  @@index([actorUserId])
+  @@index([restaurantId])
+  @@index([orderId])
+  @@index([createdAt])
 }

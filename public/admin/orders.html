@@ -288,6 +288,10 @@
                 <div class="muted">Order code</div>
                 <strong>${escapeHtml(order.pickupCode)}</strong>
               </div>
+              <div>
+                <div class="muted">Payment</div>
+                <strong>${paymentLabel(order.paymentStatus)}</strong>
+              </div>
             </div>
 
             <div class="items">${items}</div>
@@ -318,6 +322,17 @@
     function setOrderSearch(value) {
       orderSearch = value.trim().toLowerCase();
       renderOrders();
+    }
+
+    function paymentLabel(value) {
+      return {
+        PAYMENT_NOT_REQUIRED: "Not required",
+        PAYMENT_PENDING: "Pending",
+        PAID: "Paid",
+        PAYMENT_FAILED: "Failed",
+        REFUNDED: "Refunded",
+        PARTIALLY_REFUNDED: "Partial refund"
+      }[value] || "Not required";
     }
 
     async function updateStatus(button, id, status) {
