@@ -124,9 +124,8 @@ function publicMenuItem(item) {
         price: paiseToRupees(pricePaise)
     };
 }
-function publicOrderResponse(order) {
-    return {
-        id: order.id,
+function publicOrderResponse(order, options = {}) {
+    const response = {
         orderNumber: order.orderNumber,
         pickupCode: order.pickupCode,
         totalPrice: paiseToRupees(order.totalPricePaise),
@@ -148,6 +147,12 @@ function publicOrderResponse(order) {
             priceAtOrder: paiseToRupees(item.priceAtOrderPaise)
         }))
     };
+
+    if (options.includeInternalId) {
+        response.id = order.id;
+    }
+
+    return response;
 }
 
 function allowedNextOrderStatuses(status) {
@@ -393,6 +398,7 @@ app.post("/order", orderLimiter, async (req, res) => {
         }
 
         const pickupCode = crypto.randomInt(1000, 10000).toString();
+	const trackingToken = crypto.randomUUID();
 
         const menuItems = await prisma.menu.findMany({
             where: {
@@ -430,6 +436,7 @@ app.post("/order", orderLimiter, async (req, res) => {
                     orderNumber: counter.orderCounter - 1,
                     totalPricePaise,
                     pickupCode,
+		    trackingToken,
                     sessionId,
                     phone: normalizedPhone,
                     restaurantId,
@@ -450,12 +457,11 @@ app.post("/order", orderLimiter, async (req, res) => {
         });
 
         res.json({
-            orderId: order.id,
-            orderNumber: order.orderNumber,
-            pickupCode,
-            trackingUrl: `${BASE_URL}/track/${order.id}`
-        });
-
+    trackingToken: order.trackingToken,
+    orderNumber: order.orderNumber,
+    pickupCode,
+    trackingUrl: `${BASE_URL}/track/${order.trackingToken}`
+});
     } catch (err) {
         res.status(500).json({ error: err.message || "Order failed" });
     }
@@ -464,10 +470,10 @@ app.post("/order", orderLimiter, async (req, res) => {
 /* ================================
    GET ORDER
 ================================ */
-app.get("/order/:id", async (req, res) => {
+app.get("/order/:trackingToken", async (req, res) => {
     try {
         const order = await prisma.order.findUnique({
-            where: { id: req.params.id },
+            where: { trackingToken: req.params.trackingToken },
             include: {
                 items: true,
                 restaurant: true
@@ -478,7 +484,7 @@ app.get("/order/:id", async (req, res) => {
 
         res.json(publicOrderResponse(order));
     } catch (err) {
-        logRouteError("GET /order/:id", err);
+        logRouteError("GET /order/:trackingToken", err);
         res.status(500).json({ error: "Error fetching order" });
     }
 });
@@ -495,7 +501,7 @@ app.get("/orders/lookup", async (req, res) => {
         const orders = await prisma.order.findMany({
             where: { restaurantId, phone },
             select: {
-                id: true,
+                trackingToken: true,
                 orderNumber: true,
                 pickupCode: true,
                 status: true,
@@ -507,12 +513,15 @@ app.get("/orders/lookup", async (req, res) => {
         });
 
         res.json({
-    orders: orders.map((order) => ({
-        ...order,
-        totalPrice: paiseToRupees(order.totalPricePaise),
-        totalPricePaise: undefined
-    }))
-});
+            orders: orders.map((order) => {
+                const { totalPricePaise, ...safeOrder } = order;
+
+                return {
+                    ...safeOrder,
+                    totalPrice: paiseToRupees(totalPricePaise)
+                };
+            })
+        });
     } catch (err) {
         logRouteError("GET /orders/lookup", err);
         res.status(500).json({ error: "Error finding orders" });
@@ -1192,7 +1201,7 @@ app.get("/admin/orders/:restaurantId", authMiddleware, async (req, res) => {
 
         res.json({
             restaurant,
-            orders: orders.map(publicOrderResponse),
+            orders: orders.map((order) => publicOrderResponse(order, { includeInternalId: true })),
             pagination: {
                 page,
                 limit,

@@ -170,6 +170,7 @@ model Order {
   totalPricePaise Int
   status       OrderStatus @default(PENDING)
   pickupCode   String
+  trackingToken String @unique
 
   phone        String?
   sessionId    String

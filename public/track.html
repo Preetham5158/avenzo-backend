@@ -95,7 +95,7 @@
 
   <script src="/assets/app.js"></script>
   <script>
-    const orderId = window.location.pathname.split("/track/")[1] || "";
+    const trackingToken = window.location.pathname.split("/track/")[1] || "";
     const statuses = ["PENDING", "PREPARING", "READY", "COMPLETED"];
     let isLoadingStatus = false;
     let statusPollingTimer = null;
@@ -107,7 +107,7 @@
     }
 
     async function loadStatus() {
-      if (!orderId) {
+      if (!trackingToken) {
         showSavedOrders();
         return;
       }
@@ -115,7 +115,7 @@
       if (isLoadingStatus) return;
       isLoadingStatus = true;
       try {
-  const data = await request(`/order/${orderId}`, { headers: {} });
+  const data = await request(`/order/${trackingToken}`, { headers: {} });
 
   document.getElementById("restaurantName").textContent = data.restaurant?.name || "Restaurant";
   document.getElementById("orderNumber").textContent = Number.isInteger(data.orderNumber) ? `Order #${data.orderNumber}` : "Order received";
@@ -179,7 +179,7 @@
       card.hidden = false;
       list.innerHTML = orders.length
         ? orders.map(order => `
-          <button class="saved-order card card-pad row-between cursor-pointer" type="button" onclick="location.href='/track/${order.orderId}'">
+          <button class="saved-order card card-pad row-between cursor-pointer" type="button" onclick="location.href='/track/${order.trackingToken}'">
             <span>
               <strong>${order.orderNumber ? `Order #${order.orderNumber}` : "Order"}</strong>
               <span class="muted">Code ${escapeHtml(order.pickupCode || "----")}</span>
@@ -205,7 +205,7 @@
     }
 
     loadStatus();
-    if (orderId) startStatusPolling();
+    if (trackingToken) startStatusPolling();
 
     document.addEventListener("visibilitychange", () => {
       if (document.hidden) return;

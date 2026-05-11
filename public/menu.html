@@ -1087,7 +1087,7 @@
     function saveRecentOrder(order) {
       const next = [
         order,
-        ...recentOrders().filter(item => item.orderId !== order.orderId)
+        ...recentOrders().filter(item => item.trackingToken !== order.trackingToken)
       ].slice(0, 8);
       localStorage.setItem("avenzoRecentOrders", JSON.stringify(next));
     }
@@ -1108,7 +1108,7 @@
         </div>
         <div class="row row-wrap">
           <button class="btn btn-ghost" type="button" onclick="openFindOrder()">Find order</button>
-          <button class="btn btn-dark" type="button" onclick="location.href='/track/${order.orderId}'">Track</button>
+          <button class="btn btn-dark" type="button" onclick="location.href='/track/${order.trackingToken}'">Track</button>
         </div>
       `;
       el.classList.add("show");
@@ -1170,13 +1170,13 @@
           })
         });
         saveRecentOrder({
-          orderId: data.orderId,
+          trackingToken: data.trackingToken,
           orderNumber: data.orderNumber,
           pickupCode: data.pickupCode,
           restaurantId,
           createdAt: new Date().toISOString()
         });
-        window.location.href = `/track/${data.orderId}`;
+        window.location.href = `/track/${data.trackingToken}`;
       } catch (err) {
         toast(err.message);
       } finally {
