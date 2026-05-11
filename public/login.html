@@ -17,7 +17,7 @@
       </div>
 
       <div class="stack text-center mb-20">
-        <div class="eyebrow">Restaurant access</div>
+        <div class="eyebrow">Avenzo account</div>
         <h1 class="h1-auth">Welcome back</h1>
         <p class="muted">Open your Avenzo home and keep service moving smoothly.</p>
       </div>
@@ -65,7 +65,7 @@
         if (!res.ok || !data.token) throw new Error(data.error || "Sign in failed");
 
         localStorage.setItem("token", data.token);
-        window.location.href = "/admin/dashboard.html";
+        window.location.href = data.user?.role === "USER" ? "/customer.html" : "/admin/dashboard.html";
       } catch (err) {
         errorEl.textContent = err.message;
         toast(err.message);

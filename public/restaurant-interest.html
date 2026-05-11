@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Partner with Avenzo</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/app.css">
+</head>
+
+<body>
+  <div class="shell">
+    <header class="topbar">
+      <div class="topbar-inner">
+        <a class="brand" href="/" style="text-decoration:none">
+          <img src="/logo.png" alt="Avenzo">
+          <span>AVENZO</span>
+        </a>
+        <a class="btn btn-ghost" href="/login.html">Sign in</a>
+      </div>
+    </header>
+
+    <main class="page">
+      <section class="hero-panel mb-20">
+        <div class="eyebrow">Partner with Avenzo</div>
+        <h1>List your restaurant on Avenzo</h1>
+        <p class="muted">Tell us about your restaurant. The Avenzo team reviews every request and follows up personally.</p>
+      </section>
+
+      <section class="card card-pad">
+        <form class="stack" onsubmit="submitInterest(event)" id="interestForm">
+          <div class="grid grid-2">
+            <div class="field">
+              <label for="restaurantName">Restaurant name</label>
+              <input id="restaurantName" class="input" required placeholder="Avenzo Cafe">
+            </div>
+            <div class="field">
+              <label for="contactName">Contact name</label>
+              <input id="contactName" class="input" required placeholder="Your name">
+            </div>
+          </div>
+
+          <div class="grid grid-2">
+            <div class="field">
+              <label for="phone">Phone</label>
+              <input id="phone" class="input" required placeholder="+91 98765 43210">
+            </div>
+            <div class="field">
+              <label for="email">Email</label>
+              <input id="email" class="input" type="email" required placeholder="owner@example.com">
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="location">Location</label>
+              <input id="location" class="input" required placeholder="Area, city">
+          </div>
+
+          <div class="grid grid-2">
+            <div class="field">
+              <label for="restaurantType">Restaurant type</label>
+              <input id="restaurantType" class="input" placeholder="Cafe, QSR, family restaurant">
+            </div>
+            <div class="field">
+              <label for="approxDailyOrders">Approx daily orders</label>
+              <input id="approxDailyOrders" class="input" placeholder="50-100">
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="message">Message</label>
+            <textarea id="message" class="textarea" placeholder="Anything you want the Avenzo team to know"></textarea>
+          </div>
+
+          <button id="submitBtn" class="btn btn-primary" type="submit">Submit interest</button>
+          <div id="feedback" class="muted feedback-line"></div>
+        </form>
+      </section>
+    </main>
+  </div>
+
+  <script src="/assets/app.js"></script>
+  <script>
+    async function submitInterest(event) {
+      event.preventDefault();
+      const btn = document.getElementById("submitBtn");
+      const feedback = document.getElementById("feedback");
+      feedback.textContent = "";
+      setLoading(btn, true, "Submitting...");
+
+      try {
+        await request("/restaurant-interest", {
+          method: "POST",
+          body: JSON.stringify({
+            restaurantName: document.getElementById("restaurantName").value.trim(),
+            contactName: document.getElementById("contactName").value.trim(),
+            phone: document.getElementById("phone").value.trim(),
+            email: document.getElementById("email").value.trim(),
+            location: document.getElementById("location").value.trim() || null,
+            restaurantType: document.getElementById("restaurantType").value.trim() || null,
+            approxDailyOrders: document.getElementById("approxDailyOrders").value.trim() || null,
+            message: document.getElementById("message").value.trim() || null
+          })
+        });
+        document.getElementById("interestForm").reset();
+        feedback.textContent = "Thanks for your interest. The Avenzo team will get back to you soon.";
+        toast("Thanks for your interest");
+      } catch (err) {
+        feedback.textContent = err.message;
+        toast(err.message);
+      } finally {
+        setLoading(btn, false);
+      }
+    }
+  </script>
+</body>
+
+</html>

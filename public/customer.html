@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Avenzo Customer</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/app.css">
+</head>
+
+<body>
+  <div class="shell">
+    <header class="topbar">
+      <div class="topbar-inner">
+        <div class="brand">
+          <img src="/logo.png" alt="Avenzo">
+          <span>AVENZO</span>
+        </div>
+        <div id="accountMenu"></div>
+      </div>
+    </header>
+
+    <main class="page">
+      <section class="hero-panel">
+        <div class="eyebrow">Customer account</div>
+        <h1>Welcome to Avenzo.</h1>
+        <p class="muted">
+          Your customer account is ready. Customer features like order history,
+          saved preferences, and faster repeat ordering will be available here soon.
+        </p>
+        <div class="row row-wrap mt-18">
+          <a class="btn btn-primary" href="/">Explore Avenzo</a>
+          <a class="btn btn-ghost" href="/restaurant-interest.html">List your restaurant</a>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="/assets/app.js"></script>
+  <script>
+    requireAuth();
+    initAccountMenu().then((user) => {
+      if (user && user.role !== "USER") {
+        window.location.href = "/admin/dashboard.html";
+      }
+    });
+  </script>
+</body>
+
+</html>
