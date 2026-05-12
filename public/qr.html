@@ -119,8 +119,6 @@
 
   <script src="/assets/app.js"></script>
   <script>
-    requireAuth("/restaurant-login.html");
-
     const selectedRestaurantId = new URLSearchParams(location.search).get("restaurantId");
 
     async function loadRestaurants() {
@@ -213,8 +211,10 @@
       qrImage.src = qrUrl(url, 350);
     }
 
-    initAccountMenu();
-    loadRestaurants();
+    initPartnerPage().then((user) => {
+      if (!user) return;
+      loadRestaurants();
+    });
   </script>
 </body>
 

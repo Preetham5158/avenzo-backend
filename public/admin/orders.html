@@ -95,8 +95,6 @@
 
   <script src="/assets/app.js"></script>
   <script>
-    requireAuth("/restaurant-login.html");
-
     const restaurantId = new URLSearchParams(location.search).get("restaurantId");
     const statusMeta = {
       PENDING: ["pill-warning", "Pending"],
@@ -360,9 +358,11 @@
       window.location.href = `/admin/menu.html?restaurantId=${restaurantId}`;
     }
 
-    initAccountMenu();
-    loadOrders();
-    startOrdersPolling();
+    initPartnerPage().then((user) => {
+      if (!user) return;
+      loadOrders();
+      startOrdersPolling();
+    });
 
     document.addEventListener("visibilitychange", () => {
       if (document.hidden) return;

@@ -807,7 +807,7 @@
         <div class="field" id="phoneField">
           <label for="phone">Mobile number</label>
           <input id="phone" class="input" inputmode="tel" placeholder="10 digit mobile number">
-          <div class="muted" id="phoneHelp">We use this number to help you track your dine-in order and send order updates.</div>
+          <div class="muted" id="phoneHelp">We use this number to help the restaurant identify your order and send updates.</div>
         </div>
       </div>
       <div class="modal-actions">
@@ -1127,8 +1127,8 @@
       } else {
         phoneInput.hidden = false;
         phoneHelp.textContent = getToken()
-          ? "We use this number to send order updates and help the restaurant identify your order. It will be saved to your profile."
-          : "Phone is required for guest orders so you can track your dine-in order and the restaurant can identify it.";
+          ? "We use this number to help the restaurant identify your order and send updates. It will be saved to your profile."
+          : "We use this number to help the restaurant identify your order and send updates.";
         phoneField.classList.remove("app-panel");
         phoneField.style.padding = "";
       }

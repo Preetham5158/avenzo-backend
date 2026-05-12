@@ -17,6 +17,9 @@ Current auth uses JWT bearer tokens stored by the frontend. This is simple for t
 - Restaurant login requires OTP when `AUTH_REQUIRE_RESTAURANT_2FA=true`.
 - OTP log mode is development-only and must be replaced with a configured email/SMS provider before production 2FA enforcement.
 - `/auth/login` remains only for compatibility and should be retired after clients move.
+- `USER` accounts are blocked from restaurant/admin APIs and redirected out of the restaurant shell.
+- Restaurant-scoped APIs verify the current admin, owner, or assigned employee before returning or changing data.
+- Customer order history is scoped to the current customer only; guest orders stay separate until a future verified claim flow exists.
 
 ## Additional Work
 
@@ -25,3 +28,5 @@ Current auth uses JWT bearer tokens stored by the frontend. This is simple for t
 - Device/session audit view.
 - Suspicious login detection.
 - Centralized validation and error middleware.
+- Split remaining route handlers from `src/index.js` into route/controller/service/serializer modules.
+- Replace compatibility endpoints that accept internal IDs on public routes with slug/key-only versions once clients have migrated.

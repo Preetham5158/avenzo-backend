@@ -157,8 +157,6 @@
 
   <script src="/assets/app.js"></script>
   <script>
-    requireAuth("/restaurant-login.html");
-
     let canCreateRestaurant = false;
     let canEditRestaurants = false;
     let currentUser = null;
@@ -174,11 +172,6 @@
         canEditRestaurants = !!data.canEditRestaurants;
         currentUser = data.user || null;
         restaurantCache = restaurants;
-
-        if (data.user?.role === "USER") {
-          renderCustomerPlaceholder(data.user);
-          return;
-        }
 
         document.getElementById("pageTitle").textContent = canCreateRestaurant ? "All Restaurants" : "Your Restaurants";
         document.getElementById("roleText").textContent = canCreateRestaurant
@@ -196,28 +189,6 @@
         document.getElementById("list").innerHTML = `<div class="empty">${escapeHtml(err.message || "No access")}</div>`;
         toast(err.message);
       }
-    }
-
-    function renderCustomerPlaceholder(user) {
-      document.getElementById("pageTitle").textContent = "Your Avenzo account";
-      document.getElementById("roleText").textContent = "Welcome to Avenzo. Your customer account is ready.";
-      document.getElementById("createBtn").hidden = true;
-      document.getElementById("createBtn").style.display = "none";
-      document.getElementById("leadsBtn").hidden = true;
-      document.getElementById("leadsBtn").style.display = "none";
-      document.getElementById("stats").innerHTML = `
-        <div class="card card-pad metric-card empty-full">
-          <div class="muted">Signed in as</div>
-          <h3>${escapeHtml(user?.name || user?.email || "Avenzo customer")}</h3>
-          <p class="muted mb-0">Customer features like order history, saved preferences, and faster repeat ordering will be available here soon.</p>
-        </div>
-      `;
-      document.getElementById("list").innerHTML = `
-        <div class="empty empty-full">
-          <p>Restaurant management is available only to assigned restaurant owners, employees, and the Avenzo admin team.</p>
-          <a class="btn btn-primary" href="/">Explore Avenzo</a>
-        </div>
-      `;
     }
 
     function renderStats(restaurants, user) {
@@ -417,8 +388,10 @@
       document.getElementById("subscriptionEndsAt").value = date.toISOString().slice(0, 10);
     }
 
-    initAccountMenu();
-    loadRestaurants();
+    initPartnerPage().then((user) => {
+      if (!user) return;
+      loadRestaurants();
+    });
   </script>
 </body>
 

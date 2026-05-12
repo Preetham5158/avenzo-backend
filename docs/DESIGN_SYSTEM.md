@@ -7,15 +7,20 @@ Avenzo should feel calm, premium, and operationally trustworthy. Customer surfac
 ## Typography
 
 - Page title: 24-40px depending on context.
+- Section title: 22-32px.
 - Card title: 17-22px.
 - Body: 14-16px.
-- Utility/eyebrow: 12px uppercase, strong weight.
+- Helper text: 12-14px, muted.
+- Labels: 13px, strong weight.
+- Use Inter everywhere.
 
 ## Spacing
 
-- Page gutters: 20-40px desktop, 10-18px mobile.
-- Cards/forms: 14-18px internal padding.
-- Grid gaps: 12-18px.
+- Scale: 4, 8, 12, 16, 24, 32, 48.
+- Page gutters: 24-40px desktop, 16-24px tablet, 10-18px mobile.
+- Cards/forms: 16px internal padding by default.
+- Grid gaps: 12 or 16 for app surfaces; 24 or 32 for public sections.
+- Avoid nested cards; cards are for repeated items, forms, modals, and bounded tools.
 
 ## Colors
 
@@ -31,6 +36,18 @@ Avenzo should feel calm, premium, and operationally trustworthy. Customer surfac
 - Badges/pills: status, counts, roles, food type, payment status.
 - Forms: labels always visible, helper text for sensitive fields like phone and OTP.
 - Empty states: short message plus next action.
+- Page shell: sticky top bar, constrained content, and enough bottom padding for fixed nav/action bars.
+- Page header: eyebrow, title, helper text, and only the primary page action.
+- Form field: visible label, input/select/textarea, helper/error text.
+- Modal: one title, short context line, content body, and action row.
+- Tabs: status filters only; keep labels short and tappable.
+- Action row: wrap on mobile and keep destructive actions visually distinct.
+
+## Breakpoints
+
+- Mobile: `<= 640px`.
+- Tablet: `<= 900px`.
+- Desktop: `> 900px`.
 
 ## Customer Experience
 
@@ -54,13 +71,17 @@ Avenzo should feel calm, premium, and operationally trustworthy. Customer surfac
 - Desktop menu: sticky vertical category sidebar, independently scrollable.
 - Mobile menu: sticky horizontal category chips, full-width menu content, one page scroll.
 - Cart CTA: sticky bottom only when meaningful and must not cover content.
+- Avoid stacking multiple sticky bars. When a sticky bar is unavoidable, content must use matching top or bottom padding.
+- Mobile bottom nav: fixed, 4-5 items maximum, with page padding-bottom so it never covers cards or buttons.
 
 ## Admin Layout
 
 - Prioritize scan density, filters, counts, and direct actions.
 - Leads and orders should have status summaries and clear next actions.
+- Admin navigation is role-aware: admin sees global controls, owner sees owned restaurant controls, employee sees operational controls only.
 
 ## Public Layout
 
 - Public pages should expose the product and next action without competing auth choices.
 - Legal pages should look consistent and be clearly marked as templates until reviewed.
+- Customer pages must not promote restaurant onboarding except as low-priority footer/help links.

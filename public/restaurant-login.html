@@ -18,14 +18,14 @@
 
       <div class="stack text-center mb-20">
         <div class="eyebrow">Restaurant partner sign in</div>
-        <h1 class="h1-auth">Restaurant login</h1>
-        <p class="muted">For approved Avenzo restaurant owners, admins, and staff only. There is no public restaurant signup.</p>
+        <h1 class="h1-auth">Restaurant Partner Sign in</h1>
+        <p class="muted">For Avenzo admins, restaurant owners, and approved team members.</p>
       </div>
 
       <div class="auth-benefits mb-20">
         <span>Approved partners</span>
         <span>Operations dashboard</span>
-        <span>Dev-safe OTP</span>
+        <span>Verification step</span>
       </div>
 
       <form class="stack" id="passwordForm" onsubmit="login(event)">
@@ -61,6 +61,11 @@
         Customer account?
         <a href="/customer-login.html" class="auth-link">Customer sign in</a>
       </p>
+      <p class="muted auth-footnote">
+        <a href="/privacy.html" class="auth-link">Privacy</a> ·
+        <a href="/terms.html" class="auth-link">Terms</a> ·
+        <a href="/refund-policy.html" class="auth-link">Refund policy</a>
+      </p>
     </section>
   </main>
 
@@ -88,7 +93,7 @@
           challengeId = data.challengeId;
           document.getElementById("passwordForm").hidden = true;
           document.getElementById("otpForm").hidden = false;
-          document.getElementById("otpHelp").textContent = "Enter the verification code sent to your registered contact. In development log mode, check the server log.";
+          document.getElementById("otpHelp").textContent = "Enter the verification code sent to your registered contact.";
           document.getElementById("otp").focus();
           return;
         }

@@ -29,7 +29,8 @@ async function request(path, options = {}) {
   }
 
   if (!res.ok) {
-    const error = new Error(data?.error || "Something went wrong");
+    const friendlyAuthMessage = res.status === 401 ? "Please sign in again." : null;
+    const error = new Error(friendlyAuthMessage || data?.error || "Something went wrong");
     error.status = res.status;
     throw error;
   }
@@ -134,12 +135,12 @@ function skeletonCards(count = 3, variant = "card") {
   }).join("");
 }
 
-function logout() {
+function logout(redirectTo = "/customer-login.html") {
   localStorage.removeItem("token");
-  window.location.href = "/customer-login.html";
+  window.location.href = redirectTo;
 }
 
-async function initAccountMenu(targetId = "accountMenu") {
+async function initAccountMenu(targetId = "accountMenu", signOutRedirect = "/customer-login.html") {
   const target = document.getElementById(targetId);
   if (!target) return null;
 
@@ -157,13 +158,13 @@ async function initAccountMenu(targetId = "accountMenu") {
             <strong>${escapeHtml(displayName)}</strong>
             <div class="muted">${escapeHtml(user.email || "")}</div>
           </div>
-          <button type="button" onclick="logout()">Sign out</button>
+          <button type="button" onclick="logout('${escapeHtml(signOutRedirect)}')">Sign out</button>
         </div>
       </div>
     `;
     return user;
   } catch {
-    logout();
+    logout(signOutRedirect);
     return null;
   }
 }
@@ -198,6 +199,27 @@ async function initCustomerPage(active = "home") {
     return null;
   }
   return user;
+}
+
+function partnerNoAccessMessage() {
+  return "This area is for approved Avenzo restaurant partners. Please use your customer account to browse restaurants and track orders.";
+}
+
+async function initPartnerPage() {
+  requireAuth("/restaurant-login.html");
+  try {
+    const user = await initAccountMenu("accountMenu", "/restaurant-login.html");
+    if (!user) return null;
+    if (user.role === "USER") {
+      toast(partnerNoAccessMessage());
+      window.location.href = "/customer.html";
+      return null;
+    }
+    return user;
+  } catch {
+    window.location.href = "/restaurant-login.html";
+    return null;
+  }
 }
 
 function toggleAccountMenu() {

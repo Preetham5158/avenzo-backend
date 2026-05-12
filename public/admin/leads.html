@@ -61,7 +61,6 @@
 
   <script src="/assets/app.js"></script>
   <script>
-    requireAuth("/restaurant-login.html");
     const statuses = ["NEW", "CONTACTED", "QUALIFIED", "CONVERTED", "CLOSED"];
     let activeStatus = "";
     let search = "";
@@ -69,7 +68,8 @@
 
     async function loadLeads() {
       try {
-        const user = await initAccountMenu();
+        const user = await initPartnerPage();
+        if (!user) return;
         if (user?.role !== "ADMIN") {
           document.getElementById("leads").innerHTML = `<div class="empty">Only Avenzo admins can view restaurant leads.</div>`;
           return;

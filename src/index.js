@@ -147,6 +147,7 @@ function publicMenuKey(menuId) {
         .slice(0, 24);
 }
 
+// Public menu uses menuKey so customer pages never need internal menu IDs.
 function publicMenuItem(item) {
     if (!item) return item;
 
@@ -159,6 +160,27 @@ function publicMenuItem(item) {
         price: paiseToRupees(pricePaise)
     };
 }
+
+function adminMenuItem(item) {
+    if (!item) return item;
+
+    return {
+        id: item.id,
+        key: publicMenuKey(item.id),
+        name: item.name,
+        description: item.description,
+        imageUrl: item.imageUrl,
+        foodType: item.foodType,
+        isAvailable: item.isAvailable,
+        isActive: item.isActive,
+        price: paiseToRupees(item.pricePaise),
+        categoryId: item.categoryId,
+        category: item.category
+            ? { id: item.category.id, name: item.category.name, sortOrder: item.category.sortOrder }
+            : null
+    };
+}
+
 function publicOrderResponse(order, options = {}) {
     const response = {
         orderNumber: order.orderNumber,
@@ -378,17 +400,6 @@ async function ensureFoodTypeSchema() {
 }
 
 /* ================================
-   HELPER: ADMIN AUTH
-================================ */
-// function checkAdmin(req, res) {
-//   if (req.headers["x-admin-key"] !== ADMIN_KEY) {
-//     res.status(403).json({ error: "Unauthorized" });
-//     return false;
-//   }
-//   return true;
-// }
-
-/* ================================
    HEALTH CHECK
 ================================ */
 app.get("/", (req, res) => {
@@ -595,6 +606,7 @@ app.post("/order", orderLimiter, optionalAuth, async (req, res) => {
             }
         }
 
+        // Guest orders stay separate from accounts until a future verified claim flow exists.
         let normalizedPhone = normalizePhone(phone);
         const shouldSaveCustomerPhone = !!customer && !customer.phone && !!normalizedPhone;
         if (!normalizedPhone && customer?.phone) {
@@ -688,6 +700,7 @@ app.post("/order", orderLimiter, optionalAuth, async (req, res) => {
                     trackingToken,
                     sessionId: deviceId,
                     phone: normalizedPhone,
+                    // Signed-in customer orders attach customerId so they appear in My Orders.
                     ...(customer && { customerId: customer.id }),
                     restaurantId,
                     items: {
@@ -742,7 +755,12 @@ app.post("/order", orderLimiter, optionalAuth, async (req, res) => {
         });
     } catch (err) {
         logRouteError("POST /order", err);
-        res.status(500).json({ error: err.message || "Order failed" });
+        const knownOrderError =
+            err.message === "Invalid item" ||
+            String(err.message || "").endsWith(" is unavailable");
+        res.status(knownOrderError ? 400 : 500).json({
+            error: knownOrderError ? err.message : "We could not place the order. Please try again."
+        });
     }
 });
 
@@ -966,6 +984,7 @@ app.post("/auth/restaurant/login", authLimiter, async (req, res) => {
         const user = await findPasswordUser(req.body.email, req.body.password);
         if (!user) return res.status(400).json({ error: "Invalid credentials" });
 
+        // Restaurant partner login is only for approved admin, owner, and employee accounts.
         if (user.role === "USER") {
             return res.status(403).json({ error: "This is a customer account. Restaurant access is available only for approved Avenzo partners." });
         }
@@ -1079,7 +1098,7 @@ app.post("/auth/login", authLimiter, async (req, res) => {
 function authMiddleware(req, res, next) {
     const authHeader = req.headers.authorization;
 
-    if (!authHeader) return res.status(401).json({ error: "No token" });
+    if (!authHeader) return res.status(401).json({ error: "Please sign in again." });
 
     const token = authHeader.startsWith("Bearer ")
         ? authHeader.split(" ")[1]
@@ -1094,7 +1113,7 @@ function authMiddleware(req, res, next) {
         req.user = decoded;
         next();
     } catch {
-        res.status(401).json({ error: "Invalid token" });
+        res.status(401).json({ error: "Please sign in again." });
     }
 }
 
@@ -1113,7 +1132,7 @@ function optionalAuth(req, res, next) {
             audience: JWT_AUDIENCE
         });
     } catch {
-        return res.status(401).json({ error: "Invalid token" });
+        return res.status(401).json({ error: "Please sign in again." });
     }
 
     next();
@@ -1160,17 +1179,23 @@ app.patch("/customer/profile", authMiddleware, async (req, res) => {
         if (!user) return res.status(401).json({ error: "Invalid user" });
         if (user.role !== "USER") return res.status(403).json({ error: "Customer profile is available only for customer accounts" });
 
-        const name = cleanString(req.body.name, 120);
-        const rawPhone = cleanString(req.body.phone, 40);
+        const data = {};
+        const nameProvided = Object.prototype.hasOwnProperty.call(req.body, "name");
+        const phoneProvided = Object.prototype.hasOwnProperty.call(req.body, "phone");
+        const name = nameProvided ? cleanString(req.body.name, 120) : undefined;
+        const rawPhone = phoneProvided ? cleanString(req.body.phone, 40) : undefined;
         const phone = rawPhone ? normalizePhone(rawPhone) : null;
 
-        if (rawPhone && !phone) {
+        if (phoneProvided && rawPhone && !phone) {
             return res.status(400).json({ error: "Use a valid phone number" });
         }
 
+        if (nameProvided) data.name = name;
+        if (phoneProvided) data.phone = phone;
+
         const updated = await prisma.user.update({
             where: { id: user.id },
-            data: { name, phone },
+            data,
             select: { id: true, email: true, name: true, phone: true, role: true, createdAt: true }
         });
 
@@ -1396,6 +1421,7 @@ async function getRestaurantAccess(restaurantId, userId) {
 }
 
 function ensureWorkspaceService(access, res) {
+    // Super admins can inspect and repair paused or expired restaurants; operators are blocked.
     if (access.isSuperAdmin) return true;
     if (isRestaurantServiceAvailable(access.restaurant)) return true;
     res.status(423).json({ error: restaurantServiceMessage(access.restaurant) });
@@ -1409,6 +1435,12 @@ app.get("/restaurants", authMiddleware, async (req, res) => {
     try {
         const user = await getAuthUser(req.user.userId);
         if (!user) return res.status(401).json({ error: "Invalid user" });
+        // Customer accounts are intentionally kept out of the restaurant/admin shell.
+        if (user.role === "USER") {
+            return res.status(403).json({
+                error: "This area is for approved Avenzo restaurant partners. Please use your customer account to browse restaurants and track orders."
+            });
+        }
 
         const restaurants = await prisma.restaurant.findMany({
             where: isSuperAdmin(user)
@@ -1799,7 +1831,7 @@ app.get("/admin/menu/:restaurantId", authMiddleware, async (req, res) => {
             ]
         });
 
-        res.json(menu.map(publicMenuItem));
+        res.json(menu.map(adminMenuItem));
     } catch (err) {
         logRouteError("GET /admin/menu/:restaurantId", err);
         res.status(500).json({ error: "Error fetching admin menu" });

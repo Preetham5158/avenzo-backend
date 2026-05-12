@@ -206,8 +206,6 @@
 
   <script src="/assets/app.js"></script>
   <script>
-    requireAuth("/restaurant-login.html");
-
     const restaurantId = new URLSearchParams(location.search).get("restaurantId");
     let currentUser = null;
     let categories = [];
@@ -219,7 +217,8 @@
 
     async function init() {
       try {
-        currentUser = await request("/auth/me");
+        currentUser = await initPartnerPage();
+        if (!currentUser) return;
         const restaurant = await request(`/restaurant/${restaurantId}`, { headers: {} });
         restaurantFoodType = restaurant.foodType || "BOTH";
         activeFoodType = restaurantFoodType === "NON_VEG" ? "NON_VEG" : "VEG";
@@ -487,7 +486,6 @@
       window.location.href = `/admin/orders.html?restaurantId=${restaurantId}`;
     }
 
-    initAccountMenu();
     init();
   </script>
 </body>

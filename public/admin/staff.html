@@ -46,12 +46,12 @@
 
   <script src="/assets/app.js"></script>
   <script>
-    requireAuth("/restaurant-login.html");
     const restaurantId = new URLSearchParams(location.search).get("restaurantId");
     let currentUser = null;
 
     async function init() {
-      currentUser = await initAccountMenu();
+      currentUser = await initPartnerPage();
+      if (!currentUser) return;
       await loadStaff();
     }
 
