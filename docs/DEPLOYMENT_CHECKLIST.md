@@ -37,6 +37,10 @@ npx prisma migrate deploy && npm start
 - `JWT_SECRET`
 - `BASE_URL`
 - `ENABLE_BOOTSTRAP_SCHEMA=false`
+- `AUTH_REQUIRE_RESTAURANT_2FA=true`
+- `AUTH_REQUIRE_CUSTOMER_2FA=false`
+- `OTP_MODE=log` only for development; configure a provider before production OTP enforcement.
+- `NOTIFICATION_MODE=log` only for development/no-provider mode.
 
 Do not commit secrets.
 
@@ -73,3 +77,9 @@ Only do this after confirming the production schema already matches that baselin
 - Expired or suspended restaurants block owner/employee operations.
 - Super Admin can renew subscription status/date.
 - Restaurant interest form saves a lead.
+- Restaurant login OTP flow works with configured provider or approved development log mode.
+
+## Rollback Notes
+
+- Roll back app code and database migrations together.
+- Do not rollback migrations that have already been depended on by production writes without a data plan.

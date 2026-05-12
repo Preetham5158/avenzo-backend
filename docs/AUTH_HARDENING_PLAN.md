@@ -10,6 +10,14 @@ Current auth uses JWT bearer tokens stored by the frontend. This is simple for t
 - Keep customer and restaurant login paths visibly separate.
 - Reduce inline JavaScript and tighten CSP by removing `unsafe-inline`.
 
+## Current Behavior
+
+- Customer auth uses `/auth/customer/login` and `/auth/customer/signup`.
+- Restaurant/admin auth uses `/auth/restaurant/login`.
+- Restaurant login requires OTP when `AUTH_REQUIRE_RESTAURANT_2FA=true`.
+- OTP log mode is development-only and must be replaced with a configured email/SMS provider before production 2FA enforcement.
+- `/auth/login` remains only for compatibility and should be retired after clients move.
+
 ## Additional Work
 
 - Shorter access token lifetime.

@@ -23,3 +23,10 @@ Order preparation status and payment status are separate:
 - Reconciliation report for restaurants.
 - Avoid showing unpaid orders in restaurant queue.
 - Audit payment status changes.
+
+## Before Payment Launch
+
+- Require trusted webhook confirmation before restaurant-visible paid orders.
+- Keep `paymentStatus` separate from kitchen status.
+- Add rollback plan for provider outage.
+- Confirm notification/OTP provider credentials are configured outside source control.

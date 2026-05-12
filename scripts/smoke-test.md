@@ -13,14 +13,15 @@ npm start
 
 ## Checklist
 
-1. Sign up a new account from `/signup.html`.
+1. Sign up a new account from `/customer-signup.html`.
    - Confirm the created user has role `USER`.
-   - Customer Login should redirect to `/customer.html`.
+   - Customer Login at `/customer-login.html` should redirect to `/customer.html`.
    - The customer dashboard should show account info and order history.
 
-2. Login as an admin from `/login.html`.
+2. Login as an admin from `/restaurant-login.html`.
    - `/auth/me` should return role `ADMIN`.
-   - Restaurant Login should redirect to `/admin/dashboard.html`.
+   - Restaurant login should require OTP when `AUTH_REQUIRE_RESTAURANT_2FA=true`.
+   - OTP verification should redirect to `/admin/dashboard.html`.
    - `/admin/dashboard.html` should show all restaurants.
 
 3. Submit `/restaurant-interest.html`.
