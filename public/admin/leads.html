@@ -25,9 +25,34 @@
         <div>
           <div class="eyebrow">Restaurant leads</div>
           <h1>Partner requests</h1>
-          <p class="muted">New restaurant interest submissions for Avenzo follow-up.</p>
+          <p class="muted">Review, qualify, and convert restaurant interest submissions.</p>
         </div>
-        <a class="btn btn-ghost" href="/admin/dashboard.html">Dashboard</a>
+        <div class="row row-wrap">
+          <button class="btn btn-ghost" type="button" onclick="markSeen()">Mark all seen</button>
+          <a class="btn btn-ghost" href="/admin/dashboard.html">Dashboard</a>
+        </div>
+      </section>
+
+      <section class="grid grid-3" id="leadStats"></section>
+
+      <section class="card card-pad mt-16">
+        <div class="grid grid-2">
+          <div class="field">
+            <label for="leadSearch">Search</label>
+            <input id="leadSearch" class="input" placeholder="Restaurant, contact, phone, email..." oninput="setSearch(this.value)">
+          </div>
+          <div class="field">
+            <label for="statusFilter">Status</label>
+            <select id="statusFilter" class="select" onchange="setStatus(this.value)">
+              <option value="">All</option>
+              <option value="NEW">New</option>
+              <option value="CONTACTED">Contacted</option>
+              <option value="QUALIFIED">Qualified</option>
+              <option value="CONVERTED">Converted</option>
+              <option value="CLOSED">Closed</option>
+            </select>
+          </div>
+        </div>
       </section>
 
       <section class="stack mt-16" id="leads"></section>
@@ -36,7 +61,11 @@
 
   <script src="/assets/app.js"></script>
   <script>
-    requireAuth();
+    requireAuth("/restaurant-login.html");
+    const statuses = ["NEW", "CONTACTED", "QUALIFIED", "CONVERTED", "CLOSED"];
+    let activeStatus = "";
+    let search = "";
+    let searchTimer = null;
 
     async function loadLeads() {
       try {
@@ -47,37 +76,124 @@
         }
 
         document.getElementById("leads").innerHTML = skeletonCards(4);
-        const data = await request("/admin/restaurant-leads?limit=50");
-        const leads = data.leads || [];
-        if (!leads.length) {
-          document.getElementById("leads").innerHTML = `<div class="empty">No restaurant leads yet.</div>`;
-          return;
-        }
-
-        document.getElementById("leads").innerHTML = leads.map(lead => `
-          <article class="card card-pad">
-            <div class="row-between">
-              <div>
-                <h3 class="h3-tight">${escapeHtml(lead.restaurantName)}</h3>
-                <div class="muted">${escapeHtml(lead.location || "Location not shared")}</div>
-              </div>
-              <span class="pill pill-warning">${escapeHtml(lead.status)}</span>
-            </div>
-            <div class="grid grid-3 mt-12">
-              <div><div class="muted">Contact</div><strong>${escapeHtml(lead.contactName)}</strong></div>
-              <div><div class="muted">Phone</div><strong>${escapeHtml(lead.phone)}</strong></div>
-              <div><div class="muted">Email</div><strong>${escapeHtml(lead.email)}</strong></div>
-            </div>
-            <div class="grid grid-2 mt-12">
-              <div><div class="muted">Type</div><strong>${escapeHtml(lead.restaurantType || "Not shared")}</strong></div>
-              <div><div class="muted">Daily orders</div><strong>${escapeHtml(lead.approxDailyOrders || "Not shared")}</strong></div>
-            </div>
-            ${lead.message ? `<p class="muted mt-12 mb-0">${escapeHtml(lead.message)}</p>` : ""}
-          </article>
-        `).join("");
+        const params = new URLSearchParams({ limit: "50" });
+        if (activeStatus) params.set("status", activeStatus);
+        if (search) params.set("search", search);
+        const data = await request(`/admin/restaurant-leads?${params.toString()}`);
+        renderStats(data.counts || {}, data.unseenNewCount || 0);
+        renderLeads(data.leads || []);
       } catch (err) {
         document.getElementById("leads").innerHTML = `<div class="empty">${escapeHtml(err.message)}</div>`;
       }
+    }
+
+    function renderStats(counts, unseen) {
+      const cards = [
+        ["NEW", "New", unseen],
+        ["CONTACTED", "Contacted", counts.CONTACTED || 0],
+        ["QUALIFIED", "Qualified", counts.QUALIFIED || 0],
+        ["CONVERTED", "Converted", counts.CONVERTED || 0]
+      ];
+      document.getElementById("leadStats").innerHTML = cards.map(([key, label, value]) => `
+        <article class="card card-pad">
+          <div class="muted">${label}</div>
+          <h3>${value}</h3>
+          <span class="pill ${key === "NEW" && value ? "pill-danger" : "pill"}">${key === "NEW" ? "Unseen new" : key}</span>
+        </article>
+      `).join("");
+    }
+
+    function renderLeads(leads) {
+      if (!leads.length) {
+        document.getElementById("leads").innerHTML = `<div class="empty">No restaurant leads match this view.</div>`;
+        return;
+      }
+
+      document.getElementById("leads").innerHTML = leads.map(lead => `
+        <article class="card card-pad">
+          <div class="row-between">
+            <div>
+              <h3 class="h3-tight">${escapeHtml(lead.restaurantName)}</h3>
+              <div class="muted">${escapeHtml(lead.location || "Location not shared")} - ${formatDate(lead.createdAt)}</div>
+            </div>
+            <span class="pill ${statusClass(lead.status)}">${escapeHtml(lead.status)}</span>
+          </div>
+          <div class="grid grid-3 mt-12">
+            <div><div class="muted">Contact</div><strong>${escapeHtml(lead.contactName)}</strong></div>
+            <div><div class="muted">Phone</div><strong>${escapeHtml(lead.phone)}</strong></div>
+            <div><div class="muted">Email</div><strong>${escapeHtml(lead.email)}</strong></div>
+          </div>
+          <div class="grid grid-2 mt-12">
+            <div><div class="muted">Type</div><strong>${escapeHtml(lead.restaurantType || "Not shared")}</strong></div>
+            <div><div class="muted">Daily orders</div><strong>${escapeHtml(lead.approxDailyOrders || "Not shared")}</strong></div>
+          </div>
+          ${lead.message ? `<p class="muted mt-12">${escapeHtml(lead.message)}</p>` : ""}
+          <div class="field mt-12">
+            <label for="note-${lead.id}">Internal note</label>
+            <textarea id="note-${lead.id}" class="textarea" placeholder="Add follow-up note">${escapeHtml(lead.internalNote || "")}</textarea>
+          </div>
+          <div class="row row-wrap mt-12">
+            ${statuses.filter(status => status !== lead.status).map(status => `
+              <button class="btn btn-ghost" type="button" onclick="updateLead('${lead.id}', '${status}')">${statusLabel(status)}</button>
+            `).join("")}
+            <button class="btn btn-soft" type="button" onclick="saveNote('${lead.id}')">Save note</button>
+            <button class="btn btn-ghost" type="button" onclick="navigator.clipboard?.writeText('${escapeHtml(lead.phone)}')">Copy phone</button>
+            <button class="btn btn-ghost" type="button" onclick="navigator.clipboard?.writeText('${escapeHtml(lead.email)}')">Copy email</button>
+          </div>
+        </article>
+      `).join("");
+    }
+
+    function statusClass(status) {
+      if (status === "NEW") return "pill-danger";
+      if (["QUALIFIED", "CONVERTED"].includes(status)) return "pill-success";
+      if (status === "CLOSED") return "pill";
+      return "pill-warning";
+    }
+
+    function statusLabel(status) {
+      return {
+        CONTACTED: "Mark contacted",
+        QUALIFIED: "Mark qualified",
+        CONVERTED: "Mark converted",
+        CLOSED: "Close",
+        NEW: "Reopen new"
+      }[status] || status;
+    }
+
+    async function updateLead(id, status) {
+      await request(`/admin/restaurant-leads/${id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ status })
+      });
+      toast("Lead updated");
+      loadLeads();
+    }
+
+    async function saveNote(id) {
+      await request(`/admin/restaurant-leads/${id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ internalNote: document.getElementById(`note-${id}`).value })
+      });
+      toast("Note saved");
+      loadLeads();
+    }
+
+    async function markSeen() {
+      await request("/admin/restaurant-leads/mark-seen", { method: "POST", body: JSON.stringify({}) });
+      toast("New leads marked seen");
+      loadLeads();
+    }
+
+    function setStatus(value) {
+      activeStatus = value;
+      loadLeads();
+    }
+
+    function setSearch(value) {
+      search = value.trim();
+      clearTimeout(searchTimer);
+      searchTimer = setTimeout(loadLeads, 250);
     }
 
     loadLeads();

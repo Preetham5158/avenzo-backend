@@ -206,7 +206,7 @@
 
   <script src="/assets/app.js"></script>
   <script>
-    requireAuth();
+    requireAuth("/restaurant-login.html");
 
     const restaurantId = new URLSearchParams(location.search).get("restaurantId");
     let currentUser = null;

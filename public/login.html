@@ -2,46 +2,32 @@
 <html>
 
 <head>
-  <title>Avenzo Login</title>
+  <title>Avenzo Sign In</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/assets/app.css">
   <style>
-    .auth-card {
-      width: min(520px, calc(100vw - 32px));
-    }
-
-    .customer-form {
-      padding-bottom: 18px;
-      border-bottom: 1px solid var(--line);
-    }
-
-    .restaurant-access {
-      margin-top: 18px;
-      padding: 16px;
-      border-radius: var(--radius);
-      border: 1px solid var(--line);
-      background: #fffaf2;
-      text-align: left;
-    }
-
-    .restaurant-access h2 {
-      font-size: 18px;
-      margin-bottom: 6px;
-    }
-
-    .restaurant-fields {
-      display: none;
-      margin-top: 14px;
-    }
-
-    .restaurant-fields.open {
+    .choice-wrap {
+      width: min(760px, calc(100vw - 32px));
       display: grid;
+      gap: 16px;
     }
 
-    @media (max-width: 520px) {
-      .restaurant-access {
-        padding: 14px;
+    .choice-grid {
+      display: grid;
+      grid-template-columns: 1.25fr 0.75fr;
+      gap: 16px;
+    }
+
+    .choice-card {
+      min-height: 220px;
+      display: grid;
+      align-content: space-between;
+    }
+
+    @media (max-width: 720px) {
+      .choice-grid {
+        grid-template-columns: 1fr;
       }
     }
   </style>
@@ -49,111 +35,39 @@
 
 <body>
   <main class="auth-page">
-    <section class="card auth-card">
-      <div class="brand">
+    <section class="choice-wrap">
+      <div class="brand center-brand">
         <img src="/logo.png" alt="Avenzo">
         <span>AVENZO</span>
       </div>
 
-      <div class="stack text-center mb-20">
-        <div class="eyebrow">Customer Sign In</div>
-        <h1 class="h1-auth">Welcome back</h1>
-        <p class="muted">Open your customer dashboard, order history, and tracking links.</p>
-      </div>
-
-      <form class="stack customer-form" onsubmit="login(event, 'customer')">
-        <div class="field">
-          <label for="customerEmail">Email</label>
-          <input id="customerEmail" class="input" type="email" autocomplete="email" placeholder="you@example.com" required>
-        </div>
-
-        <div class="field">
-          <label for="customerPassword">Password</label>
-          <input id="customerPassword" class="input" type="password" autocomplete="current-password" placeholder="Enter password" required>
-        </div>
-
-        <button id="customerLoginBtn" class="btn btn-primary" type="submit">Sign in</button>
-        <div id="customerError" class="muted feedback-line"></div>
-      </form>
-
-      <p class="muted auth-footnote">
-        New to Avenzo?
-        <a href="/signup.html" class="auth-link">Create customer account</a>
-      </p>
-
-      <section class="restaurant-access">
-        <div class="eyebrow">Restaurant partners</div>
-        <h2>Restaurant login</h2>
-        <p class="muted">Restaurant access is for approved Avenzo restaurant partners only.</p>
-        <button id="showRestaurantLoginBtn" class="btn btn-ghost" type="button">Restaurant login</button>
-
-        <form class="stack restaurant-fields" id="restaurantLoginForm" onsubmit="login(event, 'restaurant')">
-          <div class="field">
-            <label for="restaurantEmail">Email</label>
-            <input id="restaurantEmail" class="input" type="email" autocomplete="email" placeholder="owner@example.com" required>
+      <section class="choice-grid">
+        <article class="card card-pad choice-card">
+          <div>
+            <div class="eyebrow">Customers</div>
+            <h1 class="h1-auth">Customer sign in</h1>
+            <p class="muted">View your dine-in order history, tracking links, and future repeat-ordering features.</p>
           </div>
-
-          <div class="field">
-            <label for="restaurantPassword">Password</label>
-            <input id="restaurantPassword" class="input" type="password" autocomplete="current-password" placeholder="Enter password" required>
+          <div class="stack">
+            <a class="btn btn-primary" href="/customer-login.html">Sign in</a>
+            <a class="btn btn-ghost" href="/customer-signup.html">Create customer account</a>
           </div>
+        </article>
 
-          <button id="restaurantLoginBtn" class="btn btn-dark" type="submit">Restaurant login</button>
-          <div id="restaurantError" class="muted feedback-line"></div>
-        </form>
-
-        <p class="muted auth-footnote">
-          Want to list your restaurant?
-          <a href="/restaurant-interest.html" class="auth-link">Submit restaurant interest</a>
-        </p>
+        <article class="card card-pad choice-card">
+          <div>
+            <div class="eyebrow">Restaurant partners</div>
+            <h2>Restaurant login</h2>
+            <p class="muted">For approved Avenzo restaurant partners only.</p>
+          </div>
+          <div class="stack">
+            <a class="btn btn-dark" href="/restaurant-login.html">Restaurant login</a>
+            <a class="auth-link" href="/restaurant-interest.html">Submit restaurant interest</a>
+          </div>
+        </article>
       </section>
     </section>
   </main>
-
-  <script src="/assets/app.js"></script>
-  <script>
-    document.getElementById("showRestaurantLoginBtn").addEventListener("click", () => {
-      document.getElementById("restaurantLoginForm").classList.toggle("open");
-      document.getElementById("restaurantEmail").focus();
-    });
-
-    if (new URLSearchParams(location.search).get("mode") === "restaurant") {
-      document.getElementById("restaurantLoginForm").classList.add("open");
-    }
-
-    async function login(event, mode) {
-      event.preventDefault();
-      const isRestaurant = mode === "restaurant";
-      const btn = document.getElementById(isRestaurant ? "restaurantLoginBtn" : "customerLoginBtn");
-      const errorEl = document.getElementById(isRestaurant ? "restaurantError" : "customerError");
-      errorEl.textContent = "";
-      setLoading(btn, true, "Signing in...");
-
-      try {
-        const email = document.getElementById(isRestaurant ? "restaurantEmail" : "customerEmail").value.trim();
-        const password = document.getElementById(isRestaurant ? "restaurantPassword" : "customerPassword").value;
-        const res = await fetch(`${API}/auth/login`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, password })
-        });
-        const data = await res.json();
-        if (!res.ok || !data.token) throw new Error(data.error || "Sign in failed");
-
-        if (isRestaurant && data.user?.role === "USER") {
-          throw new Error("This is a customer account. Please use customer sign in, or contact Avenzo if you need restaurant access.");
-        }
-
-        localStorage.setItem("token", data.token);
-        window.location.href = data.user?.role === "USER" ? "/customer.html" : "/admin/dashboard.html";
-      } catch (err) {
-        errorEl.textContent = err.message;
-        toast(err.message);
-      } finally {
-        setLoading(btn, false);
-      }
-    }
-  </script>
 </body>
 
 </html>

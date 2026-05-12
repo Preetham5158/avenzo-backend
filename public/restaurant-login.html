@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Restaurant partner sign in</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/app.css">
+</head>
+
+<body>
+  <main class="auth-page">
+    <section class="card auth-card">
+      <div class="brand center-brand">
+        <img src="/logo.png" alt="Avenzo">
+        <span>AVENZO</span>
+      </div>
+
+      <div class="stack text-center mb-20">
+        <div class="eyebrow">Restaurant partner sign in</div>
+        <h1 class="h1-auth">Restaurant login</h1>
+        <p class="muted">For approved Avenzo restaurant partners only.</p>
+      </div>
+
+      <form class="stack" id="passwordForm" onsubmit="login(event)">
+        <div class="field">
+          <label for="email">Email</label>
+          <input id="email" class="input" type="email" autocomplete="email" placeholder="owner@example.com" required>
+        </div>
+
+        <div class="field">
+          <label for="password">Password</label>
+          <input id="password" class="input" type="password" autocomplete="current-password" placeholder="Enter password" required>
+        </div>
+
+        <button id="loginBtn" class="btn btn-dark" type="submit">Restaurant login</button>
+        <div id="error" class="muted feedback-line"></div>
+      </form>
+
+      <form class="stack" id="otpForm" onsubmit="verifyOtp(event)" hidden>
+        <div class="field">
+          <label for="otp">Verification code</label>
+          <input id="otp" class="input" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="6 digit code" required>
+        </div>
+        <button id="otpBtn" class="btn btn-primary" type="submit">Verify and continue</button>
+        <button id="resendBtn" class="btn btn-ghost" type="button" onclick="resendOtp()">Resend code</button>
+        <div id="otpHelp" class="muted feedback-line"></div>
+      </form>
+
+      <p class="muted auth-footnote">
+        Want to list your restaurant?
+        <a href="/restaurant-interest.html" class="auth-link">Submit restaurant interest</a>
+      </p>
+      <p class="muted auth-footnote">
+        Customer account?
+        <a href="/customer-login.html" class="auth-link">Customer sign in</a>
+      </p>
+    </section>
+  </main>
+
+  <script src="/assets/app.js"></script>
+  <script>
+    let challengeId = "";
+
+    async function login(event) {
+      event.preventDefault();
+      const btn = document.getElementById("loginBtn");
+      const errorEl = document.getElementById("error");
+      errorEl.textContent = "";
+      setLoading(btn, true, "Checking...");
+
+      try {
+        const data = await request("/auth/restaurant/login", {
+          method: "POST",
+          body: JSON.stringify({
+            email: document.getElementById("email").value.trim(),
+            password: document.getElementById("password").value
+          })
+        });
+
+        if (data.otpRequired) {
+          challengeId = data.challengeId;
+          document.getElementById("passwordForm").hidden = true;
+          document.getElementById("otpForm").hidden = false;
+          document.getElementById("otpHelp").textContent = "Enter the verification code sent to your registered contact. In development log mode, check the server log.";
+          document.getElementById("otp").focus();
+          return;
+        }
+
+        finishLogin(data);
+      } catch (err) {
+        errorEl.textContent = err.message;
+        toast(err.message);
+      } finally {
+        setLoading(btn, false);
+      }
+    }
+
+    async function verifyOtp(event) {
+      event.preventDefault();
+      const btn = document.getElementById("otpBtn");
+      setLoading(btn, true, "Verifying...");
+      try {
+        const data = await request("/auth/otp/verify", {
+          method: "POST",
+          body: JSON.stringify({
+            challengeId,
+            otp: document.getElementById("otp").value.trim(),
+            purpose: "RESTAURANT_LOGIN"
+          })
+        });
+        finishLogin(data);
+      } catch (err) {
+        document.getElementById("otpHelp").textContent = err.message;
+        toast(err.message);
+      } finally {
+        setLoading(btn, false);
+      }
+    }
+
+    async function resendOtp() {
+      const btn = document.getElementById("resendBtn");
+      setLoading(btn, true, "Sending...");
+      try {
+        const data = await request("/auth/otp/resend", {
+          method: "POST",
+          body: JSON.stringify({ challengeId })
+        });
+        challengeId = data.challengeId;
+        document.getElementById("otpHelp").textContent = "A new verification code was created.";
+      } catch (err) {
+        document.getElementById("otpHelp").textContent = err.message;
+      } finally {
+        setLoading(btn, false);
+      }
+    }
+
+    function finishLogin(data) {
+      localStorage.setItem("token", data.token);
+      window.location.href = "/admin/dashboard.html";
+    }
+  </script>
+</body>
+
+</html>

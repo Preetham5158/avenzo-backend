@@ -73,7 +73,7 @@
             <p id="roleText" class="muted">Getting your restaurants ready...</p>
           </div>
           <div class="row row-wrap">
-            <button id="leadsBtn" class="btn btn-ghost" onclick="openLeads()" hidden style="display:none">Restaurant leads</button>
+            <button id="leadsBtn" class="btn btn-ghost" onclick="openLeads()" hidden style="display:none">Restaurant leads <span id="leadsBadge" class="pill pill-danger" hidden>0</span></button>
             <button id="createBtn" class="btn btn-primary" onclick="openRestaurantModal()" hidden style="display:none">Add restaurant</button>
           </div>
         </div>
@@ -157,7 +157,7 @@
 
   <script src="/assets/app.js"></script>
   <script>
-    requireAuth();
+    requireAuth("/restaurant-login.html");
 
     let canCreateRestaurant = false;
     let canEditRestaurants = false;
@@ -188,6 +188,7 @@
         document.getElementById("createBtn").style.display = canCreateRestaurant ? "inline-flex" : "none";
         document.getElementById("leadsBtn").hidden = !canCreateRestaurant;
         document.getElementById("leadsBtn").style.display = canCreateRestaurant ? "inline-flex" : "none";
+        if (canCreateRestaurant) loadLeadBadge();
 
         renderStats(restaurants, data.user);
         renderRestaurants(restaurants);
@@ -395,6 +396,18 @@
 
     function openLeads() {
       window.location.href = "/admin/leads.html";
+    }
+
+    async function loadLeadBadge() {
+      try {
+        const data = await request("/admin/restaurant-leads/summary");
+        const count = data.unseenNewCount || 0;
+        const badge = document.getElementById("leadsBadge");
+        badge.textContent = count;
+        badge.hidden = count === 0;
+      } catch {
+        document.getElementById("leadsBadge").hidden = true;
+      }
     }
 
     function renewSubscription30Days() {

@@ -37,9 +37,9 @@ async function request(path, options = {}) {
   return data;
 }
 
-function requireAuth() {
+function requireAuth(redirectTo = "/customer-login.html") {
   if (!getToken()) {
-    window.location.href = "/login.html";
+    window.location.href = redirectTo;
   }
 }
 
@@ -136,7 +136,7 @@ function skeletonCards(count = 3, variant = "card") {
 
 function logout() {
   localStorage.removeItem("token");
-  window.location.href = "/login.html";
+  window.location.href = "/customer-login.html";
 }
 
 async function initAccountMenu(targetId = "accountMenu") {
