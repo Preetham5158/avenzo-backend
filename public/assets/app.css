@@ -589,6 +589,23 @@ h3 {
   margin-bottom: 18px;
 }
 
+.auth-benefits {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.auth-benefits span {
+  padding: 7px 10px;
+  border-radius: 999px;
+  background: #fff7ec;
+  border: 1px solid rgba(255, 107, 22, 0.16);
+  color: #8a3a08;
+  font-size: 12px;
+  font-weight: 800;
+}
+
 .tabbar {
   display: flex;
   gap: 8px;

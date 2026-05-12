@@ -2,25 +2,86 @@
 <html>
 
 <head>
-  <title>Avenzo Customer</title>
+  <title>Avenzo Customer Dashboard</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/assets/app.css">
   <style>
+    .customer-shell {
+      display: grid;
+      gap: 18px;
+    }
+
     .customer-hero {
       display: grid;
-      grid-template-columns: minmax(0, 1.4fr) minmax(260px, 0.6fr);
+      grid-template-columns: minmax(0, 1.35fr) minmax(280px, 0.65fr);
       gap: 16px;
       align-items: stretch;
     }
 
-    .customer-hero .hero-panel {
-      height: 100%;
+    .account-card {
+      display: grid;
+      gap: 14px;
+      align-content: start;
     }
 
+    .quick-actions {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .quick-action {
+      min-height: 112px;
+      justify-content: space-between;
+      align-items: flex-start;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .quick-action strong {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 15px;
+    }
+
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.25fr) minmax(320px, 0.75fr);
+      gap: 16px;
+      align-items: start;
+    }
+
+    .section-panel {
+      display: grid;
+      gap: 14px;
+    }
+
+    .panel-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .restaurant-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .restaurant-card,
     .order-card {
       display: grid;
       gap: 12px;
+    }
+
+    .restaurant-meta,
+    .order-meta {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
     }
 
     .order-items {
@@ -29,9 +90,50 @@
       flex-wrap: wrap;
     }
 
-    @media (max-width: 760px) {
+    .history-controls {
+      display: grid;
+      grid-template-columns: minmax(180px, 1fr) 170px;
+      gap: 10px;
+    }
+
+    .profile-form {
+      display: grid;
+      gap: 12px;
+    }
+
+    .low-priority-help {
+      border-top: 1px solid var(--line);
+      padding-top: 12px;
+      font-size: 13px;
+    }
+
+    @media (max-width: 960px) {
+      .dashboard-grid,
       .customer-hero {
         grid-template-columns: 1fr;
+      }
+
+      .quick-actions {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 680px) {
+      .restaurant-grid,
+      .restaurant-meta,
+      .order-meta,
+      .history-controls {
+        grid-template-columns: 1fr;
+      }
+
+      .quick-actions {
+        display: flex;
+        overflow-x: auto;
+        padding-bottom: 4px;
+      }
+
+      .quick-action {
+        min-width: 210px;
       }
     }
   </style>
@@ -41,105 +143,359 @@
   <div class="shell">
     <header class="topbar">
       <div class="topbar-inner">
-        <div class="brand">
+        <a class="brand" href="/" aria-label="Avenzo home">
           <img src="/logo.png" alt="Avenzo">
           <span>AVENZO</span>
-        </div>
+        </a>
         <div id="accountMenu"></div>
       </div>
     </header>
 
-    <main class="page">
-      <section class="customer-hero mb-20">
+    <main class="page customer-shell">
+      <section class="customer-hero">
         <div class="hero-panel">
-          <div class="eyebrow">Customer account</div>
+          <div class="eyebrow">Customer dashboard</div>
           <h1 id="welcomeTitle">Welcome to Avenzo.</h1>
           <p class="muted">
-            Your customer account keeps your dine-in orders, tracking links, and future repeat-ordering features in one calm place.
+            Browse active dine-in partners, track live orders, and keep repeat visits simple from one polished customer space.
           </p>
           <div class="row row-wrap mt-18">
-            <a class="btn btn-primary" href="/">Explore Avenzo</a>
-            <a class="btn btn-ghost" href="/restaurant-interest.html">List your restaurant</a>
+            <a class="btn btn-primary" href="#restaurants">Browse restaurants</a>
+            <a class="btn btn-ghost" href="#orders">View orders</a>
           </div>
         </div>
-        <article class="card card-pad">
-          <div class="muted">Account</div>
-          <h3 id="accountName">Loading...</h3>
-          <p class="muted mb-0" id="accountEmail"></p>
-          <span class="pill pill-dark mt-12">Customer</span>
+
+        <article class="card card-pad account-card" id="accountCard">
+          <div>
+            <div class="muted">Account</div>
+            <h3 id="accountName">Loading...</h3>
+            <p class="muted mb-0" id="accountEmail"></p>
+          </div>
+          <div class="grid grid-2">
+            <div>
+              <div class="muted">Phone</div>
+              <strong id="accountPhone">Not added</strong>
+            </div>
+            <div>
+              <div class="muted">Type</div>
+              <strong>Customer</strong>
+            </div>
+          </div>
+          <button class="btn btn-dark" type="button" onclick="focusProfile()">Edit profile</button>
         </article>
       </section>
 
-      <section class="page-head">
-        <div>
-          <div class="eyebrow">Recent orders</div>
-          <h2 class="section-title">Order history</h2>
-          <p class="muted">Orders placed while signed in appear here automatically.</p>
-        </div>
-        <button class="btn btn-ghost" id="refreshOrdersBtn" type="button">Refresh</button>
+      <section class="quick-actions" aria-label="Quick actions">
+        <a class="card card-pad quick-action" href="#restaurants">
+          <span>
+            <strong>Browse restaurants</strong>
+            <span class="muted">Find active dine-in menus near you.</span>
+          </span>
+          <span class="pill pill-success" id="restaurantCountPill">Loading</span>
+        </a>
+        <a class="card card-pad quick-action" href="#orders">
+          <span>
+            <strong>View orders</strong>
+            <span class="muted">See signed-in orders only.</span>
+          </span>
+          <span class="pill" id="orderCountPill">Loading</span>
+        </a>
+        <a class="card card-pad quick-action" href="#" id="recentTrackLink">
+          <span>
+            <strong>Track recent order</strong>
+            <span class="muted">Jump back into the latest status.</span>
+          </span>
+          <span class="pill pill-warning">Live</span>
+        </a>
+        <a class="card card-pad quick-action" href="#profile">
+          <span>
+            <strong>Profile</strong>
+            <span class="muted">Update name and phone.</span>
+          </span>
+          <span class="pill pill-dark">Settings</span>
+        </a>
       </section>
 
-      <section class="stack" id="orders"></section>
+      <section class="dashboard-grid">
+        <div class="section-panel" id="restaurants">
+          <div class="panel-toolbar">
+            <div>
+              <div class="eyebrow">Restaurant discovery</div>
+              <h2 class="section-title">Order from Avenzo partners</h2>
+              <p class="muted mb-0">Only public-safe restaurant details are shown here.</p>
+            </div>
+            <button class="btn btn-ghost" type="button" onclick="loadRestaurants()">Refresh</button>
+          </div>
+          <div class="restaurant-grid" id="restaurantList"></div>
+        </div>
+
+        <aside class="section-panel" id="profile">
+          <div class="panel-toolbar">
+            <div>
+              <div class="eyebrow">Profile</div>
+              <h2 class="section-title">Customer settings</h2>
+            </div>
+          </div>
+          <article class="card card-pad">
+            <form class="profile-form" onsubmit="saveProfile(event)">
+              <div class="field">
+                <label for="profileName">Name</label>
+                <input class="input" id="profileName" autocomplete="name" placeholder="Your name">
+              </div>
+              <div class="field">
+                <label for="profileEmail">Email</label>
+                <input class="input" id="profileEmail" type="email" disabled>
+              </div>
+              <div class="field">
+                <label for="profilePhone">Phone</label>
+                <input class="input" id="profilePhone" inputmode="tel" autocomplete="tel" placeholder="Mobile number for faster checkout">
+              </div>
+              <button id="profileBtn" class="btn btn-primary" type="submit">Save profile</button>
+              <div class="muted feedback-line" id="profileMessage"></div>
+            </form>
+            <div class="low-priority-help muted">
+              Restaurant partner? Use the <a class="auth-link" href="/restaurant-login.html">partner login</a> or submit the <a class="auth-link" href="/restaurant-interest.html">interest form</a>.
+            </div>
+          </article>
+        </aside>
+      </section>
+
+      <section class="section-panel" id="orders">
+        <div class="panel-toolbar">
+          <div>
+            <div class="eyebrow">Recent orders</div>
+            <h2 class="section-title">Your dine-in history</h2>
+            <p class="muted mb-0">Guest orders stay private to their tracking links until a future claim flow exists.</p>
+          </div>
+          <button class="btn btn-ghost" id="refreshOrdersBtn" type="button">Refresh</button>
+        </div>
+        <div class="history-controls">
+          <input class="input" id="orderSearch" placeholder="Search restaurant or order code" oninput="renderOrders()">
+          <select class="select" id="statusFilter" onchange="loadOrders(true)">
+            <option value="">All statuses</option>
+            <option value="PENDING">Pending</option>
+            <option value="PREPARING">Preparing</option>
+            <option value="READY">Ready</option>
+            <option value="COMPLETED">Completed</option>
+            <option value="CANCELLED">Cancelled</option>
+          </select>
+        </div>
+        <section class="stack" id="ordersList"></section>
+        <div class="row row-wrap" id="ordersPager"></div>
+      </section>
     </main>
   </div>
 
   <script src="/assets/app.js"></script>
   <script>
     requireAuth();
-    let page = 1;
+
+    let currentUser = null;
+    let restaurants = [];
+    let orders = [];
+    let orderPagination = { page: 1, totalPages: 1, total: 0 };
 
     initAccountMenu().then((user) => {
       if (user && user.role !== "USER") {
         window.location.href = "/admin/dashboard.html";
         return;
       }
-      document.getElementById("welcomeTitle").textContent = `Welcome${user?.name ? `, ${user.name}` : ""}.`;
-      document.getElementById("accountName").textContent = user?.name || "Avenzo customer";
-      document.getElementById("accountEmail").textContent = user?.email || "";
-      loadOrders();
+      currentUser = user;
+      hydrateProfile(user || {});
+      loadRestaurants();
+      loadOrders(true);
     });
 
-    document.getElementById("refreshOrdersBtn").addEventListener("click", () => loadOrders());
+    document.getElementById("refreshOrdersBtn").addEventListener("click", () => loadOrders(true));
 
-    async function loadOrders() {
-      const target = document.getElementById("orders");
+    function hydrateProfile(user) {
+      const display = user.name || user.email || "Avenzo customer";
+      document.getElementById("welcomeTitle").textContent = `Welcome${user.name ? `, ${user.name}` : ""}.`;
+      document.getElementById("accountName").textContent = display;
+      document.getElementById("accountEmail").textContent = user.email || "";
+      document.getElementById("accountPhone").textContent = user.phone || "Not added";
+      document.getElementById("profileName").value = user.name || "";
+      document.getElementById("profileEmail").value = user.email || "";
+      document.getElementById("profilePhone").value = user.phone || "";
+    }
+
+    function focusProfile() {
+      document.getElementById("profile").scrollIntoView({ behavior: "smooth", block: "start" });
+      setTimeout(() => document.getElementById("profileName").focus(), 250);
+    }
+
+    async function loadRestaurants() {
+      const target = document.getElementById("restaurantList");
+      target.innerHTML = skeletonCards(4);
+      try {
+        const data = await request("/customer/restaurants");
+        restaurants = data.restaurants || [];
+        document.getElementById("restaurantCountPill").textContent = `${restaurants.length} places`;
+        renderRestaurants();
+      } catch (err) {
+        target.innerHTML = `<div class="empty empty-full">${escapeHtml(err.message)}</div>`;
+      }
+    }
+
+    function renderRestaurants() {
+      const target = document.getElementById("restaurantList");
+      if (!restaurants.length) {
+        target.innerHTML = `
+          <div class="empty empty-full">
+            <h3 class="card-title-gap">No restaurants available yet</h3>
+            <p class="muted">Avenzo partners will appear here as they go live. Check back soon for dine-in menus near you.</p>
+          </div>`;
+        return;
+      }
+
+      target.innerHTML = restaurants.map(restaurant => {
+        const href = `/r/${encodeURIComponent(restaurant.slug)}`;
+        const available = restaurant.serviceAvailable !== false;
+        return `
+          <article class="card card-pad restaurant-card">
+            <div class="row-between">
+              <div>
+                <h3 class="h3-tight">${escapeHtml(restaurant.name)}</h3>
+                <div class="muted">${escapeHtml(restaurant.locality || restaurant.address || "Dine-in partner")}</div>
+              </div>
+              <span class="pill ${available ? "pill-success" : "pill-warning"}">${available ? "Open now" : "Ordering paused"}</span>
+            </div>
+            <div class="restaurant-meta">
+              <div><div class="muted">Food type</div><strong>${restaurantFoodTypeLabel(restaurant.foodType)}</strong></div>
+              <div><div class="muted">Service</div><strong>${available ? "Accepting orders" : "Unavailable"}</strong></div>
+            </div>
+            ${available ? "" : `<p class="muted mb-0">${escapeHtml(restaurant.serviceMessage || "This restaurant is not accepting orders right now.")}</p>`}
+            <div class="row row-wrap">
+              <a class="btn ${available ? "btn-primary" : "btn-ghost"}" href="${available ? href : "#"}" ${available ? "" : "aria-disabled='true' onclick='return false;'"}>${available ? "View menu" : "Unavailable"}</a>
+            </div>
+          </article>`;
+      }).join("");
+    }
+
+    async function loadOrders(resetPage = false) {
+      const target = document.getElementById("ordersList");
+      if (resetPage) orderPagination.page = 1;
       target.innerHTML = skeletonCards(3);
       try {
-        const data = await request(`/customer/orders?page=${page}&limit=20`);
-        const orders = data.orders || [];
-        if (!orders.length) {
-          target.innerHTML = `<div class="empty">You have not placed any orders yet.</div>`;
-          return;
-        }
-
-        target.innerHTML = orders.map(order => {
-          const preview = (order.items || []).slice(0, 4).map(item => `
-            <span class="pill">${escapeHtml(item.nameAtOrder)} x ${item.quantity}</span>
-          `).join("");
-          return `
-            <article class="card card-pad order-card">
-              <div class="row-between">
-                <div>
-                  <div class="eyebrow">${escapeHtml(order.restaurant?.name || "Avenzo restaurant")}</div>
-                  <h3 class="h3-tight">Order #${order.orderNumber}</h3>
-                  <div class="muted">${formatDate(order.createdAt)}</div>
-                </div>
-                <span class="pill ${statusPill(order.status)}">${escapeHtml(order.status)}</span>
-              </div>
-              <div class="grid grid-3">
-                <div><div class="muted">Total</div><strong>${money(order.totalPrice)}</strong></div>
-                <div><div class="muted">Pickup code</div><strong>${escapeHtml(order.pickupCode)}</strong></div>
-                <div><div class="muted">Payment</div><strong>${paymentLabel(order.paymentStatus)}</strong></div>
-              </div>
-              <div class="order-items">${preview}</div>
-              <div class="row row-wrap">
-                <a class="btn btn-dark" href="/track/${order.trackingToken}">Track</a>
-              </div>
-            </article>
-          `;
-        }).join("");
+        const status = document.getElementById("statusFilter").value;
+        const data = await request(`/customer/orders?page=${orderPagination.page}&limit=6${status ? `&status=${encodeURIComponent(status)}` : ""}`);
+        orders = data.orders || [];
+        orderPagination = data.pagination || { page: 1, totalPages: 1, total: orders.length };
+        document.getElementById("orderCountPill").textContent = `${orderPagination.total || 0} orders`;
+        renderOrders();
       } catch (err) {
         target.innerHTML = `<div class="empty">${escapeHtml(err.message)}</div>`;
+      }
+    }
+
+    function renderOrders() {
+      const target = document.getElementById("ordersList");
+      const query = document.getElementById("orderSearch").value.trim().toLowerCase();
+      const filtered = orders.filter(order => {
+        if (!query) return true;
+        return [
+          order.restaurant?.name,
+          order.pickupCode,
+          `#${order.orderNumber}`,
+          String(order.orderNumber)
+        ].join(" ").toLowerCase().includes(query);
+      });
+
+      const recent = orders[0];
+      const recentLink = document.getElementById("recentTrackLink");
+      if (recent?.trackingToken) {
+        recentLink.href = `/track/${recent.trackingToken}`;
+        recentLink.classList.remove("is-disabled");
+      } else {
+        recentLink.href = "#orders";
+      }
+
+      if (!filtered.length) {
+        target.innerHTML = `
+          <div class="empty">
+            <h3 class="card-title-gap">No orders yet</h3>
+            <p class="muted">Browse restaurants and place your first Avenzo order while signed in.</p>
+            <a class="btn btn-primary mt-12" href="#restaurants">Browse restaurants</a>
+          </div>`;
+        renderPager();
+        return;
+      }
+
+      target.innerHTML = filtered.map(orderHtml).join("");
+      renderPager();
+    }
+
+    function orderHtml(order) {
+      const preview = (order.items || []).slice(0, 4).map(item => `
+        <span class="pill">${escapeHtml(item.nameAtOrder)} x ${item.quantity}</span>
+      `).join("");
+      const menuHref = order.restaurant?.slug ? `/r/${encodeURIComponent(order.restaurant.slug)}` : "/";
+      return `
+        <article class="card card-pad order-card">
+          <div class="row-between">
+            <div>
+              <div class="eyebrow">${escapeHtml(order.restaurant?.name || "Avenzo restaurant")}</div>
+              <h3 class="h3-tight">Order #${order.orderNumber}</h3>
+              <div class="muted">${formatDate(order.createdAt)}</div>
+            </div>
+            <span class="pill ${statusPill(order.status)}">${statusLabel(order.status)}</span>
+          </div>
+          <div class="order-meta">
+            <div><div class="muted">Total</div><strong>${money(order.totalPrice)}</strong></div>
+            <div><div class="muted">Pickup code</div><strong>${escapeHtml(order.pickupCode)}</strong></div>
+            <div><div class="muted">Payment</div><strong>${paymentLabel(order.paymentStatus)}</strong></div>
+            <div><div class="muted">Ready</div><strong>${order.readyAt ? formatDate(order.readyAt) : "Not yet"}</strong></div>
+          </div>
+          <div class="order-items">${preview || `<span class="muted">Items unavailable</span>`}</div>
+          <div class="row row-wrap">
+            <a class="btn btn-dark" href="/track/${order.trackingToken}">Track</a>
+            <a class="btn btn-ghost" href="${menuHref}">View menu</a>
+          </div>
+        </article>`;
+    }
+
+    function renderPager() {
+      const pager = document.getElementById("ordersPager");
+      const totalPages = orderPagination.totalPages || 1;
+      if (totalPages <= 1) {
+        pager.innerHTML = "";
+        return;
+      }
+      pager.innerHTML = `
+        <button class="btn btn-ghost" type="button" ${orderPagination.page <= 1 ? "disabled" : ""} onclick="changePage(-1)">Previous</button>
+        <span class="pill">Page ${orderPagination.page} of ${totalPages}</span>
+        <button class="btn btn-ghost" type="button" ${orderPagination.page >= totalPages ? "disabled" : ""} onclick="changePage(1)">Show more</button>
+      `;
+    }
+
+    function changePage(delta) {
+      orderPagination.page = Math.min(Math.max(1, orderPagination.page + delta), orderPagination.totalPages || 1);
+      loadOrders(false);
+    }
+
+    async function saveProfile(event) {
+      event.preventDefault();
+      const btn = document.getElementById("profileBtn");
+      const msg = document.getElementById("profileMessage");
+      msg.textContent = "";
+      setLoading(btn, true, "Saving...");
+      try {
+        const data = await request("/customer/profile", {
+          method: "PATCH",
+          body: JSON.stringify({
+            name: document.getElementById("profileName").value.trim() || null,
+            phone: document.getElementById("profilePhone").value.trim() || null
+          })
+        });
+        currentUser = data.profile;
+        hydrateProfile(data.profile);
+        msg.textContent = data.message || "Profile updated";
+        toast("Profile updated");
+      } catch (err) {
+        msg.textContent = err.message;
+        toast(err.message);
+      } finally {
+        setLoading(btn, false);
       }
     }
 
@@ -147,6 +503,10 @@
       if (["READY", "COMPLETED"].includes(status)) return "pill-success";
       if (status === "CANCELLED") return "pill-danger";
       return "pill-warning";
+    }
+
+    function statusLabel(value) {
+      return String(value || "").replaceAll("_", " ").toLowerCase().replace(/\b\w/g, letter => letter.toUpperCase());
     }
 
     function paymentLabel(value) {
