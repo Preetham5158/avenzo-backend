@@ -3,16 +3,16 @@ require("dotenv").config();
 const express = require("express");
 const path = require("path");
 const crypto = require("crypto");
-const { PrismaClient } = require("@prisma/client");
 
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const { notifyOrderConfirmation, sendOtp } = require("./services/notification.service");
 const { checkOrderAbuse, hashIp, logOrderAttempt } = require("./services/abuse.service");
 const { isValidPhone, normalizePhone } = require("./utils/phone");
+const { createPrismaClient } = require("./prisma");
 
 const app = express();
-const prisma = new PrismaClient();
+const prisma = createPrismaClient();
 const JWT_ISSUER = "avenzo-api";
 const JWT_AUDIENCE = "avenzo-admin";
 const FOOD_TYPES = ["VEG", "NON_VEG"];
@@ -318,6 +318,7 @@ function authUserResponse(user) {
         id: user.id,
         email: user.email,
         name: user.name,
+        phone: user.phone,
         role: user.role
     };
 }
@@ -608,6 +609,12 @@ app.post("/order", orderLimiter, optionalAuth, async (req, res) => {
                 where: { id: req.user.userId },
                 select: { id: true, email: true, role: true }
             });
+            if (!customer) {
+                return res.status(401).json({ error: "Invalid customer account" });
+            }
+            if (customer.role !== "USER") {
+                return res.status(403).json({ error: "Use a customer account to place customer orders" });
+            }
         }
 
         const pickupCode = crypto.randomInt(1000, 10000).toString();
@@ -886,6 +893,9 @@ app.post("/auth/customer/login", authLimiter, async (req, res) => {
     try {
         const user = await findPasswordUser(req.body.email, req.body.password);
         if (!user) return res.status(400).json({ error: "Invalid credentials" });
+        if (user.role !== "USER") {
+            return res.status(403).json({ error: "This sign in is for customer accounts. Restaurant partners should use restaurant login." });
+        }
 
         if (customer2faRequired()) {
             const challenge = await createOtpChallenge(user, "CUSTOMER_LOGIN");
@@ -1056,7 +1066,7 @@ function optionalAuth(req, res, next) {
             audience: JWT_AUDIENCE
         });
     } catch {
-        req.user = null;
+        return res.status(401).json({ error: "Invalid token" });
     }
 
     next();
@@ -1076,10 +1086,79 @@ app.get("/auth/me", authMiddleware, async (req, res) => {
     }
 });
 
+app.get("/customer/profile", authMiddleware, async (req, res) => {
+    try {
+        const user = await prisma.user.findUnique({
+            where: { id: req.user.userId },
+            select: { id: true, email: true, name: true, phone: true, role: true, createdAt: true }
+        });
+
+        if (!user) return res.status(401).json({ error: "Invalid user" });
+        if (user.role !== "USER") return res.status(403).json({ error: "Customer profile is available only for customer accounts" });
+
+        res.json({ profile: user });
+    } catch (err) {
+        logRouteError("GET /customer/profile", err);
+        res.status(500).json({ error: "Error fetching profile" });
+    }
+});
+
+app.patch("/customer/profile", authMiddleware, async (req, res) => {
+    try {
+        const user = await prisma.user.findUnique({
+            where: { id: req.user.userId },
+            select: { id: true, role: true }
+        });
+
+        if (!user) return res.status(401).json({ error: "Invalid user" });
+        if (user.role !== "USER") return res.status(403).json({ error: "Customer profile is available only for customer accounts" });
+
+        const name = cleanString(req.body.name, 120);
+        const rawPhone = cleanString(req.body.phone, 40);
+        const phone = rawPhone ? normalizePhone(rawPhone) : null;
+
+        if (rawPhone && !phone) {
+            return res.status(400).json({ error: "Use a valid phone number" });
+        }
+
+        const updated = await prisma.user.update({
+            where: { id: user.id },
+            data: { name, phone },
+            select: { id: true, email: true, name: true, phone: true, role: true, createdAt: true }
+        });
+
+        res.json({ profile: updated, message: "Profile updated" });
+    } catch (err) {
+        logRouteError("PATCH /customer/profile", err);
+        res.status(500).json({ error: "Could not update profile" });
+    }
+});
+
+app.get("/customer/restaurants", authMiddleware, async (req, res) => {
+    try {
+        const user = await getAuthUser(req.user.userId);
+        if (!user) return res.status(401).json({ error: "Invalid user" });
+        if (user.role !== "USER") return res.status(403).json({ error: "Customer restaurant discovery is available only for customer accounts" });
+
+        const restaurants = await prisma.restaurant.findMany({
+            where: { isActive: true },
+            orderBy: [{ locality: "asc" }, { name: "asc" }]
+        });
+
+        res.json({
+            restaurants: restaurants.map(customerRestaurantResponse)
+        });
+    } catch (err) {
+        logRouteError("GET /customer/restaurants", err);
+        res.status(500).json({ error: "Error fetching restaurants" });
+    }
+});
+
 app.get("/customer/orders", authMiddleware, async (req, res) => {
     try {
         const user = await getAuthUser(req.user.userId);
         if (!user) return res.status(401).json({ error: "Invalid user" });
+        if (user.role !== "USER") return res.status(403).json({ error: "Customer orders are available only for customer accounts" });
 
         const validStatuses = ["PENDING", "PREPARING", "READY", "COMPLETED", "CANCELLED"];
         const requestedStatus = req.query.status ? String(req.query.status).toUpperCase() : "";
@@ -1183,6 +1262,20 @@ function publicRestaurantResponse(restaurant) {
         pickupNote: restaurant.pickupNote,
         foodType: restaurant.foodType,
         isActive: restaurant.isActive,
+        serviceAvailable: isRestaurantServiceAvailable(restaurant),
+        serviceMessage: restaurantServiceMessage(restaurant)
+    };
+}
+
+function customerRestaurantResponse(restaurant) {
+    if (!restaurant) return null;
+
+    return {
+        name: restaurant.name,
+        slug: restaurant.slug,
+        address: restaurant.address,
+        locality: restaurant.locality,
+        foodType: restaurant.foodType,
         serviceAvailable: isRestaurantServiceAvailable(restaurant),
         serviceMessage: restaurantServiceMessage(restaurant)
     };

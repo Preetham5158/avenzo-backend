@@ -1,7 +1,7 @@
-const { PrismaClient } = require("@prisma/client");
 const bcrypt = require("bcrypt");
+const { createPrismaClient } = require("./prisma");
 
-const prisma = new PrismaClient();
+const prisma = createPrismaClient();
 
 if (process.env.NODE_ENV === "production") {
   throw new Error("Refusing to run seed in production");
