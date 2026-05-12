@@ -46,7 +46,7 @@
       }
 
       .order-tools {
-        top: calc(var(--topbar-height) + 96px);
+        top: calc(var(--topbar-height) + 130px);
         padding: 10px;
       }
     }
@@ -197,7 +197,7 @@
         <div class="card card-pad">
           <div class="muted">${statusMeta[status][1]}</div>
           <h3>${counts[status] || 0}</h3>
-          <span class="pill ${statusMeta[status][0]}">${status}</span>
+          <span class="pill ${statusMeta[status][0]}">${statusMeta[status][1]}</span>
         </div>
       `).join("");
     }
@@ -226,9 +226,7 @@
 
     function renderOrders() {
       const container = document.getElementById("list");
-      let orders = activeOrderStatus === "ALL"
-        ? allOrders
-        : allOrders;
+      let orders = allOrders.slice();
 
       if (orderSearch) {
         orders = orders.filter(order => [
@@ -270,7 +268,7 @@
                 <h3 class="h3-tight">Code ${escapeHtml(order.pickupCode)}</h3>
                 <div class="muted">Placed ${formatDate(order.createdAt)}</div>
               </div>
-              <span class="pill ${meta[0]}">${escapeHtml(order.status)}</span>
+              <span class="pill ${meta[0]}">${escapeHtml(meta[1] || order.status)}</span>
             </div>
 
             <div class="grid grid-3">
