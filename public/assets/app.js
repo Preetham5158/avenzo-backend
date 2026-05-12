@@ -13,11 +13,12 @@ function authHeaders(extra = {}) {
 }
 
 async function request(path, options = {}) {
+  const { auth, ...fetchOptions } = options;
   const headers = options.body
-    ? authHeaders({ "Content-Type": "application/json", ...(options.headers || {}) })
-    : authHeaders(options.headers || {});
+    ? (auth === false ? { "Content-Type": "application/json", ...(options.headers || {}) } : authHeaders({ "Content-Type": "application/json", ...(options.headers || {}) }))
+    : (auth === false ? (options.headers || {}) : authHeaders(options.headers || {}));
 
-  const res = await fetch(`${API}${path}`, { ...options, headers });
+  const res = await fetch(`${API}${path}`, { ...fetchOptions, headers });
   const text = await res.text();
   let data = null;
   if (text) {
@@ -178,12 +179,18 @@ function customerNavHtml(active = "home") {
   ];
 
   return `
-    <nav class="customer-nav" aria-label="Customer navigation">
-      ${items.map(item => `
-        <a class="${active === item.key ? "active" : ""}" href="${item.href}">
-          <span>${item.label}</span>
-        </a>
-      `).join("")}
+    <nav class="customer-nav" id="customerNavMenu" aria-label="Customer navigation">
+      <button class="customer-nav-toggle" type="button" onclick="toggleCustomerNav()" aria-expanded="false" aria-controls="customerNavLinks">
+        <span aria-hidden="true">&#9776;</span>
+        <span>Menu</span>
+      </button>
+      <div class="customer-nav-links" id="customerNavLinks">
+        ${items.map(item => `
+          <a class="${active === item.key ? "active" : ""}" href="${item.href}">
+            <span>${item.label}</span>
+          </a>
+        `).join("")}
+      </div>
     </nav>
   `;
 }
@@ -227,9 +234,22 @@ function toggleAccountMenu() {
   document.getElementById("accountDropdown")?.classList.toggle("open");
 }
 
+function toggleCustomerNav() {
+  const nav = document.getElementById("customerNavMenu");
+  if (!nav) return;
+  const isOpen = nav.classList.toggle("open");
+  nav.querySelector(".customer-nav-toggle")?.setAttribute("aria-expanded", isOpen ? "true" : "false");
+}
+
 document.addEventListener("click", (event) => {
   const dropdown = document.getElementById("accountDropdown");
   if (dropdown && !dropdown.contains(event.target)) {
     dropdown.classList.remove("open");
+  }
+
+  const customerNav = document.getElementById("customerNavMenu");
+  if (customerNav && !customerNav.contains(event.target)) {
+    customerNav.classList.remove("open");
+    customerNav.querySelector(".customer-nav-toggle")?.setAttribute("aria-expanded", "false");
   }
 });

@@ -418,6 +418,7 @@ app.get("/categories/:restaurantId", authMiddleware, async (req, res) => {
 app.post("/order", orderLimiter, optionalAuth, async (req, res) => {
     try {
         const { items, sessionId, phone } = req.body;
+        const guestOrder = req.body.guest === true;
         let restaurantId = cleanString(req.body.restaurantId, 80);
         const restaurantSlug = cleanString(req.body.restaurantSlug, 140);
         const ipHash = hashIp(req.ip);
@@ -473,7 +474,7 @@ app.post("/order", orderLimiter, optionalAuth, async (req, res) => {
         }
 
         let customer = null;
-        if (req.user?.userId) {
+        if (!guestOrder && req.user?.userId) {
             customer = await prisma.user.findUnique({
                 where: { id: req.user.userId },
                 select: { id: true, email: true, role: true, phone: true }
@@ -995,6 +996,8 @@ function authMiddleware(req, res, next) {
 }
 
 function optionalAuth(req, res, next) {
+    if (req.body?.guest === true) return next();
+
     const authHeader = req.headers.authorization;
     if (!authHeader) return next();
 

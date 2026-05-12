@@ -175,6 +175,14 @@ button {
 }
 
 .customer-nav {
+  position: relative;
+}
+
+.customer-nav-toggle {
+  display: none;
+}
+
+.customer-nav-links {
   display: flex;
   align-items: center;
   gap: 6px;
@@ -788,32 +796,53 @@ h3 {
 
   .topbar-inner {
     min-height: 58px;
-    flex-wrap: wrap;
     padding: 8px 0;
+    gap: 8px;
   }
 
   .topbar-inner #customerNav {
-    order: 3;
-    width: 100%;
+    margin-left: auto;
   }
 
-  .customer-nav {
-    position: fixed;
-    left: 10px;
-    right: 10px;
-    bottom: 10px;
-    z-index: 70;
+  .customer-nav-toggle {
+    min-height: 40px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 0 12px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: white;
+    color: var(--ink);
+    cursor: pointer;
+    font-weight: 800;
+  }
+
+  .customer-nav-links {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 8px);
+    z-index: 80;
+    width: min(220px, calc(100vw - 20px));
+    display: none;
+    padding: 7px;
+    border-radius: var(--radius);
+    background: white;
+    box-shadow: var(--shadow);
+  }
+
+  .customer-nav.open .customer-nav-links {
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 4px;
-    padding: 5px;
-    border-radius: 18px;
   }
 
   .customer-nav a {
     min-height: 42px;
-    padding: 0 4px;
-    font-size: 11px;
+    justify-content: flex-start;
+    padding: 0 12px;
+    border-radius: var(--radius-sm);
+    font-size: 13px;
   }
 
   .brand span {
@@ -854,18 +883,23 @@ h3 {
   }
 
   .account {
-    width: min(100%, 260px);
-    margin-left: auto;
+    width: auto;
+    margin-left: 0;
   }
 
   .account-trigger {
-    width: 100%;
+    max-width: 152px;
+  }
+
+  .account-trigger span:first-child {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .account-menu {
-    position: static;
-    width: 100%;
-    margin-top: 8px;
+    position: absolute;
+    width: min(260px, calc(100vw - 20px));
   }
 
   .auth-page {
@@ -949,14 +983,6 @@ h3 {
 }
 
 @media (max-width: 440px) {
-  .topbar-inner {
-    align-items: flex-start;
-  }
-
-  .account {
-    width: 100%;
-  }
-
   .page-head h1,
   .hero-panel h1,
   .metric-card h3 {
@@ -965,6 +991,22 @@ h3 {
 
   .modal-actions {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 420px) {
+  .brand span {
+    display: none;
+  }
+
+  .account-trigger {
+    max-width: 44px;
+    width: 44px;
+    padding: 0;
+  }
+
+  .account-trigger span:first-child {
+    display: none;
   }
 }
 

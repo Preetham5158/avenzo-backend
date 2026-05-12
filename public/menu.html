@@ -224,6 +224,14 @@
       backdrop-filter: blur(18px);
     }
 
+    .category-rail-title {
+      padding: 4px 6px 2px;
+      color: #7a5d4c;
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
     .category-button {
       min-height: 60px;
       width: 100%;
@@ -628,6 +636,12 @@
         gap: 8px;
       }
 
+      .category-rail-title {
+        flex: 0 0 auto;
+        align-self: center;
+        padding: 0 4px;
+      }
+
       .category-button {
         flex: 0 0 auto;
         min-height: 42px;
@@ -777,6 +791,7 @@
 
     <section class="menu-layout" id="menuLayout">
       <aside class="category-rail">
+        <div class="category-rail-title">Categories</div>
         <div id="categoryRail"></div>
       </aside>
       <section class="menu-feed" id="menu"></section>
@@ -846,6 +861,7 @@
     const slug = window.location.pathname.startsWith("/r/")
       ? decodeURIComponent(window.location.pathname.split("/r/")[1] || "")
       : new URLSearchParams(location.search).get("slug");
+    const guestMode = new URLSearchParams(location.search).get("guest") === "1";
     let cart = [];
     let menuData = [];
     let activeCategory = "ALL";
@@ -858,8 +874,8 @@
       try {
         document.getElementById("menu").innerHTML = skeletonCards(6, "food");
         const restaurant = slug
-          ? await request(`/restaurant/slug/${slug}`, { headers: {} })
-          : await request(`/restaurant/${restaurantId}`, { headers: {} });
+          ? await request(`/restaurant/slug/${slug}`, { auth: false })
+          : await request(`/restaurant/${restaurantId}`, { auth: false });
         restaurantId = restaurant.id || restaurantId;
         document.getElementById("restaurantName").textContent = restaurant.name;
         document.getElementById("restaurantAddress").textContent = restaurant.address || restaurant.locality || "Choose here. Eat here. Skip the billing queue.";
@@ -884,6 +900,7 @@
     }
 
     async function loadCustomerProfile() {
+      if (guestMode) return;
       if (!getToken()) return;
       try {
         const data = await request("/customer/profile");
@@ -895,8 +912,8 @@
 
     async function loadMenu() {
       menuData = slug
-        ? await request(`/menu/by-slug/${slug}`, { headers: {} })
-        : await request(`/menu/${restaurantId}`, { headers: {} });
+        ? await request(`/menu/by-slug/${slug}`, { auth: false })
+        : await request(`/menu/${restaurantId}`, { auth: false });
       menuData.sort((a, b) => Number(b.isAvailable) - Number(a.isAvailable));
       renderRail();
       renderMenu();
@@ -1126,7 +1143,7 @@
         phoneField.style.padding = "12px";
       } else {
         phoneInput.hidden = false;
-        phoneHelp.textContent = getToken()
+        phoneHelp.textContent = getToken() && !guestMode
           ? "We use this number to help the restaurant identify your order and send updates. It will be saved to your profile."
           : "We use this number to help the restaurant identify your order and send updates.";
         phoneField.classList.remove("app-panel");
@@ -1192,7 +1209,7 @@
         const query = slug
           ? `restaurantSlug=${encodeURIComponent(slug)}`
           : `restaurantId=${encodeURIComponent(restaurantId)}`;
-        const data = await request(`/orders/lookup?${query}&phone=${encodeURIComponent(phone)}`, { headers: {} });
+        const data = await request(`/orders/lookup?${query}&phone=${encodeURIComponent(phone)}`, { auth: false });
         const orders = data.orders || [];
         document.getElementById("lookupResults").innerHTML = orders.length
           ? orders.map(order => `
@@ -1230,11 +1247,13 @@
           sessionId: getDeviceId(),
           items: cart,
           ...(slug ? { restaurantSlug: slug } : { restaurantId }),
+          ...(guestMode ? { guest: true } : {}),
           ...(phone ? { phone } : {})
         };
         const data = await request("/order", {
           method: "POST",
-          body: JSON.stringify(payload)
+          body: JSON.stringify(payload),
+          auth: !guestMode
         });
         if (getToken() && !customerProfile?.phone && phone) {
           customerProfile = { ...(customerProfile || {}), phone };

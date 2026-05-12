@@ -139,7 +139,7 @@
 
         window.__restaurants = restaurants;
         container.innerHTML = restaurants.map(r => {
-          const url = `${API}/r/${r.slug}`;
+          const url = `${API}/r/${r.slug}?guest=1`;
           const qr = qrUrl(url, 220);
           return `
             <article class="card card-pad stack qr-card">
@@ -164,7 +164,7 @@
 
     function downloadCard(id, name) {
       const restaurant = (window.__restaurants || []).find(r => r.id === id);
-      const url = `${API}/r/${restaurant?.slug || id}`;
+      const url = `${API}/r/${restaurant?.slug || id}?guest=1`;
       const canvas = document.createElement("canvas");
       const ctx = canvas.getContext("2d");
       const qrImage = new Image();

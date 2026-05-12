@@ -117,7 +117,7 @@
       if (isLoadingStatus) return;
       isLoadingStatus = true;
       try {
-  const data = await request(`/order/${trackingToken}`, { headers: {} });
+  const data = await request(`/order/${trackingToken}`, { auth: false });
 
   document.getElementById("restaurantName").textContent = data.restaurant?.name || "Restaurant";
   document.getElementById("orderNumber").textContent = Number.isInteger(data.orderNumber) ? `Order #${data.orderNumber}` : "Order received";
