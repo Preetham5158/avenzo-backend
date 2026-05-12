@@ -49,6 +49,7 @@ enum LeadStatus {
   NEW
   CONTACTED
   QUALIFIED
+  CONVERTED
   CLOSED
 }
 
@@ -72,6 +73,20 @@ enum NotificationChannel {
   EMAIL
   SMS
   WHATSAPP
+}
+
+enum OtpPurpose {
+  CUSTOMER_LOGIN
+  RESTAURANT_LOGIN
+  SIGNUP_VERIFY
+  ORDER_CONFIRMATION
+  PASSWORD_RESET
+}
+
+enum OtpChannel {
+  EMAIL
+  SMS
+  LOG
 }
 
 enum OrderAttemptStatus {
@@ -99,11 +114,14 @@ model User {
   password  String
   name      String?
   phone     String?
+  phoneVerifiedAt DateTime?
+  emailVerifiedAt DateTime?
 
   role      UserRole @default(USER)
 
   ownedRestaurants Restaurant[] @relation("RestaurantOwner")
   orders Order[] @relation("CustomerOrders")
+  otpChallenges OtpChallenge[]
 
   staffRestaurantId String?
   staffRestaurant   Restaurant? @relation("RestaurantStaff", fields: [staffRestaurantId], references: [id], onDelete: SetNull)
@@ -125,12 +143,15 @@ model RestaurantLead {
   restaurantType String?
   approxDailyOrders String?
   message String?
+  internalNote String?
   status LeadStatus @default(NEW)
+  viewedAt DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([status])
+  @@index([viewedAt])
   @@index([createdAt])
 }
 
@@ -290,11 +311,14 @@ model OrderItem {
 model NotificationLog {
   id String @id @default(uuid())
 
+  userId String?
   orderId String?
   order Order? @relation(fields: [orderId], references: [id], onDelete: SetNull)
 
   recipientPhone String?
   recipientEmail String?
+  recipientMasked String?
+  purpose String?
   channel NotificationChannel
   status NotificationStatus
   error String?
@@ -303,6 +327,32 @@ model NotificationLog {
 
   @@index([orderId])
   @@index([createdAt])
+}
+
+model OtpChallenge {
+  id String @id @default(uuid())
+
+  userId String?
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  email String?
+  phone String?
+  purpose OtpPurpose
+  channel OtpChannel
+  otpHash String
+  expiresAt DateTime
+  consumedAt DateTime?
+  attempts Int @default(0)
+  maxAttempts Int @default(5)
+  metadata Json?
+
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([email])
+  @@index([phone])
+  @@index([purpose])
+  @@index([expiresAt])
 }
 
 model OrderAttempt {

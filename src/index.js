@@ -7,7 +7,7 @@ const { PrismaClient } = require("@prisma/client");
 
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
-const { notifyOrderConfirmation } = require("./services/notification.service");
+const { notifyOrderConfirmation, sendOtp } = require("./services/notification.service");
 const { checkOrderAbuse, hashIp, logOrderAttempt } = require("./services/abuse.service");
 const { isValidPhone, normalizePhone } = require("./utils/phone");
 
@@ -18,7 +18,7 @@ const JWT_AUDIENCE = "avenzo-admin";
 const FOOD_TYPES = ["VEG", "NON_VEG"];
 const RESTAURANT_FOOD_TYPES = ["PURE_VEG", "NON_VEG", "BOTH"];
 const SUBSCRIPTION_STATUSES = ["TRIALING", "ACTIVE", "EXPIRED", "SUSPENDED"];
-const LEAD_STATUSES = ["NEW", "CONTACTED", "QUALIFIED", "CLOSED"];
+const LEAD_STATUSES = ["NEW", "CONTACTED", "QUALIFIED", "CONVERTED", "CLOSED"];
 const ORDER_STATUS_TRANSITIONS = {
     PENDING: ["PREPARING", "CANCELLED"],
     PREPARING: ["READY", "CANCELLED"],
@@ -91,6 +91,8 @@ const orderLimiter = rateLimit({ windowMs: 60 * 1000, max: 20 });
 const orderLookupLimiter = rateLimit({ windowMs: 60 * 1000, max: 12 });
 const trackingLimiter = rateLimit({ windowMs: 60 * 1000, max: 60 });
 const restaurantInterestLimiter = rateLimit({ windowMs: 60 * 60 * 1000, max: 8 });
+const otpLimiter = rateLimit({ windowMs: 10 * 60 * 1000, max: 12 });
+const OTP_PURPOSES = ["CUSTOMER_LOGIN", "RESTAURANT_LOGIN", "SIGNUP_VERIFY", "ORDER_CONFIRMATION", "PASSWORD_RESET"];
 
 function normalizeSlug(value) {
     return String(value || "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
@@ -242,6 +244,97 @@ async function auditLog(action, data = {}) {
     } catch (err) {
         console.error(`[audit:failed] ${err?.message || err}`);
     }
+}
+
+function restaurant2faRequired() {
+    return String(process.env.AUTH_REQUIRE_RESTAURANT_2FA || "true").toLowerCase() === "true";
+}
+
+function customer2faRequired() {
+    return String(process.env.AUTH_REQUIRE_CUSTOMER_2FA || "false").toLowerCase() === "true";
+}
+
+function otpTtlMinutes() {
+    return Math.max(parseInt(process.env.OTP_TTL_MINUTES || "10", 10), 1);
+}
+
+function otpMaxAttempts() {
+    return Math.min(Math.max(parseInt(process.env.OTP_MAX_ATTEMPTS || "5", 10), 1), 10);
+}
+
+function generateOtp() {
+    return crypto.randomInt(100000, 1000000).toString();
+}
+
+async function hashOtp(value) {
+    return bcrypt.hash(String(value), 10);
+}
+
+async function createOtpChallenge(user, purpose) {
+    const otp = generateOtp();
+    const channel = user.phone ? "SMS" : user.email ? "EMAIL" : "LOG";
+    const challenge = await prisma.otpChallenge.create({
+        data: {
+            userId: user.id,
+            email: user.email || null,
+            phone: user.phone || null,
+            purpose,
+            channel: process.env.OTP_MODE === "log" ? "LOG" : channel,
+            otpHash: await hashOtp(otp),
+            expiresAt: new Date(Date.now() + otpTtlMinutes() * 60 * 1000),
+            maxAttempts: otpMaxAttempts(),
+            metadata: { role: user.role }
+        },
+        select: { id: true, expiresAt: true, channel: true }
+    });
+
+    await sendOtp({
+        prisma,
+        userId: user.id,
+        channel,
+        phone: user.phone,
+        email: user.email,
+        purpose,
+        otp
+    });
+
+    return challenge;
+}
+
+function signAuthToken(user) {
+    return jwt.sign(
+        { userId: user.id, role: user.role },
+        process.env.JWT_SECRET,
+        {
+            expiresIn: "7d",
+            issuer: JWT_ISSUER,
+            audience: JWT_AUDIENCE
+        }
+    );
+}
+
+function authUserResponse(user) {
+    return {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role
+    };
+}
+
+function loginSuccessResponse(user) {
+    return {
+        token: signAuthToken(user),
+        user: authUserResponse(user)
+    };
+}
+
+async function findPasswordUser(email, password) {
+    if (!email || !password) return null;
+    const user = await prisma.user.findUnique({ where: { email: String(email).toLowerCase().trim() } });
+    if (!user) return null;
+    const valid = await bcrypt.compare(password, user.password);
+    return valid ? user : null;
 }
 
 async function ensureFoodTypeSchema() {
@@ -754,6 +847,158 @@ app.post("/auth/signup", authLimiter, async (req, res) => {
     }
 });
 
+app.post("/auth/customer/signup", authLimiter, async (req, res) => {
+    try {
+        const { email, password, name, phone } = req.body;
+
+        if (!email || !password || password.length < 8) {
+            return res.status(400).json({ error: "Use a valid email and at least 8 characters for password" });
+        }
+
+        const normalizedEmail = String(email).toLowerCase().trim();
+        const normalizedPhone = phone ? normalizePhone(phone) : null;
+        if (normalizedPhone && !isValidPhone(normalizedPhone)) {
+            return res.status(400).json({ error: "Use a valid phone number" });
+        }
+
+        const existing = await prisma.user.findUnique({ where: { email: normalizedEmail } });
+        if (existing) {
+            return res.status(400).json({ error: "User already exists" });
+        }
+
+        const user = await prisma.user.create({
+            data: {
+                email: normalizedEmail,
+                password: await bcrypt.hash(password, 10),
+                name: cleanString(name, 120),
+                phone: normalizedPhone
+            }
+        });
+
+        res.json({ message: "Customer account created", userId: user.id });
+    } catch (err) {
+        logRouteError("POST /auth/customer/signup", err);
+        res.status(500).json({ error: "Signup failed" });
+    }
+});
+
+app.post("/auth/customer/login", authLimiter, async (req, res) => {
+    try {
+        const user = await findPasswordUser(req.body.email, req.body.password);
+        if (!user) return res.status(400).json({ error: "Invalid credentials" });
+
+        if (customer2faRequired()) {
+            const challenge = await createOtpChallenge(user, "CUSTOMER_LOGIN");
+            return res.json({
+                otpRequired: true,
+                challengeId: challenge.id,
+                channel: challenge.channel,
+                expiresAt: challenge.expiresAt
+            });
+        }
+
+        res.json(loginSuccessResponse(user));
+    } catch (err) {
+        logRouteError("POST /auth/customer/login", err);
+        res.status(500).json({ error: "Login failed" });
+    }
+});
+
+app.post("/auth/restaurant/login", authLimiter, async (req, res) => {
+    try {
+        const user = await findPasswordUser(req.body.email, req.body.password);
+        if (!user) return res.status(400).json({ error: "Invalid credentials" });
+
+        if (user.role === "USER") {
+            return res.status(403).json({ error: "This is a customer account. Restaurant access is available only for approved Avenzo partners." });
+        }
+
+        if (restaurant2faRequired()) {
+            const challenge = await createOtpChallenge(user, "RESTAURANT_LOGIN");
+            return res.json({
+                otpRequired: true,
+                challengeId: challenge.id,
+                channel: challenge.channel,
+                expiresAt: challenge.expiresAt
+            });
+        }
+
+        res.json(loginSuccessResponse(user));
+    } catch (err) {
+        logRouteError("POST /auth/restaurant/login", err);
+        res.status(500).json({ error: "Login failed" });
+    }
+});
+
+app.post("/auth/otp/verify", otpLimiter, async (req, res) => {
+    try {
+        const { challengeId, otp, purpose } = req.body;
+        if (!challengeId || !otp) return res.status(400).json({ error: "OTP required" });
+
+        const challenge = await prisma.otpChallenge.findUnique({
+            where: { id: String(challengeId) },
+            include: { user: true }
+        });
+
+        if (!challenge || !challenge.user) return res.status(400).json({ error: "Invalid or expired OTP" });
+        if (purpose && challenge.purpose !== purpose) return res.status(400).json({ error: "Invalid or expired OTP" });
+        if (challenge.consumedAt) return res.status(400).json({ error: "OTP already used" });
+        if (challenge.expiresAt < new Date()) return res.status(400).json({ error: "OTP expired" });
+        if (challenge.attempts >= challenge.maxAttempts) return res.status(429).json({ error: "Too many OTP attempts" });
+
+        const valid = await bcrypt.compare(String(otp), challenge.otpHash);
+        if (!valid) {
+            await prisma.otpChallenge.update({
+                where: { id: challenge.id },
+                data: { attempts: { increment: 1 } }
+            });
+            return res.status(400).json({ error: "Invalid OTP" });
+        }
+
+        await prisma.otpChallenge.update({
+            where: { id: challenge.id },
+            data: { consumedAt: new Date() }
+        });
+
+        res.json(loginSuccessResponse(challenge.user));
+    } catch (err) {
+        logRouteError("POST /auth/otp/verify", err);
+        res.status(500).json({ error: "OTP verification failed" });
+    }
+});
+
+app.post("/auth/otp/resend", otpLimiter, async (req, res) => {
+    try {
+        const { challengeId } = req.body;
+        if (!challengeId) return res.status(400).json({ error: "Challenge required" });
+
+        const current = await prisma.otpChallenge.findUnique({
+            where: { id: String(challengeId) },
+            include: { user: true }
+        });
+
+        if (!current || !current.user || current.consumedAt) {
+            return res.status(400).json({ error: "Invalid or expired OTP" });
+        }
+
+        await prisma.otpChallenge.update({
+            where: { id: current.id },
+            data: { consumedAt: new Date() }
+        });
+
+        const challenge = await createOtpChallenge(current.user, current.purpose);
+        res.json({
+            otpRequired: true,
+            challengeId: challenge.id,
+            channel: challenge.channel,
+            expiresAt: challenge.expiresAt
+        });
+    } catch (err) {
+        logRouteError("POST /auth/otp/resend", err);
+        res.status(500).json({ error: "Could not resend OTP" });
+    }
+});
+
 app.post("/auth/login", authLimiter, async (req, res) => {
     try {
         const { email, password } = req.body;
@@ -761,35 +1006,12 @@ app.post("/auth/login", authLimiter, async (req, res) => {
             return res.status(400).json({ error: "Email & password required" });
         }
 
-        const user = await prisma.user.findUnique({ where: { email: String(email).toLowerCase().trim() } });
+        const user = await findPasswordUser(email, password);
         if (!user) {
             return res.status(400).json({ error: "Invalid credentials" });
         }
 
-        const valid = await bcrypt.compare(password, user.password);
-        if (!valid) {
-            return res.status(400).json({ error: "Invalid credentials" });
-        }
-
-        const token = jwt.sign(
-            { userId: user.id, role: user.role },
-            process.env.JWT_SECRET,
-            {
-                expiresIn: "7d",
-                issuer: JWT_ISSUER,
-                audience: JWT_AUDIENCE
-            }
-        );
-
-        res.json({
-            token,
-            user: {
-                id: user.id,
-                email: user.email,
-                name: user.name,
-                role: user.role
-            }
-        });
+        res.json(loginSuccessResponse(user));
 
     } catch (err) {
         logRouteError("POST /auth/login", err);
@@ -1527,20 +1749,44 @@ app.get("/admin/restaurant-leads", authMiddleware, async (req, res) => {
 
         const page = Math.max(parseInt(req.query.page || "1", 10), 1);
         const limit = Math.min(Math.max(parseInt(req.query.limit || "50", 10), 1), 100);
-        const where = status ? { status } : {};
+        const search = cleanString(req.query.search, 120);
+        const where = {
+            ...(status && { status }),
+            ...(search && {
+                OR: [
+                    { restaurantName: { contains: search, mode: "insensitive" } },
+                    { contactName: { contains: search, mode: "insensitive" } },
+                    { phone: { contains: search, mode: "insensitive" } },
+                    { email: { contains: search, mode: "insensitive" } },
+                    { location: { contains: search, mode: "insensitive" } }
+                ]
+            })
+        };
 
-        const [leads, total] = await Promise.all([
+        const [leads, total, statusCounts, unseenNewCount] = await Promise.all([
             prisma.restaurantLead.findMany({
                 where,
                 orderBy: { createdAt: "desc" },
                 skip: (page - 1) * limit,
                 take: limit
             }),
-            prisma.restaurantLead.count({ where })
+            prisma.restaurantLead.count({ where }),
+            prisma.restaurantLead.groupBy({
+                by: ["status"],
+                _count: { status: true }
+            }),
+            prisma.restaurantLead.count({
+                where: { status: "NEW", viewedAt: null }
+            })
         ]);
 
         res.json({
             leads,
+            counts: statusCounts.reduce((acc, item) => {
+                acc[item.status] = item._count.status;
+                return acc;
+            }, {}),
+            unseenNewCount,
             pagination: {
                 page,
                 limit,
@@ -1551,6 +1797,74 @@ app.get("/admin/restaurant-leads", authMiddleware, async (req, res) => {
     } catch (err) {
         logRouteError("GET /admin/restaurant-leads", err);
         res.status(500).json({ error: "Error fetching restaurant leads" });
+    }
+});
+
+app.get("/admin/restaurant-leads/summary", authMiddleware, async (req, res) => {
+    try {
+        const user = await getAuthUser(req.user.userId);
+        if (!isSuperAdmin(user)) return res.status(403).json({ error: "Only admins can view restaurant leads" });
+
+        const [statusCounts, unseenNewCount] = await Promise.all([
+            prisma.restaurantLead.groupBy({ by: ["status"], _count: { status: true } }),
+            prisma.restaurantLead.count({ where: { status: "NEW", viewedAt: null } })
+        ]);
+
+        res.json({
+            counts: statusCounts.reduce((acc, item) => {
+                acc[item.status] = item._count.status;
+                return acc;
+            }, {}),
+            unseenNewCount
+        });
+    } catch (err) {
+        logRouteError("GET /admin/restaurant-leads/summary", err);
+        res.status(500).json({ error: "Error fetching lead summary" });
+    }
+});
+
+app.post("/admin/restaurant-leads/mark-seen", authMiddleware, async (req, res) => {
+    try {
+        const user = await getAuthUser(req.user.userId);
+        if (!isSuperAdmin(user)) return res.status(403).json({ error: "Only admins can update restaurant leads" });
+
+        await prisma.restaurantLead.updateMany({
+            where: { status: "NEW", viewedAt: null },
+            data: { viewedAt: new Date() }
+        });
+
+        res.json({ ok: true });
+    } catch (err) {
+        logRouteError("POST /admin/restaurant-leads/mark-seen", err);
+        res.status(500).json({ error: "Error updating leads" });
+    }
+});
+
+app.patch("/admin/restaurant-leads/:id", authMiddleware, async (req, res) => {
+    try {
+        const user = await getAuthUser(req.user.userId);
+        if (!isSuperAdmin(user)) return res.status(403).json({ error: "Only admins can update restaurant leads" });
+
+        const data = {};
+        if (typeof req.body.status !== "undefined") {
+            const status = String(req.body.status).toUpperCase();
+            if (!LEAD_STATUSES.includes(status)) return res.status(400).json({ error: "Invalid lead status" });
+            data.status = status;
+            data.viewedAt = new Date();
+        }
+        if (typeof req.body.internalNote !== "undefined") {
+            data.internalNote = cleanString(req.body.internalNote, 1000);
+        }
+
+        const lead = await prisma.restaurantLead.update({
+            where: { id: req.params.id },
+            data
+        });
+
+        res.json({ lead });
+    } catch (err) {
+        logRouteError("PATCH /admin/restaurant-leads/:id", err);
+        res.status(500).json({ error: "Error updating lead" });
     }
 });
 

@@ -18,13 +18,13 @@ async function main() {
   const email = `customer-${suffix}@example.com`;
   const password = "Customer@123";
 
-  const signup = await request("/auth/signup", {
+  const signup = await request("/auth/customer/signup", {
     method: "POST",
     body: JSON.stringify({ name: "Smoke Customer", email, password })
   });
   console.log("signup", signup.status);
 
-  const login = await request("/auth/login", {
+  const login = await request("/auth/customer/login", {
     method: "POST",
     body: JSON.stringify({ email, password })
   });
