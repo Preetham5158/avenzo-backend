@@ -18,6 +18,14 @@ Current foundation:
 - Repeated payment failures.
 - Payment required before restaurant-visible order.
 - Restaurant manual blocking controls.
+- Admin review queue for repeated rejected attempts.
+- Safer customer claim flow before guest orders can be attached to an account.
+
+## Current Safety Notes
+
+- Guest orders require a phone number and are not automatically linked to customer accounts.
+- IP addresses are hashed before storage.
+- Blocked phone/device checks run before order creation.
 
 ## Payment Era
 

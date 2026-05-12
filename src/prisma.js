@@ -17,6 +17,7 @@ function createPrismaClient() {
     const connectionString = process.env.DATABASE_URL;
     if (!connectionString) return new PrismaClient();
 
+    // Supabase pooler connections need Prisma's pg adapter with libpq-compatible SSL.
     const adapter = new PrismaPg({
         connectionString: withPgLibpqCompat(connectionString)
     });

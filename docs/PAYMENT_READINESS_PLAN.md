@@ -23,6 +23,8 @@ Order preparation status and payment status are separate:
 - Reconciliation report for restaurants.
 - Avoid showing unpaid orders in restaurant queue.
 - Audit payment status changes.
+- Store all money values in paise/cents-style integer fields, never Float.
+- Keep public tracking and customer order APIs free of provider charge IDs unless a safe customer-facing reference is explicitly designed.
 
 ## Before Payment Launch
 
@@ -30,3 +32,4 @@ Order preparation status and payment status are separate:
 - Keep `paymentStatus` separate from kitchen status.
 - Add rollback plan for provider outage.
 - Confirm notification/OTP provider credentials are configured outside source control.
+- Have legal review the refund policy before enabling customer payments.

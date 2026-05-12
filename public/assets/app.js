@@ -208,6 +208,7 @@ function partnerNoAccessMessage() {
 async function initPartnerPage() {
   requireAuth("/restaurant-login.html");
   try {
+    // Partner pages must verify role before loading restaurant or admin data.
     const user = await initAccountMenu("accountMenu", "/restaurant-login.html");
     if (!user) return null;
     if (user.role === "USER") {

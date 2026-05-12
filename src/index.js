@@ -8,6 +8,10 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const { notifyOrderConfirmation, sendOtp } = require("./services/notification.service");
 const { checkOrderAbuse, hashIp, logOrderAttempt } = require("./services/abuse.service");
+const { publicMenuItem, adminMenuItem } = require("./serializers/menu.serializer");
+const { publicOrderResponse, customerOrderSummary } = require("./serializers/order.serializer");
+const { rupeesToPaise, paiseToRupees } = require("./utils/money");
+const { publicMenuKey } = require("./utils/token");
 const { isValidPhone, normalizePhone } = require("./utils/phone");
 const { createPrismaClient } = require("./prisma");
 
@@ -127,115 +131,6 @@ function menuFoodFilter(value) {
     if (!value || String(value).toUpperCase() === "ALL") return {};
     const foodType = String(value).toUpperCase();
     return FOOD_TYPES.includes(foodType) ? { foodType } : {};
-}
-
-function rupeesToPaise(value) {
-    const amount = Number(value);
-    if (!Number.isFinite(amount) || amount < 0) return null;
-    return Math.round(amount * 100);
-}
-
-function paiseToRupees(value) {
-    return Number(value || 0) / 100;
-}
-
-function publicMenuKey(menuId) {
-    return crypto
-        .createHmac("sha256", process.env.JWT_SECRET)
-        .update(String(menuId || ""))
-        .digest("base64url")
-        .slice(0, 24);
-}
-
-// Public menu uses menuKey so customer pages never need internal menu IDs.
-function publicMenuItem(item) {
-    if (!item) return item;
-
-    const { id, pricePaise, restaurantId, categoryId, category, ...safeItem } = item;
-
-    return {
-        ...safeItem,
-        key: publicMenuKey(id),
-        category: category ? { name: category.name, sortOrder: category.sortOrder } : null,
-        price: paiseToRupees(pricePaise)
-    };
-}
-
-function adminMenuItem(item) {
-    if (!item) return item;
-
-    return {
-        id: item.id,
-        key: publicMenuKey(item.id),
-        name: item.name,
-        description: item.description,
-        imageUrl: item.imageUrl,
-        foodType: item.foodType,
-        isAvailable: item.isAvailable,
-        isActive: item.isActive,
-        price: paiseToRupees(item.pricePaise),
-        categoryId: item.categoryId,
-        category: item.category
-            ? { id: item.category.id, name: item.category.name, sortOrder: item.category.sortOrder }
-            : null
-    };
-}
-
-function publicOrderResponse(order, options = {}) {
-    const response = {
-        orderNumber: order.orderNumber,
-        pickupCode: order.pickupCode,
-        totalPrice: paiseToRupees(order.totalPricePaise),
-        status: order.status,
-        paymentStatus: order.paymentStatus,
-        readyAt: order.readyAt,
-        createdAt: order.createdAt,
-        updatedAt: order.updatedAt,
-        restaurant: order.restaurant
-            ? {
-                  name: order.restaurant.name,
-                  slug: order.restaurant.slug,
-                  pickupNote: order.restaurant.pickupNote
-              }
-            : null,
-        items: (order.items || []).map((item) => ({
-            nameAtOrder: item.nameAtOrder,
-            quantity: item.quantity,
-            priceAtOrder: paiseToRupees(item.priceAtOrderPaise)
-        }))
-    };
-
-    if (options.includeInternalId) {
-        response.id = order.id;
-    }
-
-    return response;
-}
-
-function customerOrderSummary(order) {
-    return {
-        trackingToken: order.trackingToken,
-        orderNumber: order.orderNumber,
-        pickupCode: order.pickupCode,
-        status: order.status,
-        paymentStatus: order.paymentStatus,
-        totalPrice: paiseToRupees(order.totalPricePaise),
-        createdAt: order.createdAt,
-        readyAt: order.readyAt,
-        restaurant: order.restaurant
-            ? {
-                  name: order.restaurant.name,
-                  slug: order.restaurant.slug,
-                  locality: order.restaurant.locality,
-                  address: order.restaurant.address
-              }
-            : null,
-        items: (order.items || []).map((item) => ({
-            nameAtOrder: item.nameAtOrder,
-            quantity: item.quantity,
-            priceAtOrder: paiseToRupees(item.priceAtOrderPaise)
-        }))
-    };
 }
 
 function allowedNextOrderStatuses(status) {
@@ -399,9 +294,6 @@ async function ensureFoodTypeSchema() {
     `);
 }
 
-/* ================================
-   HEALTH CHECK
-================================ */
 app.get("/", (req, res) => {
     res.sendFile(path.join(__dirname, "../public/index.html"));
 });
@@ -410,9 +302,6 @@ app.get("/r/:slug", (req, res) => {
     res.sendFile(path.join(__dirname, "../public/menu.html"));
 });
 
-/* ================================
-   GET RESTAURANT
-================================ */
 app.get("/restaurant/slug/:slug", async (req, res) => {
     try {
         const restaurant = await prisma.restaurant.findUnique({
@@ -446,9 +335,6 @@ app.get("/restaurant/:id", async (req, res) => {
         res.status(500).json({ error: "Error fetching restaurant" });
     }
 });
-/* ================================
-   GET MENU
-================================ */
 app.get("/menu/:restaurantId", async (req, res) => {
     try {
         const restaurant = await prisma.restaurant.findUnique({ where: { id: req.params.restaurantId } });
@@ -508,9 +394,6 @@ app.get("/menu/by-slug/:slug", async (req, res) => {
     }
 });
 
-/* ================================
-   GET CATEGORIES
-================================ */
 app.get("/categories/:restaurantId", authMiddleware, async (req, res) => {
     try {
         const access = await getRestaurantAccess(req.params.restaurantId, req.user.userId);
@@ -532,9 +415,6 @@ app.get("/categories/:restaurantId", authMiddleware, async (req, res) => {
     }
 });
 
-/* ================================
-   CREATE ORDER (OPTIMIZED)
-================================ */
 app.post("/order", orderLimiter, optionalAuth, async (req, res) => {
     try {
         const { items, sessionId, phone } = req.body;
@@ -764,9 +644,6 @@ app.post("/order", orderLimiter, optionalAuth, async (req, res) => {
     }
 });
 
-/* ================================
-   GET ORDER
-================================ */
 app.get("/order/:trackingToken", trackingLimiter, async (req, res) => {
     try {
         const order = await prisma.order.findUnique({
@@ -907,11 +784,11 @@ app.post("/auth/signup", authLimiter, async (req, res) => {
 
         const hashed = await bcrypt.hash(password, 10);
 
-        const user = await prisma.user.create({
+        await prisma.user.create({
             data: { email: String(email).toLowerCase().trim(), password: hashed, name }
         });
 
-        res.json({ message: "User created", userId: user.id });
+        res.json({ message: "Customer account created" });
 
     } catch (err) {
         logRouteError("POST /auth/signup", err);
@@ -938,7 +815,7 @@ app.post("/auth/customer/signup", authLimiter, async (req, res) => {
             return res.status(400).json({ error: "User already exists" });
         }
 
-        const user = await prisma.user.create({
+        await prisma.user.create({
             data: {
                 email: normalizedEmail,
                 password: await bcrypt.hash(password, 10),
@@ -947,7 +824,7 @@ app.post("/auth/customer/signup", authLimiter, async (req, res) => {
             }
         });
 
-        res.json({ message: "Customer account created", userId: user.id });
+        res.json({ message: "Customer account created" });
     } catch (err) {
         logRouteError("POST /auth/customer/signup", err);
         res.status(500).json({ error: "Signup failed" });
@@ -1156,13 +1033,14 @@ app.get("/customer/profile", authMiddleware, async (req, res) => {
     try {
         const user = await prisma.user.findUnique({
             where: { id: req.user.userId },
-            select: { id: true, email: true, name: true, phone: true, role: true, createdAt: true }
+            select: { email: true, name: true, phone: true, role: true }
         });
 
         if (!user) return res.status(401).json({ error: "Invalid user" });
         if (user.role !== "USER") return res.status(403).json({ error: "Customer profile is available only for customer accounts" });
 
-        res.json({ profile: user });
+        const { role, ...profile } = user;
+        res.json({ profile });
     } catch (err) {
         logRouteError("GET /customer/profile", err);
         res.status(500).json({ error: "Error fetching profile" });
@@ -1196,7 +1074,7 @@ app.patch("/customer/profile", authMiddleware, async (req, res) => {
         const updated = await prisma.user.update({
             where: { id: user.id },
             data,
-            select: { id: true, email: true, name: true, phone: true, role: true, createdAt: true }
+            select: { email: true, name: true, phone: true }
         });
 
         res.json({ profile: updated, message: "Profile updated" });
@@ -1376,19 +1254,6 @@ function getUserPermissions(user) {
     };
 }
 
-async function canAccessRestaurant(restaurantId, userId) {
-    const user = await getAuthUser(userId);
-    if (!user) return false;
-    if (isSuperAdmin(user)) return true;
-
-    const restaurant = await prisma.restaurant.findUnique({
-        where: { id: restaurantId },
-        select: { ownerId: true }
-    });
-
-    return !!restaurant && (restaurant.ownerId === userId || user.staffRestaurantId === restaurantId);
-}
-
 async function getRestaurantAccess(restaurantId, userId) {
     const user = await getAuthUser(userId);
     if (!user) return { user: null, restaurant: null, canAccess: false, canManage: false, canOperate: false };
@@ -1428,9 +1293,6 @@ function ensureWorkspaceService(access, res) {
     return false;
 }
 
-/* ================================
-   RESTAURANTS LIST
-================================ */
 app.get("/restaurants", authMiddleware, async (req, res) => {
     try {
         const user = await getAuthUser(req.user.userId);
@@ -2140,9 +2002,6 @@ app.delete("/admin/staff/:restaurantId/:userId", authMiddleware, async (req, res
     }
 });
 
-/* ================================
-   START SERVER
-================================ */
 const PORT = process.env.PORT || 5000;
 
 async function startServer() {

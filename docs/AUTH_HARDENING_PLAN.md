@@ -20,6 +20,7 @@ Current auth uses JWT bearer tokens stored by the frontend. This is simple for t
 - `USER` accounts are blocked from restaurant/admin APIs and redirected out of the restaurant shell.
 - Restaurant-scoped APIs verify the current admin, owner, or assigned employee before returning or changing data.
 - Customer order history is scoped to the current customer only; guest orders stay separate until a future verified claim flow exists.
+- Release smoke testing creates temporary admin, owner, employee, customer, restaurant, menu, and order fixtures to verify role boundaries.
 
 ## Additional Work
 
@@ -30,3 +31,4 @@ Current auth uses JWT bearer tokens stored by the frontend. This is simple for t
 - Centralized validation and error middleware.
 - Split remaining route handlers from `src/index.js` into route/controller/service/serializer modules.
 - Replace compatibility endpoints that accept internal IDs on public routes with slug/key-only versions once clients have migrated.
+- Move bearer storage from `localStorage` to secure cookies before production if the frontend becomes dynamic enough to support CSRF protection.

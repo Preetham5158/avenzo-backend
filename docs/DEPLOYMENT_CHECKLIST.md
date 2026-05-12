@@ -68,7 +68,7 @@ Only do this after confirming the production schema already matches that baselin
 
 - Login works for admin and assigned restaurant users.
 - Admin dashboard lists restaurants.
-- Customer signup/login lands on the customer placeholder.
+- Customer signup/login lands on the customer home.
 - Public menu loads for an active restaurant.
 - Order creation returns a `trackingToken`.
 - Tracking URL works and does not expose internal order IDs.
@@ -78,6 +78,8 @@ Only do this after confirming the production schema already matches that baselin
 - Super Admin can renew subscription status/date.
 - Restaurant interest form saves a lead.
 - Restaurant login OTP flow works with configured provider or approved development log mode.
+- `node scripts/smoke-test.js` passes and cleans up its temporary role fixtures.
+- Public menu and tracking responses do not expose internal IDs.
 
 ## Rollback Notes
 

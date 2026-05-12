@@ -24,6 +24,7 @@ async function logOrderAttempt(prisma, { restaurantId, phone, deviceId, ipHash, 
 }
 
 async function checkOrderAbuse(prisma, { restaurantId, phone, deviceId, ipHash }) {
+  // Block lists and short-window attempt counts protect restaurants from noisy fake orders.
   const [blockedPhone, blockedDevice] = await Promise.all([
     phone ? prisma.blockedPhone.findUnique({ where: { phone } }) : null,
     deviceId ? prisma.blockedDevice.findUnique({ where: { deviceId } }) : null

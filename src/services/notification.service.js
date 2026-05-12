@@ -43,6 +43,7 @@ async function sendOtp({ prisma, userId, channel = "LOG", phone, email, purpose,
     throw new Error("OTP log mode is disabled in production");
   }
 
+  // Development log mode is explicit; production must use a real provider and never print OTPs.
   console.log(`[otp:dev-log] purpose=${purpose} recipient=${recipientMasked} otp=${otp}`);
   await prisma.notificationLog.create({
     data: {
@@ -84,6 +85,7 @@ async function notifyOrderConfirmation({ prisma, order, restaurant, baseUrl, rec
       return;
     }
 
+    // Order notifications are best-effort until a provider is configured; orders must still be created.
     console.log(`[notification:intent] order=${order.orderNumber} channel=log ${message}`);
     await prisma.notificationLog.create({
       data: {
