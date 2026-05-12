@@ -463,7 +463,7 @@ app.get("/menu/:restaurantId", async (req, res) => {
                 isActive: true,
                 ...menuFoodFilter(req.query.foodType)
             },
-            include: { category: true }, // 🔥 important
+            include: { category: true },
             orderBy: [
                 { isAvailable: "desc" },
                 { category: { name: "asc" } }

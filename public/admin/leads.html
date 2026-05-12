@@ -92,7 +92,8 @@
         ["NEW", "New", unseen],
         ["CONTACTED", "Contacted", counts.CONTACTED || 0],
         ["QUALIFIED", "Qualified", counts.QUALIFIED || 0],
-        ["CONVERTED", "Converted", counts.CONVERTED || 0]
+        ["CONVERTED", "Converted", counts.CONVERTED || 0],
+        ["CLOSED", "Closed", counts.CLOSED || 0]
       ];
       document.getElementById("leadStats").innerHTML = cards.map(([key, label, value]) => `
         <article class="card card-pad">

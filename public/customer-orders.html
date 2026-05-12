@@ -9,7 +9,7 @@
   <style>
     .order-controls {
       display: grid;
-      grid-template-columns: minmax(0, 1fr) 170px;
+      grid-template-columns: minmax(0, 1fr);
       gap: 10px;
     }
 
@@ -64,14 +64,11 @@
 
       <section class="order-controls">
         <input class="input" id="orderSearch" placeholder="Search restaurant or order code" oninput="renderOrders()">
-        <select class="select" id="statusFilter" onchange="loadOrders(true)">
-          <option value="">All statuses</option>
-          <option value="PENDING">Pending</option>
-          <option value="PREPARING">Preparing</option>
-          <option value="READY">Ready</option>
-          <option value="COMPLETED">Completed</option>
-          <option value="CANCELLED">Cancelled</option>
-        </select>
+      </section>
+      <section class="tabbar" aria-label="Order status tabs">
+        <button class="btn tab active" id="tab-active" type="button" onclick="setOrderGroup('active')">Active</button>
+        <button class="btn tab" id="tab-past" type="button" onclick="setOrderGroup('past')">Past</button>
+        <button class="btn tab" id="tab-cancelled" type="button" onclick="setOrderGroup('cancelled')">Cancelled</button>
       </section>
 
       <section class="stack" id="orders"></section>
@@ -83,6 +80,7 @@
   <script>
     let orders = [];
     let pagination = { page: 1, totalPages: 1, total: 0 };
+    let activeGroup = "active";
 
     initCustomerPage("orders").then((user) => {
       if (!user) return;
@@ -94,8 +92,7 @@
       const target = document.getElementById("orders");
       target.innerHTML = skeletonCards(4);
       try {
-        const status = document.getElementById("statusFilter").value;
-        const data = await request(`/customer/orders?page=${pagination.page}&limit=10${status ? `&status=${encodeURIComponent(status)}` : ""}`);
+        const data = await request(`/customer/orders?page=${pagination.page}&limit=30`);
         orders = data.orders || [];
         pagination = data.pagination || { page: 1, totalPages: 1, total: orders.length };
         renderOrders();
@@ -110,14 +107,14 @@
         order.restaurant?.name,
         order.pickupCode,
         String(order.orderNumber)
-      ].join(" ").toLowerCase().includes(query));
+      ].join(" ").toLowerCase().includes(query)).filter(order => groupMatches(order.status));
 
       const target = document.getElementById("orders");
       if (!visible.length) {
         target.innerHTML = `
           <div class="empty">
             <h3 class="card-title-gap">No orders yet</h3>
-            <p class="muted">Browse restaurants and place your first signed-in Avenzo order.</p>
+            <p class="muted">${emptyMessage()}</p>
             <a class="btn btn-primary mt-12" href="/customer-restaurants.html">Browse restaurants</a>
           </div>`;
         renderPager();
@@ -151,6 +148,26 @@
           </article>`;
       }).join("");
       renderPager();
+    }
+
+    function setOrderGroup(group) {
+      activeGroup = group;
+      document.querySelectorAll(".tabbar .tab").forEach(button => {
+        button.classList.toggle("active", button.id === `tab-${group}`);
+      });
+      renderOrders();
+    }
+
+    function groupMatches(status) {
+      if (activeGroup === "active") return ["PENDING", "PREPARING", "READY"].includes(status);
+      if (activeGroup === "past") return status === "COMPLETED";
+      return status === "CANCELLED";
+    }
+
+    function emptyMessage() {
+      if (activeGroup === "past") return "Completed orders will appear here.";
+      if (activeGroup === "cancelled") return "Cancelled orders will appear here.";
+      return "No active orders yet. Browse restaurants and place your first Avenzo order.";
     }
 
     function renderPager() {

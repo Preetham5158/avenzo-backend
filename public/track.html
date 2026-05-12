@@ -80,7 +80,7 @@
 
       <div class="row-between top-line">
         <strong>Total</strong>
-        <strong id="total">₹0</strong>
+        <strong id="total">Rs 0</strong>
       </div>
 
       <div class="row row-wrap top-line" id="trackingActions"></div>
@@ -125,7 +125,7 @@
   document.getElementById("placedAt").textContent = formatDate(data.createdAt);
         const badge = document.getElementById("statusBadge");
         badge.className = `pill ${badgeClass(data.status)}`;
-        badge.textContent = data.status;
+        badge.textContent = statusLabel(data.status);
 
         const activeIndex = Math.max(0, statuses.indexOf(data.status));
         document.querySelectorAll(".step").forEach((step, index) => {
@@ -213,6 +213,16 @@
         <a class="btn btn-primary" href="${menuHref}">Back to menu</a>
         <a class="btn btn-ghost" href="/track">Find order</a>
       `;
+    }
+
+    function statusLabel(value) {
+      return {
+        PENDING: "Order received",
+        PREPARING: "Being prepared",
+        READY: "Ready",
+        COMPLETED: "Completed",
+        CANCELLED: "Cancelled"
+      }[value] || "Checking";
     }
 
     function startStatusPolling() {

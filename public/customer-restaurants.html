@@ -9,7 +9,7 @@
   <style>
     .restaurant-toolbar {
       display: grid;
-      grid-template-columns: minmax(0, 1fr) 180px;
+      grid-template-columns: minmax(0, 1fr) 180px 180px;
       gap: 10px;
     }
 
@@ -70,6 +70,11 @@
           <option value="BOTH">Veg & non-veg</option>
           <option value="NON_VEG">Non-veg</option>
         </select>
+        <select class="select" id="availabilityFilter" onchange="renderRestaurants()">
+          <option value="">All availability</option>
+          <option value="AVAILABLE">Available now</option>
+          <option value="PAUSED">Ordering paused</option>
+        </select>
       </section>
 
       <section class="restaurant-grid" id="restaurants"></section>
@@ -100,10 +105,13 @@
     function renderRestaurants() {
       const query = document.getElementById("searchInput").value.trim().toLowerCase();
       const foodType = document.getElementById("foodFilter").value;
+      const availability = document.getElementById("availabilityFilter").value;
       const visible = restaurants.filter(restaurant => {
         const matchesQuery = !query || [restaurant.name, restaurant.locality, restaurant.address].join(" ").toLowerCase().includes(query);
         const matchesFood = !foodType || restaurant.foodType === foodType;
-        return matchesQuery && matchesFood;
+        const available = restaurant.serviceAvailable !== false;
+        const matchesAvailability = !availability || (availability === "AVAILABLE" ? available : !available);
+        return matchesQuery && matchesFood && matchesAvailability;
       });
 
       const target = document.getElementById("restaurants");
