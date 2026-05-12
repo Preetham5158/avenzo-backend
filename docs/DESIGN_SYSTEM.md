@@ -32,14 +32,16 @@ Avenzo should feel calm, premium, and operationally trustworthy. Customer surfac
 - Forms: labels always visible, helper text for sensitive fields like phone and OTP.
 - Empty states: short message plus next action.
 
-## Customer Dashboard
+## Customer Experience
 
-- First screen should answer: who is signed in, where can they order, and what happened with recent orders.
-- Quick actions should map to common customer intents: browse restaurants, view orders, track latest order, edit profile.
-- Restaurant discovery cards show only public-safe fields: name, locality/address, food type, availability, and service message.
+- Customer information architecture is split by intent: Home, Restaurants, Orders, and Profile.
+- Customer home should stay light: welcome, quick actions, profile completion hint, current order, and 2-3 recent orders.
+- Mobile customer navigation uses a bottom nav with Home, Restaurants, Orders, and Profile; desktop uses the same nav in the top bar.
+- Restaurant discovery cards show only public-safe fields: name, slug URL, locality/address, food type, availability, and service message.
 - Order cards show tracking token links, order number, pickup code, status, payment status, total, date, and a short item preview.
 - Guest orders are intentionally absent from dashboard history until a verified claim flow exists.
 - Restaurant partner interest links are allowed only as low-priority help/footer links on customer surfaces.
+- Logged-in checkout uses the saved customer phone when available. If missing, ask once with a clear reason and save it to the customer profile.
 
 ## Auth Layout
 

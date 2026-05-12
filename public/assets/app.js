@@ -168,6 +168,38 @@ async function initAccountMenu(targetId = "accountMenu") {
   }
 }
 
+function customerNavHtml(active = "home") {
+  const items = [
+    { key: "home", href: "/customer.html", label: "Home" },
+    { key: "restaurants", href: "/customer-restaurants.html", label: "Restaurants" },
+    { key: "orders", href: "/customer-orders.html", label: "Orders" },
+    { key: "profile", href: "/customer-profile.html", label: "Profile" }
+  ];
+
+  return `
+    <nav class="customer-nav" aria-label="Customer navigation">
+      ${items.map(item => `
+        <a class="${active === item.key ? "active" : ""}" href="${item.href}">
+          <span>${item.label}</span>
+        </a>
+      `).join("")}
+    </nav>
+  `;
+}
+
+async function initCustomerPage(active = "home") {
+  requireAuth();
+  const navTarget = document.getElementById("customerNav");
+  if (navTarget) navTarget.innerHTML = customerNavHtml(active);
+
+  const user = await initAccountMenu();
+  if (user && user.role !== "USER") {
+    window.location.href = "/admin/dashboard.html";
+    return null;
+  }
+  return user;
+}
+
 function toggleAccountMenu() {
   document.getElementById("accountDropdown")?.classList.toggle("open");
 }

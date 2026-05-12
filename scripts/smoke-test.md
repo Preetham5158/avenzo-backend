@@ -16,7 +16,8 @@ npm start
 1. Sign up a new account from `/customer-signup.html`.
    - Confirm the created user has role `USER`.
    - Customer Login at `/customer-login.html` should redirect to `/customer.html`.
-   - The customer dashboard should show account info and order history.
+   - Customer home should be focused and not contain the full restaurant/order/profile experience.
+   - Customer nav should link to `/customer-restaurants.html`, `/customer-orders.html`, and `/customer-profile.html`.
 
 2. Login as an admin from `/restaurant-login.html`.
    - `/auth/me` should return role `ADMIN`.
@@ -71,6 +72,10 @@ npm start
     - Place an order while logged in as a customer.
     - `/customer/orders` should list it.
     - The response should include `trackingToken` and should not expose internal order ID.
+    - `/customer-restaurants` should not expose restaurant UUIDs.
+    - Logged-in checkout should use saved profile phone without asking again.
+    - Logged-in checkout without saved phone should ask once and save the phone.
+    - Guest orders should not appear in `/customer/orders`.
 
 12. Dirty-order checks.
     - Missing phone should fail.

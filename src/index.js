@@ -139,13 +139,23 @@ function paiseToRupees(value) {
     return Number(value || 0) / 100;
 }
 
+function publicMenuKey(menuId) {
+    return crypto
+        .createHmac("sha256", process.env.JWT_SECRET)
+        .update(String(menuId || ""))
+        .digest("base64url")
+        .slice(0, 24);
+}
+
 function publicMenuItem(item) {
     if (!item) return item;
 
-    const { pricePaise, ...safeItem } = item;
+    const { id, pricePaise, restaurantId, categoryId, category, ...safeItem } = item;
 
     return {
         ...safeItem,
+        key: publicMenuKey(id),
+        category: category ? { name: category.name, sortOrder: category.sortOrder } : null,
         price: paiseToRupees(pricePaise)
     };
 }
@@ -167,7 +177,6 @@ function publicOrderResponse(order, options = {}) {
               }
             : null,
         items: (order.items || []).map((item) => ({
-            id: item.id,
             nameAtOrder: item.nameAtOrder,
             quantity: item.quantity,
             priceAtOrder: paiseToRupees(item.priceAtOrderPaise)
@@ -517,14 +526,16 @@ app.get("/categories/:restaurantId", authMiddleware, async (req, res) => {
 ================================ */
 app.post("/order", orderLimiter, optionalAuth, async (req, res) => {
     try {
-        const { items, restaurantId, sessionId, phone } = req.body;
+        const { items, sessionId, phone } = req.body;
+        let restaurantId = cleanString(req.body.restaurantId, 80);
+        const restaurantSlug = cleanString(req.body.restaurantSlug, 140);
         const ipHash = hashIp(req.ip);
 
         if (!Array.isArray(items) || items.length === 0 || items.length > 40) {
             return res.status(400).json({ error: "Items required" });
         }
 
-        if (!restaurantId || !sessionId) {
+        if ((!restaurantId && !restaurantSlug) || !sessionId) {
             return res.status(400).json({ error: "Missing data" });
         }
 
@@ -533,7 +544,63 @@ app.post("/order", orderLimiter, optionalAuth, async (req, res) => {
             return res.status(400).json({ error: "Invalid session" });
         }
 
-        const normalizedPhone = normalizePhone(phone);
+        const normalizedItems = items.map(i => ({
+            menuId: String(i.menuId || ""),
+            menuKey: String(i.menuKey || ""),
+            quantity: Number(i.quantity)
+        }));
+
+        if (normalizedItems.some(i => (!i.menuId && !i.menuKey) || !Number.isInteger(i.quantity) || i.quantity < 1 || i.quantity > 20)) {
+            return res.status(400).json({ error: "Please check item quantities" });
+        }
+
+        const restaurant = restaurantSlug
+            ? await prisma.restaurant.findUnique({
+                  where: { slug: restaurantSlug },
+                  select: { id: true, name: true, isActive: true, subscriptionStatus: true, subscriptionEndsAt: true }
+              })
+            : await prisma.restaurant.findUnique({
+                  where: { id: restaurantId },
+                  select: { id: true, name: true, isActive: true, subscriptionStatus: true, subscriptionEndsAt: true }
+              });
+
+        if (!restaurant) {
+            return res.status(404).json({ error: "Restaurant not found" });
+        }
+        restaurantId = restaurant.id;
+
+        if (!isRestaurantServiceAvailable(restaurant)) {
+            await logOrderAttempt(prisma, {
+                restaurantId,
+                phone: normalizePhone(phone),
+                deviceId,
+                ipHash,
+                status: "REJECTED",
+                reason: "restaurant_unavailable"
+            });
+            return res.status(423).json({ error: restaurantServiceMessage(restaurant) });
+        }
+
+        let customer = null;
+        if (req.user?.userId) {
+            customer = await prisma.user.findUnique({
+                where: { id: req.user.userId },
+                select: { id: true, email: true, role: true, phone: true }
+            });
+            if (!customer) {
+                return res.status(401).json({ error: "Invalid customer account" });
+            }
+            if (customer.role !== "USER") {
+                return res.status(403).json({ error: "Use a customer account to place customer orders" });
+            }
+        }
+
+        let normalizedPhone = normalizePhone(phone);
+        const shouldSaveCustomerPhone = !!customer && !customer.phone && !!normalizedPhone;
+        if (!normalizedPhone && customer?.phone) {
+            normalizedPhone = normalizePhone(customer.phone);
+        }
+
         if (!normalizedPhone) {
             await logOrderAttempt(prisma, {
                 restaurantId,
@@ -573,65 +640,26 @@ app.post("/order", orderLimiter, optionalAuth, async (req, res) => {
             return res.status(429).json({ error: abuse.reason });
         }
 
-        const normalizedItems = items.map(i => ({
-            menuId: String(i.menuId || ""),
-            quantity: Number(i.quantity)
-        }));
-
-        if (normalizedItems.some(i => !i.menuId || !Number.isInteger(i.quantity) || i.quantity < 1 || i.quantity > 20)) {
-            return res.status(400).json({ error: "Please check item quantities" });
-        }
-
-        const restaurant = await prisma.restaurant.findUnique({
-            where: { id: restaurantId },
-            select: { id: true, name: true, isActive: true, subscriptionStatus: true, subscriptionEndsAt: true }
-        });
-
-        if (!restaurant) {
-            return res.status(404).json({ error: "Restaurant not found" });
-        }
-
-        if (!isRestaurantServiceAvailable(restaurant)) {
-            await logOrderAttempt(prisma, {
-                restaurantId,
-                phone: normalizedPhone,
-                deviceId,
-                ipHash,
-                status: "REJECTED",
-                reason: "restaurant_unavailable"
-            });
-            return res.status(423).json({ error: restaurantServiceMessage(restaurant) });
-        }
-
-        let customer = null;
-        if (req.user?.userId) {
-            customer = await prisma.user.findUnique({
-                where: { id: req.user.userId },
-                select: { id: true, email: true, role: true }
-            });
-            if (!customer) {
-                return res.status(401).json({ error: "Invalid customer account" });
-            }
-            if (customer.role !== "USER") {
-                return res.status(403).json({ error: "Use a customer account to place customer orders" });
-            }
-        }
-
         const pickupCode = crypto.randomInt(1000, 10000).toString();
         const trackingToken = crypto.randomUUID();
 
+        const hasPublicMenuKeys = normalizedItems.some(i => i.menuKey);
         const menuItems = await prisma.menu.findMany({
-            where: {
-                id: { in: normalizedItems.map(i => i.menuId) },
-                restaurantId,
-                isActive: true
-            }
+            where: hasPublicMenuKeys
+                ? { restaurantId, isActive: true }
+                : {
+                      id: { in: normalizedItems.map(i => i.menuId) },
+                      restaurantId,
+                      isActive: true
+                  }
         });
 
         let totalPricePaise = 0;
 
         normalizedItems.forEach(i => {
-            const menu = menuItems.find(m => m.id === i.menuId);
+            const menu = menuItems.find(m =>
+                i.menuId ? m.id === i.menuId : publicMenuKey(m.id) === i.menuKey
+            );
 
             if (!menu) {
                 throw new Error("Invalid item");
@@ -664,7 +692,9 @@ app.post("/order", orderLimiter, optionalAuth, async (req, res) => {
                     restaurantId,
                     items: {
                         create: normalizedItems.map(i => {
-                            const menu = menuItems.find(m => m.id === i.menuId);
+                            const menu = menuItems.find(m =>
+                                i.menuId ? m.id === i.menuId : publicMenuKey(m.id) === i.menuKey
+                            );
 
                             return {
                                 menuId: menu.id,
@@ -686,6 +716,13 @@ app.post("/order", orderLimiter, optionalAuth, async (req, res) => {
             status: "ACCEPTED",
             reason: "order_created"
         });
+
+        if (shouldSaveCustomerPhone) {
+            prisma.user.update({
+                where: { id: customer.id },
+                data: { phone: normalizedPhone }
+            }).catch((err) => logRouteError("saveCustomerPhoneAfterOrder", err));
+        }
 
         notifyOrderConfirmation({
             prisma,
@@ -733,11 +770,21 @@ app.get("/order/:trackingToken", trackingLimiter, async (req, res) => {
 
 app.get("/orders/lookup", orderLookupLimiter, async (req, res) => {
     try {
-        const restaurantId = String(req.query.restaurantId || "");
+        let restaurantId = cleanString(req.query.restaurantId, 80);
+        const restaurantSlug = cleanString(req.query.restaurantSlug, 140);
         const phone = normalizePhone(req.query.phone);
 
-        if (!restaurantId || !phone || !isValidPhone(phone)) {
+        if ((!restaurantId && !restaurantSlug) || !phone || !isValidPhone(phone)) {
             return res.status(400).json({ error: "Enter the same mobile number used for ordering" });
+        }
+
+        if (!restaurantId && restaurantSlug) {
+            const restaurant = await prisma.restaurant.findUnique({
+                where: { slug: restaurantSlug },
+                select: { id: true }
+            });
+            if (!restaurant) return res.status(404).json({ error: "Restaurant not found" });
+            restaurantId = restaurant.id;
         }
 
         const orders = await prisma.order.findMany({
@@ -1254,7 +1301,6 @@ function publicRestaurantResponse(restaurant) {
     if (!restaurant) return null;
 
     return {
-        id: restaurant.id,
         name: restaurant.name,
         slug: restaurant.slug,
         address: restaurant.address,

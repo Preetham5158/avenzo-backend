@@ -82,6 +82,8 @@
         <strong>Total</strong>
         <strong id="total">₹0</strong>
       </div>
+
+      <div class="row row-wrap top-line" id="trackingActions"></div>
     </section>
 
     <section class="card card-pad stack mt-16" id="savedOrdersCard" hidden>
@@ -150,6 +152,7 @@
           `;
         }).join("");
         document.getElementById("total").textContent = money(total);
+        renderTrackingActions(data);
       } catch (err) {
         document.getElementById("restaurantName").textContent = "Order not found";
         document.getElementById("readyText").textContent = err.message || "Unable to load order.";
@@ -188,6 +191,28 @@
           </button>
         `).join("")
         : `<div class="empty">Place an order from this same browser, or use the restaurant menu's Find order option with your mobile number.</div>`;
+      document.getElementById("trackingActions").innerHTML = `
+        <a class="btn btn-primary" href="/">Back to restaurants</a>
+        <a class="btn btn-ghost" href="/customer-login.html">Customer sign in</a>
+      `;
+    }
+
+    function renderTrackingActions(order) {
+      const menuHref = order.restaurant?.slug ? `/r/${encodeURIComponent(order.restaurant.slug)}` : "/";
+      const target = document.getElementById("trackingActions");
+      if (getToken()) {
+        target.innerHTML = `
+          <a class="btn btn-dark" href="/customer-orders.html">My orders</a>
+          <a class="btn btn-primary" href="/customer-restaurants.html">Browse restaurants</a>
+          <a class="btn btn-ghost" href="/customer.html">Customer home</a>
+        `;
+        return;
+      }
+
+      target.innerHTML = `
+        <a class="btn btn-primary" href="${menuHref}">Back to menu</a>
+        <a class="btn btn-ghost" href="/track">Find order</a>
+      `;
     }
 
     function startStatusPolling() {

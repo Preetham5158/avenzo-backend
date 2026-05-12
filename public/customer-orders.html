@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Avenzo My Orders</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/app.css">
+  <style>
+    .order-controls {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 170px;
+      gap: 10px;
+    }
+
+    .order-card {
+      display: grid;
+      gap: 12px;
+    }
+
+    .order-meta {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .order-items {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    @media (max-width: 760px) {
+      .order-controls,
+      .order-meta {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="shell">
+    <header class="topbar">
+      <div class="topbar-inner">
+        <a class="brand" href="/" aria-label="Avenzo home">
+          <img src="/logo.png" alt="Avenzo">
+          <span>AVENZO</span>
+        </a>
+        <div id="customerNav"></div>
+        <div id="accountMenu"></div>
+      </div>
+    </header>
+
+    <main class="page stack">
+      <section class="page-head">
+        <div>
+          <div class="eyebrow">My orders</div>
+          <h1>Signed-in order history</h1>
+          <p class="muted mb-0">Only orders placed while logged in appear here. Guest orders stay private to tracking links.</p>
+        </div>
+        <a class="btn btn-primary" href="/customer-restaurants.html">Browse restaurants</a>
+      </section>
+
+      <section class="order-controls">
+        <input class="input" id="orderSearch" placeholder="Search restaurant or order code" oninput="renderOrders()">
+        <select class="select" id="statusFilter" onchange="loadOrders(true)">
+          <option value="">All statuses</option>
+          <option value="PENDING">Pending</option>
+          <option value="PREPARING">Preparing</option>
+          <option value="READY">Ready</option>
+          <option value="COMPLETED">Completed</option>
+          <option value="CANCELLED">Cancelled</option>
+        </select>
+      </section>
+
+      <section class="stack" id="orders"></section>
+      <div class="row row-wrap" id="pager"></div>
+    </main>
+  </div>
+
+  <script src="/assets/app.js"></script>
+  <script>
+    let orders = [];
+    let pagination = { page: 1, totalPages: 1, total: 0 };
+
+    initCustomerPage("orders").then((user) => {
+      if (!user) return;
+      loadOrders(true);
+    });
+
+    async function loadOrders(reset = false) {
+      if (reset) pagination.page = 1;
+      const target = document.getElementById("orders");
+      target.innerHTML = skeletonCards(4);
+      try {
+        const status = document.getElementById("statusFilter").value;
+        const data = await request(`/customer/orders?page=${pagination.page}&limit=10${status ? `&status=${encodeURIComponent(status)}` : ""}`);
+        orders = data.orders || [];
+        pagination = data.pagination || { page: 1, totalPages: 1, total: orders.length };
+        renderOrders();
+      } catch (err) {
+        target.innerHTML = `<div class="empty">${escapeHtml(err.message)}</div>`;
+      }
+    }
+
+    function renderOrders() {
+      const query = document.getElementById("orderSearch").value.trim().toLowerCase();
+      const visible = orders.filter(order => !query || [
+        order.restaurant?.name,
+        order.pickupCode,
+        String(order.orderNumber)
+      ].join(" ").toLowerCase().includes(query));
+
+      const target = document.getElementById("orders");
+      if (!visible.length) {
+        target.innerHTML = `
+          <div class="empty">
+            <h3 class="card-title-gap">No orders yet</h3>
+            <p class="muted">Browse restaurants and place your first signed-in Avenzo order.</p>
+            <a class="btn btn-primary mt-12" href="/customer-restaurants.html">Browse restaurants</a>
+          </div>`;
+        renderPager();
+        return;
+      }
+
+      target.innerHTML = visible.map(order => {
+        const preview = (order.items || []).slice(0, 4).map(item => `<span class="pill">${escapeHtml(item.nameAtOrder)} x ${item.quantity}</span>`).join("");
+        const menuHref = order.restaurant?.slug ? `/r/${encodeURIComponent(order.restaurant.slug)}` : "/customer-restaurants.html";
+        return `
+          <article class="card card-pad order-card">
+            <div class="row-between">
+              <div>
+                <div class="eyebrow">${escapeHtml(order.restaurant?.name || "Avenzo restaurant")}</div>
+                <h3 class="h3-tight">Order #${order.orderNumber}</h3>
+                <div class="muted">${formatDate(order.createdAt)}</div>
+              </div>
+              <span class="pill ${statusPill(order.status)}">${statusLabel(order.status)}</span>
+            </div>
+            <div class="order-meta">
+              <div><div class="muted">Pickup code</div><strong>${escapeHtml(order.pickupCode)}</strong></div>
+              <div><div class="muted">Payment</div><strong>${paymentLabel(order.paymentStatus)}</strong></div>
+              <div><div class="muted">Total</div><strong>${money(order.totalPrice)}</strong></div>
+              <div><div class="muted">Ready</div><strong>${order.readyAt ? formatDate(order.readyAt) : "Not yet"}</strong></div>
+            </div>
+            <div class="order-items">${preview || `<span class="muted">Items unavailable</span>`}</div>
+            <div class="row row-wrap">
+              <a class="btn btn-dark" href="/track/${order.trackingToken}">Track</a>
+              <a class="btn btn-ghost" href="${menuHref}">View restaurant</a>
+            </div>
+          </article>`;
+      }).join("");
+      renderPager();
+    }
+
+    function renderPager() {
+      const totalPages = pagination.totalPages || 1;
+      document.getElementById("pager").innerHTML = totalPages <= 1 ? "" : `
+        <button class="btn btn-ghost" type="button" ${pagination.page <= 1 ? "disabled" : ""} onclick="changePage(-1)">Previous</button>
+        <span class="pill">Page ${pagination.page} of ${totalPages}</span>
+        <button class="btn btn-ghost" type="button" ${pagination.page >= totalPages ? "disabled" : ""} onclick="changePage(1)">Next</button>
+      `;
+    }
+
+    function changePage(delta) {
+      pagination.page = Math.min(Math.max(1, pagination.page + delta), pagination.totalPages || 1);
+      loadOrders(false);
+    }
+
+    function statusPill(status) {
+      if (["READY", "COMPLETED"].includes(status)) return "pill-success";
+      if (status === "CANCELLED") return "pill-danger";
+      return "pill-warning";
+    }
+
+    function statusLabel(value) {
+      return String(value || "").replaceAll("_", " ").toLowerCase().replace(/\b\w/g, letter => letter.toUpperCase());
+    }
+
+    function paymentLabel(value) {
+      return {
+        PAYMENT_NOT_REQUIRED: "Not required",
+        PAYMENT_PENDING: "Pending",
+        PAID: "Paid",
+        PAYMENT_FAILED: "Failed",
+        REFUNDED: "Refunded",
+        PARTIALLY_REFUNDED: "Partial refund"
+      }[value] || "Not required";
+    }
+  </script>
+</body>
+
+</html>

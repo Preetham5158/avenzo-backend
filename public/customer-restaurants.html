@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Avenzo Restaurants</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/app.css">
+  <style>
+    .restaurant-toolbar {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 180px;
+      gap: 10px;
+    }
+
+    .restaurant-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .restaurant-card {
+      display: grid;
+      gap: 12px;
+    }
+
+    .restaurant-meta {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    @media (max-width: 760px) {
+      .restaurant-toolbar,
+      .restaurant-grid,
+      .restaurant-meta {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="shell">
+    <header class="topbar">
+      <div class="topbar-inner">
+        <a class="brand" href="/" aria-label="Avenzo home">
+          <img src="/logo.png" alt="Avenzo">
+          <span>AVENZO</span>
+        </a>
+        <div id="customerNav"></div>
+        <div id="accountMenu"></div>
+      </div>
+    </header>
+
+    <main class="page stack">
+      <section class="page-head">
+        <div>
+          <div class="eyebrow">Restaurants</div>
+          <h1>Browse dine-in menus</h1>
+          <p class="muted mb-0">Pick an active Avenzo partner and order from your table.</p>
+        </div>
+      </section>
+
+      <section class="restaurant-toolbar">
+        <input class="input" id="searchInput" placeholder="Search restaurant or locality" oninput="renderRestaurants()">
+        <select class="select" id="foodFilter" onchange="renderRestaurants()">
+          <option value="">All food types</option>
+          <option value="PURE_VEG">Pure veg</option>
+          <option value="BOTH">Veg & non-veg</option>
+          <option value="NON_VEG">Non-veg</option>
+        </select>
+      </section>
+
+      <section class="restaurant-grid" id="restaurants"></section>
+    </main>
+  </div>
+
+  <script src="/assets/app.js"></script>
+  <script>
+    let restaurants = [];
+
+    initCustomerPage("restaurants").then((user) => {
+      if (!user) return;
+      loadRestaurants();
+    });
+
+    async function loadRestaurants() {
+      const target = document.getElementById("restaurants");
+      target.innerHTML = skeletonCards(4);
+      try {
+        const data = await request("/customer/restaurants");
+        restaurants = data.restaurants || [];
+        renderRestaurants();
+      } catch (err) {
+        target.innerHTML = `<div class="empty empty-full">${escapeHtml(err.message)}</div>`;
+      }
+    }
+
+    function renderRestaurants() {
+      const query = document.getElementById("searchInput").value.trim().toLowerCase();
+      const foodType = document.getElementById("foodFilter").value;
+      const visible = restaurants.filter(restaurant => {
+        const matchesQuery = !query || [restaurant.name, restaurant.locality, restaurant.address].join(" ").toLowerCase().includes(query);
+        const matchesFood = !foodType || restaurant.foodType === foodType;
+        return matchesQuery && matchesFood;
+      });
+
+      const target = document.getElementById("restaurants");
+      if (!visible.length) {
+        target.innerHTML = `
+          <div class="empty empty-full">
+            <h3 class="card-title-gap">No restaurants found</h3>
+            <p class="muted mb-0">Try a different restaurant name, locality, or food type.</p>
+          </div>`;
+        return;
+      }
+
+      target.innerHTML = visible.map(restaurant => {
+        const available = restaurant.serviceAvailable !== false;
+        const href = `/r/${encodeURIComponent(restaurant.slug)}`;
+        return `
+          <article class="card card-pad restaurant-card">
+            <div class="row-between">
+              <div>
+                <h3 class="h3-tight">${escapeHtml(restaurant.name)}</h3>
+                <div class="muted">${escapeHtml(restaurant.locality || restaurant.address || "Dine-in partner")}</div>
+              </div>
+              <span class="pill ${available ? "pill-success" : "pill-warning"}">${available ? "Open now" : "Paused"}</span>
+            </div>
+            <div class="restaurant-meta">
+              <div><div class="muted">Food type</div><strong>${restaurantFoodTypeLabel(restaurant.foodType)}</strong></div>
+              <div><div class="muted">Ordering</div><strong>${available ? "Available" : "Unavailable"}</strong></div>
+            </div>
+            ${available ? "" : `<p class="muted mb-0">${escapeHtml(restaurant.serviceMessage || "Ordering is paused right now.")}</p>`}
+            <a class="btn ${available ? "btn-primary" : "btn-ghost"}" href="${available ? href : "#"}" ${available ? "" : "aria-disabled='true' onclick='return false;'"}>${available ? "View menu" : "Ordering paused"}</a>
+          </article>`;
+      }).join("");
+    }
+  </script>
+</body>
+
+</html>

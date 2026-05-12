@@ -804,10 +804,10 @@
       </div>
       <div class="modal-body stack">
         <div id="cartItems" class="stack"></div>
-        <div class="field">
+        <div class="field" id="phoneField">
           <label for="phone">Mobile number</label>
-          <input id="phone" class="input" inputmode="tel" required placeholder="10 digit mobile number">
-          <div class="muted">We use this number to help you track your dine-in order and send order updates.</div>
+          <input id="phone" class="input" inputmode="tel" placeholder="10 digit mobile number">
+          <div class="muted" id="phoneHelp">We use this number to help you track your dine-in order and send order updates.</div>
         </div>
       </div>
       <div class="modal-actions">
@@ -851,6 +851,7 @@
     let activeCategory = "ALL";
     let activeFoodType = "VEG";
     let searchTerm = "";
+    let customerProfile = null;
     const collapsedCategories = new Set();
 
     async function init() {
@@ -859,7 +860,7 @@
         const restaurant = slug
           ? await request(`/restaurant/slug/${slug}`, { headers: {} })
           : await request(`/restaurant/${restaurantId}`, { headers: {} });
-        restaurantId = restaurant.id;
+        restaurantId = restaurant.id || restaurantId;
         document.getElementById("restaurantName").textContent = restaurant.name;
         document.getElementById("restaurantAddress").textContent = restaurant.address || restaurant.locality || "Choose here. Eat here. Skip the billing queue.";
         document.getElementById("dineNote").textContent = restaurantFoodTypeLabel(restaurant.foodType);
@@ -875,9 +876,20 @@
           return;
         }
         await loadMenu();
+        await loadCustomerProfile();
         renderRecentOrder();
       } catch (err) {
         document.getElementById("menu").innerHTML = `<div class="empty">${escapeHtml(err.message || "Ordering will be back soon")}</div>`;
+      }
+    }
+
+    async function loadCustomerProfile() {
+      if (!getToken()) return;
+      try {
+        const data = await request("/customer/profile");
+        customerProfile = data.profile || null;
+      } catch {
+        customerProfile = null;
       }
     }
 
@@ -1007,6 +1019,7 @@
 
     function itemHtml(item) {
       const disabled = !item.isAvailable;
+      const key = item.key || item.id;
       return `
         <article class="food-card">
           <div class="food-img-wrap">
@@ -1021,29 +1034,33 @@
               ${disabled ? `<span class="pill pill-danger">Out of stock</span>` : ""}
             </div>
           </div>
-          <button class="btn btn-primary add-btn" id="add-${item.id}" ${disabled ? "disabled" : ""} onclick="changeQty('${item.id}', 1)">Add</button>
-          <div class="qty-control is-hidden" id="stepper-${item.id}">
-            <button class="btn btn-dark icon-btn" ${disabled ? "disabled" : ""} onclick="changeQty('${item.id}', -1)">-</button>
-            <strong id="qty-${item.id}">0</strong>
-            <button class="btn btn-primary icon-btn" ${disabled ? "disabled" : ""} onclick="changeQty('${item.id}', 1)">+</button>
+          <button class="btn btn-primary add-btn" id="add-${key}" ${disabled ? "disabled" : ""} onclick="changeQty('${key}', 1)">Add</button>
+          <div class="qty-control is-hidden" id="stepper-${key}">
+            <button class="btn btn-dark icon-btn" ${disabled ? "disabled" : ""} onclick="changeQty('${key}', -1)">-</button>
+            <strong id="qty-${key}">0</strong>
+            <button class="btn btn-primary icon-btn" ${disabled ? "disabled" : ""} onclick="changeQty('${key}', 1)">+</button>
           </div>
         </article>
       `;
     }
 
+    function itemKey(item) {
+      return item.key || item.id;
+    }
+
     function changeQty(id, delta) {
-      const itemData = menuData.find(m => m.id === id);
+      const itemData = menuData.find(m => itemKey(m) === id);
       if (!itemData || !itemData.isAvailable) return;
 
-      let item = cart.find(i => i.menuId === id);
+      let item = cart.find(i => i.menuKey === id);
       if (!item && delta > 0) {
-        item = { menuId: id, quantity: 0 };
+        item = { menuKey: id, quantity: 0 };
         cart.push(item);
       }
 
       if (item) {
         item.quantity += delta;
-        if (item.quantity <= 0) cart = cart.filter(i => i.menuId !== id);
+        if (item.quantity <= 0) cart = cart.filter(i => i.menuKey !== id);
       }
 
       updateUI();
@@ -1054,16 +1071,17 @@
       let totalPrice = 0;
 
       menuData.forEach(item => {
-        const found = cart.find(i => i.menuId === item.id);
+        const key = itemKey(item);
+        const found = cart.find(i => i.menuKey === key);
         const qty = found?.quantity || 0;
-        const qtyEl = document.getElementById(`qty-${item.id}`);
+        const qtyEl = document.getElementById(`qty-${key}`);
         if (qtyEl) qtyEl.textContent = qty;
-        document.getElementById(`add-${item.id}`)?.classList.toggle("is-hidden", qty > 0);
-        document.getElementById(`stepper-${item.id}`)?.classList.toggle("is-hidden", qty === 0);
+        document.getElementById(`add-${key}`)?.classList.toggle("is-hidden", qty > 0);
+        document.getElementById(`stepper-${key}`)?.classList.toggle("is-hidden", qty === 0);
       });
 
       cart.forEach(i => {
-        const data = menuData.find(m => m.id === i.menuId);
+        const data = menuData.find(m => itemKey(m) === i.menuKey);
         if (!data) return;
         totalItems += i.quantity;
         totalPrice += i.quantity * data.price;
@@ -1078,7 +1096,7 @@
     function openCheckout() {
       if (!cart.length) return toast("Your cart is empty");
       document.getElementById("cartItems").innerHTML = cart.map(i => {
-        const item = menuData.find(m => m.id === i.menuId);
+        const item = menuData.find(m => itemKey(m) === i.menuKey);
         if (!item) return "";
         return `
           <div class="row-between card card-pad">
@@ -1090,7 +1108,30 @@
           </div>
         `;
       }).join("");
+      configurePhoneField();
       document.getElementById("checkoutModal").classList.add("open");
+    }
+
+    function configurePhoneField() {
+      const phoneInput = document.getElementById("phone");
+      const phoneHelp = document.getElementById("phoneHelp");
+      const phoneField = document.getElementById("phoneField");
+      phoneInput.required = !customerProfile?.phone;
+      phoneInput.value = "";
+      if (customerProfile?.phone) {
+        phoneInput.hidden = true;
+        const suffix = customerProfile.phone.slice(-4);
+        phoneHelp.textContent = `Using the phone saved to your account ending ${suffix}.`;
+        phoneField.classList.add("app-panel");
+        phoneField.style.padding = "12px";
+      } else {
+        phoneInput.hidden = false;
+        phoneHelp.textContent = getToken()
+          ? "We use this number to send order updates and help the restaurant identify your order. It will be saved to your profile."
+          : "Phone is required for guest orders so you can track your dine-in order and the restaurant can identify it.";
+        phoneField.classList.remove("app-panel");
+        phoneField.style.padding = "";
+      }
     }
 
     function recentOrders() {
@@ -1111,7 +1152,8 @@
 
     function renderRecentOrder() {
       const el = document.getElementById("recentOrder");
-      const order = recentOrders().find(item => item.restaurantId === restaurantId);
+      const restaurantKey = slug || restaurantId;
+      const order = recentOrders().find(item => item.restaurantKey === restaurantKey);
       if (!order) {
         el.classList.remove("show");
         el.innerHTML = "";
@@ -1147,7 +1189,10 @@
       const phone = document.getElementById("lookupPhone").value.trim();
       setLoading(btn, true, "Finding...");
       try {
-        const data = await request(`/orders/lookup?restaurantId=${encodeURIComponent(restaurantId)}&phone=${encodeURIComponent(phone)}`, { headers: {} });
+        const query = slug
+          ? `restaurantSlug=${encodeURIComponent(slug)}`
+          : `restaurantId=${encodeURIComponent(restaurantId)}`;
+        const data = await request(`/orders/lookup?${query}&phone=${encodeURIComponent(phone)}`, { headers: {} });
         const orders = data.orders || [];
         document.getElementById("lookupResults").innerHTML = orders.length
           ? orders.map(order => `
@@ -1177,24 +1222,28 @@
       setLoading(btn, true, "Sending...");
 
       try {
-        const phone = document.getElementById("phone").value.trim();
-        if (!/^[0-9+\-\s()]{10,20}$/.test(phone)) {
+        const phone = customerProfile?.phone ? "" : document.getElementById("phone").value.trim();
+        if (!customerProfile?.phone && !/^[0-9+\-\s()]{10,20}$/.test(phone)) {
           throw new Error("Enter a valid mobile number to place your order.");
         }
+        const payload = {
+          sessionId: getDeviceId(),
+          items: cart,
+          ...(slug ? { restaurantSlug: slug } : { restaurantId }),
+          ...(phone ? { phone } : {})
+        };
         const data = await request("/order", {
           method: "POST",
-          body: JSON.stringify({
-            restaurantId,
-            sessionId: getDeviceId(),
-            phone,
-            items: cart
-          })
+          body: JSON.stringify(payload)
         });
+        if (getToken() && !customerProfile?.phone && phone) {
+          customerProfile = { ...(customerProfile || {}), phone };
+        }
         saveRecentOrder({
           trackingToken: data.trackingToken,
           orderNumber: data.orderNumber,
           pickupCode: data.pickupCode,
-          restaurantId,
+          restaurantKey: slug || restaurantId,
           createdAt: new Date().toISOString()
         });
         toast(data.message || "Order placed. We will send confirmation updates when available.");
