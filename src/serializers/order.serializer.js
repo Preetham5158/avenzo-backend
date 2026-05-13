@@ -34,6 +34,18 @@ function publicOrderResponse(order, options = {}) {
   response.hasRating = !!order.rating;
   response.rating = order.rating?.rating ?? null;
 
+  // Include payment method info when payment is pending so tracking/checkout can show correct UI.
+  if (order.paymentStatus === "PAYMENT_PENDING" && order.paymentMethod) {
+    response.paymentInfo = {
+      type: order.paymentMethod.type,
+      displayName: order.paymentMethod.displayName,
+      ...(order.paymentMethod.type === "UPI_QR" && {
+        qrImageUrl: order.paymentMethod.qrImageUrl || null,
+        upiId: order.paymentMethod.upiId || null
+      })
+    };
+  }
+
   return response;
 }
 

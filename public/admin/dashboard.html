@@ -237,6 +237,7 @@
             <button class="btn btn-soft" onclick="openOrders('${r.id}')">Orders</button>
             <button class="btn btn-ghost" onclick="openQr('${r.id}')">Scan card</button>
             ${canManageStaff(r) ? `<button class="btn btn-ghost" onclick="openStaff('${r.id}')">Staff</button>` : ""}
+            ${canEditRestaurants ? `<button class="btn btn-ghost" onclick="openPayments('${r.id}')">Payments</button>` : ""}
             ${canEditRestaurants ? `<button class="btn btn-ghost" onclick='openRestaurantModal(${JSON.stringify(r.id)})'>Edit</button>` : ""}
           </div>
         </article>
@@ -363,6 +364,10 @@
 
     function openStaff(id) {
       window.location.href = `/admin/staff.html?restaurantId=${id}`;
+    }
+
+    function openPayments(id) {
+      window.location.href = `/admin/payments.html?restaurantId=${id}`;
     }
 
     function openLeads() {

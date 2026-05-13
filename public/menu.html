@@ -812,12 +812,34 @@
           <input id="phone" class="input" inputmode="tel" placeholder="10 digit mobile number">
           <div class="muted" id="phoneHelp">We use this number to help the restaurant identify your order and send updates.</div>
         </div>
+        <div id="paymentMethodField" hidden></div>
       </div>
       <div class="modal-actions">
         <button type="button" class="btn btn-ghost" onclick="closeCheckout()">Add more</button>
         <button id="placeBtn" class="btn btn-primary" type="submit">Place order</button>
       </div>
     </form>
+  </div>
+
+  <div class="modal-backdrop" id="upiQrModal">
+    <div class="modal">
+      <div class="modal-head row-between">
+        <div>
+          <h3 class="section-title" id="upiQrTitle">Scan to pay</h3>
+          <div class="muted" id="upiQrSubtitle">Open your UPI app and scan the QR code below.</div>
+        </div>
+        <button type="button" class="btn btn-ghost icon-btn" onclick="closeUpiQrModal()">X</button>
+      </div>
+      <div class="modal-body stack" style="align-items:center;text-align:center">
+        <img id="upiQrImage" src="" alt="UPI QR code" style="max-width:260px;width:100%;border-radius:16px;border:1px solid #eee">
+        <p id="upiQrId" class="muted" style="font-size:13px"></p>
+        <p class="muted" style="font-size:13px">Once you have paid via your UPI app, tap the button below.</p>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" onclick="closeUpiQrModal()">Cancel</button>
+        <button id="upiPaidBtn" class="btn btn-primary" type="button" onclick="confirmUpiPayment()">I have paid</button>
+      </div>
+    </div>
   </div>
 
   <div class="modal-backdrop" id="findOrderModal">
@@ -843,6 +865,7 @@
     </form>
   </div>
 
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
   <script src="/assets/app.js"></script>
   <script>
     let restaurantId = new URLSearchParams(location.search).get("restaurantId");
@@ -852,6 +875,8 @@
     const guestMode = new URLSearchParams(location.search).get("guest") === "1";
     let cart = [];
     let menuData = [];
+    let paymentMethods = [];
+    let selectedPaymentMethodId = null;
     let resolvedSlug = slug || null;
     let activeCategory = "ALL";
     let activeFoodType = "ALL";
@@ -902,6 +927,7 @@
           ratingEl.hidden = false;
         }
         await loadCustomerProfile();
+        await loadPaymentMethods();
         setupFoodFilter();
         maybeInitCustomerBar();
         if (guestMode || !getToken()) {
@@ -922,6 +948,19 @@
         customerProfile = data.profile || null;
       } catch {
         customerProfile = null;
+      }
+    }
+
+    async function loadPaymentMethods() {
+      if (!restaurantId) return;
+      try {
+        const data = await request(`/payment/methods?restaurantId=${encodeURIComponent(restaurantId)}`, { auth: false });
+        paymentMethods = Array.isArray(data) ? data : (data.methods || []);
+        const def = paymentMethods.find(m => m.isDefault) || paymentMethods[0] || null;
+        selectedPaymentMethodId = def?.id || null;
+      } catch {
+        paymentMethods = [];
+        selectedPaymentMethodId = null;
       }
     }
 
@@ -1157,8 +1196,30 @@
           </div>
         `;
       }).join("");
+      renderPaymentSelector();
       configurePhoneField();
       document.getElementById("checkoutModal").classList.add("open");
+    }
+
+    function renderPaymentSelector() {
+      const el = document.getElementById("paymentMethodField");
+      if (!el) return;
+      if (!paymentMethods.length) { el.hidden = true; return; }
+      el.hidden = false;
+      el.innerHTML = `
+        <label class="field-label">Payment method</label>
+        <div class="stack" style="gap:8px">
+          ${paymentMethods.map(m => `
+            <label class="row card card-pad cursor-pointer" style="gap:10px;align-items:center">
+              <input type="radio" name="paymentMethod" value="${m.id}" ${m.id === selectedPaymentMethodId ? "checked" : ""} onchange="selectedPaymentMethodId='${m.id}'">
+              <span style="flex:1">
+                <strong>${escapeHtml(m.displayName)}</strong>
+                <span class="muted" style="font-size:12px;display:block">${m.type === "UPI_QR" ? "Scan QR code to pay" : "Secure online payment"}</span>
+              </span>
+            </label>
+          `).join("")}
+        </div>
+      `;
     }
 
     function configurePhoneField() {
@@ -1255,7 +1316,8 @@
           ...(slug ? { restaurantSlug: slug } : { restaurantId }),
           ...(guestMode ? { guest: true } : {}),
           ...(phone ? { phone } : {}),
-          ...(tableNumber ? { tableNumber } : {})
+          ...(tableNumber ? { tableNumber } : {}),
+          ...(selectedPaymentMethodId ? { paymentMethodId: selectedPaymentMethodId } : {})
         };
         const data = await request("/order", {
           method: "POST",
@@ -1273,6 +1335,19 @@
           restaurantKey: slug || restaurantId,
           createdAt: new Date().toISOString()
         });
+
+        if (data.paymentStatus === "PAYMENT_PENDING") {
+          const methodType = data.paymentMethod?.type;
+          closeCheckout();
+          if (methodType === "UPI_QR") {
+            openUpiQrModal(data);
+            return;
+          }
+          // Default to Razorpay for RAZORPAY type or unknown — handles redirect and loading state.
+          await openRazorpayCheckout(data.trackingToken, phone || customerProfile?.phone || "");
+          return;
+        }
+
         toast(data.message || "Order placed. We will send confirmation updates when available.");
         // Pass guest=1 so the tracking page knows not to show customer account navigation.
         window.location.href = `/track/${data.trackingToken}${guestMode ? "?guest=1" : ""}`;
@@ -1280,6 +1355,104 @@
         toast(err.message);
       } finally {
         setLoading(btn, false);
+      }
+    }
+
+    let _upiTrackingToken = null;
+
+    function openUpiQrModal(orderData) {
+      _upiTrackingToken = orderData.trackingToken;
+      const method = orderData.paymentMethod;
+      document.getElementById("upiQrTitle").textContent = `Pay — ${method?.displayName || "UPI QR"}`;
+      const imgEl = document.getElementById("upiQrImage");
+      if (method?.qrImageUrl) {
+        imgEl.src = method.qrImageUrl;
+        imgEl.hidden = false;
+      } else {
+        imgEl.hidden = true;
+      }
+      const idEl = document.getElementById("upiQrId");
+      idEl.textContent = method?.upiId ? `UPI ID: ${method.upiId}` : "";
+      document.getElementById("upiPaidBtn").disabled = false;
+      document.getElementById("upiQrModal").classList.add("open");
+    }
+
+    function closeUpiQrModal() {
+      document.getElementById("upiQrModal").classList.remove("open");
+      if (_upiTrackingToken) {
+        window.location.href = `/track/${_upiTrackingToken}${guestMode ? "?guest=1" : ""}`;
+      }
+    }
+
+    async function confirmUpiPayment() {
+      if (!_upiTrackingToken) return;
+      const btn = document.getElementById("upiPaidBtn");
+      setLoading(btn, true, "Confirming...");
+      try {
+        await request("/payment/upi-confirm", {
+          method: "POST",
+          body: JSON.stringify({ trackingToken: _upiTrackingToken }),
+          auth: false
+        });
+        document.getElementById("upiQrModal").classList.remove("open");
+        window.location.href = `/track/${_upiTrackingToken}${guestMode ? "?guest=1" : ""}`;
+      } catch (err) {
+        toast(err.message || "Could not confirm payment. Please try again.");
+        setLoading(btn, false);
+      }
+    }
+
+    async function openRazorpayCheckout(trackingToken, prefillPhone) {
+      const btn = document.getElementById("placeBtn");
+      try {
+        const payData = await request("/payment/create", {
+          method: "POST",
+          body: JSON.stringify({ trackingToken }),
+          auth: !guestMode
+        });
+
+        if (payData.alreadyPaid) {
+          window.location.href = `/track/${trackingToken}${guestMode ? "?guest=1" : ""}`;
+          return;
+        }
+
+        const options = {
+          key: payData.keyId,
+          amount: payData.amount,
+          currency: payData.currency,
+          order_id: payData.razorpayOrderId,
+          name: "Avenzo",
+          description: "Dine-in order",
+          prefill: { contact: prefillPhone || "" },
+          theme: { color: "#ff6b16" },
+          handler: function() {
+            // Frontend success is UI-only; DB is updated by the webhook.
+            // Redirect immediately — the tracking page will show the paid state once webhook fires.
+            window.location.href = `/track/${trackingToken}${guestMode ? "?guest=1" : ""}`;
+          },
+          modal: {
+            ondismiss: function() {
+              setLoading(btn, false);
+              toast("Payment cancelled. Your order is saved — visit the counter to pay or try again.");
+            }
+          }
+        };
+
+        if (typeof Razorpay === "undefined") {
+          toast("Payment service could not load. Please refresh and try again.");
+          setLoading(btn, false);
+          return;
+        }
+
+        const rzp = new Razorpay(options);
+        rzp.on("payment.failed", function() {
+          setLoading(btn, false);
+          toast("Payment failed. Please try again or pay at the counter.");
+        });
+        rzp.open();
+      } catch (err) {
+        setLoading(btn, false);
+        toast(err.message || "Could not initiate payment. Please try again.");
       }
     }
 
