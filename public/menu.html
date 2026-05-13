@@ -833,7 +833,7 @@
       <div class="modal-body stack" style="align-items:center;text-align:center">
         <img id="upiQrImage" src="" alt="UPI QR code" style="max-width:260px;width:100%;border-radius:16px;border:1px solid #eee">
         <p id="upiQrId" class="muted" style="font-size:13px"></p>
-        <p class="muted" style="font-size:13px">Once you have paid via your UPI app, tap the button below.</p>
+        <p class="muted" style="font-size:13px">Once you have paid via your UPI app, tap the button below. The restaurant will verify your payment before preparing your order.</p>
       </div>
       <div class="modal-actions">
         <button type="button" class="btn btn-ghost" onclick="closeUpiQrModal()">Cancel</button>
@@ -1387,17 +1387,18 @@
     async function confirmUpiPayment() {
       if (!_upiTrackingToken) return;
       const btn = document.getElementById("upiPaidBtn");
-      setLoading(btn, true, "Confirming...");
+      setLoading(btn, true, "Submitting...");
       try {
         await request("/payment/upi-confirm", {
           method: "POST",
           body: JSON.stringify({ trackingToken: _upiTrackingToken }),
           auth: false
         });
+        // Redirect to tracking — page will show "claim submitted, awaiting restaurant confirmation".
         document.getElementById("upiQrModal").classList.remove("open");
         window.location.href = `/track/${_upiTrackingToken}${guestMode ? "?guest=1" : ""}`;
       } catch (err) {
-        toast(err.message || "Could not confirm payment. Please try again.");
+        toast(err.message || "Could not submit payment claim. Please try again.");
         setLoading(btn, false);
       }
     }

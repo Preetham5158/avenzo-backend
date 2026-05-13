@@ -34,8 +34,8 @@ function publicOrderResponse(order, options = {}) {
   response.hasRating = !!order.rating;
   response.rating = order.rating?.rating ?? null;
 
-  // Include payment method info when payment is pending so tracking/checkout can show correct UI.
-  if (order.paymentStatus === "PAYMENT_PENDING" && order.paymentMethod) {
+  // Include payment method info while payment is unresolved so tracking/checkout shows correct UI.
+  if (["PAYMENT_PENDING", "PAYMENT_CLAIMED"].includes(order.paymentStatus) && order.paymentMethod) {
     response.paymentInfo = {
       type: order.paymentMethod.type,
       displayName: order.paymentMethod.displayName,
@@ -44,6 +44,10 @@ function publicOrderResponse(order, options = {}) {
         upiId: order.paymentMethod.upiId || null
       })
     };
+  }
+  // Expose the reference the customer submitted (e.g. UTR) so restaurant can cross-check.
+  if (options.includeInternalId && order.paymentReference) {
+    response.paymentReference = order.paymentReference;
   }
 
   return response;

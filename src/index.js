@@ -1911,9 +1911,12 @@ app.patch("/order/:id/status", authMiddleware, async (req, res) => {
         if (!access.canOperate) return res.status(403).json({ error: "Not allowed" });
         if (!ensureWorkspaceService(access, res)) return;
 
-        // Block kitchen actions on unpaid orders — payment must be confirmed via webhook first.
+        // Block kitchen actions until payment is fully confirmed — neither pending nor customer-claimed is sufficient.
         if (order.paymentStatus === "PAYMENT_PENDING") {
-            return res.status(402).json({ error: "Payment is pending for this order. Status cannot be updated until payment is confirmed." });
+            return res.status(402).json({ error: "Payment is pending. Status cannot be updated until payment is confirmed." });
+        }
+        if (order.paymentStatus === "PAYMENT_CLAIMED") {
+            return res.status(402).json({ error: "Customer has claimed payment but it has not been verified yet. Please confirm payment received before preparing the order." });
         }
 
         if (order.status === status) {
@@ -2029,7 +2032,7 @@ app.get("/admin/orders/:restaurantId", authMiddleware, async (req, res) => {
         const [orders, total] = await Promise.all([
             prisma.order.findMany({
                 where,
-                include: { items: true },
+                include: { items: true, paymentMethod: true },
                 orderBy: { createdAt: "desc" },
                 skip,
                 take: limit
@@ -2339,37 +2342,90 @@ app.get("/payment/methods", trackingLimiter, async (req, res) => {
     }
 });
 
-// Trust-based UPI confirmation: customer claims they have paid via UPI QR.
-// Appropriate for dine-in: the customer is physically present and the restaurant's UPI app
-// independently receives the payment notification.
+// Customer submits a UPI payment claim. This does NOT mark the order as paid —
+// it sets PAYMENT_CLAIMED so restaurant staff can verify in their UPI app before
+// allowing the order into the kitchen.
 app.post("/payment/upi-confirm", paymentLimiter, optionalAuth, async (req, res) => {
     try {
         const trackingToken = cleanString(req.body.trackingToken, 80);
+        // Optional UTR / transaction ID provided by the customer.
+        const paymentReference = cleanString(req.body.paymentReference, 120) || null;
         if (!trackingToken) return res.status(400).json({ error: "trackingToken required" });
 
         const order = await prisma.order.findUnique({
             where: { trackingToken },
-            select: { id: true, paymentStatus: true, paymentMethod: { select: { type: true } }, restaurantId: true, customer: { select: { email: true } }, restaurant: { select: { name: true } } }
+            select: { id: true, paymentStatus: true, paymentMethod: { select: { type: true } }, restaurantId: true }
         });
 
         if (!order) return res.status(404).json({ error: "Order not found" });
         if (order.paymentStatus === "PAID") return res.json({ ok: true, alreadyPaid: true });
+        if (order.paymentStatus === "PAYMENT_CLAIMED") return res.json({ ok: true, claimed: true });
         if (order.paymentStatus !== "PAYMENT_PENDING") return res.status(400).json({ error: "This order does not require payment" });
         if (order.paymentMethod?.type !== "UPI_QR") return res.status(400).json({ error: "This order is not a UPI QR payment" });
 
+        // Mark as claimed — restaurant must verify before it can be prepared.
+        await prisma.order.update({
+            where: { id: order.id },
+            data: {
+                paymentStatus: "PAYMENT_CLAIMED",
+                ...(paymentReference && { paymentReference })
+            }
+        });
+
+        res.json({ ok: true, claimed: true });
+    } catch (err) {
+        logRouteError("POST /payment/upi-confirm", err);
+        res.status(500).json({ error: "Could not submit payment claim" });
+    }
+});
+
+// Restaurant/admin verifies UPI payment and marks it as confirmed PAID.
+// Only callable by restaurant staff — the customer can never call this.
+app.post("/admin/order/:id/confirm-payment", authMiddleware, async (req, res) => {
+    try {
+        const order = await prisma.order.findUnique({
+            where: { id: req.params.id },
+            select: {
+                id: true, paymentStatus: true, restaurantId: true, trackingToken: true,
+                orderNumber: true, pickupCode: true, paymentReference: true,
+                customer: { select: { email: true } },
+                restaurant: { select: { name: true } }
+            }
+        });
+
+        if (!order) return res.status(404).json({ error: "Order not found" });
+
+        const access = await getRestaurantAccess(order.restaurantId, req.user.userId);
+        if (!access.canOperate) return res.status(403).json({ error: "Not allowed" });
+
+        if (order.paymentStatus === "PAID") return res.json({ ok: true, alreadyPaid: true });
+        if (order.paymentStatus !== "PAYMENT_CLAIMED") {
+            return res.status(400).json({ error: "Order is not in a payment claimed state" });
+        }
+
         await prisma.order.update({ where: { id: order.id }, data: { paymentStatus: "PAID" } });
+
+        await prisma.auditLog.create({
+            data: {
+                actorUserId: req.user.userId,
+                action: "ORDER_STATUS_UPDATED",
+                restaurantId: order.restaurantId,
+                orderId: order.id,
+                metadata: { paymentStatusChange: "PAID", confirmedFrom: "PAYMENT_CLAIMED" }
+            }
+        });
 
         notifyOrderConfirmation({
             prisma,
-            order: { ...order, trackingToken },
+            order: { ...order },
             restaurant: order.restaurant,
             baseUrl: BASE_URL,
             recipientEmail: order.customer?.email || null
-        }).catch((err) => logRouteError("upiConfirmNotify", err));
+        }).catch((err) => logRouteError("confirmPaymentNotify", err));
 
         res.json({ ok: true });
     } catch (err) {
-        logRouteError("POST /payment/upi-confirm", err);
+        logRouteError("POST /admin/order/:id/confirm-payment", err);
         res.status(500).json({ error: "Could not confirm payment" });
     }
 });
