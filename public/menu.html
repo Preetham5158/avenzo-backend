@@ -952,9 +952,12 @@
     }
 
     async function loadPaymentMethods() {
-      if (!restaurantId) return;
+      if (!restaurantId && !resolvedSlug) return;
       try {
-        const data = await request(`/payment/methods?restaurantId=${encodeURIComponent(restaurantId)}`, { auth: false });
+        const query = restaurantId
+          ? `restaurantId=${encodeURIComponent(restaurantId)}`
+          : `slug=${encodeURIComponent(resolvedSlug)}`;
+        const data = await request(`/payment/methods?${query}`, { auth: false });
         paymentMethods = Array.isArray(data) ? data : (data.methods || []);
         const def = paymentMethods.find(m => m.isDefault) || paymentMethods[0] || null;
         selectedPaymentMethodId = def?.id || null;
