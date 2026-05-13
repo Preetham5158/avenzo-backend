@@ -6,7 +6,7 @@ const crypto = require("crypto");
 
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
-const { notifyOrderConfirmation, sendOtp } = require("./services/notification.service");
+const { notifyOrderConfirmation, notifyOrderStatus, sendOtp, maskEmail } = require("./services/notification.service");
 const { checkOrderAbuse, hashIp, logOrderAttempt } = require("./services/abuse.service");
 const { publicMenuItem, adminMenuItem } = require("./serializers/menu.serializer");
 const { publicOrderResponse, customerOrderSummary } = require("./serializers/order.serializer");
@@ -178,7 +178,7 @@ function restaurant2faRequired() {
 }
 
 function customer2faRequired() {
-    return String(process.env.AUTH_REQUIRE_CUSTOMER_2FA || "false").toLowerCase() === "true";
+    return String(process.env.AUTH_REQUIRE_CUSTOMER_2FA || "true").toLowerCase() === "true";
 }
 
 function otpTtlMinutes() {
@@ -199,14 +199,21 @@ async function hashOtp(value) {
 
 async function createOtpChallenge(user, purpose) {
     const otp = generateOtp();
-    const channel = user.phone ? "SMS" : user.email ? "EMAIL" : "LOG";
+    const otpMode = process.env.OTP_MODE || "log";
+    // When email mode is active, always use EMAIL channel regardless of whether a phone exists.
+    const channel = otpMode === "email"
+        ? (user.email ? "EMAIL" : "LOG")
+        : otpMode === "log"
+            ? "LOG"
+            : (user.phone ? "SMS" : user.email ? "EMAIL" : "LOG");
+
     const challenge = await prisma.otpChallenge.create({
         data: {
             userId: user.id,
             email: user.email || null,
             phone: user.phone || null,
             purpose,
-            channel: process.env.OTP_MODE === "log" ? "LOG" : channel,
+            channel,
             otpHash: await hashOtp(otp),
             expiresAt: new Date(Date.now() + otpTtlMinutes() * 60 * 1000),
             maxAttempts: otpMaxAttempts(),
@@ -225,7 +232,7 @@ async function createOtpChallenge(user, purpose) {
         otp
     });
 
-    return challenge;
+    return { ...challenge, maskedEmail: maskEmail(user.email) };
 }
 
 function signAuthToken(user) {
@@ -852,17 +859,14 @@ app.post("/auth/customer/login", authLimiter, async (req, res) => {
             return res.status(403).json({ error: "This sign in is for customer accounts. Restaurant partners should use restaurant login." });
         }
 
-        if (customer2faRequired()) {
-            const challenge = await createOtpChallenge(user, "CUSTOMER_LOGIN");
-            return res.json({
-                otpRequired: true,
-                challengeId: challenge.id,
-                channel: challenge.channel,
-                expiresAt: challenge.expiresAt
-            });
-        }
-
-        res.json(loginSuccessResponse(user));
+        const challenge = await createOtpChallenge(user, "CUSTOMER_LOGIN");
+        return res.json({
+            otpRequired: true,
+            challengeId: challenge.id,
+            channel: challenge.channel,
+            maskedEmail: challenge.maskedEmail,
+            expiresAt: challenge.expiresAt
+        });
     } catch (err) {
         logRouteError("POST /auth/customer/login", err);
         res.status(500).json({ error: "Login failed" });
@@ -879,17 +883,14 @@ app.post("/auth/restaurant/login", authLimiter, async (req, res) => {
             return res.status(403).json({ error: "This is a customer account. Restaurant access is available only for approved Avenzo partners." });
         }
 
-        if (restaurant2faRequired()) {
-            const challenge = await createOtpChallenge(user, "RESTAURANT_LOGIN");
-            return res.json({
-                otpRequired: true,
-                challengeId: challenge.id,
-                channel: challenge.channel,
-                expiresAt: challenge.expiresAt
-            });
-        }
-
-        res.json(loginSuccessResponse(user));
+        const challenge = await createOtpChallenge(user, "RESTAURANT_LOGIN");
+        return res.json({
+            otpRequired: true,
+            challengeId: challenge.id,
+            channel: challenge.channel,
+            maskedEmail: challenge.maskedEmail,
+            expiresAt: challenge.expiresAt
+        });
     } catch (err) {
         logRouteError("POST /auth/restaurant/login", err);
         res.status(500).json({ error: "Login failed" });
@@ -957,6 +958,7 @@ app.post("/auth/otp/resend", otpLimiter, async (req, res) => {
             otpRequired: true,
             challengeId: challenge.id,
             channel: challenge.channel,
+            maskedEmail: challenge.maskedEmail,
             expiresAt: challenge.expiresAt
         });
     } catch (err) {
@@ -1662,7 +1664,17 @@ app.patch("/order/:id/status", authMiddleware, async (req, res) => {
 
         const order = await prisma.order.findUnique({
             where: { id },
-            select: { id: true, restaurantId: true, readyAt: true, status: true }
+            select: {
+                id: true,
+                restaurantId: true,
+                readyAt: true,
+                status: true,
+                trackingToken: true,
+                pickupCode: true,
+                orderNumber: true,
+                customer: { select: { email: true } },
+                restaurant: { select: { name: true } }
+            }
         });
 
         if (!order) return res.status(404).json({ error: "Not found" });
@@ -1672,7 +1684,7 @@ app.patch("/order/:id/status", authMiddleware, async (req, res) => {
         if (!ensureWorkspaceService(access, res)) return;
 
         if (order.status === status) {
-            return res.json(order);
+            return res.json({ id: order.id, status: order.status });
         }
 
         const allowed = allowedNextOrderStatuses(order.status);
@@ -1699,6 +1711,15 @@ app.patch("/order/:id/status", authMiddleware, async (req, res) => {
             orderId: order.id,
             metadata: { from: order.status, to: status }
         });
+
+        notifyOrderStatus({
+            prisma,
+            order,
+            restaurant: order.restaurant,
+            status,
+            baseUrl: BASE_URL,
+            recipientEmail: order.customer?.email || null
+        }).catch((err) => logRouteError("notifyOrderStatus", err));
 
         res.json(updated);
     } catch (err) {

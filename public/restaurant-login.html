@@ -44,11 +44,15 @@
       </form>
 
       <form class="stack" id="otpForm" onsubmit="verifyOtp(event)" hidden>
+        <div class="stack text-center mb-16">
+          <p class="muted mb-0">We sent a verification code to your registered email.</p>
+          <p class="muted mb-0" id="maskedEmailHint"></p>
+        </div>
         <div class="field">
           <label for="otp">Verification code</label>
-          <input id="otp" class="input" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="6 digit code" required>
+          <input id="otp" class="input" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="6-digit code" required>
         </div>
-        <button id="otpBtn" class="btn btn-primary" type="submit">Verify and continue</button>
+        <button id="otpBtn" class="btn btn-dark" type="submit">Verify and continue</button>
         <button id="resendBtn" class="btn btn-ghost" type="button" onclick="resendOtp()">Resend code</button>
         <div id="otpHelp" class="muted feedback-line"></div>
       </form>
@@ -91,17 +95,24 @@
 
         if (data.otpRequired) {
           challengeId = data.challengeId;
+          if (data.maskedEmail) {
+            document.getElementById("maskedEmailHint").textContent = data.maskedEmail;
+          }
           document.getElementById("passwordForm").hidden = true;
           document.getElementById("otpForm").hidden = false;
-          document.getElementById("otpHelp").textContent = "Enter the verification code sent to your registered contact.";
           document.getElementById("otp").focus();
           return;
         }
 
         finishLogin(data);
       } catch (err) {
-        errorEl.textContent = err.message;
-        toast(err.message);
+        const msg = err.message || "";
+        errorEl.textContent = msg.includes("customer account")
+          ? "This account is for customer ordering. Please use Customer sign in."
+          : msg.includes("could not send") || msg.includes("verification code")
+            ? "We couldn't send the verification code. Please try again."
+            : "Sign in failed. Please check your email and password.";
+        toast(errorEl.textContent);
       } finally {
         setLoading(btn, false);
       }
@@ -110,6 +121,8 @@
     async function verifyOtp(event) {
       event.preventDefault();
       const btn = document.getElementById("otpBtn");
+      const helpEl = document.getElementById("otpHelp");
+      helpEl.textContent = "";
       setLoading(btn, true, "Verifying...");
       try {
         const data = await request("/auth/otp/verify", {
@@ -122,8 +135,13 @@
         });
         finishLogin(data);
       } catch (err) {
-        document.getElementById("otpHelp").textContent = err.message;
-        toast(err.message);
+        const msg = err.message || "";
+        helpEl.textContent = msg.includes("expired")
+          ? "This code has expired. Please request a new one."
+          : msg.includes("attempts")
+            ? "Too many attempts. Please go back and sign in again."
+            : "That code doesn't look right. Please try again.";
+        toast(helpEl.textContent);
       } finally {
         setLoading(btn, false);
       }
@@ -131,6 +149,7 @@
 
     async function resendOtp() {
       const btn = document.getElementById("resendBtn");
+      const helpEl = document.getElementById("otpHelp");
       setLoading(btn, true, "Sending...");
       try {
         const data = await request("/auth/otp/resend", {
@@ -138,9 +157,10 @@
           body: JSON.stringify({ challengeId })
         });
         challengeId = data.challengeId;
-        document.getElementById("otpHelp").textContent = "A new verification code was created.";
+        helpEl.textContent = "A new code was sent to your email.";
+        document.getElementById("otp").value = "";
       } catch (err) {
-        document.getElementById("otpHelp").textContent = err.message;
+        helpEl.textContent = "We couldn't send the verification code. Please try again.";
       } finally {
         setLoading(btn, false);
       }

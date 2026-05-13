@@ -1,43 +1,71 @@
 # Notification Plan
 
-Current mode: `NOTIFICATION_MODE=log`.
-OTP mode: `OTP_MODE=log`.
+## Current State
 
-No production email, SMS, or WhatsApp provider is configured in this pass. Order creation records/logs notification intent and must not fail because notification delivery fails.
+- OTP delivery: **Resend email** (`OTP_MODE=email`) — implemented and live.
+- Order notifications: **Resend email** (`NOTIFICATION_MODE=email`) — implemented and live.
+- Development fallback: `OTP_MODE=log` prints OTP to server console. Blocked in `NODE_ENV=production`.
 
-Development log mode is allowed only outside production. OTP values must never be logged in production. If a real OTP provider is not configured while OTP is required, the login/verification flow must fail safely instead of pretending delivery worked.
+## Provider — Resend
 
-## Providers To Evaluate
+Domain `avenzo.app` is verified in the Resend dashboard.
+Sender: `Avenzo <no-reply@avenzo.app>`.
 
-- Email: Amazon SES, SendGrid, Resend.
-- SMS: Twilio, MSG91, Exotel.
-- WhatsApp: Meta WhatsApp Cloud API or approved BSP.
-- India SMS: confirm DLT registration, sender ID, consent language, template approval, and transactional/promotional separation before launch.
+Required environment variables:
+```
+EMAIL_PROVIDER=resend
+RESEND_API_KEY=re_...
+FROM_EMAIL=Avenzo <no-reply@avenzo.app>
+SUPPORT_EMAIL=support@avenzo.app
+OTP_MODE=email
+NOTIFICATION_MODE=email
+```
 
-## Events
+## OTP Emails
 
-- Restaurant login OTP for approved restaurant users.
-- Order confirmation after order creation.
-- Order status update: preparing, ready, completed, cancelled.
-- Future OTP for suspicious orders or phone verification.
+Triggered by:
+- Customer login (`CUSTOMER_LOGIN` purpose)
+- Restaurant/admin login (`RESTAURANT_LOGIN` purpose)
+- Resend via `POST /auth/otp/resend`
+
+Subject: `Your Avenzo verification code`
+Content: code displayed prominently, TTL reminder, ignore-if-not-requested notice.
+
+OTP is stored as a bcrypt hash. The plaintext OTP is never logged or returned in any API response.
+
+## Order Confirmation Email
+
+Triggered after `POST /order` succeeds for a logged-in customer with an email address.
+Guest orders without email do not receive a confirmation — order creation is never blocked by email failure.
+
+Includes: restaurant name, order number, pickup code, total, tracking link.
+
+## Order Status Emails
+
+Triggered on `PATCH /order/:id/status` for:
+- `READY` — "Your order is ready for collection."
+- `CANCELLED` — "Your order has been cancelled."
+- `COMPLETED` — "Your order is complete."
+
+Only sent when the order belongs to a logged-in customer with an email address.
+Failures are logged in `NotificationLog` but never surface to the restaurant operator or customer as an error.
 
 ## Failure Handling
 
-- Log delivery intent and failures in `NotificationLog`.
-- Do not block order creation on notification failure.
-- Retry policy should be provider-specific and idempotent.
+All delivery failures are logged in `NotificationLog` with `status: FAILED` and a sanitised error field.
+OTP delivery failure throws a user-friendly error message; login is blocked until a code is delivered successfully.
+Order notification failure is silent to the user — order creation and status updates always succeed regardless.
 
 ## Privacy
 
-- Send only the minimum needed order details.
-- Avoid exposing internal IDs.
-- Respect notification consent wording before promotional messages.
-- Mask recipients in notification logs where possible.
+- Email addresses are masked in `NotificationLog.recipientMasked` (`ab***@domain.com`).
+- Raw `recipientEmail` is stored in the log for support use only.
+- Internal order IDs are never included in email content.
+- Tracking links use `trackingToken` (opaque UUID) only.
 
-## Provider Setup Future
+## Future Phases
 
-- Configure `SMS_PROVIDER` or `EMAIL_PROVIDER`.
-- Set `FROM_EMAIL` and support contact values.
-- Disable log OTP mode in production.
-- Verify provider webhook/error callbacks before enabling mandatory production OTP.
-- Add template inventory for order placed, order ready, order cancelled, restaurant login OTP, and support/deletion/correction contact messages.
+- **SMS OTP**: Requires India DLT registration, sender ID, transactional template approval, and BSP selection (Twilio, MSG91, Exotel). Do not enable until DLT compliance is complete.
+- **WhatsApp**: Meta WhatsApp Cloud API or approved BSP. Template inventory and consent wording required first.
+- **Retry / webhook**: Add provider webhook callbacks and idempotent retry for delivery failures.
+- **Customer notification preferences**: Respect opt-out before sending promotional or non-transactional messages.

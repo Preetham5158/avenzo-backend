@@ -1,34 +1,43 @@
 # Auth Hardening Plan
 
-Current auth uses JWT bearer tokens stored by the frontend. This is simple for the current static app, but localStorage has XSS exposure risk.
+## Current State
 
-## Target
+All authenticated users (customer and restaurant/admin) require email OTP after password verification.
 
-- Move auth to `HttpOnly`, `Secure`, `SameSite` cookies.
-- Add CSRF protection for state-changing requests.
-- Add session revocation and token rotation.
-- Keep customer and restaurant login paths visibly separate.
-- Reduce inline JavaScript and tighten CSP by removing `unsafe-inline`.
+- Customer login: `POST /auth/customer/login` → OTP challenge → `POST /auth/otp/verify` → token.
+- Restaurant/admin login: `POST /auth/restaurant/login` → OTP challenge → `POST /auth/otp/verify` → token.
+- `USER` accounts are blocked from restaurant/admin APIs and the restaurant login path.
+- OTP is stored as a bcrypt hash. Plaintext OTP is never logged in production or returned in API responses.
+- OTP challenges expire based on `OTP_TTL_MINUTES` (default 10). Max attempts enforced by `OTP_MAX_ATTEMPTS` (default 5).
+- Challenges are consumed (marked `consumedAt`) after successful verification to prevent reuse.
+- Auth tokens are stored in `sessionStorage` — tab-isolated, not persisted across sessions.
+- Guest ordering never requires login or OTP.
 
-## Current Behavior
+## 2FA Flags
 
-- Customer auth uses `/auth/customer/login` and `/auth/customer/signup`.
-- Restaurant/admin auth uses `/auth/restaurant/login`.
-- Restaurant login requires OTP when `AUTH_REQUIRE_RESTAURANT_2FA=true`.
-- OTP log mode is development-only and must be replaced with a configured email/SMS provider before production 2FA enforcement.
-- `/auth/login` remains only for compatibility and should be retired after clients move.
-- `USER` accounts are blocked from restaurant/admin APIs and redirected out of the restaurant shell.
-- Restaurant-scoped APIs verify the current admin, owner, or assigned employee before returning or changing data.
-- Customer order history is scoped to the current customer only; guest orders stay separate until a future verified claim flow exists.
-- Release smoke testing creates temporary admin, owner, employee, customer, restaurant, menu, and order fixtures to verify role boundaries.
+| Variable | Default | Notes |
+|---|---|---|
+| `AUTH_REQUIRE_RESTAURANT_2FA` | `true` | Always on in production |
+| `AUTH_REQUIRE_CUSTOMER_2FA` | `true` | Always on in production. Set `false` locally with `OTP_MODE=log` for dev speed. |
 
-## Additional Work
+## OTP Provider
 
-- Shorter access token lifetime.
-- Refresh token rotation.
-- Device/session audit view.
-- Suspicious login detection.
-- Centralized validation and error middleware.
-- Split remaining route handlers from `src/index.js` into route/controller/service/serializer modules.
-- Replace compatibility endpoints that accept internal IDs on public routes with slug/key-only versions once clients have migrated.
-- Move bearer storage from `localStorage` to secure cookies before production if the frontend becomes dynamic enough to support CSRF protection.
+Email OTP delivered via Resend (`OTP_MODE=email`).
+Development fallback: `OTP_MODE=log` prints OTP to server console. Blocked in `NODE_ENV=production`.
+
+## Role Boundaries
+
+- `USER` → customer login path only; blocked from all restaurant/admin APIs.
+- `ADMIN` → restaurant login path; full admin access.
+- `RESTAURANT_OWNER` → restaurant login path; own restaurant workspace only.
+- `EMPLOYEE` → restaurant login path; assigned restaurant operational access only.
+
+## Additional Work (Future)
+
+- Shorter access token lifetime with refresh token rotation.
+- HttpOnly Secure cookie storage once the frontend supports CSRF protection.
+- Device/session audit view for account holders.
+- Suspicious login detection (new device, unusual geography).
+- Centralised validation and error middleware.
+- Split remaining route handlers from `src/index.js` into route/controller/service modules.
+- Retire `/auth/login` compatibility endpoint after all clients have migrated to role-specific paths.

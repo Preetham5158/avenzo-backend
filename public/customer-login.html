@@ -28,7 +28,7 @@
         <span>Profile saved</span>
       </div>
 
-      <form class="stack" onsubmit="login(event)">
+      <form class="stack" id="passwordForm" onsubmit="login(event)">
         <div class="field">
           <label for="email">Email</label>
           <input id="email" class="input" type="email" autocomplete="email" placeholder="you@example.com" required>
@@ -41,6 +41,20 @@
 
         <button id="loginBtn" class="btn btn-primary" type="submit">Sign in</button>
         <div id="error" class="muted feedback-line"></div>
+      </form>
+
+      <form class="stack" id="otpForm" onsubmit="verifyOtp(event)" hidden>
+        <div class="stack text-center mb-16" id="otpIntro">
+          <p class="muted mb-0">We sent a verification code to your email.</p>
+          <p class="muted mb-0" id="maskedEmailHint"></p>
+        </div>
+        <div class="field">
+          <label for="otp">Verification code</label>
+          <input id="otp" class="input" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="6-digit code" required>
+        </div>
+        <button id="otpBtn" class="btn btn-primary" type="submit">Verify and sign in</button>
+        <button id="resendBtn" class="btn btn-ghost" type="button" onclick="resendOtp()">Resend code</button>
+        <div id="otpHelp" class="muted feedback-line"></div>
       </form>
 
       <p class="muted auth-footnote">
@@ -57,6 +71,8 @@
 
   <script src="/assets/app.js"></script>
   <script>
+    let challengeId = "";
+
     async function login(event) {
       event.preventDefault();
       const btn = document.getElementById("loginBtn");
@@ -74,14 +90,71 @@
         });
 
         if (data.otpRequired) {
-          throw new Error("OTP is required for this account. Please use restaurant login if this is a partner account.");
+          challengeId = data.challengeId;
+          if (data.maskedEmail) {
+            document.getElementById("maskedEmailHint").textContent = data.maskedEmail;
+          }
+          document.getElementById("passwordForm").hidden = true;
+          document.getElementById("otpForm").hidden = false;
+          document.getElementById("otp").focus();
+          return;
         }
 
         sessionStorage.setItem("token", data.token);
-        window.location.href = data.user?.role === "USER" ? "/customer.html" : "/admin/dashboard.html";
+        window.location.href = "/customer.html";
       } catch (err) {
         errorEl.textContent = err.message;
         toast(err.message);
+      } finally {
+        setLoading(btn, false);
+      }
+    }
+
+    async function verifyOtp(event) {
+      event.preventDefault();
+      const btn = document.getElementById("otpBtn");
+      const helpEl = document.getElementById("otpHelp");
+      helpEl.textContent = "";
+      setLoading(btn, true, "Verifying...");
+
+      try {
+        const data = await request("/auth/otp/verify", {
+          method: "POST",
+          body: JSON.stringify({
+            challengeId,
+            otp: document.getElementById("otp").value.trim(),
+            purpose: "CUSTOMER_LOGIN"
+          })
+        });
+        sessionStorage.setItem("token", data.token);
+        window.location.href = "/customer.html";
+      } catch (err) {
+        const msg = err.message || "That code doesn't look right. Please try again.";
+        helpEl.textContent = msg.includes("expired")
+          ? "This code has expired. Please request a new one."
+          : msg.includes("attempts")
+            ? "Too many attempts. Please go back and try signing in again."
+            : "That code doesn't look right. Please try again.";
+        toast(helpEl.textContent);
+      } finally {
+        setLoading(btn, false);
+      }
+    }
+
+    async function resendOtp() {
+      const btn = document.getElementById("resendBtn");
+      const helpEl = document.getElementById("otpHelp");
+      setLoading(btn, true, "Sending...");
+      try {
+        const data = await request("/auth/otp/resend", {
+          method: "POST",
+          body: JSON.stringify({ challengeId })
+        });
+        challengeId = data.challengeId;
+        helpEl.textContent = "A new code was sent to your email.";
+        document.getElementById("otp").value = "";
+      } catch (err) {
+        helpEl.textContent = "We couldn't send the verification code. Please try again.";
       } finally {
         setLoading(btn, false);
       }
