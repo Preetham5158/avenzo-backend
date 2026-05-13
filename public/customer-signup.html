@@ -99,8 +99,7 @@
         google.accounts.id.initialize({
           client_id: clientId,
           callback: handleGoogleCredential,
-          auto_select: false,
-          use_fedcm_for_prompt: false
+          auto_select: false
         });
         google.accounts.id.renderButton(
           document.getElementById("googleSignInContainer"),
