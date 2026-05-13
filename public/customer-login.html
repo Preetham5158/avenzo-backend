@@ -4,6 +4,8 @@
 <head>
   <title>Customer sign in</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#ff6b16">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/assets/app.css">
 </head>
@@ -41,6 +43,7 @@
 
         <button id="loginBtn" class="btn btn-primary" type="submit">Sign in</button>
         <div id="error" class="muted feedback-line"></div>
+        <div class="text-center" style="margin-top:4px"><a href="/forgot-password.html" class="link muted" style="font-size:13px">Forgot password?</a></div>
       </form>
 
       <form class="stack" id="otpForm" onsubmit="verifyOtp(event)" hidden>

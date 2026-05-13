@@ -288,6 +288,7 @@
                 <div class="muted">Payment</div>
                 <strong>${paymentLabel(order.paymentStatus)}</strong>
               </div>
+              ${order.tableNumber ? `<div><div class="muted">Table</div><strong>${escapeHtml(order.tableNumber)}</strong></div>` : ""}
             </div>
 
             <div class="items">${items}</div>

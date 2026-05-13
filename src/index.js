@@ -56,6 +56,11 @@ app.use((req, res, next) => {
 app.use(express.json({ limit: "100kb" }));
 app.use(express.static("public"));
 
+// Health check — must respond even if DB is slow; used by load balancers and Render.
+app.get("/health", (req, res) => {
+    res.json({ status: "ok", uptime: Math.floor(process.uptime()) });
+});
+
 const BASE_URL = process.env.BASE_URL || "http://localhost:5000";
 
 function rateLimit({ windowMs, max }) {
@@ -97,6 +102,7 @@ const orderLookupLimiter = rateLimit({ windowMs: 60 * 1000, max: 12 });
 const trackingLimiter = rateLimit({ windowMs: 60 * 1000, max: 60 });
 const restaurantInterestLimiter = rateLimit({ windowMs: 60 * 60 * 1000, max: 8 });
 const otpLimiter = rateLimit({ windowMs: 10 * 60 * 1000, max: 12 });
+const passwordResetLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 5 });
 const OTP_PURPOSES = ["CUSTOMER_LOGIN", "RESTAURANT_LOGIN", "SIGNUP_VERIFY", "ORDER_CONFIRMATION", "PASSWORD_RESET"];
 
 function normalizeSlug(value) {
@@ -302,6 +308,17 @@ async function ensureFoodTypeSchema() {
     `);
 }
 
+// Returns the set of menu IDs ordered >= 5 times in the last 30 days for a restaurant.
+async function getPopularMenuIds(restaurantId) {
+    const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const counts = await prisma.orderItem.groupBy({
+        by: ["menuId"],
+        where: { order: { restaurantId, createdAt: { gte: since } } },
+        _count: { id: true }
+    });
+    return new Set(counts.filter(c => c._count.id >= 5).map(c => c.menuId));
+}
+
 app.get("/", (req, res) => {
     res.sendFile(path.join(__dirname, "../public/index.html"));
 });
@@ -339,15 +356,24 @@ app.get("/restaurant/slug/:slug", async (req, res) => {
 
 app.get("/restaurant/:id", async (req, res) => {
     try {
-        const restaurant = await prisma.restaurant.findUnique({
-            where: { id: req.params.id },
-        });
+        const [restaurant, ratingData] = await Promise.all([
+            prisma.restaurant.findUnique({ where: { id: req.params.id } }),
+            prisma.orderRating.aggregate({
+                where: { restaurantId: req.params.id },
+                _avg: { rating: true },
+                _count: { rating: true }
+            })
+        ]);
 
         if (!restaurant) {
             return res.status(404).json({ error: "Restaurant not found" });
         }
 
-        res.json(publicRestaurantResponse(restaurant));
+        res.json({
+            ...publicRestaurantResponse(restaurant),
+            avgRating: ratingData._avg.rating ? Math.round(ratingData._avg.rating * 10) / 10 : null,
+            ratingCount: ratingData._count.rating
+        });
     } catch (err) {
         logRouteError("GET /restaurant/:id", err);
         res.status(500).json({ error: "Error fetching restaurant" });
@@ -361,20 +387,23 @@ app.get("/menu/:restaurantId", async (req, res) => {
             return res.status(423).json({ error: restaurantServiceMessage(restaurant) });
         }
 
-        const menu = await prisma.menu.findMany({
-            where: {
-                restaurantId: req.params.restaurantId,
-                isActive: true,
-                ...menuFoodFilter(req.query.foodType)
-            },
-            include: { category: true },
-            orderBy: [
-                { isAvailable: "desc" },
-                { category: { name: "asc" } }
-            ]
-        });
+        const [menu, popularIds] = await Promise.all([
+            prisma.menu.findMany({
+                where: {
+                    restaurantId: req.params.restaurantId,
+                    isActive: true,
+                    ...menuFoodFilter(req.query.foodType)
+                },
+                include: { category: true },
+                orderBy: [
+                    { isAvailable: "desc" },
+                    { category: { name: "asc" } }
+                ]
+            }),
+            getPopularMenuIds(req.params.restaurantId)
+        ]);
 
-        res.json(menu.map(publicMenuItem));
+        res.json(menu.map(item => publicMenuItem(item, { popularIds })));
     } catch (err) {
         logRouteError("GET /menu/:restaurantId", err);
         res.status(500).json({ error: "Error fetching menu" });
@@ -395,20 +424,57 @@ app.get("/menu/by-slug/:slug", async (req, res) => {
             return res.status(423).json({ error: restaurantServiceMessage(restaurant) });
         }
 
-        const menu = await prisma.menu.findMany({
-            where: { restaurantId: restaurant.id, isActive: true, ...menuFoodFilter(req.query.foodType) },
-            include: { category: true },
-            orderBy: [
-                { isAvailable: "desc" },
-                { category: { sortOrder: "asc" } },
-                { name: "asc" }
-            ]
-        });
+        const [menu, popularIds] = await Promise.all([
+            prisma.menu.findMany({
+                where: { restaurantId: restaurant.id, isActive: true, ...menuFoodFilter(req.query.foodType) },
+                include: { category: true },
+                orderBy: [
+                    { isAvailable: "desc" },
+                    { category: { sortOrder: "asc" } },
+                    { name: "asc" }
+                ]
+            }),
+            getPopularMenuIds(restaurant.id)
+        ]);
 
-        res.json(menu.map(publicMenuItem));
+        res.json(menu.map(item => publicMenuItem(item, { popularIds })));
     } catch (err) {
         logRouteError("GET /menu/by-slug/:slug", err);
         res.status(500).json({ error: "Error fetching menu" });
+    }
+});
+
+app.get("/reviews/restaurant/:slug", trackingLimiter, async (req, res) => {
+    try {
+        const restaurant = await prisma.restaurant.findUnique({
+            where: { slug: req.params.slug },
+            select: { id: true }
+        });
+        if (!restaurant) return res.status(404).json({ error: "Restaurant not found" });
+
+        const page = Math.max(parseInt(req.query.page || "1", 10), 1);
+        const limit = Math.min(Math.max(parseInt(req.query.limit || "10", 10), 1), 30);
+        const skip = (page - 1) * limit;
+
+        const where = { restaurantId: restaurant.id, comment: { not: null } };
+        const [reviews, total] = await Promise.all([
+            prisma.orderRating.findMany({
+                where,
+                select: { rating: true, comment: true, createdAt: true },
+                orderBy: { createdAt: "desc" },
+                skip,
+                take: limit
+            }),
+            prisma.orderRating.count({ where })
+        ]);
+
+        res.json({
+            reviews,
+            pagination: { page, limit, total, totalPages: Math.max(Math.ceil(total / limit), 1) }
+        });
+    } catch (err) {
+        logRouteError("GET /reviews/restaurant/:slug", err);
+        res.status(500).json({ error: "Could not load reviews" });
     }
 });
 
@@ -436,6 +502,7 @@ app.get("/categories/:restaurantId", authMiddleware, async (req, res) => {
 app.post("/order", orderLimiter, optionalAuth, async (req, res) => {
     try {
         const { items, sessionId, phone } = req.body;
+        const tableNumber = cleanString(req.body.tableNumber, 40) || null;
         const guestOrder = req.body.guest === true;
         let restaurantId = cleanString(req.body.restaurantId, 80);
         const restaurantSlug = cleanString(req.body.restaurantSlug, 140);
@@ -599,6 +666,7 @@ app.post("/order", orderLimiter, optionalAuth, async (req, res) => {
                     trackingToken,
                     sessionId: deviceId,
                     phone: normalizedPhone,
+                    tableNumber: tableNumber || null,
                     // Signed-in customer orders attach customerId so they appear in My Orders.
                     ...(customer && { customerId: customer.id }),
                     restaurantId,
@@ -742,6 +810,10 @@ app.get("/track/:id", (req, res) => {
 
 app.get("/restaurant-interest", (req, res) => {
     res.sendFile(path.join(__dirname, "../public/restaurant-interest.html"));
+});
+
+app.get("/forgot-password", (req, res) => {
+    res.sendFile(path.join(__dirname, "../public/forgot-password.html"));
 });
 
 app.post("/restaurant-interest", restaurantInterestLimiter, async (req, res) => {
@@ -972,6 +1044,94 @@ app.post("/auth/otp/resend", otpLimiter, async (req, res) => {
     } catch (err) {
         logRouteError("POST /auth/otp/resend", err);
         res.status(500).json({ error: "Could not resend OTP" });
+    }
+});
+
+app.post("/auth/password-reset/request", passwordResetLimiter, async (req, res) => {
+    try {
+        const email = cleanString(req.body.email, 180)?.toLowerCase().trim();
+        if (!email || !isValidEmail(email)) {
+            return res.status(400).json({ error: "Enter a valid email address" });
+        }
+
+        const user = await prisma.user.findUnique({ where: { email } });
+
+        // Always respond the same way to prevent email enumeration.
+        const safeResponse = { message: "If this email is registered to a customer account, a verification code was sent." };
+        if (!user || user.role !== "USER") return res.json(safeResponse);
+
+        const otp = generateOtp();
+        const channel = process.env.OTP_MODE === "email" ? "EMAIL" : "LOG";
+        const challenge = await prisma.otpChallenge.create({
+            data: {
+                userId: user.id,
+                email: user.email,
+                purpose: "PASSWORD_RESET",
+                channel,
+                otpHash: await hashOtp(otp),
+                expiresAt: new Date(Date.now() + 15 * 60 * 1000),
+                maxAttempts: 3
+            },
+            select: { id: true }
+        });
+
+        await sendOtp({ prisma, userId: user.id, channel, email: user.email, purpose: "PASSWORD_RESET", otp });
+
+        res.json({ challengeId: challenge.id, maskedEmail: maskEmail(user.email), ...safeResponse });
+    } catch (err) {
+        logRouteError("POST /auth/password-reset/request", err);
+        res.status(500).json({ error: "We could not process this request. Please try again." });
+    }
+});
+
+app.post("/auth/password-reset/confirm", passwordResetLimiter, async (req, res) => {
+    try {
+        const challengeId = cleanString(req.body.challengeId, 80);
+        const otp = cleanString(req.body.otp, 10);
+        const newPassword = req.body.newPassword;
+
+        if (!challengeId || !otp || !newPassword) {
+            return res.status(400).json({ error: "Missing required fields" });
+        }
+        if (typeof newPassword !== "string" || newPassword.length < 8) {
+            return res.status(400).json({ error: "Password must be at least 8 characters" });
+        }
+
+        const challenge = await prisma.otpChallenge.findUnique({ where: { id: challengeId } });
+
+        if (!challenge || challenge.purpose !== "PASSWORD_RESET") {
+            return res.status(400).json({ error: "Invalid or expired reset code" });
+        }
+        if (challenge.consumedAt) {
+            return res.status(400).json({ error: "This code has already been used" });
+        }
+        if (challenge.expiresAt < new Date()) {
+            return res.status(400).json({ error: "This code has expired. Please request a new one." });
+        }
+        if (challenge.attempts >= challenge.maxAttempts) {
+            return res.status(429).json({ error: "Too many attempts. Please request a new reset code." });
+        }
+
+        await prisma.otpChallenge.update({
+            where: { id: challengeId },
+            data: { attempts: { increment: 1 } }
+        });
+
+        const valid = await bcrypt.compare(String(otp), challenge.otpHash);
+        if (!valid) {
+            return res.status(400).json({ error: "That code doesn't look right. Please try again." });
+        }
+
+        const hashed = await bcrypt.hash(newPassword, 10);
+        await prisma.$transaction([
+            prisma.otpChallenge.update({ where: { id: challengeId }, data: { consumedAt: new Date() } }),
+            prisma.user.update({ where: { id: challenge.userId }, data: { password: hashed } })
+        ]);
+
+        res.json({ message: "Password updated. You can now sign in with your new password." });
+    } catch (err) {
+        logRouteError("POST /auth/password-reset/confirm", err);
+        res.status(500).json({ error: "Could not reset password. Please try again." });
     }
 });
 
@@ -2092,9 +2252,23 @@ async function startServer() {
             await ensureFoodTypeSchema();
         }
 
-        app.listen(PORT, () => {
+        const server = app.listen(PORT, () => {
             console.log("Server running on port " + PORT);
         });
+
+        const shutdown = async (signal) => {
+            console.log(`[server] ${signal} — shutting down`);
+            server.close(async () => {
+                await prisma.$disconnect().catch(() => {});
+                process.exit(0);
+            });
+            // Force-exit after 10 s if connections are not drained.
+            setTimeout(() => process.exit(1), 10_000).unref();
+        };
+        process.on("SIGTERM", () => shutdown("SIGTERM"));
+        process.on("SIGINT", () => shutdown("SIGINT"));
+
+        return server;
     } catch (err) {
         logRouteError("BOOT", err);
         process.exit(1);

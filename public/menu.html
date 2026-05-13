@@ -4,6 +4,8 @@
 <head>
   <title>Avenzo Menu</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#ff6b16">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/assets/app.css">
   <style>
@@ -491,6 +493,39 @@
       transform: none;
     }
 
+    .pill-popular {
+      background: #fff3e0;
+      color: #bf360c;
+    }
+
+    .menu-reviews {
+      margin-top: 28px;
+      display: grid;
+      gap: 12px;
+    }
+
+    .review-card {
+      padding: 14px 16px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.88);
+      border: 1px solid rgba(108, 71, 47, 0.1);
+      box-shadow: 0 8px 20px rgba(64, 31, 15, 0.06);
+    }
+
+    .review-stars {
+      color: var(--saffron);
+      font-size: 15px;
+      letter-spacing: 1px;
+    }
+
+    .reviews-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
     @keyframes card-pop {
       from {
         opacity: 0;
@@ -722,6 +757,7 @@
         <p id="restaurantAddress">Choose here. Eat here. Skip the billing queue.</p>
       </div>
       <button class="btn dine-find-btn" id="findOrderGuestBtn" type="button" hidden onclick="openFindOrder()">Find order</button>
+      <div class="dine-badge" id="restaurantRating" hidden></div>
       <div class="dine-badge" id="dineNote">Live dine-in menu</div>
     </div>
   </header>
@@ -742,6 +778,8 @@
       </aside>
       <section class="menu-feed" id="menu"></section>
     </section>
+
+    <section id="reviewsSection" class="menu-reviews" hidden></section>
   </main>
 
   <div class="cart-bar">
@@ -765,6 +803,10 @@
       </div>
       <div class="modal-body stack">
         <div id="cartItems" class="stack"></div>
+        <div class="field">
+          <label for="tableNumber">Table number <span class="muted" style="font-weight:400">(optional)</span></label>
+          <input id="tableNumber" class="input" placeholder="e.g. 12, A3, Counter" maxlength="40" autocomplete="off">
+        </div>
         <div class="field" id="phoneField">
           <label for="phone">Mobile number</label>
           <input id="phone" class="input" inputmode="tel" placeholder="10 digit mobile number">
@@ -810,12 +852,26 @@
     const guestMode = new URLSearchParams(location.search).get("guest") === "1";
     let cart = [];
     let menuData = [];
+    let resolvedSlug = slug || null;
     let activeCategory = "ALL";
     let activeFoodType = "ALL";
     let restaurantFoodType = "BOTH";
     let searchTerm = "";
     let customerProfile = null;
     const collapsedCategories = new Set();
+
+    function cartKey() {
+      return `avenzoCart:${slug || restaurantId || "unknown"}`;
+    }
+    function saveCart() {
+      try { localStorage.setItem(cartKey(), JSON.stringify(cart)); } catch {}
+    }
+    function loadSavedCart() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(cartKey()) || "[]");
+        if (Array.isArray(saved)) cart = saved.filter(i => i.menuKey && i.quantity > 0);
+      } catch {}
+    }
 
     async function init() {
       try {
@@ -824,6 +880,7 @@
           ? await request(`/restaurant/slug/${slug}`, { auth: false })
           : await request(`/restaurant/${restaurantId}`, { auth: false });
         restaurantId = restaurant.id || restaurantId;
+        resolvedSlug = restaurant.slug || resolvedSlug;
         restaurantFoodType = restaurant.foodType || "BOTH";
         document.getElementById("restaurantName").textContent = restaurant.name;
         document.getElementById("restaurantAddress").textContent = restaurant.address || restaurant.locality || "Choose here. Eat here. Skip the billing queue.";
@@ -838,6 +895,12 @@
           return;
         }
         await loadMenu();
+        loadSavedCart();
+        if (restaurant.avgRating) {
+          const ratingEl = document.getElementById("restaurantRating");
+          ratingEl.textContent = `${restaurant.avgRating} ★`;
+          ratingEl.hidden = false;
+        }
         await loadCustomerProfile();
         setupFoodFilter();
         maybeInitCustomerBar();
@@ -845,6 +908,7 @@
           const findBtn = document.getElementById("findOrderGuestBtn");
           if (findBtn) findBtn.hidden = false;
         }
+        loadReviews();
       } catch (err) {
         document.getElementById("menu").innerHTML = `<div class="empty">${escapeHtml(err.message || "Ordering will be back soon")}</div>`;
       }
@@ -1014,6 +1078,7 @@
             <div class="price-row">
               <strong>${money(item.price)}</strong>
               <span class="pill ${foodTypePillClass(item.foodType)}">${foodTypeLabel(item.foodType)}</span>
+              ${item.isPopular ? `<span class="pill pill-popular">Popular</span>` : ""}
               ${disabled ? `<span class="pill pill-danger">Out of stock</span>` : ""}
             </div>
           </div>
@@ -1047,6 +1112,7 @@
       }
 
       updateUI();
+      saveCart();
     }
 
     function updateUI() {
@@ -1182,12 +1248,14 @@
         if (!customerProfile?.phone && !/^[0-9+\-\s()]{10,20}$/.test(phone)) {
           throw new Error("Enter a valid mobile number to place your order.");
         }
+        const tableNumber = document.getElementById("tableNumber").value.trim() || undefined;
         const payload = {
           sessionId: getDeviceId(),
           items: cart,
           ...(slug ? { restaurantSlug: slug } : { restaurantId }),
           ...(guestMode ? { guest: true } : {}),
-          ...(phone ? { phone } : {})
+          ...(phone ? { phone } : {}),
+          ...(tableNumber ? { tableNumber } : {})
         };
         const data = await request("/order", {
           method: "POST",
@@ -1197,6 +1265,7 @@
         if (getToken() && !customerProfile?.phone && phone) {
           customerProfile = { ...(customerProfile || {}), phone };
         }
+        try { localStorage.removeItem(cartKey()); } catch {}
         saveRecentOrder({
           trackingToken: data.trackingToken,
           orderNumber: data.orderNumber,
@@ -1221,6 +1290,31 @@
         localStorage.setItem("avenzoDeviceId", id);
       }
       return id;
+    }
+
+    async function loadReviews() {
+      if (!resolvedSlug) return;
+      try {
+        const data = await request(`/reviews/restaurant/${encodeURIComponent(resolvedSlug)}?page=1&limit=6`, { auth: false });
+        const reviews = data.reviews || [];
+        if (!reviews.length) return;
+        const section = document.getElementById("reviewsSection");
+        section.innerHTML = `
+          <div class="reviews-head">
+            <h2 class="section-title mb-0">What guests say</h2>
+          </div>
+          ${reviews.map(r => `
+            <div class="review-card">
+              <div class="review-stars">${"★".repeat(r.rating)}${"☆".repeat(5 - r.rating)}</div>
+              <p class="food-desc" style="margin-top:6px;margin-bottom:0">${escapeHtml(r.comment)}</p>
+              <div class="muted" style="font-size:12px;margin-top:6px">${new Date(r.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}</div>
+            </div>
+          `).join("")}
+        `;
+        section.hidden = false;
+      } catch {
+        // reviews are non-critical — silently skip on error
+      }
     }
 
     init();

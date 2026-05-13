@@ -1,0 +1,22 @@
+{
+  "name": "Avenzo",
+  "short_name": "Avenzo",
+  "description": "Dine-in ordering made simple. Scan, order, and enjoy.",
+  "start_url": "/customer.html",
+  "display": "standalone",
+  "background_color": "#fff6e8",
+  "theme_color": "#ff6b16",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/logo.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/logo.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

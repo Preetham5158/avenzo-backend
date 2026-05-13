@@ -262,6 +262,7 @@ model Order {
   trackingToken String @unique
 
   phone        String
+  tableNumber  String?
   sessionId    String
 
   customerId   String?

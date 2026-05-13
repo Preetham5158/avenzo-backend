@@ -1,7 +1,7 @@
 const { paiseToRupees } = require("../utils/money");
 const { publicMenuKey } = require("../utils/token");
 
-function publicMenuItem(item) {
+function publicMenuItem(item, options = {}) {
   if (!item) return item;
 
   const { id, pricePaise, restaurantId, categoryId, category, ...safeItem } = item;
@@ -11,7 +11,8 @@ function publicMenuItem(item) {
     ...safeItem,
     key: publicMenuKey(id),
     category: category ? { name: category.name, sortOrder: category.sortOrder } : null,
-    price: paiseToRupees(pricePaise)
+    price: paiseToRupees(pricePaise),
+    isPopular: options.popularIds ? options.popularIds.has(id) : false
   };
 }
 

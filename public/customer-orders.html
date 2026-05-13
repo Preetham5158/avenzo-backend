@@ -144,6 +144,7 @@
             <div class="row row-wrap">
               <a class="btn btn-dark" href="/track/${order.trackingToken}">Track</a>
               <a class="btn btn-ghost" href="${menuHref}">View restaurant</a>
+              ${["COMPLETED", "CANCELLED"].includes(order.status) ? `<a class="btn btn-ghost" href="${menuHref}">Order again</a>` : ""}
               ${order.status === "COMPLETED" && order.rating === null
                 ? `<button class="btn btn-ghost" type="button" onclick="openRateModal('${order.trackingToken}')">Rate order</button>`
                 : order.rating ? `<span class="pill pill-success">${order.rating} ★</span>` : ""}

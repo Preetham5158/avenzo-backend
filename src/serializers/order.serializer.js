@@ -28,6 +28,7 @@ function publicOrderResponse(order, options = {}) {
     response.id = order.id;
   }
 
+  response.tableNumber = order.tableNumber || null;
   // Expose rating state so the frontend can show the prompt or the submitted stars.
   response.hasRating = !!order.rating;
   response.rating = order.rating?.rating ?? null;
@@ -58,6 +59,7 @@ function customerOrderSummary(order) {
       quantity: item.quantity,
       priceAtOrder: paiseToRupees(item.priceAtOrderPaise)
     })),
+    tableNumber: order.tableNumber || null,
     rating: order.rating?.rating ?? null
   };
 }
