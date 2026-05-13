@@ -26,6 +26,7 @@ function publicOrderResponse(order, options = {}) {
 
   if (options.includeInternalId) {
     response.id = order.id;
+    response.phone = order.phone || null;
   }
 
   response.tableNumber = order.tableNumber || null;

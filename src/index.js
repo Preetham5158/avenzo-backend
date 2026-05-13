@@ -2244,6 +2244,25 @@ app.post("/order/:trackingToken/rating", orderLimiter, optionalAuth, async (req,
     }
 });
 
+// Unknown API routes return JSON — prevents leaking Express HTML with framework info.
+app.use((req, res, next) => {
+    if (req.path.startsWith("/auth/") || req.path.startsWith("/admin/") ||
+        req.path.startsWith("/customer/") || req.path.startsWith("/order") ||
+        req.path.startsWith("/menu") || req.path.startsWith("/restaurant") ||
+        req.path.startsWith("/reviews/") || req.path.startsWith("/categories") ||
+        req.path.startsWith("/category") || req.path.startsWith("/restaurants")) {
+        return res.status(404).json({ error: "Not found" });
+    }
+    next();
+});
+
+// Global error handler — catches unhandled throws, returns JSON, never exposes stack traces.
+// eslint-disable-next-line no-unused-vars
+app.use((err, req, res, next) => {
+    logRouteError("unhandled", err);
+    res.status(500).json({ error: "Something went wrong" });
+});
+
 const PORT = process.env.PORT || 5000;
 
 async function startServer() {

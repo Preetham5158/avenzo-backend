@@ -139,6 +139,7 @@
               <div><div class="muted">Payment</div><strong>${paymentLabel(order.paymentStatus)}</strong></div>
               <div><div class="muted">Total</div><strong>${money(order.totalPrice)}</strong></div>
               <div><div class="muted">Ready</div><strong>${order.readyAt ? formatDate(order.readyAt) : "Not yet"}</strong></div>
+              ${order.tableNumber ? `<div><div class="muted">Table</div><strong>${escapeHtml(order.tableNumber)}</strong></div>` : ""}
             </div>
             <div class="order-items">${preview || `<span class="muted">Items unavailable</span>`}</div>
             <div class="row row-wrap">
