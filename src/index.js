@@ -59,7 +59,10 @@ app.use((req, res, next) => {
     res.setHeader("X-Frame-Options", "DENY");
     res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
     res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
-    res.setHeader("Cross-Origin-Opener-Policy", "same-origin");
+    // Google GIS popup needs window.opener intact — relax COOP on customer auth pages only.
+    const googleSsoPages = ["/customer-login.html", "/customer-signup.html"];
+    const isSsoPage = googleSsoPages.some(p => req.path === p || req.path.endsWith(p));
+    res.setHeader("Cross-Origin-Opener-Policy", isSsoPage ? "unsafe-none" : "same-origin");
     res.setHeader("Cross-Origin-Resource-Policy", "same-origin");
     if (req.secure || req.headers["x-forwarded-proto"] === "https") {
         res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
