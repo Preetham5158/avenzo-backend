@@ -17,6 +17,7 @@ const { isValidPhone, normalizePhone } = require("./utils/phone");
 const { createPrismaClient } = require("./prisma");
 
 const Razorpay = require("razorpay");
+const { OAuth2Client } = require("google-auth-library");
 
 const app = express();
 const prisma = createPrismaClient();
@@ -65,7 +66,7 @@ app.use((req, res, next) => {
     }
     res.setHeader(
         "Content-Security-Policy",
-        "default-src 'self'; script-src 'self' 'unsafe-inline' https://checkout.razorpay.com https://cdn.razorpay.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://api.razorpay.com https://checkout.razorpay.com https://*.razorpay.com; frame-src https://api.razorpay.com https://checkout.razorpay.com; object-src 'none'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
+        "default-src 'self'; script-src 'self' 'unsafe-inline' https://checkout.razorpay.com https://cdn.razorpay.com https://accounts.google.com/gsi/client; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com/gsi/style; img-src 'self' data: https:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://api.razorpay.com https://checkout.razorpay.com https://*.razorpay.com https://accounts.google.com; frame-src https://api.razorpay.com https://checkout.razorpay.com https://accounts.google.com; object-src 'none'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
     );
     next();
 });
@@ -1005,6 +1006,72 @@ app.post("/auth/customer/login", authLimiter, async (req, res) => {
     } catch (err) {
         logRouteError("POST /auth/customer/login", err);
         res.status(500).json({ error: "Login failed" });
+    }
+});
+
+// Exposes only the public Google client ID — safe to return to any visitor.
+app.get("/auth/google/client-id", (req, res) => {
+    const clientId = process.env.GOOGLE_CLIENT_ID || null;
+    res.json({ clientId });
+});
+
+// Google SSO — customer accounts only. ADMIN/RESTAURANT_OWNER creation is never allowed here.
+app.post("/auth/google", authLimiter, async (req, res) => {
+    try {
+        const clientId = process.env.GOOGLE_CLIENT_ID;
+        if (!clientId) {
+            return res.status(503).json({ error: "Google sign-in is not configured" });
+        }
+        const idToken = cleanString(req.body.idToken, 4096);
+        if (!idToken) return res.status(400).json({ error: "idToken required" });
+
+        const client = new OAuth2Client(clientId);
+        let payload;
+        try {
+            const ticket = await client.verifyIdToken({ idToken, audience: clientId });
+            payload = ticket.getPayload();
+        } catch {
+            return res.status(401).json({ error: "Invalid Google token" });
+        }
+
+        const { email, name, email_verified } = payload;
+        if (!email || !email_verified) {
+            return res.status(400).json({ error: "Google account email is not verified" });
+        }
+
+        const normalizedEmail = email.toLowerCase().trim();
+        let user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
+
+        if (user) {
+            // Block non-customer accounts from using this SSO path
+            if (user.role !== "USER") {
+                return res.status(403).json({ error: "This sign-in is for customer accounts only." });
+            }
+            // Stamp emailVerifiedAt if not already set
+            if (!user.emailVerifiedAt) {
+                user = await prisma.user.update({
+                    where: { id: user.id },
+                    data: { emailVerifiedAt: new Date() }
+                });
+            }
+        } else {
+            // Create new customer account via Google
+            user = await prisma.user.create({
+                data: {
+                    email: normalizedEmail,
+                    // Random unusable password — Google users authenticate via token, not password
+                    password: await bcrypt.hash(crypto.randomBytes(32).toString("hex"), 10),
+                    name: cleanString(name, 120) || null,
+                    role: "USER",
+                    emailVerifiedAt: new Date()
+                }
+            });
+        }
+
+        res.json(loginSuccessResponse(user));
+    } catch (err) {
+        logRouteError("POST /auth/google", err);
+        res.status(500).json({ error: "Google sign-in failed" });
     }
 });
 
