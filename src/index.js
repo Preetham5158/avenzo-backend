@@ -65,7 +65,7 @@ app.use((req, res, next) => {
     }
     res.setHeader(
         "Content-Security-Policy",
-        "default-src 'self'; script-src 'self' 'unsafe-inline' https://checkout.razorpay.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://api.razorpay.com https://lumberjack.razorpay.com; frame-src https://api.razorpay.com https://checkout.razorpay.com; object-src 'none'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
+        "default-src 'self'; script-src 'self' 'unsafe-inline' https://checkout.razorpay.com https://cdn.razorpay.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://api.razorpay.com https://checkout.razorpay.com https://*.razorpay.com; frame-src https://api.razorpay.com https://checkout.razorpay.com; object-src 'none'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
     );
     next();
 });
@@ -2543,10 +2543,6 @@ app.delete("/admin/payment-methods/:restaurantId/:id", authMiddleware, async (re
 // Creates a Razorpay order for an existing PAYMENT_PENDING Avenzo order.
 app.post("/payment/create", paymentLimiter, optionalAuth, async (req, res) => {
     try {
-        if (!isPaymentEnabled()) {
-            return res.status(400).json({ error: "Payments are not enabled" });
-        }
-
         const trackingToken = cleanString(req.body.trackingToken, 80);
         if (!trackingToken) {
             return res.status(400).json({ error: "trackingToken required" });
@@ -2554,7 +2550,13 @@ app.post("/payment/create", paymentLimiter, optionalAuth, async (req, res) => {
 
         const order = await prisma.order.findUnique({
             where: { trackingToken },
-            select: { id: true, totalPricePaise: true, paymentStatus: true, razorpayOrderId: true }
+            select: {
+                id: true,
+                totalPricePaise: true,
+                paymentStatus: true,
+                razorpayOrderId: true,
+                paymentMethod: { select: { type: true } }
+            }
         });
 
         if (!order) return res.status(404).json({ error: "Order not found" });
@@ -2564,21 +2566,35 @@ app.post("/payment/create", paymentLimiter, optionalAuth, async (req, res) => {
         if (order.paymentStatus !== "PAYMENT_PENDING") {
             return res.status(400).json({ error: "This order does not require payment" });
         }
+        // Only create Razorpay orders for RAZORPAY-type payment methods.
+        if (order.paymentMethod?.type !== "RAZORPAY") {
+            return res.status(400).json({ error: "This order uses a different payment method" });
+        }
+
+        // Validate credentials up-front so the error is user-friendly, not a 500.
+        const keyId = process.env.RAZORPAY_KEY_ID;
+        const keySecret = process.env.RAZORPAY_KEY_SECRET;
+        if (!keyId || !keySecret) {
+            logRouteError("POST /payment/create", new Error("RAZORPAY_KEY_ID or RAZORPAY_KEY_SECRET not set"));
+            return res.status(503).json({ error: "Online payment is temporarily unavailable. Please try another method or pay at the counter." });
+        }
+
+        const currency = process.env.RAZORPAY_CURRENCY || "INR";
 
         // Re-use existing Razorpay order if already created (idempotent).
         if (order.razorpayOrderId) {
             return res.json({
                 razorpayOrderId: order.razorpayOrderId,
                 amount: order.totalPricePaise,
-                currency: "INR",
-                keyId: process.env.RAZORPAY_KEY_ID
+                currency,
+                keyId
             });
         }
 
         const rzp = getRazorpayInstance();
         const rzpOrder = await rzp.orders.create({
             amount: order.totalPricePaise,
-            currency: "INR",
+            currency,
             receipt: trackingToken,
             payment_capture: 1
         });
@@ -2591,8 +2607,8 @@ app.post("/payment/create", paymentLimiter, optionalAuth, async (req, res) => {
         res.json({
             razorpayOrderId: rzpOrder.id,
             amount: order.totalPricePaise,
-            currency: "INR",
-            keyId: process.env.RAZORPAY_KEY_ID
+            currency,
+            keyId
         });
     } catch (err) {
         logRouteError("POST /payment/create", err);
