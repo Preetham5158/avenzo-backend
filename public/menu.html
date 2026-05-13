@@ -592,6 +592,11 @@
         border-radius: 18px;
         overflow-x: auto;
         overflow-y: hidden;
+        scrollbar-width: none;
+      }
+
+      .category-rail::-webkit-scrollbar {
+        display: none;
       }
 
       #categoryRail {
@@ -699,7 +704,15 @@
 </head>
 
 <body>
-  <div id="customerTopbar" hidden></div>
+  <header class="topbar" id="customerTopbar" hidden>
+    <div class="topbar-inner">
+      <a class="brand" href="/customer.html" aria-label="Avenzo home">
+        <img src="/logo.png" alt="Avenzo"><span>AVENZO</span>
+      </a>
+      <div id="customerNav"></div>
+      <div id="accountMenu"></div>
+    </div>
+  </header>
 
   <header class="dine-top">
     <div class="dine-inner">
@@ -978,16 +991,6 @@
       const bar = document.getElementById("customerTopbar");
       if (!bar) return;
       bar.hidden = false;
-      bar.innerHTML = `
-        <header class="topbar">
-          <div class="topbar-inner">
-            <a class="brand" href="/customer.html" aria-label="Avenzo home">
-              <img src="/logo.png" alt="Avenzo"><span>AVENZO</span>
-            </a>
-            <div id="customerNav"></div>
-            <div id="accountMenu"></div>
-          </div>
-        </header>`;
       document.body.classList.add("has-customer-bar");
       document.getElementById("customerNav").innerHTML = customerNavHtml("restaurants");
       initAccountMenu("accountMenu", "/customer-login.html");

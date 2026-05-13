@@ -28,8 +28,9 @@ function publicOrderResponse(order, options = {}) {
     response.id = order.id;
   }
 
-  // Expose whether this order has been rated so the frontend can show/hide the rating prompt.
+  // Expose rating state so the frontend can show the prompt or the submitted stars.
   response.hasRating = !!order.rating;
+  response.rating = order.rating?.rating ?? null;
 
   return response;
 }

@@ -73,7 +73,15 @@
 </head>
 
 <body>
-  <div id="customerTopbar" hidden></div>
+  <header class="topbar" id="customerTopbar" hidden>
+    <div class="topbar-inner">
+      <a class="brand" href="/customer.html" aria-label="Avenzo home">
+        <img src="/logo.png" alt="Avenzo"><span>AVENZO</span>
+      </a>
+      <div id="customerNav"></div>
+      <div id="accountMenu"></div>
+    </div>
+  </header>
 
   <main class="page track-page">
     <section class="hero-panel stack track-hero">
@@ -250,20 +258,20 @@
         : "/";
       const target = document.getElementById("trackingActions");
 
-      // Show customer navigation only when logged in AND this is not a guest-mode tracking link.
+      // Logged-in customer with their own tracking link
       if (!guestTracking && getToken()) {
         target.innerHTML = `
-          <a class="btn btn-dark" href="/customer-orders.html">My orders</a>
           <a class="btn btn-primary" href="/customer-restaurants.html">Browse restaurants</a>
-          <a class="btn btn-ghost" href="/customer.html">Home</a>
+          <a class="btn btn-ghost" href="/customer-orders.html">My orders</a>
         `;
         return;
       }
 
-      target.innerHTML = `
-        <a class="btn btn-primary" href="${menuHref}">Order again</a>
-        <a class="btn btn-ghost" href="/track">Find order</a>
-      `;
+      // Guest: show Order again only after the order is done or cancelled
+      const showOrderAgain = ["COMPLETED", "CANCELLED"].includes(order.status);
+      target.innerHTML = showOrderAgain
+        ? `<a class="btn btn-primary" href="${menuHref}">Order again</a>`
+        : "";
     }
 
     function renderRatingSection(order) {
@@ -327,16 +335,6 @@
       const bar = document.getElementById("customerTopbar");
       if (!bar || !bar.hidden) return;
       bar.hidden = false;
-      bar.innerHTML = `
-        <header class="topbar">
-          <div class="topbar-inner">
-            <a class="brand" href="/customer.html" aria-label="Avenzo home">
-              <img src="/logo.png" alt="Avenzo"><span>AVENZO</span>
-            </a>
-            <div id="customerNav"></div>
-            <div id="accountMenu"></div>
-          </div>
-        </header>`;
       document.getElementById("customerNav").innerHTML = customerNavHtml("orders");
       initAccountMenu("accountMenu", "/customer-login.html");
       const heroBrand = document.querySelector(".center-brand");
