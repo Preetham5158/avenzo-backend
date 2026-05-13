@@ -15,10 +15,13 @@ All authenticated users (customer and restaurant/admin) require email OTP after 
 
 ## 2FA Flags
 
-| Variable | Default | Notes |
+| Variable | Local default | Production (Render) |
 |---|---|---|
-| `AUTH_REQUIRE_RESTAURANT_2FA` | `true` | Always on in production |
-| `AUTH_REQUIRE_CUSTOMER_2FA` | `true` | Always on in production. Set `false` locally with `OTP_MODE=log` for dev speed. |
+| `AUTH_REQUIRE_RESTAURANT_2FA` | `false` | `true` |
+| `AUTH_REQUIRE_CUSTOMER_2FA` | `false` | `true` |
+
+Keep both flags `false` locally when `OTP_MODE=log` is active so you can log in without waiting for an email.
+Set both to `true` in the Render environment alongside `OTP_MODE=email`.
 
 ## OTP Provider
 

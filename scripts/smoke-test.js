@@ -258,26 +258,37 @@ async function main() {
       tokens.owner = (await login(fixtures.emails.owner, fixtures.password)).token;
       tokens.employee = (await login(fixtures.emails.employee, fixtures.password)).token;
 
-      // Verify 2FA is enforced: customer login path must require OTP, not return a token directly.
+      const customer2fa = String(process.env.AUTH_REQUIRE_CUSTOMER_2FA || "false").toLowerCase() === "true";
+      const restaurant2fa = String(process.env.AUTH_REQUIRE_RESTAURANT_2FA || "false").toLowerCase() === "true";
+
+      // Verify customer login path behaviour matches the 2FA flag.
       const customerLoginRes = await request("/auth/customer/login", {
         method: "POST",
         body: JSON.stringify({ email: fixtures.emails.customerWithPhone, password: fixtures.password })
       });
       assert(customerLoginRes.status === 200, `customer login returned ${customerLoginRes.status}`);
-      assert(customerLoginRes.data?.otpRequired === true, "customer login should require OTP");
-      assert(typeof customerLoginRes.data?.challengeId === "string", "customer login should return challengeId");
-      assert(!customerLoginRes.data?.token, "customer login must not return token before OTP");
+      if (customer2fa) {
+        assert(customerLoginRes.data?.otpRequired === true, "customer login should require OTP when 2FA is on");
+        assert(typeof customerLoginRes.data?.challengeId === "string", "customer login should return challengeId");
+        assert(!customerLoginRes.data?.token, "customer login must not return token before OTP");
+      } else {
+        assert(typeof customerLoginRes.data?.token === "string", "customer login should return token when 2FA is off");
+      }
 
-      // Verify 2FA is enforced: restaurant login path must require OTP for approved roles.
+      // Verify restaurant login path behaviour matches the 2FA flag.
       const adminPartner = await request("/auth/restaurant/login", {
         method: "POST",
         body: JSON.stringify({ email: fixtures.emails.admin, password: fixtures.password })
       });
       assert(adminPartner.status === 200, `admin partner login returned ${adminPartner.status}`);
-      assert(adminPartner.data?.otpRequired === true, "restaurant login should require OTP");
-      assert(!adminPartner.data?.token, "restaurant login must not return token before OTP");
+      if (restaurant2fa) {
+        assert(adminPartner.data?.otpRequired === true, "restaurant login should require OTP when 2FA is on");
+        assert(!adminPartner.data?.token, "restaurant login must not return token before OTP");
+      } else {
+        assert(typeof adminPartner.data?.token === "string", "restaurant login should return token when 2FA is off");
+      }
 
-      // USER must be blocked from restaurant login path.
+      // USER must always be blocked from restaurant login path regardless of 2FA setting.
       const customerPartner = await request("/auth/restaurant/login", {
         method: "POST",
         body: JSON.stringify({ email: fixtures.emails.customerWithPhone, password: fixtures.password })

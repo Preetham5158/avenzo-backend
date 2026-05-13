@@ -39,11 +39,14 @@ npx prisma migrate deploy && npm start
 - `BASE_URL`
 - `ENABLE_BOOTSTRAP_SCHEMA=false`
 
-### Authentication — 2FA
+### Authentication — 2FA (Production)
 - `AUTH_REQUIRE_RESTAURANT_2FA=true`
 - `AUTH_REQUIRE_CUSTOMER_2FA=true`
 - `OTP_TTL_MINUTES=10`
 - `OTP_MAX_ATTEMPTS=5`
+
+> **Local / development defaults**: `AUTH_REQUIRE_RESTAURANT_2FA=false`, `AUTH_REQUIRE_CUSTOMER_2FA=false`, `OTP_MODE=log`, `NOTIFICATION_MODE=log`.
+> Do not copy production flags into your local `.env` unless you are specifically testing the full OTP email flow.
 
 ### Email — Resend
 - `OTP_MODE=email`

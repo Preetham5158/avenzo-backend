@@ -174,11 +174,11 @@ async function auditLog(action, data = {}) {
 }
 
 function restaurant2faRequired() {
-    return String(process.env.AUTH_REQUIRE_RESTAURANT_2FA || "true").toLowerCase() === "true";
+    return String(process.env.AUTH_REQUIRE_RESTAURANT_2FA || "false").toLowerCase() === "true";
 }
 
 function customer2faRequired() {
-    return String(process.env.AUTH_REQUIRE_CUSTOMER_2FA || "true").toLowerCase() === "true";
+    return String(process.env.AUTH_REQUIRE_CUSTOMER_2FA || "false").toLowerCase() === "true";
 }
 
 function otpTtlMinutes() {
@@ -859,14 +859,18 @@ app.post("/auth/customer/login", authLimiter, async (req, res) => {
             return res.status(403).json({ error: "This sign in is for customer accounts. Restaurant partners should use restaurant login." });
         }
 
-        const challenge = await createOtpChallenge(user, "CUSTOMER_LOGIN");
-        return res.json({
-            otpRequired: true,
-            challengeId: challenge.id,
-            channel: challenge.channel,
-            maskedEmail: challenge.maskedEmail,
-            expiresAt: challenge.expiresAt
-        });
+        if (customer2faRequired()) {
+            const challenge = await createOtpChallenge(user, "CUSTOMER_LOGIN");
+            return res.json({
+                otpRequired: true,
+                challengeId: challenge.id,
+                channel: challenge.channel,
+                maskedEmail: challenge.maskedEmail,
+                expiresAt: challenge.expiresAt
+            });
+        }
+
+        res.json(loginSuccessResponse(user));
     } catch (err) {
         logRouteError("POST /auth/customer/login", err);
         res.status(500).json({ error: "Login failed" });
@@ -883,14 +887,18 @@ app.post("/auth/restaurant/login", authLimiter, async (req, res) => {
             return res.status(403).json({ error: "This is a customer account. Restaurant access is available only for approved Avenzo partners." });
         }
 
-        const challenge = await createOtpChallenge(user, "RESTAURANT_LOGIN");
-        return res.json({
-            otpRequired: true,
-            challengeId: challenge.id,
-            channel: challenge.channel,
-            maskedEmail: challenge.maskedEmail,
-            expiresAt: challenge.expiresAt
-        });
+        if (restaurant2faRequired()) {
+            const challenge = await createOtpChallenge(user, "RESTAURANT_LOGIN");
+            return res.json({
+                otpRequired: true,
+                challengeId: challenge.id,
+                channel: challenge.channel,
+                maskedEmail: challenge.maskedEmail,
+                expiresAt: challenge.expiresAt
+            });
+        }
+
+        res.json(loginSuccessResponse(user));
     } catch (err) {
         logRouteError("POST /auth/restaurant/login", err);
         res.status(500).json({ error: "Login failed" });
