@@ -124,6 +124,15 @@
       </div>
 
       <div class="row row-wrap top-line" id="trackingActions"></div>
+
+      <div id="paymentPendingPanel" hidden style="margin-top:12px;padding:12px 14px;border-radius:14px;background:#fff8e1;border:1px solid #ffe082;font-size:14px">
+        <strong style="color:#e65100">Payment awaited</strong>
+        <p class="muted" style="margin:4px 0 0">Your order is saved. Please complete payment to send it to the kitchen.</p>
+      </div>
+      <div id="paymentFailedPanel" hidden style="margin-top:12px;padding:12px 14px;border-radius:14px;background:#fff0f0;border:1px solid #ffcdd2;font-size:14px">
+        <strong style="color:#c62828">Payment failed</strong>
+        <p class="muted" style="margin:4px 0 0">Your order was cancelled because the payment did not go through.</p>
+      </div>
     </section>
 
     <section class="card card-pad stack mt-16" id="ratingSection" hidden>
@@ -215,9 +224,16 @@
           `;
         }).join("");
         document.getElementById("total").textContent = money(total);
+        renderPaymentPanels(data);
         renderTrackingActions(data);
         renderRatingSection(data);
         maybeInitCustomerBar();
+
+        // Stop polling once terminal state is reached (no more updates expected).
+        if (["COMPLETED", "CANCELLED", "PAYMENT_FAILED"].includes(data.status) ||
+            data.paymentStatus === "PAYMENT_FAILED") {
+          stopStatusPolling();
+        }
       } catch (err) {
         document.getElementById("restaurantName").textContent = "Order not found";
         document.getElementById("readyText").textContent = err.message || "Unable to load order.";
@@ -260,6 +276,76 @@
         <a class="btn btn-primary" href="/">Back to home</a>
         <a class="btn btn-ghost" href="/customer-login.html">Sign in to your account</a>
       `;
+    }
+
+    function renderPaymentPanels(order) {
+      const pendingPanel = document.getElementById("paymentPendingPanel");
+      const failedPanel = document.getElementById("paymentFailedPanel");
+      pendingPanel.hidden = !["PAYMENT_PENDING", "PAYMENT_CLAIMED"].includes(order.paymentStatus);
+      failedPanel.hidden = order.paymentStatus !== "PAYMENT_FAILED";
+
+      if (order.paymentStatus === "PAYMENT_CLAIMED") {
+        // Customer already submitted claim — restaurant is verifying.
+        pendingPanel.innerHTML = `
+          <strong style="color:#2e7d32">Payment claim submitted</strong>
+          <p class="muted" style="margin:4px 0 0">Your payment claim has been sent to the restaurant. They will verify it in their UPI app and confirm shortly. Your order will move to preparation once confirmed.</p>
+        `;
+        return;
+      }
+
+      if (order.paymentStatus === "PAYMENT_PENDING" && order.paymentInfo) {
+        const info = order.paymentInfo;
+        if (info.type === "UPI_QR") {
+          let upiHtml = `<div style="margin-top:10px">`;
+          if (info.qrImageUrl) {
+            upiHtml += `<img src="${escapeHtml(info.qrImageUrl)}" alt="UPI QR" style="max-width:200px;width:100%;border-radius:12px;border:1px solid #eee;display:block;margin-bottom:8px">`;
+          }
+          if (info.upiId) {
+            upiHtml += `<p class="muted" style="font-size:13px;margin:0">UPI ID: ${escapeHtml(info.upiId)}</p>`;
+          }
+          upiHtml += `</div>`;
+          pendingPanel.innerHTML = `
+            <strong style="color:#e65100">Payment awaited — ${escapeHtml(info.displayName)}</strong>
+            <p class="muted" style="margin:4px 0 0">Scan the QR code or use the UPI ID below. Tap "I have paid" after completing payment.</p>
+            ${upiHtml}
+            <button class="btn btn-primary" style="margin-top:10px;width:100%" onclick="retryPayment()">I have paid</button>
+          `;
+        }
+      }
+    }
+
+    async function retryPayment() {
+      if (!trackingToken) return;
+      const btn = event?.target;
+      if (btn) { btn.disabled = true; btn.textContent = "Submitting..."; }
+      try {
+        const data = await request(`/order/${trackingToken}`, { auth: false });
+        if (data.paymentStatus === "PAID") { await loadStatus(); return; }
+        if (data.paymentStatus === "PAYMENT_CLAIMED") { await loadStatus(); return; }
+
+        const info = data.paymentInfo;
+        if (info?.type === "UPI_QR") {
+          // Customer submits their claim — restaurant must then verify and confirm.
+          await request("/payment/upi-confirm", {
+            method: "POST",
+            body: JSON.stringify({ trackingToken }),
+            auth: false
+          });
+          toast("Payment claim submitted. The restaurant will confirm shortly.");
+          await loadStatus();
+        } else {
+          // Razorpay: cannot reopen checkout from the tracking page; redirect to menu.
+          const slug = data.restaurant?.slug;
+          if (slug) {
+            window.location.href = `/r/${encodeURIComponent(slug)}?guest=1`;
+          } else {
+            toast("Please return to the menu to complete payment.");
+          }
+        }
+      } catch (err) {
+        toast(err.message || "Could not submit payment claim.");
+        if (btn) { btn.disabled = false; btn.textContent = "I have paid"; }
+      }
     }
 
     function renderTrackingActions(order) {

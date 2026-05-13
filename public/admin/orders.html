@@ -286,13 +286,29 @@
               </div>
               <div>
                 <div class="muted">Payment</div>
-                <strong>${paymentLabel(order.paymentStatus)}</strong>
+                <strong class="${paymentPillClass(order.paymentStatus)}" style="font-size:13px">${paymentLabel(order.paymentStatus)}</strong>
               </div>
               ${order.tableNumber ? `<div><div class="muted">Table</div><strong>${escapeHtml(order.tableNumber)}</strong></div>` : ""}
               ${order.phone ? `<div><div class="muted">Phone</div><strong>${escapeHtml(order.phone)}</strong></div>` : ""}
             </div>
 
             <div class="items">${items}</div>
+
+            ${order.paymentStatus === "PAYMENT_CLAIMED" ? `
+              <div style="padding:12px 14px;border-radius:12px;background:#fff8e1;border:1px solid #ffe082;font-size:14px">
+                <strong style="color:#e65100">Customer says paid — verify before preparing</strong>
+                <p class="muted" style="margin:4px 0 6px">Check your UPI app to confirm payment was received, then tap the button below.</p>
+                ${order.paymentReference ? `<p class="muted" style="margin:0 0 8px;font-size:12px">Customer reference: <strong>${escapeHtml(order.paymentReference)}</strong></p>` : ""}
+                <button class="btn btn-primary" onclick="confirmPayment(this, '${order.id}')">Mark payment received</button>
+              </div>
+            ` : ""}
+
+            ${order.paymentStatus === "PAYMENT_PENDING" ? `
+              <div style="padding:12px 14px;border-radius:12px;background:#fff0f0;border:1px solid #ffcdd2;font-size:14px">
+                <strong style="color:#c62828">Awaiting payment</strong>
+                <p class="muted" style="margin:4px 0 0">Customer has not yet submitted payment for this order.</p>
+              </div>
+            ` : ""}
 
             <div class="order-status-panel">
               <div class="muted">Update order</div>
@@ -325,12 +341,34 @@
     function paymentLabel(value) {
       return {
         PAYMENT_NOT_REQUIRED: "Not required",
-        PAYMENT_PENDING: "Pending",
+        PAYMENT_PENDING: "Awaiting payment",
+        PAYMENT_CLAIMED: "Customer says paid",
         PAID: "Paid",
         PAYMENT_FAILED: "Failed",
         REFUNDED: "Refunded",
         PARTIALLY_REFUNDED: "Partial refund"
       }[value] || "Not required";
+    }
+
+    function paymentPillClass(value) {
+      if (value === "PAID") return "pill-success";
+      if (value === "PAYMENT_CLAIMED") return "pill-warning";
+      if (value === "PAYMENT_FAILED") return "pill-danger";
+      if (value === "PAYMENT_PENDING") return "pill-danger";
+      return "";
+    }
+
+    async function confirmPayment(button, id) {
+      setLoading(button, true, "Confirming...");
+      try {
+        await request(`/admin/order/${id}/confirm-payment`, { method: "POST" });
+        toast("Payment confirmed. Order can now be prepared.");
+      } catch (err) {
+        toast(err.message || "Could not confirm payment");
+      } finally {
+        setLoading(button, false);
+        loadOrders();
+      }
     }
 
     async function updateStatus(button, id, status) {

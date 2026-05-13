@@ -16,8 +16,24 @@ const { publicMenuKey } = require("./utils/token");
 const { isValidPhone, normalizePhone } = require("./utils/phone");
 const { createPrismaClient } = require("./prisma");
 
+const Razorpay = require("razorpay");
+
 const app = express();
 const prisma = createPrismaClient();
+
+function getRazorpayInstance() {
+    const keyId = process.env.RAZORPAY_KEY_ID;
+    const keySecret = process.env.RAZORPAY_KEY_SECRET;
+    if (!keyId || !keySecret) throw new Error("Razorpay credentials not configured");
+    return new Razorpay({ key_id: keyId, key_secret: keySecret });
+}
+
+async function getEnabledPaymentMethods(restaurantId) {
+    return prisma.paymentMethod.findMany({
+        where: { restaurantId, isEnabled: true },
+        orderBy: [{ isDefault: "desc" }, { sortOrder: "asc" }, { createdAt: "asc" }]
+    });
+}
 const JWT_ISSUER = "avenzo-api";
 const JWT_AUDIENCE = "avenzo-admin";
 const FOOD_TYPES = ["VEG", "NON_VEG"];
@@ -49,11 +65,19 @@ app.use((req, res, next) => {
     }
     res.setHeader(
         "Content-Security-Policy",
-        "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https:; font-src 'self' https://fonts.gstatic.com; connect-src 'self'; object-src 'none'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
+        "default-src 'self'; script-src 'self' 'unsafe-inline' https://checkout.razorpay.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://api.razorpay.com https://lumberjack.razorpay.com; frame-src https://api.razorpay.com https://checkout.razorpay.com; object-src 'none'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
     );
     next();
 });
-app.use(express.json({ limit: "100kb" }));
+// Capture raw body for Razorpay webhook signature verification before JSON parsing.
+app.use(express.json({
+    limit: "100kb",
+    verify: (req, _res, buf) => {
+        if (req.path === "/webhooks/razorpay") {
+            req.rawBody = buf.toString("utf8");
+        }
+    }
+}));
 app.use(express.static("public"));
 
 // Health check — must respond even if DB is slow; used by load balancers and Render.
@@ -103,6 +127,7 @@ const trackingLimiter = rateLimit({ windowMs: 60 * 1000, max: 60 });
 const restaurantInterestLimiter = rateLimit({ windowMs: 60 * 60 * 1000, max: 8 });
 const otpLimiter = rateLimit({ windowMs: 10 * 60 * 1000, max: 12 });
 const passwordResetLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 5 });
+const paymentLimiter = rateLimit({ windowMs: 60 * 1000, max: 15 });
 const OTP_PURPOSES = ["CUSTOMER_LOGIN", "RESTAURANT_LOGIN", "SIGNUP_VERIFY", "ORDER_CONFIRMATION", "PASSWORD_RESET"];
 
 function normalizeSlug(value) {
@@ -503,6 +528,7 @@ app.post("/order", orderLimiter, optionalAuth, async (req, res) => {
     try {
         const { items, sessionId, phone } = req.body;
         const tableNumber = cleanString(req.body.tableNumber, 40) || null;
+        const paymentMethodId = cleanString(req.body.paymentMethodId, 80) || null;
         const guestOrder = req.body.guest === true;
         let restaurantId = cleanString(req.body.restaurantId, 80);
         const restaurantSlug = cleanString(req.body.restaurantSlug, 140);
@@ -621,6 +647,21 @@ app.post("/order", orderLimiter, optionalAuth, async (req, res) => {
         const pickupCode = crypto.randomInt(1000, 10000).toString();
         const trackingToken = crypto.randomUUID();
 
+        // Resolve payment: check if the supplied method is valid for this restaurant.
+        const enabledMethods = await getEnabledPaymentMethods(restaurantId);
+        let resolvedPaymentMethodId = null;
+        if (enabledMethods.length > 0) {
+            if (paymentMethodId) {
+                const match = enabledMethods.find(m => m.id === paymentMethodId);
+                if (!match) return res.status(400).json({ error: "Invalid payment method" });
+                resolvedPaymentMethodId = match.id;
+            } else {
+                // Default to the first enabled method (sorted by isDefault desc, sortOrder asc).
+                resolvedPaymentMethodId = enabledMethods[0].id;
+            }
+        }
+        const requiresPayment = resolvedPaymentMethodId !== null;
+
         const hasPublicMenuKeys = normalizedItems.some(i => i.menuKey);
         const menuItems = await prisma.menu.findMany({
             where: hasPublicMenuKeys
@@ -661,12 +702,13 @@ app.post("/order", orderLimiter, optionalAuth, async (req, res) => {
                 data: {
                     orderNumber: counter.orderCounter - 1,
                     totalPricePaise,
-                    paymentStatus: "PAYMENT_NOT_REQUIRED",
+                    paymentStatus: requiresPayment ? "PAYMENT_PENDING" : "PAYMENT_NOT_REQUIRED",
                     pickupCode,
                     trackingToken,
                     sessionId: deviceId,
                     phone: normalizedPhone,
                     tableNumber: tableNumber || null,
+                    ...(resolvedPaymentMethodId && { paymentMethodId: resolvedPaymentMethodId }),
                     // Signed-in customer orders attach customerId so they appear in My Orders.
                     ...(customer && { customerId: customer.id }),
                     restaurantId,
@@ -712,11 +754,27 @@ app.post("/order", orderLimiter, optionalAuth, async (req, res) => {
             recipientEmail: customer?.email
         }).catch((err) => logRouteError("notifyOrderConfirmation", err));
 
+        // Include enough payment context for the frontend to route to the right payment UI.
+        const selectedMethod = resolvedPaymentMethodId
+            ? enabledMethods.find(m => m.id === resolvedPaymentMethodId) || null
+            : null;
+
         res.json({
             trackingToken: order.trackingToken,
             orderNumber: order.orderNumber,
             pickupCode,
             paymentStatus: order.paymentStatus,
+            paymentMethod: selectedMethod
+                ? {
+                    id: selectedMethod.id,
+                    type: selectedMethod.type,
+                    displayName: selectedMethod.displayName,
+                    ...(selectedMethod.type === "UPI_QR" && {
+                        qrImageUrl: selectedMethod.qrImageUrl || null,
+                        upiId: selectedMethod.upiId || null
+                    })
+                }
+                : null,
             message: "Order placed. We will send confirmation updates when available.",
             trackingUrl: `${BASE_URL}/track/${order.trackingToken}`
         });
@@ -738,7 +796,8 @@ app.get("/order/:trackingToken", trackingLimiter, async (req, res) => {
             include: {
                 items: true,
                 restaurant: true,
-                rating: true
+                rating: true,
+                paymentMethod: true
             }
         });
 
@@ -1837,6 +1896,7 @@ app.patch("/order/:id/status", authMiddleware, async (req, res) => {
                 restaurantId: true,
                 readyAt: true,
                 status: true,
+                paymentStatus: true,
                 trackingToken: true,
                 pickupCode: true,
                 orderNumber: true,
@@ -1850,6 +1910,14 @@ app.patch("/order/:id/status", authMiddleware, async (req, res) => {
         const access = await getRestaurantAccess(order.restaurantId, req.user.userId);
         if (!access.canOperate) return res.status(403).json({ error: "Not allowed" });
         if (!ensureWorkspaceService(access, res)) return;
+
+        // Block kitchen actions until payment is fully confirmed — neither pending nor customer-claimed is sufficient.
+        if (order.paymentStatus === "PAYMENT_PENDING") {
+            return res.status(402).json({ error: "Payment is pending. Status cannot be updated until payment is confirmed." });
+        }
+        if (order.paymentStatus === "PAYMENT_CLAIMED") {
+            return res.status(402).json({ error: "Customer has claimed payment but it has not been verified yet. Please confirm payment received before preparing the order." });
+        }
 
         if (order.status === status) {
             return res.json({ id: order.id, status: order.status });
@@ -1964,7 +2032,7 @@ app.get("/admin/orders/:restaurantId", authMiddleware, async (req, res) => {
         const [orders, total] = await Promise.all([
             prisma.order.findMany({
                 where,
-                include: { items: true },
+                include: { items: true, paymentMethod: true },
                 orderBy: { createdAt: "desc" },
                 skip,
                 take: limit
@@ -2244,13 +2312,438 @@ app.post("/order/:trackingToken/rating", orderLimiter, optionalAuth, async (req,
     }
 });
 
+// ─── PAYMENT ────────────────────────────────────────────────────────────────
+
+// Public: returns enabled payment methods for a restaurant so the frontend can show the selector.
+app.get("/payment/methods", trackingLimiter, async (req, res) => {
+    try {
+        const slug = cleanString(req.query.slug, 140);
+        let restaurantId = cleanString(req.query.restaurantId, 80);
+
+        if (!slug && !restaurantId) return res.status(400).json({ error: "slug or restaurantId required" });
+
+        if (slug && !restaurantId) {
+            const r = await prisma.restaurant.findUnique({ where: { slug }, select: { id: true } });
+            if (!r) return res.status(404).json({ error: "Restaurant not found" });
+            restaurantId = r.id;
+        }
+
+        const methods = await getEnabledPaymentMethods(restaurantId);
+        res.json(methods.map(m => ({
+            id: m.id,
+            type: m.type,
+            displayName: m.displayName,
+            isDefault: m.isDefault,
+            ...(m.type === "UPI_QR" && { qrImageUrl: m.qrImageUrl || null, upiId: m.upiId || null })
+        })));
+    } catch (err) {
+        logRouteError("GET /payment/methods", err);
+        res.status(500).json({ error: "Could not load payment methods" });
+    }
+});
+
+// Customer submits a UPI payment claim. This does NOT mark the order as paid —
+// it sets PAYMENT_CLAIMED so restaurant staff can verify in their UPI app before
+// allowing the order into the kitchen.
+app.post("/payment/upi-confirm", paymentLimiter, optionalAuth, async (req, res) => {
+    try {
+        const trackingToken = cleanString(req.body.trackingToken, 80);
+        // Optional UTR / transaction ID provided by the customer.
+        const paymentReference = cleanString(req.body.paymentReference, 120) || null;
+        if (!trackingToken) return res.status(400).json({ error: "trackingToken required" });
+
+        const order = await prisma.order.findUnique({
+            where: { trackingToken },
+            select: { id: true, paymentStatus: true, paymentMethod: { select: { type: true } }, restaurantId: true }
+        });
+
+        if (!order) return res.status(404).json({ error: "Order not found" });
+        if (order.paymentStatus === "PAID") return res.json({ ok: true, alreadyPaid: true });
+        if (order.paymentStatus === "PAYMENT_CLAIMED") return res.json({ ok: true, claimed: true });
+        if (order.paymentStatus !== "PAYMENT_PENDING") return res.status(400).json({ error: "This order does not require payment" });
+        if (order.paymentMethod?.type !== "UPI_QR") return res.status(400).json({ error: "This order is not a UPI QR payment" });
+
+        // Mark as claimed — restaurant must verify before it can be prepared.
+        await prisma.order.update({
+            where: { id: order.id },
+            data: {
+                paymentStatus: "PAYMENT_CLAIMED",
+                ...(paymentReference && { paymentReference })
+            }
+        });
+
+        res.json({ ok: true, claimed: true });
+    } catch (err) {
+        logRouteError("POST /payment/upi-confirm", err);
+        res.status(500).json({ error: "Could not submit payment claim" });
+    }
+});
+
+// Restaurant/admin verifies UPI payment and marks it as confirmed PAID.
+// Only callable by restaurant staff — the customer can never call this.
+app.post("/admin/order/:id/confirm-payment", authMiddleware, async (req, res) => {
+    try {
+        const order = await prisma.order.findUnique({
+            where: { id: req.params.id },
+            select: {
+                id: true, paymentStatus: true, restaurantId: true, trackingToken: true,
+                orderNumber: true, pickupCode: true, paymentReference: true,
+                customer: { select: { email: true } },
+                restaurant: { select: { name: true } }
+            }
+        });
+
+        if (!order) return res.status(404).json({ error: "Order not found" });
+
+        const access = await getRestaurantAccess(order.restaurantId, req.user.userId);
+        if (!access.canOperate) return res.status(403).json({ error: "Not allowed" });
+
+        if (order.paymentStatus === "PAID") return res.json({ ok: true, alreadyPaid: true });
+        if (order.paymentStatus !== "PAYMENT_CLAIMED") {
+            return res.status(400).json({ error: "Order is not in a payment claimed state" });
+        }
+
+        await prisma.order.update({ where: { id: order.id }, data: { paymentStatus: "PAID" } });
+
+        await prisma.auditLog.create({
+            data: {
+                actorUserId: req.user.userId,
+                action: "ORDER_STATUS_UPDATED",
+                restaurantId: order.restaurantId,
+                orderId: order.id,
+                metadata: { paymentStatusChange: "PAID", confirmedFrom: "PAYMENT_CLAIMED" }
+            }
+        });
+
+        notifyOrderConfirmation({
+            prisma,
+            order: { ...order },
+            restaurant: order.restaurant,
+            baseUrl: BASE_URL,
+            recipientEmail: order.customer?.email || null
+        }).catch((err) => logRouteError("confirmPaymentNotify", err));
+
+        res.json({ ok: true });
+    } catch (err) {
+        logRouteError("POST /admin/order/:id/confirm-payment", err);
+        res.status(500).json({ error: "Could not confirm payment" });
+    }
+});
+
+// ─── ADMIN: PAYMENT METHODS ─────────────────────────────────────────────────
+
+app.get("/admin/payment-methods/:restaurantId", authMiddleware, async (req, res) => {
+    try {
+        const access = await getRestaurantAccess(req.params.restaurantId, req.user.userId);
+        if (!access.canManage) return res.status(403).json({ error: "Only owners or admins can manage payment methods" });
+
+        const methods = await prisma.paymentMethod.findMany({
+            where: { restaurantId: req.params.restaurantId },
+            orderBy: [{ isDefault: "desc" }, { sortOrder: "asc" }, { createdAt: "asc" }]
+        });
+        res.json(methods);
+    } catch (err) {
+        logRouteError("GET /admin/payment-methods/:restaurantId", err);
+        res.status(500).json({ error: "Could not load payment methods" });
+    }
+});
+
+app.post("/admin/payment-methods/:restaurantId", authMiddleware, async (req, res) => {
+    try {
+        const access = await getRestaurantAccess(req.params.restaurantId, req.user.userId);
+        if (!access.canManage) return res.status(403).json({ error: "Only owners or admins can manage payment methods" });
+
+        const { type, displayName, isDefault, sortOrder, qrImageUrl, upiId } = req.body;
+        const validTypes = ["RAZORPAY", "UPI_QR"];
+        if (!validTypes.includes(type)) return res.status(400).json({ error: "type must be RAZORPAY or UPI_QR" });
+        if (!cleanString(displayName, 80)) return res.status(400).json({ error: "displayName required" });
+
+        // Only one default at a time per restaurant.
+        if (isDefault) {
+            await prisma.paymentMethod.updateMany({
+                where: { restaurantId: req.params.restaurantId },
+                data: { isDefault: false }
+            });
+        }
+
+        const method = await prisma.paymentMethod.create({
+            data: {
+                restaurantId: req.params.restaurantId,
+                type,
+                displayName: cleanString(displayName, 80),
+                isEnabled: req.body.isEnabled !== false,
+                isDefault: !!isDefault,
+                sortOrder: typeof sortOrder === "number" ? sortOrder : 0,
+                qrImageUrl: cleanString(qrImageUrl, 500) || null,
+                upiId: cleanString(upiId, 60) || null
+            }
+        });
+        res.json(method);
+    } catch (err) {
+        logRouteError("POST /admin/payment-methods/:restaurantId", err);
+        res.status(500).json({ error: "Could not create payment method" });
+    }
+});
+
+app.put("/admin/payment-methods/:restaurantId/:id", authMiddleware, async (req, res) => {
+    try {
+        const access = await getRestaurantAccess(req.params.restaurantId, req.user.userId);
+        if (!access.canManage) return res.status(403).json({ error: "Only owners or admins can manage payment methods" });
+
+        const existing = await prisma.paymentMethod.findFirst({
+            where: { id: req.params.id, restaurantId: req.params.restaurantId }
+        });
+        if (!existing) return res.status(404).json({ error: "Payment method not found" });
+
+        const { displayName, isEnabled, isDefault, sortOrder, qrImageUrl, upiId } = req.body;
+
+        if (isDefault) {
+            await prisma.paymentMethod.updateMany({
+                where: { restaurantId: req.params.restaurantId, id: { not: req.params.id } },
+                data: { isDefault: false }
+            });
+        }
+
+        const updated = await prisma.paymentMethod.update({
+            where: { id: req.params.id },
+            data: {
+                ...(displayName !== undefined && { displayName: cleanString(displayName, 80) }),
+                ...(isEnabled !== undefined && { isEnabled: !!isEnabled }),
+                ...(isDefault !== undefined && { isDefault: !!isDefault }),
+                ...(sortOrder !== undefined && { sortOrder: Number(sortOrder) }),
+                ...(qrImageUrl !== undefined && { qrImageUrl: cleanString(qrImageUrl, 500) || null }),
+                ...(upiId !== undefined && { upiId: cleanString(upiId, 60) || null })
+            }
+        });
+        res.json(updated);
+    } catch (err) {
+        logRouteError("PUT /admin/payment-methods/:restaurantId/:id", err);
+        res.status(500).json({ error: "Could not update payment method" });
+    }
+});
+
+app.delete("/admin/payment-methods/:restaurantId/:id", authMiddleware, async (req, res) => {
+    try {
+        const access = await getRestaurantAccess(req.params.restaurantId, req.user.userId);
+        if (!access.canManage) return res.status(403).json({ error: "Only owners or admins can manage payment methods" });
+
+        const existing = await prisma.paymentMethod.findFirst({
+            where: { id: req.params.id, restaurantId: req.params.restaurantId }
+        });
+        if (!existing) return res.status(404).json({ error: "Payment method not found" });
+
+        await prisma.paymentMethod.delete({ where: { id: req.params.id } });
+        res.json({ ok: true });
+    } catch (err) {
+        logRouteError("DELETE /admin/payment-methods/:restaurantId/:id", err);
+        res.status(500).json({ error: "Could not delete payment method" });
+    }
+});
+
+// Creates a Razorpay order for an existing PAYMENT_PENDING Avenzo order.
+app.post("/payment/create", paymentLimiter, optionalAuth, async (req, res) => {
+    try {
+        if (!isPaymentEnabled()) {
+            return res.status(400).json({ error: "Payments are not enabled" });
+        }
+
+        const trackingToken = cleanString(req.body.trackingToken, 80);
+        if (!trackingToken) {
+            return res.status(400).json({ error: "trackingToken required" });
+        }
+
+        const order = await prisma.order.findUnique({
+            where: { trackingToken },
+            select: { id: true, totalPricePaise: true, paymentStatus: true, razorpayOrderId: true }
+        });
+
+        if (!order) return res.status(404).json({ error: "Order not found" });
+        if (order.paymentStatus === "PAID") {
+            return res.json({ alreadyPaid: true });
+        }
+        if (order.paymentStatus !== "PAYMENT_PENDING") {
+            return res.status(400).json({ error: "This order does not require payment" });
+        }
+
+        // Re-use existing Razorpay order if already created (idempotent).
+        if (order.razorpayOrderId) {
+            return res.json({
+                razorpayOrderId: order.razorpayOrderId,
+                amount: order.totalPricePaise,
+                currency: "INR",
+                keyId: process.env.RAZORPAY_KEY_ID
+            });
+        }
+
+        const rzp = getRazorpayInstance();
+        const rzpOrder = await rzp.orders.create({
+            amount: order.totalPricePaise,
+            currency: "INR",
+            receipt: trackingToken,
+            payment_capture: 1
+        });
+
+        await prisma.order.update({
+            where: { id: order.id },
+            data: { razorpayOrderId: rzpOrder.id }
+        });
+
+        res.json({
+            razorpayOrderId: rzpOrder.id,
+            amount: order.totalPricePaise,
+            currency: "INR",
+            keyId: process.env.RAZORPAY_KEY_ID
+        });
+    } catch (err) {
+        logRouteError("POST /payment/create", err);
+        res.status(500).json({ error: "Could not initiate payment. Please try again." });
+    }
+});
+
+// Razorpay webhook — raw body required for signature verification.
+// Signature is HMAC-SHA256 of raw body using the webhook secret.
+app.post("/webhooks/razorpay", async (req, res) => {
+    const signature = req.headers["x-razorpay-signature"];
+    const secret = process.env.RAZORPAY_WEBHOOK_SECRET;
+
+    if (!secret) {
+        logRouteError("POST /webhooks/razorpay", new Error("RAZORPAY_WEBHOOK_SECRET not set"));
+        return res.status(500).json({ error: "Webhook not configured" });
+    }
+    if (!signature || !req.rawBody) {
+        return res.status(400).json({ error: "Missing signature or body" });
+    }
+
+    const expected = crypto.createHmac("sha256", secret).update(req.rawBody).digest("hex");
+    if (!crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(signature))) {
+        return res.status(400).json({ error: "Invalid signature" });
+    }
+
+    let event;
+    try {
+        event = typeof req.body === "string" ? JSON.parse(req.rawBody) : req.body;
+    } catch {
+        return res.status(400).json({ error: "Invalid payload" });
+    }
+
+    const eventType = event?.event;
+    const payment = event?.payload?.payment?.entity;
+    const rzpOrderId = payment?.order_id || event?.payload?.order?.entity?.id;
+
+    if (!rzpOrderId) return res.json({ ok: true }); // ignore unrecognised events
+
+    try {
+        const order = await prisma.order.findFirst({
+            where: { razorpayOrderId: rzpOrderId },
+            select: { id: true, trackingToken: true, orderNumber: true, pickupCode: true, paymentStatus: true, customerId: true, restaurantId: true, phone: true, customer: { select: { email: true } }, restaurant: { select: { name: true } } }
+        });
+
+        if (!order) {
+            logRouteError("POST /webhooks/razorpay", new Error(`No order for razorpayOrderId=${rzpOrderId}`));
+            return res.json({ ok: true });
+        }
+
+        if (eventType === "payment.captured" || eventType === "order.paid") {
+            // Idempotency: skip if already marked PAID.
+            if (order.paymentStatus === "PAID") return res.json({ ok: true });
+
+            await prisma.order.update({
+                where: { id: order.id },
+                data: {
+                    paymentStatus: "PAID",
+                    razorpayPaymentId: payment?.id || null
+                }
+            });
+
+            await auditLog("ORDER_STATUS_UPDATED", {
+                restaurantId: order.restaurantId,
+                orderId: order.id,
+                metadata: { paymentEvent: eventType, razorpayPaymentId: payment?.id }
+            });
+
+            // Notify customer that their payment was confirmed and order is received.
+            notifyOrderConfirmation({
+                prisma,
+                order,
+                restaurant: order.restaurant,
+                baseUrl: BASE_URL,
+                recipientEmail: order.customer?.email || null
+            }).catch((err) => logRouteError("webhookNotifyConfirm", err));
+
+        } else if (eventType === "payment.failed") {
+            // Idempotency: skip if already failed or cancelled.
+            if (["PAYMENT_FAILED", "REFUNDED"].includes(order.paymentStatus)) return res.json({ ok: true });
+
+            await prisma.order.update({
+                where: { id: order.id },
+                data: {
+                    paymentStatus: "PAYMENT_FAILED",
+                    // Auto-cancel the order so it never enters the kitchen queue.
+                    status: "CANCELLED"
+                }
+            });
+        }
+
+        return res.json({ ok: true });
+    } catch (err) {
+        logRouteError("POST /webhooks/razorpay", err);
+        // Always return 200 to Razorpay — a non-200 causes retries.
+        return res.json({ ok: true });
+    }
+});
+
+// Admin endpoint to record a refund after processing it manually in Razorpay dashboard.
+app.patch("/admin/order/:id/payment-status", authMiddleware, async (req, res) => {
+    try {
+        const user = await getAuthUser(req.user.userId);
+        if (!isSuperAdmin(user)) {
+            return res.status(403).json({ error: "Only admins can record refunds" });
+        }
+
+        const { paymentStatus } = req.body;
+        const allowed = ["REFUNDED", "PARTIALLY_REFUNDED"];
+        if (!allowed.includes(paymentStatus)) {
+            return res.status(400).json({ error: `paymentStatus must be one of: ${allowed.join(", ")}` });
+        }
+
+        const order = await prisma.order.findUnique({
+            where: { id: req.params.id },
+            select: { id: true, paymentStatus: true, restaurantId: true }
+        });
+        if (!order) return res.status(404).json({ error: "Order not found" });
+
+        // Refunds can only be recorded for paid orders.
+        if (order.paymentStatus !== "PAID") {
+            return res.status(409).json({ error: "Refunds can only be recorded for paid orders" });
+        }
+
+        const updated = await prisma.order.update({
+            where: { id: order.id },
+            data: { paymentStatus }
+        });
+
+        await auditLog("ORDER_STATUS_UPDATED", {
+            actorUserId: user.id,
+            restaurantId: order.restaurantId,
+            orderId: order.id,
+            metadata: { paymentStatusChange: paymentStatus }
+        });
+
+        res.json({ id: updated.id, paymentStatus: updated.paymentStatus });
+    } catch (err) {
+        logRouteError("PATCH /admin/order/:id/payment-status", err);
+        res.status(500).json({ error: "Could not update payment status" });
+    }
+});
+
 // Unknown API routes return JSON — prevents leaking Express HTML with framework info.
 app.use((req, res, next) => {
     if (req.path.startsWith("/auth/") || req.path.startsWith("/admin/") ||
         req.path.startsWith("/customer/") || req.path.startsWith("/order") ||
         req.path.startsWith("/menu") || req.path.startsWith("/restaurant") ||
         req.path.startsWith("/reviews/") || req.path.startsWith("/categories") ||
-        req.path.startsWith("/category") || req.path.startsWith("/restaurants")) {
+        req.path.startsWith("/category") || req.path.startsWith("/restaurants") ||
+        req.path.startsWith("/payment") || req.path.startsWith("/webhooks")) {
         return res.status(404).json({ error: "Not found" });
     }
     next();

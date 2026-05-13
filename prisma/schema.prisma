@@ -56,6 +56,7 @@ enum LeadStatus {
 enum PaymentStatus {
   PAYMENT_NOT_REQUIRED
   PAYMENT_PENDING
+  PAYMENT_CLAIMED  // customer submitted UPI claim; awaiting restaurant verification
   PAID
   PAYMENT_FAILED
   REFUNDED
@@ -102,6 +103,11 @@ enum AuditAction {
   STAFF_REMOVED
   ORDER_STATUS_UPDATED
   ORDER_ATTEMPT_REJECTED
+}
+
+enum PaymentMethodType {
+  RAZORPAY
+  UPI_QR
 }
 
 //////////////////////////////////////////////////////
@@ -172,10 +178,11 @@ model Restaurant {
   owner     User     @relation("RestaurantOwner", fields: [ownerId], references: [id], onDelete: Cascade)
   staff     User[]   @relation("RestaurantStaff")
 
-  menus     Menu[]
-  orders    Order[]
-  categories Category[]
-  ratings   OrderRating[]
+  menus          Menu[]
+  orders         Order[]
+  categories     Category[]
+  ratings        OrderRating[]
+  paymentMethods PaymentMethod[]
 
   isActive  Boolean  @default(true)
   subscriptionStatus SubscriptionStatus @default(ACTIVE)
@@ -264,6 +271,13 @@ model Order {
   phone        String
   tableNumber  String?
   sessionId    String
+
+  razorpayOrderId   String?
+  razorpayPaymentId String?
+  paymentReference  String?  // optional UTR / transaction ID submitted by customer for UPI claims
+
+  paymentMethodId String?
+  paymentMethod   PaymentMethod? @relation(fields: [paymentMethodId], references: [id], onDelete: SetNull)
 
   customerId   String?
   customer     User? @relation("CustomerOrders", fields: [customerId], references: [id], onDelete: SetNull)
@@ -425,4 +439,31 @@ model AuditLog {
   @@index([restaurantId])
   @@index([orderId])
   @@index([createdAt])
+}
+
+//////////////////////////////////////////////////////
+// PAYMENT METHODS
+//////////////////////////////////////////////////////
+
+model PaymentMethod {
+  id           String            @id @default(uuid())
+  restaurantId String
+  restaurant   Restaurant        @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  type        PaymentMethodType
+  displayName String
+  isEnabled   Boolean           @default(true)
+  isDefault   Boolean           @default(false)
+  sortOrder   Int               @default(0)
+
+  // UPI_QR specific
+  qrImageUrl  String?
+  upiId       String?
+
+  orders Order[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([restaurantId])
 }
