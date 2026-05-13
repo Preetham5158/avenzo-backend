@@ -10,6 +10,7 @@ const { notifyOrderConfirmation, sendOtp } = require("./services/notification.se
 const { checkOrderAbuse, hashIp, logOrderAttempt } = require("./services/abuse.service");
 const { publicMenuItem, adminMenuItem } = require("./serializers/menu.serializer");
 const { publicOrderResponse, customerOrderSummary } = require("./serializers/order.serializer");
+const { submitRating } = require("./services/rating.service");
 const { rupeesToPaise, paiseToRupees } = require("./utils/money");
 const { publicMenuKey } = require("./utils/token");
 const { isValidPhone, normalizePhone } = require("./utils/phone");
@@ -312,7 +313,17 @@ app.get("/restaurant/slug/:slug", async (req, res) => {
             return res.status(404).json({ error: "Restaurant not found" });
         }
 
-        res.json(publicRestaurantResponse(restaurant));
+        const ratingData = await prisma.orderRating.aggregate({
+            where: { restaurantId: restaurant.id },
+            _avg: { rating: true },
+            _count: { rating: true }
+        });
+
+        res.json({
+            ...publicRestaurantResponse(restaurant),
+            avgRating: ratingData._avg.rating ? Math.round(ratingData._avg.rating * 10) / 10 : null,
+            ratingCount: ratingData._count.rating
+        });
     } catch (err) {
         logRouteError("GET /restaurant/slug/:slug", err);
         res.status(500).json({ error: "Error fetching restaurant" });
@@ -651,7 +662,8 @@ app.get("/order/:trackingToken", trackingLimiter, async (req, res) => {
             where: { trackingToken: req.params.trackingToken },
             include: {
                 items: true,
-                restaurant: true
+                restaurant: true,
+                rating: true
             }
         });
 
@@ -1093,13 +1105,28 @@ app.get("/customer/restaurants", authMiddleware, async (req, res) => {
         if (!user) return res.status(401).json({ error: "Invalid user" });
         if (user.role !== "USER") return res.status(403).json({ error: "Customer restaurant discovery is available only for customer accounts" });
 
-        const restaurants = await prisma.restaurant.findMany({
-            where: { isActive: true },
-            orderBy: [{ locality: "asc" }, { name: "asc" }]
-        });
+        const [restaurants, ratingAgg] = await Promise.all([
+            prisma.restaurant.findMany({
+                where: { isActive: true },
+                orderBy: [{ locality: "asc" }, { name: "asc" }]
+            }),
+            prisma.orderRating.groupBy({
+                by: ["restaurantId"],
+                _avg: { rating: true },
+                _count: { rating: true }
+            })
+        ]);
+        const ratingMap = new Map(ratingAgg.map(r => [r.restaurantId, r]));
 
         res.json({
-            restaurants: restaurants.map(customerRestaurantResponse)
+            restaurants: restaurants.map(r => {
+                const rd = ratingMap.get(r.id);
+                return {
+                    ...customerRestaurantResponse(r),
+                    avgRating: rd?._avg.rating ? Math.round(rd._avg.rating * 10) / 10 : null,
+                    ratingCount: rd?._count.rating || 0
+                };
+            })
         });
     } catch (err) {
         logRouteError("GET /customer/restaurants", err);
@@ -1136,7 +1163,8 @@ app.get("/customer/orders", authMiddleware, async (req, res) => {
                     items: true,
                     restaurant: {
                         select: { name: true, slug: true, locality: true, address: true }
-                    }
+                    },
+                    rating: { select: { rating: true } }
                 },
                 orderBy: { createdAt: "desc" },
                 skip: (page - 1) * limit,
@@ -2002,6 +2030,28 @@ app.delete("/admin/staff/:restaurantId/:userId", authMiddleware, async (req, res
     } catch (err) {
         logRouteError("DELETE /admin/staff/:restaurantId/:userId", err);
         res.status(500).json({ error: "Error removing staff" });
+    }
+});
+
+// One rating per completed order; guests use trackingToken, customers also verified by userId.
+app.post("/order/:trackingToken/rating", orderLimiter, optionalAuth, async (req, res) => {
+    try {
+        const ratingVal = Number(req.body.rating);
+        if (!Number.isInteger(ratingVal) || ratingVal < 1 || ratingVal > 5) {
+            return res.status(400).json({ error: "Rating must be between 1 and 5 stars" });
+        }
+        const comment = req.body.comment ? String(req.body.comment).trim().slice(0, 500) : null;
+        await submitRating(prisma, {
+            trackingToken: req.params.trackingToken,
+            rating: ratingVal,
+            comment,
+            userId: req.user?.userId || null
+        });
+        res.json({ ok: true, message: "Thank you for your feedback!" });
+    } catch (err) {
+        if (err.status) return res.status(err.status).json({ error: err.message });
+        logRouteError("POST /order/:trackingToken/rating", err);
+        res.status(500).json({ error: "Could not save your rating" });
     }
 });
 

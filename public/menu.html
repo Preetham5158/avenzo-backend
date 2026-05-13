@@ -1211,14 +1211,15 @@
           : `restaurantId=${encodeURIComponent(restaurantId)}`;
         const data = await request(`/orders/lookup?${query}&phone=${encodeURIComponent(phone)}`, { auth: false });
         const orders = data.orders || [];
+        const lookupStatusLabels = { PENDING: "Received", PREPARING: "Being prepared", READY: "Ready", COMPLETED: "Done", CANCELLED: "Cancelled" };
         document.getElementById("lookupResults").innerHTML = orders.length
           ? orders.map(order => `
-            <button class="card card-pad row-between cursor-pointer" type="button" onclick="location.href='/track/${order.trackingToken}'">
+            <button class="card card-pad row-between cursor-pointer" type="button" onclick="location.href='/track/${order.trackingToken}?guest=1'">
               <span>
                 <strong>Order #${order.orderNumber}</strong>
                 <span class="muted">Code ${escapeHtml(order.pickupCode)}</span>
               </span>
-              <span class="pill">${escapeHtml(order.status)}</span>
+              <span class="pill">${lookupStatusLabels[order.status] || escapeHtml(order.status)}</span>
             </button>
           `).join("")
           : `<div class="empty">No recent order found for this number.</div>`;
@@ -1266,7 +1267,8 @@
           createdAt: new Date().toISOString()
         });
         toast(data.message || "Order placed. We will send confirmation updates when available.");
-        window.location.href = `/track/${data.trackingToken}`;
+        // Pass guest=1 so the tracking page knows not to show customer account navigation.
+        window.location.href = `/track/${data.trackingToken}${guestMode ? "?guest=1" : ""}`;
       } catch (err) {
         toast(err.message);
       } finally {

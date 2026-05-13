@@ -295,6 +295,18 @@ h3 {
 .center-brand { justify-content: center; }
 .track-code-block { text-align: center; padding: 20px 0; }
 
+.rate-star {
+  background: transparent;
+  border: 0;
+  font-size: 34px;
+  line-height: 1;
+  padding: 4px;
+  cursor: pointer;
+  color: #d1d5db;
+  transition: color 0.12s ease, transform 0.12s ease;
+}
+.rate-star:hover { transform: scale(1.18); }
+
 .hero-panel {
   background:
     radial-gradient(circle at 8% 20%, rgba(255, 200, 87, 0.28), transparent 24%),

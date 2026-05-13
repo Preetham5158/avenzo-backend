@@ -48,10 +48,6 @@
         <a href="/customer-signup.html" class="auth-link">Create customer account</a>
       </p>
       <p class="muted auth-footnote">
-        Restaurant partner?
-        <a href="/restaurant-login.html" class="auth-link">Sign in here</a>
-      </p>
-      <p class="muted auth-footnote">
         <a href="/privacy.html" class="auth-link">Privacy</a> ·
         <a href="/terms.html" class="auth-link">Terms</a> ·
         <a href="/refund-policy.html" class="auth-link">Refund policy</a>
@@ -81,7 +77,7 @@
           throw new Error("OTP is required for this account. Please use restaurant login if this is a partner account.");
         }
 
-        localStorage.setItem("token", data.token);
+        sessionStorage.setItem("token", data.token);
         window.location.href = data.user?.role === "USER" ? "/customer.html" : "/admin/dashboard.html";
       } catch (err) {
         errorEl.textContent = err.message;

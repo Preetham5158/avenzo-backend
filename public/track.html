@@ -40,6 +40,35 @@
       text-align: left;
       background: white;
     }
+
+    .star-row {
+      display: flex;
+      gap: 4px;
+      justify-content: center;
+    }
+
+    .star-btn {
+      background: transparent;
+      border: 0;
+      font-size: 34px;
+      line-height: 1;
+      padding: 4px;
+      cursor: pointer;
+      color: #d1d5db;
+      transition: color 0.12s ease, transform 0.12s ease;
+    }
+
+    .star-btn.lit {
+      color: var(--brand-2);
+    }
+
+    .star-btn:hover {
+      transform: scale(1.18);
+    }
+
+    .rating-panel {
+      text-align: center;
+    }
   </style>
 </head>
 
@@ -86,6 +115,17 @@
       <div class="row row-wrap top-line" id="trackingActions"></div>
     </section>
 
+    <section class="card card-pad stack mt-16" id="ratingSection" hidden>
+      <div class="rating-panel">
+        <div class="eyebrow">Your feedback</div>
+        <h3 class="section-title">How was your order?</h3>
+        <p class="muted" id="ratingHelp">Tap a star to rate your experience at this restaurant.</p>
+        <div class="star-row" id="starRow" role="radiogroup" aria-label="Rate this order"></div>
+        <textarea id="ratingComment" class="input mt-12" rows="2" maxlength="500" placeholder="Optional: what did you think?" style="resize:vertical;min-height:60px"></textarea>
+        <button id="submitRatingBtn" class="btn btn-primary mt-12" onclick="submitRating()" disabled>Submit rating</button>
+      </div>
+    </section>
+
     <section class="card card-pad stack mt-16" id="savedOrdersCard" hidden>
       <div>
         <h3 class="section-title">Recent orders on this device</h3>
@@ -98,9 +138,12 @@
   <script src="/assets/app.js"></script>
   <script>
     const trackingToken = window.location.pathname.split("/track/")[1] || "";
+    // guest=1 in URL means this tracking page was opened from guest checkout — show guest actions only.
+    const guestTracking = new URLSearchParams(location.search).get("guest") === "1";
     const statuses = ["PENDING", "PREPARING", "READY", "COMPLETED"];
     let isLoadingStatus = false;
     let statusPollingTimer = null;
+    let selectedRating = 0;
 
     function badgeClass(status) {
       if (status === "READY" || status === "COMPLETED") return "pill-success";
@@ -117,12 +160,12 @@
       if (isLoadingStatus) return;
       isLoadingStatus = true;
       try {
-  const data = await request(`/order/${trackingToken}`, { auth: false });
+        const data = await request(`/order/${trackingToken}`, { auth: false });
 
-  document.getElementById("restaurantName").textContent = data.restaurant?.name || "Restaurant";
-  document.getElementById("orderNumber").textContent = Number.isInteger(data.orderNumber) ? `Order #${data.orderNumber}` : "Order received";
-  document.getElementById("orderCode").textContent = data.pickupCode;
-  document.getElementById("placedAt").textContent = formatDate(data.createdAt);
+        document.getElementById("restaurantName").textContent = data.restaurant?.name || "Restaurant";
+        document.getElementById("orderNumber").textContent = Number.isInteger(data.orderNumber) ? `Order #${data.orderNumber}` : "Order received";
+        document.getElementById("orderCode").textContent = data.pickupCode;
+        document.getElementById("placedAt").textContent = formatDate(data.createdAt);
         const badge = document.getElementById("statusBadge");
         badge.className = `pill ${badgeClass(data.status)}`;
         badge.textContent = statusLabel(data.status);
@@ -133,7 +176,7 @@
         });
 
         document.getElementById("readyText").textContent = data.status === "READY"
-          ? "Your food is ready."
+          ? "Your food is ready. Please collect at the counter."
           : data.status === "COMPLETED"
             ? "Done. Enjoy your meal."
             : data.status === "CANCELLED"
@@ -153,6 +196,7 @@
         }).join("");
         document.getElementById("total").textContent = money(total);
         renderTrackingActions(data);
+        renderRatingSection(data);
       } catch (err) {
         document.getElementById("restaurantName").textContent = "Order not found";
         document.getElementById("readyText").textContent = err.message || "Unable to load order.";
@@ -182,7 +226,7 @@
       card.hidden = false;
       list.innerHTML = orders.length
         ? orders.map(order => `
-          <button class="saved-order card card-pad row-between cursor-pointer" type="button" onclick="location.href='/track/${order.trackingToken}'">
+          <button class="saved-order card card-pad row-between cursor-pointer" type="button" onclick="location.href='/track/${order.trackingToken}?guest=1'">
             <span>
               <strong>${order.orderNumber ? `Order #${order.orderNumber}` : "Order"}</strong>
               <span class="muted">Code ${escapeHtml(order.pickupCode || "----")}</span>
@@ -192,34 +236,94 @@
         `).join("")
         : `<div class="empty">Place an order from this same browser, or use the restaurant menu's Find order option with your mobile number.</div>`;
       document.getElementById("trackingActions").innerHTML = `
-        <a class="btn btn-primary" href="/">Back to restaurants</a>
-        <a class="btn btn-ghost" href="/customer-login.html">Customer sign in</a>
+        <a class="btn btn-primary" href="/">Back to home</a>
+        <a class="btn btn-ghost" href="/customer-login.html">Sign in to your account</a>
       `;
     }
 
     function renderTrackingActions(order) {
-      const menuHref = order.restaurant?.slug ? `/r/${encodeURIComponent(order.restaurant.slug)}` : "/";
+      const menuHref = order.restaurant?.slug
+        ? `/r/${encodeURIComponent(order.restaurant.slug)}?guest=1`
+        : "/";
       const target = document.getElementById("trackingActions");
-      if (getToken()) {
+
+      // Show customer navigation only when logged in AND this is not a guest-mode tracking link.
+      if (!guestTracking && getToken()) {
         target.innerHTML = `
           <a class="btn btn-dark" href="/customer-orders.html">My orders</a>
           <a class="btn btn-primary" href="/customer-restaurants.html">Browse restaurants</a>
-          <a class="btn btn-ghost" href="/customer.html">Customer home</a>
+          <a class="btn btn-ghost" href="/customer.html">Home</a>
         `;
         return;
       }
 
       target.innerHTML = `
-        <a class="btn btn-primary" href="${menuHref}">Back to menu</a>
+        <a class="btn btn-primary" href="${menuHref}">Order again</a>
         <a class="btn btn-ghost" href="/track">Find order</a>
       `;
+    }
+
+    function renderRatingSection(order) {
+      const section = document.getElementById("ratingSection");
+      if (order.status !== "COMPLETED") { section.hidden = true; return; }
+      if (order.hasRating) {
+        section.hidden = false;
+        section.innerHTML = `
+          <div class="rating-panel">
+            <div class="eyebrow">Already rated</div>
+            <h3 class="section-title">${renderStars(order.rating || 0)} ${order.rating ? `${order.rating}/5` : ""}</h3>
+            <p class="muted mb-0">Thank you for your feedback!</p>
+          </div>`;
+        return;
+      }
+      section.hidden = false;
+      document.getElementById("starRow").innerHTML = [1,2,3,4,5].map(n => `
+        <button class="star-btn" type="button" data-val="${n}" onclick="selectStar(${n})" aria-label="${n} star${n > 1 ? "s" : ""}">★</button>
+      `).join("");
+    }
+
+    function renderStars(val) {
+      return [1,2,3,4,5].map(n => `<span style="color:${n <= val ? "var(--brand-2)" : "#d1d5db"}">★</span>`).join("");
+    }
+
+    function selectStar(val) {
+      selectedRating = val;
+      document.querySelectorAll(".star-btn").forEach(btn => {
+        btn.classList.toggle("lit", Number(btn.dataset.val) <= val);
+      });
+      document.getElementById("submitRatingBtn").disabled = false;
+    }
+
+    async function submitRating() {
+      if (!selectedRating) return;
+      const btn = document.getElementById("submitRatingBtn");
+      setLoading(btn, true, "Submitting...");
+      try {
+        const comment = document.getElementById("ratingComment")?.value.trim() || null;
+        await request(`/order/${trackingToken}/rating`, {
+          method: "POST",
+          body: JSON.stringify({ rating: selectedRating, comment }),
+          auth: false
+        });
+        const section = document.getElementById("ratingSection");
+        section.innerHTML = `
+          <div class="rating-panel">
+            <div class="eyebrow">Submitted</div>
+            <h3 class="section-title">${renderStars(selectedRating)} ${selectedRating}/5</h3>
+            <p class="muted mb-0">Thank you! Your feedback helps improve the experience.</p>
+          </div>`;
+        toast("Rating submitted. Thank you!");
+      } catch (err) {
+        toast(err.message || "Could not submit rating");
+        setLoading(btn, false);
+      }
     }
 
     function statusLabel(value) {
       return {
         PENDING: "Order received",
         PREPARING: "Being prepared",
-        READY: "Ready",
+        READY: "Ready for pickup",
         COMPLETED: "Completed",
         CANCELLED: "Cancelled"
       }[value] || "Checking";

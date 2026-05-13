@@ -175,6 +175,7 @@ model Restaurant {
   menus     Menu[]
   orders    Order[]
   categories Category[]
+  ratings   OrderRating[]
 
   isActive  Boolean  @default(true)
   subscriptionStatus SubscriptionStatus @default(ACTIVE)
@@ -272,6 +273,7 @@ model Order {
 
   items        OrderItem[]
   notificationLogs NotificationLog[]
+  rating       OrderRating?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -371,6 +373,26 @@ model OrderAttempt {
   @@index([phone])
   @@index([deviceId])
   @@index([createdAt])
+}
+
+//////////////////////////////////////////////////////
+// ORDER RATING
+//////////////////////////////////////////////////////
+
+model OrderRating {
+  id           String     @id @default(uuid())
+  orderId      String     @unique
+  order        Order      @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  customerId   String?
+  restaurantId String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  rating       Int        // 1–5
+  comment      String?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  @@index([restaurantId])
+  @@index([customerId])
 }
 
 model BlockedPhone {

@@ -144,6 +144,9 @@
             <div class="row row-wrap">
               <a class="btn btn-dark" href="/track/${order.trackingToken}">Track</a>
               <a class="btn btn-ghost" href="${menuHref}">View restaurant</a>
+              ${order.status === "COMPLETED" && order.rating === null
+                ? `<button class="btn btn-ghost" type="button" onclick="openRateModal('${order.trackingToken}')">Rate order</button>`
+                : order.rating ? `<span class="pill pill-success">${order.rating} ★</span>` : ""}
             </div>
           </article>`;
       }).join("");
@@ -191,7 +194,7 @@
     }
 
     function statusLabel(value) {
-      return String(value || "").replaceAll("_", " ").toLowerCase().replace(/\b\w/g, letter => letter.toUpperCase());
+      return { PENDING: "Received", PREPARING: "Preparing", READY: "Ready", COMPLETED: "Done", CANCELLED: "Cancelled" }[value] || value;
     }
 
     function paymentLabel(value) {
@@ -204,7 +207,69 @@
         PARTIALLY_REFUNDED: "Partial refund"
       }[value] || "Not required";
     }
+
+    let rateToken = "";
+    let rateVal = 0;
+
+    function openRateModal(trackingToken) {
+      rateToken = trackingToken;
+      rateVal = 0;
+      document.getElementById("rateStars").innerHTML = [1,2,3,4,5].map(n =>
+        `<button class="rate-star" type="button" data-val="${n}" onclick="pickStar(${n})">★</button>`
+      ).join("");
+      document.getElementById("rateComment").value = "";
+      document.getElementById("rateSubmitBtn").disabled = true;
+      document.getElementById("rateModal").classList.add("open");
+    }
+
+    function pickStar(val) {
+      rateVal = val;
+      document.querySelectorAll(".rate-star").forEach(btn => {
+        btn.style.color = Number(btn.dataset.val) <= val ? "var(--brand-2)" : "#d1d5db";
+      });
+      document.getElementById("rateSubmitBtn").disabled = false;
+    }
+
+    async function submitOrderRating(event) {
+      event.preventDefault();
+      if (!rateVal) return;
+      const btn = document.getElementById("rateSubmitBtn");
+      setLoading(btn, true, "Submitting...");
+      try {
+        const comment = document.getElementById("rateComment").value.trim() || null;
+        await request(`/order/${rateToken}/rating`, {
+          method: "POST",
+          body: JSON.stringify({ rating: rateVal, comment })
+        });
+        document.getElementById("rateModal").classList.remove("open");
+        toast("Rating submitted. Thank you!");
+        loadOrders(true);
+      } catch (err) {
+        toast(err.message || "Could not submit rating");
+        setLoading(btn, false);
+      }
+    }
   </script>
+
+  <div class="modal-backdrop" id="rateModal">
+    <form class="modal stack" onsubmit="submitOrderRating(event)">
+      <div class="modal-head row-between">
+        <div>
+          <h3 class="section-title">Rate this order</h3>
+          <div class="muted">Tap a star to leave your rating.</div>
+        </div>
+        <button type="button" class="btn btn-ghost icon-btn" onclick="document.getElementById('rateModal').classList.remove('open')">×</button>
+      </div>
+      <div class="modal-body stack text-center">
+        <div id="rateStars" style="display:flex;gap:4px;justify-content:center;font-size:34px"></div>
+        <textarea id="rateComment" class="input mt-12" rows="2" maxlength="500" placeholder="Optional feedback"></textarea>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" onclick="document.getElementById('rateModal').classList.remove('open')">Cancel</button>
+        <button id="rateSubmitBtn" class="btn btn-primary" type="submit" disabled>Submit</button>
+      </div>
+    </form>
+  </div>
 </body>
 
 </html>

@@ -2,30 +2,41 @@
 <html>
 
 <head>
-  <title>Avenzo Customer Home</title>
+  <title>Avenzo</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/assets/app.css">
   <style>
-    .home-grid {
+    .home-hero {
       display: grid;
-      grid-template-columns: minmax(0, 1.15fr) minmax(280px, 0.85fr);
+      grid-template-columns: 1fr auto;
+      align-items: start;
+      gap: 16px;
+    }
+
+    .home-columns {
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
       gap: 16px;
       align-items: start;
     }
 
-    .order-preview {
+    .active-order-card {
       display: grid;
       gap: 10px;
     }
 
-    .compact-list {
+    .recent-list {
       display: grid;
-      gap: 10px;
+      gap: 8px;
     }
 
-    @media (max-width: 900px) {
-      .home-grid {
+    @media (max-width: 860px) {
+      .home-hero {
+        grid-template-columns: 1fr;
+      }
+
+      .home-columns {
         grid-template-columns: 1fr;
       }
     }
@@ -46,48 +57,45 @@
     </header>
 
     <main class="page stack">
-      <section class="home-grid">
-        <div class="hero-panel">
-          <div class="eyebrow">Customer home</div>
-          <h1 id="welcomeTitle">Welcome to Avenzo.</h1>
-          <p class="muted">Find a restaurant, place a dine-in order, and track the food you ordered while signed in.</p>
+      <section class="hero-panel home-hero">
+        <div>
+          <div class="eyebrow" id="greetingEyebrow">Welcome</div>
+          <h1 id="welcomeTitle">What would you like today?</h1>
+          <p class="muted">Find a dine-in restaurant, order from your table, and track your food in real time.</p>
           <div class="row row-wrap mt-18">
             <a class="btn btn-primary" href="/customer-restaurants.html">Browse restaurants</a>
             <a class="btn btn-ghost" href="/customer-orders.html">My orders</a>
           </div>
         </div>
-
         <article class="card card-pad stack" id="profileHint" hidden>
-          <div>
-            <div class="eyebrow">Complete profile</div>
-            <h3>Add your phone once</h3>
-            <p class="muted mb-0">A saved phone lets checkout use your account number instead of asking every time.</p>
-          </div>
+          <div class="eyebrow">Quick tip</div>
+          <h3>Add your phone once</h3>
+          <p class="muted mb-0">Save your number so checkout skips the phone step next time.</p>
           <a class="btn btn-dark" href="/customer-profile.html">Add phone</a>
         </article>
       </section>
 
-      <section class="home-grid">
+      <section class="home-columns mt-16">
         <article class="card card-pad stack">
           <div class="row-between">
             <div>
-              <div class="eyebrow">Current order</div>
-              <h2 class="section-title">Recent activity</h2>
+              <div class="eyebrow">Right now</div>
+              <h2 class="section-title">Active order</h2>
             </div>
-            <a class="btn btn-ghost" href="/customer-orders.html">View all</a>
+            <a class="btn btn-ghost" href="/customer-orders.html">All orders</a>
           </div>
-          <div id="currentOrder" class="order-preview"></div>
+          <div id="activeOrder" class="active-order-card"></div>
         </article>
 
         <article class="card card-pad stack">
           <div class="row-between">
             <div>
-              <div class="eyebrow">Order preview</div>
-              <h2 class="section-title">Last few orders</h2>
+              <div class="eyebrow">Order again</div>
+              <h2 class="section-title">Recent orders</h2>
             </div>
             <a class="btn btn-ghost" href="/customer-restaurants.html">Browse</a>
           </div>
-          <div id="recentOrders" class="compact-list"></div>
+          <div id="recentOrders" class="recent-list"></div>
         </article>
       </section>
     </main>
@@ -97,34 +105,42 @@
   <script>
     let user = null;
 
+    function greeting() {
+      const hour = new Date().getHours();
+      if (hour < 12) return "Good morning";
+      if (hour < 17) return "Good afternoon";
+      return "Good evening";
+    }
+
     initCustomerPage("home").then((loadedUser) => {
       user = loadedUser;
       if (!user) return;
-      document.getElementById("welcomeTitle").textContent = `Welcome${user.name ? `, ${user.name}` : ""}.`;
+      const name = user.name ? `, ${user.name}` : "";
+      document.getElementById("greetingEyebrow").textContent = greeting();
+      document.getElementById("welcomeTitle").textContent = `${greeting()}${name}. What would you like today?`;
       document.getElementById("profileHint").hidden = !!user.phone;
       loadHomeOrders();
     });
 
     async function loadHomeOrders() {
       try {
-        const data = await request("/customer/orders?page=1&limit=3");
+        const data = await request("/customer/orders?page=1&limit=5");
         const orders = data.orders || [];
-        const active = orders.find(order => !["COMPLETED", "CANCELLED"].includes(order.status)) || orders[0];
-        renderCurrentOrder(active);
-        renderRecentOrders(orders);
+        const active = orders.find(o => ["PENDING", "PREPARING", "READY"].includes(o.status));
+        renderActiveOrder(active);
+        renderRecentOrders(orders.filter(o => !["PENDING", "PREPARING", "READY"].includes(o.status)).slice(0, 3));
       } catch (err) {
-        document.getElementById("currentOrder").innerHTML = `<div class="empty">${escapeHtml(err.message)}</div>`;
+        document.getElementById("activeOrder").innerHTML = `<div class="empty">${escapeHtml(err.message)}</div>`;
       }
     }
 
-    function renderCurrentOrder(order) {
-      const target = document.getElementById("currentOrder");
+    function renderActiveOrder(order) {
+      const target = document.getElementById("activeOrder");
       if (!order) {
         target.innerHTML = `
           <div class="empty">
-            <h3 class="card-title-gap">No orders yet</h3>
-            <p class="muted">Browse restaurants and place your first signed-in Avenzo order.</p>
-            <a class="btn btn-primary mt-12" href="/customer-restaurants.html">Browse restaurants</a>
+            <p class="muted mb-0">No active orders right now.</p>
+            <a class="btn btn-primary mt-12" href="/customer-restaurants.html">Start an order</a>
           </div>`;
         return;
       }
@@ -133,7 +149,7 @@
         <div class="row-between">
           <div>
             <strong>${escapeHtml(order.restaurant?.name || "Avenzo restaurant")}</strong>
-            <div class="muted">Order #${order.orderNumber} • ${formatDate(order.createdAt)}</div>
+            <div class="muted">Order #${order.orderNumber} · ${formatDate(order.createdAt)}</div>
           </div>
           <span class="pill ${statusPill(order.status)}">${statusLabel(order.status)}</span>
         </div>
@@ -147,15 +163,14 @@
     function renderRecentOrders(orders) {
       const target = document.getElementById("recentOrders");
       if (!orders.length) {
-        target.innerHTML = `<div class="empty">Your signed-in orders will appear here.</div>`;
+        target.innerHTML = `<div class="empty">Your past orders will appear here.</div>`;
         return;
       }
-
       target.innerHTML = orders.map(order => `
         <a class="card card-pad row-between" href="/track/${order.trackingToken}">
           <span>
             <strong>${escapeHtml(order.restaurant?.name || "Avenzo restaurant")}</strong>
-            <span class="muted">#${order.orderNumber} • ${money(order.totalPrice)}</span>
+            <span class="muted">#${order.orderNumber} · ${money(order.totalPrice)}</span>
           </span>
           <span class="pill ${statusPill(order.status)}">${statusLabel(order.status)}</span>
         </a>
@@ -169,7 +184,7 @@
     }
 
     function statusLabel(value) {
-      return String(value || "").replaceAll("_", " ").toLowerCase().replace(/\b\w/g, letter => letter.toUpperCase());
+      return { PENDING: "Received", PREPARING: "Preparing", READY: "Ready", COMPLETED: "Done", CANCELLED: "Cancelled" }[value] || value;
     }
   </script>
 </body>

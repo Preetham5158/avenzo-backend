@@ -1,7 +1,8 @@
 const API = window.location.origin;
 
+// sessionStorage keeps auth tab-isolated: a guest QR tab stays guest even when another tab is logged in.
 function getToken() {
-  return localStorage.getItem("token");
+  return sessionStorage.getItem("token");
 }
 
 function authHeaders(extra = {}) {
@@ -137,7 +138,7 @@ function skeletonCards(count = 3, variant = "card") {
 }
 
 function logout(redirectTo = "/customer-login.html") {
-  localStorage.removeItem("token");
+  sessionStorage.removeItem("token");
   window.location.href = redirectTo;
 }
 

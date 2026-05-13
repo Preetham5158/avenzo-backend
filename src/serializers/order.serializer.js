@@ -28,6 +28,9 @@ function publicOrderResponse(order, options = {}) {
     response.id = order.id;
   }
 
+  // Expose whether this order has been rated so the frontend can show/hide the rating prompt.
+  response.hasRating = !!order.rating;
+
   return response;
 }
 
@@ -53,7 +56,8 @@ function customerOrderSummary(order) {
       nameAtOrder: item.nameAtOrder,
       quantity: item.quantity,
       priceAtOrder: paiseToRupees(item.priceAtOrderPaise)
-    }))
+    })),
+    rating: order.rating?.rating ?? null
   };
 }
 

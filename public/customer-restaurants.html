@@ -138,7 +138,7 @@
             </div>
             <div class="restaurant-meta">
               <div><div class="muted">Food type</div><strong>${restaurantFoodTypeLabel(restaurant.foodType)}</strong></div>
-              <div><div class="muted">Ordering</div><strong>${available ? "Available" : "Unavailable"}</strong></div>
+              <div><div class="muted">Rating</div><strong>${restaurant.avgRating ? `${restaurant.avgRating} ★ (${restaurant.ratingCount})` : "No ratings yet"}</strong></div>
             </div>
             ${available ? "" : `<p class="muted mb-0">${escapeHtml(restaurant.serviceMessage || "Ordering is paused right now.")}</p>`}
             <a class="btn ${available ? "btn-primary" : "btn-ghost"}" href="${available ? href : "#"}" ${available ? "" : "aria-disabled='true' onclick='return false;'"}>${available ? "View menu" : "Ordering paused"}</a>
