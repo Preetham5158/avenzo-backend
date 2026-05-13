@@ -8,6 +8,7 @@
   <link rel="stylesheet" href="/assets/app.css">
   <style>
     :root {
+      --cust-bar-h: 0px;
       --dine-top: 72px;
       --search-top: 76px;
       --rail-top: 148px;
@@ -17,6 +18,10 @@
       --cocoa: #25130e;
       --cream: #fff6e8;
       --paper: #fffdf8;
+    }
+
+    .has-customer-bar {
+      --cust-bar-h: var(--topbar-height);
     }
 
     body {
@@ -31,7 +36,7 @@
 
     .dine-top {
       position: sticky;
-      top: 0;
+      top: var(--cust-bar-h, 0px);
       z-index: 50;
       height: var(--dine-top);
       display: flex;
@@ -89,6 +94,18 @@
       font-weight: 800;
     }
 
+    .dine-find-btn {
+      flex: 0 0 auto;
+      min-height: 36px;
+      padding: 0 12px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.14);
+      color: rgba(255, 255, 255, 0.92);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
     .order-page {
       width: min(1180px, calc(100% - 24px));
       margin: 0 auto;
@@ -97,10 +114,10 @@
 
     .quick-search {
       position: sticky;
-      top: var(--search-top);
+      top: calc(var(--cust-bar-h, 0px) + var(--search-top));
       z-index: 42;
       display: grid;
-      grid-template-columns: minmax(0, 1fr) auto auto;
+      grid-template-columns: minmax(0, 1fr) auto;
       gap: 10px;
       align-items: center;
       padding: 10px;
@@ -137,20 +154,9 @@
       box-shadow: none;
     }
 
-    .quick-count {
-      white-space: nowrap;
-      padding: 9px 12px;
-      border-radius: 999px;
-      color: #ffffff;
-      background: #12745b;
-      font-size: 12px;
-      font-weight: 800;
-      box-shadow: 0 10px 22px rgba(18, 116, 91, 0.22);
-    }
-
     .food-toggle {
       display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 3px;
       padding: 4px;
       min-width: 260px;
@@ -179,27 +185,6 @@
       box-shadow: 0 8px 18px rgba(37, 19, 14, 0.16);
     }
 
-    .recent-order {
-      display: none;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-      margin-bottom: 12px;
-      padding: 12px;
-      border-radius: 18px;
-      background: rgba(255, 253, 248, 0.9);
-      border: 1px solid rgba(108, 71, 47, 0.14);
-      box-shadow: 0 14px 30px rgba(64, 31, 15, 0.08);
-    }
-
-    .recent-order.show {
-      display: flex;
-    }
-
-    .recent-order .btn {
-      min-height: 38px;
-    }
-
     .menu-layout {
       display: grid;
       grid-template-columns: 122px minmax(0, 1fr);
@@ -209,9 +194,9 @@
 
     .category-rail {
       position: sticky;
-      top: var(--rail-top);
+      top: calc(var(--cust-bar-h, 0px) + var(--rail-top));
       z-index: 30;
-      max-height: calc(100vh - var(--rail-top) - 98px);
+      max-height: calc(100vh - var(--cust-bar-h, 0px) - var(--rail-top) - 98px);
       display: grid;
       gap: 8px;
       padding: 8px;
@@ -263,13 +248,6 @@
       line-height: 1.12;
     }
 
-    .category-button span {
-      color: inherit;
-      opacity: 0.72;
-      font-size: 11px;
-      font-weight: 800;
-    }
-
     .menu-feed {
       display: grid;
       gap: 14px;
@@ -279,12 +257,12 @@
     .menu-section {
       display: grid;
       gap: 10px;
-      scroll-margin-top: calc(var(--rail-top) + 4px);
+      scroll-margin-top: calc(var(--cust-bar-h, 0px) + var(--rail-top) + 4px);
     }
 
     .section-head {
       position: sticky;
-      top: var(--rail-top);
+      top: calc(var(--cust-bar-h, 0px) + var(--rail-top));
       z-index: 22;
       display: flex;
       align-items: center;
@@ -302,12 +280,6 @@
     .section-head h2 {
       margin: 0;
       font-size: 18px;
-    }
-
-    .section-head p {
-      margin: 2px 0 0;
-      color: #7a5d4c;
-      font-size: 13px;
     }
 
     .section-head button {
@@ -594,10 +566,6 @@
         border-radius: 18px;
       }
 
-      .quick-count {
-        justify-self: start;
-      }
-
       .food-toggle {
         width: 100%;
         min-width: 0;
@@ -605,11 +573,6 @@
 
       .toggle-option {
         padding: 0 8px;
-      }
-
-      .recent-order {
-        align-items: flex-start;
-        flex-direction: column;
       }
 
       .search-mini .input {
@@ -621,7 +584,7 @@
       }
 
       .category-rail {
-        top: var(--rail-top);
+        top: calc(var(--cust-bar-h, 0px) + var(--rail-top));
         max-height: none;
         width: auto;
         margin-bottom: 10px;
@@ -655,22 +618,14 @@
         font-size: 11px;
       }
 
-      .category-button span {
-        font-size: 10px;
-      }
-
       .section-head {
-        top: calc(var(--rail-top) + 56px);
+        top: calc(var(--cust-bar-h, 0px) + var(--rail-top) + 56px);
         padding: 9px 10px;
         border-radius: 16px;
       }
 
       .section-head h2 {
         font-size: 15px;
-      }
-
-      .section-head p {
-        font-size: 12px;
       }
 
       .food-card {
@@ -740,29 +695,12 @@
         min-width: 0;
       }
     }
-
-    @media (max-width: 520px) {
-      .category-rail {
-        width: auto;
-      }
-
-      .category-button {
-        width: 100%;
-        text-align: left;
-      }
-
-      .section-head {
-        top: var(--rail-top);
-      }
-
-      .menu-section {
-        scroll-margin-top: calc(var(--rail-top) + 64px);
-      }
-    }
   </style>
 </head>
 
 <body>
+  <div id="customerTopbar" hidden></div>
+
   <header class="dine-top">
     <div class="dine-inner">
       <div class="dine-copy">
@@ -770,6 +708,7 @@
         <h1 id="restaurantName">Opening menu...</h1>
         <p id="restaurantAddress">Choose here. Eat here. Skip the billing queue.</p>
       </div>
+      <button class="btn dine-find-btn" id="findOrderGuestBtn" type="button" hidden onclick="openFindOrder()">Find order</button>
       <div class="dine-badge" id="dineNote">Live dine-in menu</div>
     </div>
   </header>
@@ -780,14 +719,8 @@
         <span>Find</span>
         <input id="menuSearch" class="input" placeholder="dosa, idli, coffee..." oninput="setSearch(this.value)">
       </div>
-      <div class="food-toggle" id="foodFilter" role="group" aria-label="Food type filter">
-        <button class="toggle-option active" data-food-filter="VEG" type="button" onclick="setFoodFilter('VEG')">Veg</button>
-        <button class="toggle-option" data-food-filter="NON_VEG" type="button" onclick="setFoodFilter('NON_VEG')">Non-veg</button>
-      </div>
-      <div class="quick-count" id="matchCount">Finding favourites...</div>
+      <div class="food-toggle" id="foodFilter" role="group" aria-label="Food type filter" hidden></div>
     </section>
-
-    <section class="recent-order" id="recentOrder"></section>
 
     <section class="menu-layout" id="menuLayout">
       <aside class="category-rail">
@@ -865,7 +798,8 @@
     let cart = [];
     let menuData = [];
     let activeCategory = "ALL";
-    let activeFoodType = "VEG";
+    let activeFoodType = "ALL";
+    let restaurantFoodType = "BOTH";
     let searchTerm = "";
     let customerProfile = null;
     const collapsedCategories = new Set();
@@ -877,11 +811,10 @@
           ? await request(`/restaurant/slug/${slug}`, { auth: false })
           : await request(`/restaurant/${restaurantId}`, { auth: false });
         restaurantId = restaurant.id || restaurantId;
+        restaurantFoodType = restaurant.foodType || "BOTH";
         document.getElementById("restaurantName").textContent = restaurant.name;
         document.getElementById("restaurantAddress").textContent = restaurant.address || restaurant.locality || "Choose here. Eat here. Skip the billing queue.";
         document.getElementById("dineNote").textContent = restaurantFoodTypeLabel(restaurant.foodType);
-        activeFoodType = restaurant.foodType === "NON_VEG" ? "NON_VEG" : "VEG";
-        setFoodFilter(activeFoodType, false);
         if (restaurant.serviceAvailable === false) {
           document.getElementById("menu").innerHTML = `
             <div class="empty">
@@ -893,7 +826,12 @@
         }
         await loadMenu();
         await loadCustomerProfile();
-        renderRecentOrder();
+        setupFoodFilter();
+        maybeInitCustomerBar();
+        if (guestMode || !getToken()) {
+          const findBtn = document.getElementById("findOrderGuestBtn");
+          if (findBtn) findBtn.hidden = false;
+        }
       } catch (err) {
         document.getElementById("menu").innerHTML = `<div class="empty">${escapeHtml(err.message || "Ordering will be back soon")}</div>`;
       }
@@ -915,9 +853,6 @@
         ? await request(`/menu/by-slug/${slug}`, { auth: false })
         : await request(`/menu/${restaurantId}`, { auth: false });
       menuData.sort((a, b) => Number(b.isAvailable) - Number(a.isAvailable));
-      renderRail();
-      renderMenu();
-      updateUI();
     }
 
     function categoryName(item) {
@@ -928,51 +863,62 @@
       let visible = activeCategory === "ALL"
         ? menuData
         : menuData.filter(item => categoryName(item) === activeCategory);
-
-      visible = visible.filter(item => (item.foodType || "VEG") === activeFoodType);
-
-      if (searchTerm) {
-        visible = visible.filter(item => [
-          item.name,
-          item.description,
-          categoryName(item)
-        ].join(" ").toLowerCase().includes(searchTerm));
+      if (activeFoodType !== "ALL") {
+        visible = visible.filter(item => (item.foodType || "VEG") === activeFoodType);
       }
-
+      if (searchTerm) {
+        visible = visible.filter(item => [item.name, item.description, categoryName(item)]
+          .join(" ").toLowerCase().includes(searchTerm));
+      }
       return visible;
     }
 
-    function setFoodFilter(value, shouldRender = true) {
+    function setupFoodFilter() {
+      const filterEl = document.getElementById("foodFilter");
+      const hasVeg = menuData.some(item => (item.foodType || "VEG") === "VEG");
+      const hasNonVeg = menuData.some(item => item.foodType === "NON_VEG");
+      // Hide filter for pure-veg restaurants or menus with only one food type
+      if (restaurantFoodType === "PURE_VEG" || !hasNonVeg || !hasVeg) {
+        filterEl.hidden = true;
+        activeFoodType = "ALL";
+      } else {
+        filterEl.hidden = false;
+        activeFoodType = "ALL";
+        filterEl.innerHTML = `
+          <button class="toggle-option active" data-food-filter="ALL" type="button" onclick="setFoodFilter('ALL')">All</button>
+          <button class="toggle-option" data-food-filter="VEG" type="button" onclick="setFoodFilter('VEG')">Veg</button>
+          <button class="toggle-option" data-food-filter="NON_VEG" type="button" onclick="setFoodFilter('NON_VEG')">Non-veg</button>
+        `;
+      }
+      renderRail();
+      renderMenu();
+      updateUI();
+    }
+
+    function setFoodFilter(value) {
       activeFoodType = value;
       document.querySelectorAll(".toggle-option").forEach(button => {
         button.classList.toggle("active", button.dataset.foodFilter === value);
       });
-      if (shouldRender) {
-        renderRail();
-        renderMenu();
-      }
+      renderRail();
+      renderMenu();
     }
 
     function renderRail() {
-      const filteredByType = menuData.filter(item => (item.foodType || "VEG") === activeFoodType);
+      const filteredByType = activeFoodType === "ALL"
+        ? menuData
+        : menuData.filter(item => (item.foodType || "VEG") === activeFoodType);
       const categories = [...new Set(filteredByType.map(categoryName))].sort();
       if (activeCategory !== "ALL" && !categories.includes(activeCategory)) {
         activeCategory = "ALL";
       }
-      const counts = categories.reduce((acc, name) => {
-        acc[name] = filteredByType.filter(item => categoryName(item) === name).length;
-        return acc;
-      }, {});
-
       document.getElementById("categoryRail").innerHTML = `
         <button class="category-button ${activeCategory === "ALL" ? "active" : ""}" onclick="setCategory('ALL')">
           <strong>All</strong>
-          <span>${filteredByType.length} items</span>
         </button>
         ${categories.map(name => `
           <button class="category-button ${activeCategory === name ? "active" : ""}" onclick='setCategory(${JSON.stringify(name)})'>
             <strong>${escapeHtml(name)}</strong>
-            <span>${counts[name]} items</span>
           </button>
         `).join("")}
       `;
@@ -982,7 +928,9 @@
       activeCategory = name;
       renderRail();
       renderMenu();
-      const target = name === "ALL" ? document.getElementById("menu") : document.getElementById(`section-${slugifyLocal(name)}`);
+      const target = name === "ALL"
+        ? document.getElementById("menu")
+        : document.getElementById(`section-${slugifyLocal(name)}`);
       target?.scrollIntoView({ behavior: "smooth", block: "start" });
     }
 
@@ -1006,8 +954,6 @@
         return acc;
       }, {});
 
-      document.getElementById("matchCount").textContent = `${visible.length} item${visible.length === 1 ? "" : "s"}`;
-
       if (!visible.length) {
         document.getElementById("menu").innerHTML = `<div class="empty">No dish found here. Try a simpler search like dosa, idli, rice, or coffee.</div>`;
         return;
@@ -1016,10 +962,7 @@
       document.getElementById("menu").innerHTML = Object.keys(grouped).map(cat => `
         <section class="menu-section" id="section-${slugifyLocal(cat)}">
           <div class="section-head">
-            <div>
-              <h2>${escapeHtml(cat)}</h2>
-              <p>${grouped[cat].length} tasty pick${grouped[cat].length === 1 ? "" : "s"}</p>
-            </div>
+            <h2>${escapeHtml(cat)}</h2>
             <button class="btn" type="button" onclick='toggleSection(${JSON.stringify(cat)})' aria-label="Toggle ${escapeHtml(cat)}">
               ${collapsedCategories.has(cat) ? "+" : "-"}
             </button>
@@ -1028,6 +971,26 @@
         </section>
       `).join("");
       updateUI();
+    }
+
+    function maybeInitCustomerBar() {
+      if (guestMode || !getToken()) return;
+      const bar = document.getElementById("customerTopbar");
+      if (!bar) return;
+      bar.hidden = false;
+      bar.innerHTML = `
+        <header class="topbar">
+          <div class="topbar-inner">
+            <a class="brand" href="/customer.html" aria-label="Avenzo home">
+              <img src="/logo.png" alt="Avenzo"><span>AVENZO</span>
+            </a>
+            <div id="customerNav"></div>
+            <div id="accountMenu"></div>
+          </div>
+        </header>`;
+      document.body.classList.add("has-customer-bar");
+      document.getElementById("customerNav").innerHTML = customerNavHtml("restaurants");
+      initAccountMenu("accountMenu", "/customer-login.html");
     }
 
     function slugifyLocal(value) {
@@ -1151,43 +1114,15 @@
       }
     }
 
-    function recentOrders() {
-      try {
-        return JSON.parse(localStorage.getItem("avenzoRecentOrders") || "[]");
-      } catch {
-        return [];
-      }
-    }
-
     function saveRecentOrder(order) {
-      const next = [
-        order,
-        ...recentOrders().filter(item => item.trackingToken !== order.trackingToken)
-      ].slice(0, 8);
-      localStorage.setItem("avenzoRecentOrders", JSON.stringify(next));
-    }
-
-    function renderRecentOrder() {
-      const el = document.getElementById("recentOrder");
-      const restaurantKey = slug || restaurantId;
-      const order = recentOrders().find(item => item.restaurantKey === restaurantKey);
-      if (!order) {
-        el.classList.remove("show");
-        el.innerHTML = "";
-        return;
-      }
-
-      el.innerHTML = `
-        <div>
-          <strong>Last order ${order.orderNumber ? `#${order.orderNumber}` : ""}</strong>
-          <div class="muted">Code ${escapeHtml(order.pickupCode || "----")}</div>
-        </div>
-        <div class="row row-wrap">
-          <button class="btn btn-ghost" type="button" onclick="openFindOrder()">Find order</button>
-          <button class="btn btn-dark" type="button" onclick="location.href='/track/${order.trackingToken}'">Track</button>
-        </div>
-      `;
-      el.classList.add("show");
+      try {
+        const orders = JSON.parse(localStorage.getItem("avenzoRecentOrders") || "[]");
+        const next = [
+          order,
+          ...orders.filter(item => item.trackingToken !== order.trackingToken)
+        ].slice(0, 8);
+        localStorage.setItem("avenzoRecentOrders", JSON.stringify(next));
+      } catch {}
     }
 
     function openFindOrder() {

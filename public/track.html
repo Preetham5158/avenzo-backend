@@ -73,6 +73,8 @@
 </head>
 
 <body>
+  <div id="customerTopbar" hidden></div>
+
   <main class="page track-page">
     <section class="hero-panel stack track-hero">
       <div class="brand center-brand">
@@ -197,6 +199,7 @@
         document.getElementById("total").textContent = money(total);
         renderTrackingActions(data);
         renderRatingSection(data);
+        maybeInitCustomerBar();
       } catch (err) {
         document.getElementById("restaurantName").textContent = "Order not found";
         document.getElementById("readyText").textContent = err.message || "Unable to load order.";
@@ -317,6 +320,27 @@
         toast(err.message || "Could not submit rating");
         setLoading(btn, false);
       }
+    }
+
+    function maybeInitCustomerBar() {
+      if (guestTracking || !getToken()) return;
+      const bar = document.getElementById("customerTopbar");
+      if (!bar || !bar.hidden) return;
+      bar.hidden = false;
+      bar.innerHTML = `
+        <header class="topbar">
+          <div class="topbar-inner">
+            <a class="brand" href="/customer.html" aria-label="Avenzo home">
+              <img src="/logo.png" alt="Avenzo"><span>AVENZO</span>
+            </a>
+            <div id="customerNav"></div>
+            <div id="accountMenu"></div>
+          </div>
+        </header>`;
+      document.getElementById("customerNav").innerHTML = customerNavHtml("orders");
+      initAccountMenu("accountMenu", "/customer-login.html");
+      const heroBrand = document.querySelector(".center-brand");
+      if (heroBrand) heroBrand.hidden = true;
     }
 
     function statusLabel(value) {
