@@ -100,7 +100,12 @@
         const data = await request("/auth/google/client-id");
         const clientId = data.clientId;
         if (!clientId || !window.google?.accounts?.id) return;
-        google.accounts.id.initialize({ client_id: clientId, callback: handleGoogleCredential, auto_select: false });
+        google.accounts.id.initialize({
+          client_id: clientId,
+          callback: handleGoogleCredential,
+          auto_select: false,
+          use_fedcm_for_prompt: false
+        });
         google.accounts.id.renderButton(
           document.getElementById("googleSignInContainer"),
           { theme: "outline", size: "large", width: 320, text: "signin_with" }
