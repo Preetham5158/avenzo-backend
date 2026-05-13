@@ -6,6 +6,22 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/assets/app.css">
+  <style>
+    .auth-divider {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--muted);
+      font-size: 13px;
+      margin: 4px 0;
+    }
+    .auth-divider::before, .auth-divider::after {
+      content: "";
+      flex: 1;
+      height: 1px;
+      background: var(--line);
+    }
+  </style>
 </head>
 
 <body>
@@ -27,6 +43,9 @@
         <span>Signed-in orders</span>
         <span>Faster repeat visits</span>
       </div>
+
+      <div id="googleSignInContainer" style="display:flex;justify-content:center;min-height:44px"></div>
+      <div class="auth-divider">or</div>
 
       <form class="stack" onsubmit="signup(event)">
         <div class="field">
@@ -69,8 +88,46 @@
     </section>
   </main>
 
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
   <script src="/assets/app.js"></script>
   <script>
+    async function initGoogleSignIn() {
+      try {
+        const data = await request("/auth/google/client-id");
+        const clientId = data.clientId;
+        if (!clientId || !window.google?.accounts?.id) return;
+        google.accounts.id.initialize({ client_id: clientId, callback: handleGoogleCredential, auto_select: false });
+        google.accounts.id.renderButton(
+          document.getElementById("googleSignInContainer"),
+          { theme: "outline", size: "large", width: 320, text: "signup_with" }
+        );
+      } catch {
+        // Google sign-up silently unavailable — form still works
+      }
+    }
+
+    async function handleGoogleCredential(response) {
+      const msg = document.getElementById("message");
+      msg.textContent = "";
+      try {
+        const data = await request("/auth/google", {
+          method: "POST",
+          body: JSON.stringify({ idToken: response.credential })
+        });
+        sessionStorage.setItem("token", data.token);
+        window.location.href = "/customer.html";
+      } catch (err) {
+        msg.textContent = err.message;
+        toast(err.message);
+      }
+    }
+
+    function tryInitGoogle(n) {
+      if (window.google?.accounts?.id) { initGoogleSignIn(); return; }
+      if (n > 0) setTimeout(() => tryInitGoogle(n - 1), 200);
+    }
+    window.addEventListener("load", () => tryInitGoogle(10));
+
     async function signup(event) {
       event.preventDefault();
       const btn = document.getElementById("signupBtn");
