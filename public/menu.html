@@ -1302,10 +1302,15 @@
       document.getElementById("checkoutModal").classList.remove("open");
     }
 
+    let _orderIdempotencyKey = null;
+
     async function placeOrder(event) {
       event.preventDefault();
       const btn = document.getElementById("placeBtn");
       setLoading(btn, true, "Sending...");
+
+      // Generate once per checkout attempt; reused on retry so backend deduplicates.
+      if (!_orderIdempotencyKey) _orderIdempotencyKey = crypto.randomUUID();
 
       try {
         const phone = customerProfile?.phone ? "" : document.getElementById("phone").value.trim();
@@ -1315,6 +1320,7 @@
         const tableNumber = document.getElementById("tableNumber").value.trim() || undefined;
         const payload = {
           sessionId: getDeviceId(),
+          idempotencyKey: _orderIdempotencyKey,
           items: cart,
           ...(slug ? { restaurantSlug: slug } : { restaurantId }),
           ...(guestMode ? { guest: true } : {}),
@@ -1330,6 +1336,7 @@
         if (getToken() && !customerProfile?.phone && phone) {
           customerProfile = { ...(customerProfile || {}), phone };
         }
+        _orderIdempotencyKey = null; // Reset so next order gets a fresh key
         try { localStorage.removeItem(cartKey()); } catch {}
         saveRecentOrder({
           trackingToken: data.trackingToken,

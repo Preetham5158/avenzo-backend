@@ -157,7 +157,12 @@
           <span class="pill">Code ${escapeHtml(order.pickupCode)}</span>
           <span class="pill">${money(order.totalPrice)}</span>
         </div>
-        <a class="btn btn-dark" href="/track/${order.trackingToken}">Track order</a>`;
+        <div class="row row-wrap">
+          <a class="btn btn-dark" href="/track/${order.trackingToken}">Track order</a>
+          ${order.status === "PENDING" && order.paymentStatus !== "PAID"
+            ? `<button class="btn btn-ghost" style="color:var(--danger,#c62828)" onclick="cancelOrder('${order.trackingToken}')">Cancel</button>`
+            : ""}
+        </div>`;
     }
 
     function renderRecentOrders(orders) {
@@ -175,6 +180,17 @@
           <span class="pill ${statusPill(order.status)}">${statusLabel(order.status)}</span>
         </a>
       `).join("");
+    }
+
+    async function cancelOrder(trackingToken) {
+      if (!confirm("Cancel this order?")) return;
+      try {
+        await request(`/order/${trackingToken}/cancel`, { method: "POST" });
+        toast("Order cancelled.");
+        loadHomeOrders();
+      } catch (err) {
+        toast(err.message || "Could not cancel order.");
+      }
     }
 
     function statusPill(status) {

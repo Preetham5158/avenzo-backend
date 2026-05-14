@@ -204,13 +204,19 @@
           step.classList.toggle("active", index <= activeIndex && data.status !== "CANCELLED");
         });
 
-        document.getElementById("readyText").textContent = data.status === "READY"
-          ? "Your food is ready. Please collect at the counter."
-          : data.status === "COMPLETED"
-            ? "Done. Enjoy your meal."
-            : data.status === "CANCELLED"
-              ? "This order was cancelled."
-              : "The restaurant is preparing your food.";
+        let readyMsg = "The restaurant has received your order.";
+        if (data.status === "READY") readyMsg = "Your food is ready. Please collect at the counter.";
+        else if (data.status === "COMPLETED") readyMsg = "Done. Enjoy your meal.";
+        else if (data.status === "CANCELLED") readyMsg = "This order was cancelled.";
+        else if (data.status === "PREPARING") {
+          if (data.readyAt) {
+            const t = new Date(data.readyAt);
+            readyMsg = `Being prepared — ready around ${t.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}.`;
+          } else {
+            readyMsg = "The restaurant is preparing your food.";
+          }
+        }
+        document.getElementById("readyText").textContent = readyMsg;
 
         let total = 0;
         document.getElementById("items").innerHTML = (data.items || []).map(item => {
@@ -251,12 +257,25 @@
       }
 
       document.getElementById("restaurantName").textContent = "Find your order";
-      document.getElementById("orderNumber").textContent = "Recent orders from this browser are listed below.";
+      document.getElementById("orderNumber").textContent = "Enter your details below or choose a recent order.";
       document.getElementById("statusBadge").textContent = "Recent";
       document.getElementById("orderCode").textContent = "----";
-      document.getElementById("readyText").textContent = orders.length ? "Choose an order to continue tracking." : "No recent orders are saved on this device.";
-      document.getElementById("items").innerHTML = "";
-      document.getElementById("total").textContent = money(0);
+      document.getElementById("readyText").textContent = "";
+      document.getElementById("items").innerHTML = `
+        <div class="stack" style="padding:8px 0">
+          <div class="field">
+            <label for="lookupPhone">Mobile number</label>
+            <input id="lookupPhone" class="input" inputmode="tel" placeholder="+91 98765 43210" autocomplete="tel">
+          </div>
+          <div class="field">
+            <label for="lookupCode">Order code (4 digits shown at checkout)</label>
+            <input id="lookupCode" class="input" inputmode="numeric" maxlength="4" placeholder="e.g. 3842">
+          </div>
+          <button id="lookupBtn" class="btn btn-primary" onclick="lookupOrder()">Find my order</button>
+          <div id="lookupMsg" class="muted feedback-line"></div>
+        </div>
+      `;
+      document.getElementById("total").textContent = "";
 
       const card = document.getElementById("savedOrdersCard");
       const list = document.getElementById("savedOrders");
@@ -271,11 +290,28 @@
             <span class="pill">Track</span>
           </button>
         `).join("")
-        : `<div class="empty">Place an order from this same browser, or use the restaurant menu's Find order option with your mobile number.</div>`;
+        : "";
       document.getElementById("trackingActions").innerHTML = `
-        <a class="btn btn-primary" href="/">Back to home</a>
         <a class="btn btn-ghost" href="/customer-login.html">Sign in to your account</a>
       `;
+    }
+
+    async function lookupOrder() {
+      const phone = document.getElementById("lookupPhone")?.value.trim();
+      const code = document.getElementById("lookupCode")?.value.trim();
+      const msg = document.getElementById("lookupMsg");
+      const btn = document.getElementById("lookupBtn");
+      msg.textContent = "";
+      if (!phone || !code) { msg.textContent = "Enter your mobile number and order code."; return; }
+      setLoading(btn, true, "Searching...");
+      try {
+        const data = await request(`/order/find?phone=${encodeURIComponent(phone)}&code=${encodeURIComponent(code)}`, { auth: false });
+        window.location.href = `/track/${data.trackingToken}?guest=1`;
+      } catch (err) {
+        msg.textContent = err.message || "No order found.";
+      } finally {
+        setLoading(btn, false, "Find my order");
+      }
     }
 
     function renderPaymentPanels(order) {
@@ -317,7 +353,7 @@
     async function retryPayment() {
       if (!trackingToken) return;
       const btn = event?.target;
-      if (btn) { btn.disabled = true; btn.textContent = "Submitting..."; }
+      if (btn) setLoading(btn, true, "Submitting...");
       try {
         const data = await request(`/order/${trackingToken}`, { auth: false });
         if (data.paymentStatus === "PAID") { await loadStatus(); return; }
@@ -325,7 +361,6 @@
 
         const info = data.paymentInfo;
         if (info?.type === "UPI_QR") {
-          // Customer submits their claim — restaurant must then verify and confirm.
           await request("/payment/upi-confirm", {
             method: "POST",
             body: JSON.stringify({ trackingToken }),
@@ -334,7 +369,6 @@
           toast("Payment claim submitted. The restaurant will confirm shortly.");
           await loadStatus();
         } else {
-          // Razorpay: cannot reopen checkout from the tracking page; redirect to menu.
           const slug = data.restaurant?.slug;
           if (slug) {
             window.location.href = `/r/${encodeURIComponent(slug)}?guest=1`;
@@ -344,7 +378,8 @@
         }
       } catch (err) {
         toast(err.message || "Could not submit payment claim.");
-        if (btn) { btn.disabled = false; btn.textContent = "I have paid"; }
+      } finally {
+        if (btn && btn.isConnected) setLoading(btn, false, "I have paid");
       }
     }
 
@@ -353,21 +388,33 @@
         ? `/r/${encodeURIComponent(order.restaurant.slug)}?guest=1`
         : "/";
       const target = document.getElementById("trackingActions");
+      const parts = [];
 
-      // Logged-in customer with their own tracking link
       if (!guestTracking && getToken()) {
-        target.innerHTML = `
-          <a class="btn btn-primary" href="/customer-restaurants.html">Browse restaurants</a>
-          <a class="btn btn-ghost" href="/customer-orders.html">My orders</a>
-        `;
-        return;
+        parts.push(`<a class="btn btn-primary" href="/customer-restaurants.html">Browse restaurants</a>`);
+        parts.push(`<a class="btn btn-ghost" href="/customer-orders.html">My orders</a>`);
+      } else if (["COMPLETED", "CANCELLED"].includes(order.status)) {
+        parts.push(`<a class="btn btn-primary" href="${menuHref}">Order again</a>`);
       }
 
-      // Guest: show Order again only after the order is done or cancelled
-      const showOrderAgain = ["COMPLETED", "CANCELLED"].includes(order.status);
-      target.innerHTML = showOrderAgain
-        ? `<a class="btn btn-primary" href="${menuHref}">Order again</a>`
-        : "";
+      // Show cancel only while PENDING and not already paid
+      if (order.status === "PENDING" && order.paymentStatus !== "PAID") {
+        parts.push(`<button class="btn btn-ghost" style="color:var(--danger,#c62828)" onclick="cancelOrder()">Cancel order</button>`);
+      }
+
+      target.innerHTML = parts.join("");
+    }
+
+    async function cancelOrder() {
+      if (!trackingToken) return;
+      if (!confirm("Cancel this order? This cannot be undone.")) return;
+      try {
+        await request(`/order/${trackingToken}/cancel`, { method: "POST", auth: false });
+        toast("Order cancelled.");
+        await loadStatus();
+      } catch (err) {
+        toast(err.message || "Could not cancel order.");
+      }
     }
 
     function renderRatingSection(order) {
