@@ -69,7 +69,7 @@ app.use((req, res, next) => {
     }
     res.setHeader(
         "Content-Security-Policy",
-        "default-src 'self'; script-src 'self' 'unsafe-inline' https://checkout.razorpay.com https://cdn.razorpay.com https://accounts.google.com/gsi/client; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com/gsi/style; img-src 'self' data: https:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://api.razorpay.com https://checkout.razorpay.com https://*.razorpay.com https://accounts.google.com; frame-src https://api.razorpay.com https://checkout.razorpay.com https://accounts.google.com; object-src 'none'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
+        "default-src 'self'; script-src 'self' 'unsafe-inline' https://checkout.razorpay.com https://cdn.razorpay.com https://accounts.google.com/gsi/client https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com/gsi/style; img-src 'self' data: https:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://api.razorpay.com https://checkout.razorpay.com https://*.razorpay.com https://accounts.google.com https://cdnjs.cloudflare.com; frame-src https://api.razorpay.com https://checkout.razorpay.com https://accounts.google.com; object-src 'none'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
     );
     next();
 });
