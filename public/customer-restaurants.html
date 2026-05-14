@@ -9,8 +9,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg:#09080A; --bg-2:#131118; --bg-3:#1C1A22; --bg-4:#252230;
-      --tx:#F5ECD7; --tx-2:#BEB09A; --tx-3:#6E6258;
+      --bg:#0C0B0F; --bg-2:#151318; --bg-3:#1E1C24; --bg-4:#272530;
+      --tx:#F2E8D4; --tx-2:#C8BA9C; --tx-3:#9A8C7A;
       --brand:#E8401C; --brand-d:#C43318; --brand-soft:rgba(232,64,28,0.12);
       --line:rgba(255,255,255,0.07); --glass:rgba(9,8,10,0.84);
       --success:#27C96B; --warn:#E8A53A;
@@ -193,7 +193,10 @@
   <script src="/assets/app.js"></script>
   <script>
     if (!sessionStorage.getItem("token")) location.href="/customer-login.html";
-    const PALETTES=[["rgba(232,64,28,0.32)","rgba(232,64,28,0.07)"],["rgba(39,201,107,0.28)","rgba(39,201,107,0.06)"],["rgba(88,118,255,0.28)","rgba(88,118,255,0.06)"],["rgba(255,186,48,0.30)","rgba(255,186,48,0.06)"],["rgba(195,80,220,0.26)","rgba(195,80,220,0.05)"],["rgba(0,184,222,0.26)","rgba(0,184,222,0.05)"]];
+    const PALETTES=[
+      ["#2E1510","#1A0C08"],["#0D2018","#081410"],["#0E1832","#09102A"],
+      ["#261F08","#181404"],["#1E0D26","#130919"],["#081E28","#051318"]
+    ];
     const EMOJIS={PURE_VEG:"🌿",BOTH:"🍱",NON_VEG:"🍖"};
     let allRests=[],foodFilter="",openOnly=false;
 
