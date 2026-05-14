@@ -1,856 +1,570 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<title>Avenzo — Your menu. Your phone. Instantly.</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<meta name="description" content="Scan the QR at your table. Browse the menu. Order from your phone — no app, no waiting. Kitchens get perfect orders instantly.">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Avenzo — Scan. Order. Enjoy.</title>
+<meta name="description" content="QR table ordering for dine-in restaurants. Scan, browse the menu and order from your phone. No app needed.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
-@property --ga{syntax:'<angle>';initial-value:0deg;inherits:false}
-@property --pct{syntax:'<percentage>';initial-value:0%;inherits:false}
-
+/* ── Reset ─────────────────────────────── */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{overflow-x:clip;scroll-behavior:smooth}
+body{font-family:'Plus Jakarta Sans',sans-serif;background:#09090B;color:#F2EDE8;overflow-x:clip;-webkit-font-smoothing:antialiased}
+img{display:block;max-width:100%}
+a{color:inherit;text-decoration:none}
 
+/* ── Tokens ─────────────────────────────── */
 :root{
-  --noir:#0B0907;
-  --noir2:#131009;
-  --card:#1C1813;
-  --cream:#F5EFE4;
-  --cream2:#EDE6D5;
-  --ink:#1B140C;
-  --ink2:rgba(27,20,12,.46);
-  --tx:#EDE5D5;
-  --dim:rgba(237,229,213,.42);
+  --bg:#09090B;
+  --surface:#111113;
+  --cream:#F5EEE4;
+  --ink:#15100A;
   --fire:#E8401C;
-  --ember:#F57A28;
-  --gold:#E8A830;
-  --mint:#28C97E;
-  --r:20px;
-  --pad:clamp(22px,5.5vw,96px);
-  --sec:clamp(88px,12vw,160px)
+  --ember:#F5781C;
+  --gold:#E8A428;
+  --tx:#F2EDE8;
+  --muted:rgba(242,237,232,.44);
+  --r:18px;
 }
 
-html{overflow-x:clip;scroll-behavior:smooth}
-body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--noir);color:var(--tx);overflow-x:clip;cursor:none;-webkit-font-smoothing:antialiased}
-@media(pointer:coarse){body{cursor:auto}#cur,#cur2{display:none}}
+/* ── Nav ─────────────────────────────────── */
+.nav{
+  position:fixed;top:0;left:0;right:0;z-index:200;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:18px 20px;
+  transition:background .3s,padding .3s,border-color .3s;
+  border-bottom:1px solid transparent;
+}
+.nav.on{
+  background:rgba(9,9,11,.92);
+  backdrop-filter:blur(20px);
+  -webkit-backdrop-filter:blur(20px);
+  padding:12px 20px;
+  border-color:rgba(255,255,255,.07);
+}
+.nav-logo{display:flex;align-items:center;gap:10px}
+.nav-logo img{width:32px;height:32px;object-fit:contain;flex-shrink:0}
+.nav-logo span{font-size:17px;font-weight:900;letter-spacing:.07em}
+.nav-cta{
+  display:inline-flex;align-items:center;
+  background:var(--fire);color:#fff;
+  font-family:inherit;font-size:14px;font-weight:700;
+  padding:10px 20px;border-radius:10px;border:none;cursor:pointer;
+  transition:opacity .15s,transform .15s;
+}
+.nav-cta:hover{opacity:.9;transform:translateY(-1px)}
 
-/* ─── Cursor ─────────────────────────────────────────────── */
-#cur{width:28px;height:28px;border:1.5px solid rgba(232,64,28,.5);border-radius:50%;position:fixed;top:0;left:0;pointer-events:none;z-index:9998;transform:translate(-50%,-50%);transition:width .18s,height .18s,border-color .2s;will-change:transform}
-#cur2{width:4px;height:4px;background:var(--fire);border-radius:50%;position:fixed;top:0;left:0;pointer-events:none;z-index:9999;transform:translate(-50%,-50%);will-change:transform}
-body.cur-on #cur{width:50px;height:50px;border-color:var(--ember);opacity:.45}
+/* ── Buttons ─────────────────────────────── */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:6px;
+  font-family:inherit;font-weight:700;border:none;cursor:pointer;
+  transition:transform .15s,box-shadow .15s,opacity .15s;
+  white-space:nowrap;
+}
+.btn:hover{transform:translateY(-2px)}
+.btn-primary{
+  background:var(--fire);color:#fff;
+  font-size:16px;padding:16px 32px;border-radius:14px;
+  box-shadow:0 4px 24px rgba(232,64,28,.35);
+}
+.btn-primary:hover{box-shadow:0 8px 32px rgba(232,64,28,.5)}
+.btn-secondary{
+  background:rgba(255,255,255,.07);color:rgba(242,237,232,.8);
+  font-size:16px;padding:16px 32px;border-radius:14px;
+  border:1px solid rgba(255,255,255,.12);
+}
+.btn-secondary:hover{background:rgba(255,255,255,.12);color:var(--tx)}
+.btn-dark-outline{
+  background:transparent;color:var(--ink);
+  font-size:16px;padding:16px 32px;border-radius:14px;
+  border:1.5px solid rgba(21,16,10,.2);
+}
+.btn-dark-outline:hover{background:rgba(21,16,10,.05)}
 
-/* ─── Nav ────────────────────────────────────────────────── */
-nav{position:fixed;top:0;left:0;right:0;z-index:500;padding:22px var(--pad);display:flex;align-items:center;justify-content:space-between;transition:all .4s;border-bottom:1px solid transparent}
-nav.nav-on{background:rgba(11,9,7,.95);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);padding:14px var(--pad);border-color:rgba(255,255,255,.06)}
-.nbrand{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--tx);font-weight:800;font-size:17px;letter-spacing:-.5px}
-.nbrand img{height:26px}
-.nlinks{display:flex;align-items:center;gap:26px;list-style:none}
-.nlinks a{color:var(--dim);text-decoration:none;font-size:14px;font-weight:500;transition:color .2s}
-.nlinks a:hover{color:var(--tx)}
-.npill{background:var(--fire)!important;color:#fff!important;padding:9px 22px;border-radius:50px;font-size:13px;font-weight:700!important;transition:background .25s,transform .2s,box-shadow .25s!important}
-.npill:hover{background:#c8350f!important;transform:translateY(-1px)!important;box-shadow:0 8px 24px rgba(232,64,28,.38)!important}
-.nmob{display:none;background:none;border:1px solid rgba(255,255,255,.12);color:var(--tx);padding:8px 18px;border-radius:50px;font-size:13px;font-weight:600;cursor:pointer}
-@media(max-width:860px){nav{padding:16px 22px}nav.nav-on{padding:12px 22px}.nlinks{display:none}.nmob{display:block}}
+/* ── HERO ─────────────────────────────────── */
+.hero{
+  min-height:100svh;
+  padding:100px 20px 56px;
+  display:flex;align-items:center;
+  position:relative;overflow:hidden;
+  background:var(--bg);
+}
+/* warm ambient glow top-right — desktop visible */
+.hero-glow{
+  position:absolute;top:-5%;right:-8%;
+  width:55%;height:75%;
+  background:radial-gradient(ellipse,rgba(232,64,28,.11) 0%,transparent 68%);
+  pointer-events:none;z-index:0;
+}
 
-/* ─── Buttons ────────────────────────────────────────────── */
-.btn-fire{--ga:0deg;background:conic-gradient(from var(--ga),var(--fire),var(--ember),var(--gold),var(--fire));animation:spinga 4s linear infinite;border:none;padding:16px 36px;border-radius:50px;font-size:15px;font-weight:700;cursor:pointer;position:relative;overflow:hidden;box-shadow:0 0 48px rgba(232,64,28,.2);transition:transform .3s,box-shadow .3s;text-decoration:none;display:inline-flex;align-items:center;gap:8px}
-.btn-fire::before{content:'';position:absolute;inset:2px;background:var(--fire);border-radius:50px;transition:background .3s}
-.btn-fire:hover::before{background:#c83515}
-.btn-fire:hover{transform:translateY(-3px);box-shadow:0 24px 56px rgba(232,64,28,.4)}
-.btn-fire>*{position:relative;z-index:1;color:#fff}
-@keyframes spinga{to{--ga:360deg}}
-.btn-out{background:transparent;color:var(--tx);border:1.5px solid rgba(255,255,255,.14);padding:15px 36px;border-radius:50px;font-size:15px;font-weight:600;cursor:pointer;transition:all .3s;text-decoration:none;display:inline-block}
-.btn-out:hover{background:rgba(255,255,255,.07);border-color:rgba(255,255,255,.26);transform:translateY(-2px)}
+.hero-inner{
+  position:relative;z-index:1;
+  width:100%;max-width:1200px;margin:0 auto;
+  display:flex;flex-direction:column;gap:44px;
+}
 
-/* ─── HERO ───────────────────────────────────────────────── */
-.hero{position:relative;min-height:100vh;display:flex;align-items:center;overflow:hidden;background:var(--noir);padding:120px var(--pad) 80px}
-#bg-canvas{position:absolute;inset:0;z-index:0;pointer-events:none}
+.hero-badge{
+  display:inline-flex;align-items:center;gap:8px;
+  background:rgba(232,64,28,.14);
+  border:1px solid rgba(232,64,28,.28);
+  border-radius:100px;padding:7px 16px;
+  font-size:12px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;
+  color:var(--ember);width:fit-content;
+}
 
-/* Large ambient plate ring behind everything */
-.h-ring{position:absolute;width:min(90vw,840px);height:min(90vw,840px);border-radius:50%;top:50%;left:50%;transform:translate(-50%,-50%);background:radial-gradient(circle at 48% 52%,rgba(232,64,28,.1) 0%,rgba(245,122,40,.05) 40%,transparent 65%);border:1px solid rgba(255,255,255,.03);animation:ring-drift 18s ease-in-out infinite;pointer-events:none;z-index:0}
-.h-ring2{position:absolute;width:min(70vw,640px);height:min(70vw,640px);border-radius:50%;top:50%;left:50%;transform:translate(-50%,-50%);border:1px solid rgba(232,64,28,.06);animation:ring-drift 24s 3s ease-in-out infinite reverse;pointer-events:none;z-index:0}
-@keyframes ring-drift{0%,100%{transform:translate(-50%,-50%) scale(1)}50%{transform:translate(calc(-50% + 20px),calc(-50% - 12px)) scale(1.03)}}
+.hero-h1{
+  font-size:clamp(46px,13vw,100px);
+  font-weight:900;line-height:1;letter-spacing:-.03em;
+  margin-top:18px;
+}
+.hero-h1 .grad{
+  background:linear-gradient(110deg,var(--fire) 0%,var(--gold) 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.hero-sub{
+  margin-top:20px;
+  font-size:clamp(15px,2.8vw,18px);
+  color:var(--muted);line-height:1.72;
+  max-width:480px;
+}
+.hero-actions{
+  margin-top:32px;
+  display:flex;flex-wrap:wrap;gap:12px;
+}
 
-.h-inner{position:relative;z-index:2;display:grid;grid-template-columns:1fr 1fr;gap:clamp(40px,6vw,100px);align-items:center;width:100%;max-width:1200px;margin:auto}
-@media(max-width:860px){.h-inner{grid-template-columns:1fr;text-align:center}.h-right{order:-1}}
+/* ── Food cards ─── */
+.food-cards{
+  /* Mobile: horizontal snap scroll */
+  display:flex;gap:12px;
+  overflow-x:auto;scroll-snap-type:x mandatory;
+  -webkit-overflow-scrolling:touch;
+  scrollbar-width:none;
+  padding-bottom:4px;
+}
+.food-cards::-webkit-scrollbar{display:none}
 
-/* Hero left */
-.h-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(232,64,28,.09);border:1px solid rgba(232,64,28,.2);color:var(--ember);padding:7px 16px;border-radius:50px;font-size:11px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;margin-bottom:36px;animation:fupin .6s .05s ease both}
-.h-pulse{width:6px;height:6px;background:var(--fire);border-radius:50%;animation:pulse 2s infinite}
-@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.2;transform:scale(.45)}}
+.food-card{
+  scroll-snap-align:start;
+  flex:0 0 168px;flex-shrink:0;
+  border-radius:var(--r);overflow:hidden;
+  position:relative;
+  box-shadow:0 8px 36px rgba(0,0,0,.55);
+  background:#1A1512;
+}
+.food-card img{
+  width:100%;height:190px;
+  object-fit:cover;
+  display:block;
+  transition:transform .5s ease;
+}
+.food-card:hover img{transform:scale(1.07)}
+.food-card-tag{
+  position:absolute;bottom:0;left:0;right:0;
+  padding:32px 13px 13px;
+  background:linear-gradient(transparent,rgba(0,0,0,.72));
+  font-size:13px;font-weight:700;color:#fff;
+}
 
-/* BIG brand in hero */
-.h-brand{display:flex;align-items:center;gap:12px;margin-bottom:28px;animation:fupin .6s .12s ease both}
-@media(max-width:860px){.h-brand{justify-content:center}}
-.h-brand img{height:44px;filter:drop-shadow(0 0 20px rgba(232,64,28,.4))}
-.h-brand-name{font-size:38px;font-weight:800;letter-spacing:-2px;color:var(--tx)}
+/* ── Ticker ─────────────────────────────── */
+.ticker{
+  background:var(--fire);
+  padding:15px 0;
+  overflow:hidden;white-space:nowrap;flex-shrink:0;
+}
+.ticker-track{
+  display:inline-flex;
+  animation:ticker-roll 22s linear infinite;
+}
+.ticker-track:hover{animation-play-state:paused}
+.ticker-item{
+  font-size:14px;font-weight:700;letter-spacing:.05em;
+  color:rgba(255,255,255,.92);padding:0 18px;
+}
+.ticker-dot{color:rgba(255,255,255,.35)}
+@keyframes ticker-roll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
 
-.h-title{font-size:clamp(54px,9vw,108px);font-weight:800;line-height:.92;letter-spacing:clamp(-2px,-0.03em,-4px);color:var(--tx);margin-bottom:30px}
-.h-title .line{display:block;overflow:hidden}
-.h-title .w{display:inline-block;animation:word-up .78s cubic-bezier(.16,1,.3,1) both;animation-delay:var(--d,0s)}
-@keyframes word-up{from{transform:translateY(115%)}to{transform:translateY(0)}}
-.h-title .g{background:linear-gradient(100deg,var(--fire) 0%,var(--ember) 55%,var(--gold) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+/* ── How it works ───────────────────────── */
+.how{
+  background:var(--cream);
+  padding:80px 20px;
+  color:var(--ink);
+}
+.sec-label{
+  font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--fire);margin-bottom:12px;
+}
+.sec-h{
+  font-size:clamp(28px,5.5vw,48px);
+  font-weight:800;letter-spacing:-.022em;line-height:1.14;
+  color:var(--ink);margin-bottom:14px;
+}
+.sec-p{
+  font-size:15px;color:rgba(21,16,10,.48);line-height:1.72;
+  max-width:440px;margin-bottom:48px;
+}
 
-.h-sub{font-size:clamp(15px,1.8vw,18px);color:var(--dim);line-height:1.75;max-width:460px;margin-bottom:46px;text-wrap:balance;animation:fupin .7s .68s ease both}
-@media(max-width:860px){.h-sub{margin-left:auto;margin-right:auto}}
+.steps{
+  display:grid;grid-template-columns:1fr;gap:14px;
+  max-width:940px;
+}
+.step{
+  background:#fff;border-radius:var(--r);
+  padding:28px 24px;
+  display:flex;align-items:flex-start;gap:18px;
+  box-shadow:0 2px 14px rgba(0,0,0,.06);
+}
+.step-ico{
+  flex-shrink:0;
+  width:50px;height:50px;border-radius:14px;
+  background:linear-gradient(135deg,var(--fire),var(--ember));
+  display:flex;align-items:center;justify-content:center;
+  font-size:22px;
+}
+.step h3{font-size:17px;font-weight:700;color:var(--ink);margin-bottom:6px}
+.step p{font-size:13px;color:rgba(21,16,10,.48);line-height:1.65}
 
-.h-btns{display:flex;gap:12px;flex-wrap:wrap;animation:fupin .7s .84s ease both}
-@media(max-width:860px){.h-btns{justify-content:center}}
-@keyframes fupin{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+/* ── Food showcase ──────────────────────── */
+.showcase{
+  background:var(--bg);
+  padding:80px 0;
+}
+.showcase .head{padding:0 20px;margin-bottom:32px}
+.showcase .sec-h{color:var(--tx)}
+.showcase .sec-p{color:var(--muted);margin-bottom:0}
 
-/* ─── Hero phone demo ────────────────────────────────────── */
-.h-right{display:flex;align-items:center;justify-content:center;position:relative}
-.h-demo-wrap{position:relative;display:inline-flex;flex-direction:column;align-items:center}
+.reel{
+  display:flex;gap:14px;
+  overflow-x:auto;scroll-snap-type:x mandatory;
+  -webkit-overflow-scrolling:touch;
+  scrollbar-width:none;
+  padding:0 20px 8px;
+}
+.reel::-webkit-scrollbar{display:none}
 
-/* Floating QR label */
-.h-qr-tag{position:absolute;top:-22px;right:-28px;background:rgba(232,64,28,.14);border:1px solid rgba(232,64,28,.28);border-radius:12px;padding:8px 14px;display:flex;align-items:center;gap:8px;animation:float-a 6s ease-in-out infinite}
-.h-qr-tag span{font-size:11px;font-weight:700;color:var(--ember);letter-spacing:.3px}
-.qr-mini{display:grid;grid-template-columns:repeat(4,5px);gap:2px}
-.qm{width:5px;height:5px;border-radius:1px;background:var(--fire)}
-.qe{background:transparent}
-@keyframes float-a{0%,100%{transform:translateY(0) rotate(-1deg)}50%{transform:translateY(-8px) rotate(1deg)}}
+.reel-card{
+  scroll-snap-align:start;
+  flex:0 0 230px;flex-shrink:0;
+  border-radius:22px;overflow:hidden;
+  position:relative;
+  box-shadow:0 10px 44px rgba(0,0,0,.55);
+  background:#1A1512;
+}
+.reel-card img{
+  width:100%;height:290px;
+  object-fit:cover;display:block;
+  transition:transform .5s ease;
+}
+.reel-card:hover img{transform:scale(1.06)}
+.reel-card .cap{
+  position:absolute;bottom:0;left:0;right:0;
+  padding:40px 16px 16px;
+  background:linear-gradient(transparent,rgba(0,0,0,.82));
+}
+.reel-card .cap strong{display:block;font-size:15px;font-weight:700;color:#fff}
+.reel-card .cap small{font-size:12px;color:rgba(255,255,255,.52)}
 
-/* Speed tag */
-.h-speed-tag{position:absolute;bottom:-18px;left:-24px;background:rgba(40,201,126,.12);border:1px solid rgba(40,201,126,.25);border-radius:12px;padding:8px 14px;display:flex;align-items:center;gap:7px;animation:float-b 7s 1s ease-in-out infinite}
-.h-speed-tag span{font-size:11px;font-weight:700;color:var(--mint)}
-@keyframes float-b{0%,100%{transform:translateY(0) rotate(1deg)}50%{transform:translateY(-8px) rotate(-1deg)}}
+/* ── Join section ───────────────────────── */
+.join{
+  background:var(--surface);
+  padding:80px 20px;
+  text-align:center;
+}
+.join h2{
+  font-size:clamp(28px,6vw,52px);
+  font-weight:800;letter-spacing:-.022em;line-height:1.14;
+  margin-bottom:16px;
+}
+.join h2 em{font-style:normal;color:var(--ember)}
+.join p{
+  font-size:15px;color:var(--muted);line-height:1.72;
+  max-width:440px;margin:0 auto 36px;
+}
+.join-btns{display:flex;flex-wrap:wrap;gap:12px;justify-content:center}
 
-/* The phone */
-.demo-phone{width:230px}
-.dp-shell{background:#121008;border:1.5px solid rgba(255,255,255,.09);border-radius:44px;padding:10px;box-shadow:0 50px 120px rgba(0,0,0,.8),inset 0 1px 0 rgba(255,255,255,.07),0 0 80px rgba(232,64,28,.07)}
-.dp-notch{width:64px;height:20px;background:#121008;border-radius:0 0 12px 12px;margin:0 auto 6px}
-.dp-screen{background:#0d0b09;border-radius:32px;overflow:hidden;aspect-ratio:9/19.5;position:relative}
+/* ── Footer ─────────────────────────────── */
+footer{
+  padding:28px 20px;
+  border-top:1px solid rgba(255,255,255,.06);
+  display:flex;flex-direction:column;align-items:center;gap:8px;
+}
+.f-logo{display:flex;align-items:center;gap:8px}
+.f-logo img{width:22px;height:22px;object-fit:contain}
+.f-logo span{font-size:13px;font-weight:800;letter-spacing:.07em}
+.f-copy{font-size:12px;color:rgba(242,237,232,.22)}
 
-/* Demo panels — auto-cycle */
-.dp{position:absolute;inset:0;padding:16px 13px;opacity:0;transform:scale(.97) translateY(10px);transition:opacity .55s ease,transform .55s ease;pointer-events:none}
-.dp.on{opacity:1;transform:scale(1) translateY(0);pointer-events:auto}
+/* ── Reveal animation ───────────────────── */
+.r{opacity:0;transform:translateY(20px);transition:opacity .65s ease,transform .65s ease}
+.r.in{opacity:1;transform:none}
 
-/* Demo 0: QR Scanner */
-.dp0-inner{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:14px}
-.scan-label{font-size:9px;color:rgba(255,255,255,.38);letter-spacing:.8px;text-transform:uppercase}
-.scan-frame{width:90px;height:90px;position:relative;border-radius:6px}
-.scan-frame::before,.scan-frame::after,.scf3,.scf4{content:'';position:absolute;width:18px;height:18px;border-color:var(--fire);border-style:solid;border-radius:3px}
-.scan-frame::before{top:0;left:0;border-width:2.5px 0 0 2.5px;border-radius:4px 0 0 0}
-.scan-frame::after{top:0;right:0;border-width:2.5px 2.5px 0 0;border-radius:0 4px 0 0}
-.scf3{bottom:0;left:0;border-width:0 0 2.5px 2.5px;border-radius:0 0 0 4px}
-.scf4{bottom:0;right:0;border-width:0 2.5px 2.5px 0;border-radius:0 0 4px 0}
-.scan-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:3.5px;padding:10px;width:100%;height:100%;position:relative}
-.sg{border-radius:1px;background:rgba(232,64,28,.55)}
-.se{background:transparent}
-.scan-line{position:absolute;left:4px;right:4px;height:1.5px;background:linear-gradient(90deg,transparent,var(--fire),transparent);top:10px;animation:scan-move 2s ease-in-out infinite}
-@keyframes scan-move{0%,100%{top:10px;opacity:1}50%{top:calc(100% - 10px);opacity:.6}}
-.scan-tip{font-size:10px;font-weight:600;color:rgba(232,64,28,.7);animation:blink-tip 1.8s infinite}
-@keyframes blink-tip{0%,100%{opacity:1}50%{opacity:.25}}
+/* ── Float keyframes (desktop) ─────────── */
+@keyframes f1{0%,100%{transform:translateY(0) rotate(-1.5deg)} 50%{transform:translateY(-14px) rotate(-1.5deg)}}
+@keyframes f2{0%,100%{transform:translateY(0) rotate(1.2deg)} 50%{transform:translateY(-10px) rotate(1.2deg)}}
+@keyframes f3{0%,100%{transform:translateY(0) rotate(-.8deg)} 50%{transform:translateY(-18px) rotate(-.8deg)}}
+@keyframes f4{0%,100%{transform:translateY(-6px) rotate(1.8deg)} 50%{transform:translateY(8px) rotate(1.8deg)}}
 
-/* Demo 1: Menu */
-.dp1-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
-.dp1-rest{font-size:9.5px;font-weight:700;color:rgba(255,255,255,.55)}
-.dp1-cart{background:var(--fire);color:#fff;font-size:8px;font-weight:700;padding:2.5px 7px;border-radius:8px}
-.mi{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.04);border-radius:9px;padding:8px 9px;margin-bottom:5px}
-.mi-em{width:30px;height:30px;border-radius:7px;background:rgba(232,64,28,.1);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
-.mi-n{font-size:10px;font-weight:700;color:rgba(255,255,255,.82)}
-.mi-p{font-size:9px;color:var(--ember);margin-top:1px}
-.mi-add{width:19px;height:19px;background:var(--fire);border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;flex-shrink:0;margin-left:auto}
-.mi.active{background:rgba(232,64,28,.1);border:1px solid rgba(232,64,28,.22)}
+/* ── Desktop (≥900px) ──────────────────── */
+@media(min-width:900px){
+  .nav,.nav.on{padding-left:48px;padding-right:48px}
 
-/* Demo 2: Confirmed */
-.dp2-inner{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:10px;text-align:center;padding:0 6px}
-.dp2-check{width:50px;height:50px;border-radius:50%;background:linear-gradient(135deg,#16784a,#22c975);display:flex;align-items:center;justify-content:center;font-size:20px;box-shadow:0 0 24px rgba(34,201,117,.3)}
-.dp2-t{font-size:13px;font-weight:700;color:rgba(255,255,255,.92)}
-.dp2-c{font-size:9px;color:rgba(255,255,255,.3);letter-spacing:.3px}
-.dp2-tag{background:rgba(34,201,117,.1);border:1px solid rgba(34,201,117,.26);color:#22c975;padding:4px 11px;border-radius:14px;font-size:10px;font-weight:700}
-.dp2-bar{width:120px;height:3px;background:rgba(255,255,255,.06);border-radius:2px;overflow:hidden;position:relative}
-.dp2-bar::after{content:'';position:absolute;left:0;top:0;height:100%;background:linear-gradient(90deg,#22c975,#18a05e);border-radius:2px;animation:bar-prog 3.5s ease infinite}
-@keyframes bar-prog{0%{width:15%}55%{width:85%}100%{width:15%}}
+  .hero{padding:120px 48px 80px}
 
-/* Demo 3: Ready */
-.dp3-inner{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:11px;text-align:center}
-.dp3-em{font-size:48px;animation:pop 0.6s cubic-bezier(.16,1,.3,1)}
-@keyframes pop{from{transform:scale(.2);opacity:0}to{transform:scale(1);opacity:1}}
-.dp3-t{font-size:14px;font-weight:800;color:rgba(255,255,255,.95)}
-.dp3-s{font-size:9.5px;color:rgba(255,255,255,.3);line-height:1.6}
-.dp3-tag{background:rgba(232,168,48,.1);border:1px solid rgba(232,168,48,.24);color:var(--gold);padding:4px 12px;border-radius:14px;font-size:10px;font-weight:700}
+  .hero-inner{
+    flex-direction:row;
+    align-items:center;
+    gap:64px;
+  }
+  .hero-text{flex:1;min-width:0}
 
-/* ─── Steam animation beneath demo ──────────────────────────*/
-.steam-group{position:absolute;bottom:-40px;left:50%;transform:translateX(-50%);display:flex;gap:10px;align-items:flex-end;pointer-events:none}
-.steam{border-radius:50px;animation:steam-up 3s ease-in-out infinite;filter:blur(2px)}
-.st1{width:3px;height:44px;background:linear-gradient(transparent,rgba(245,122,40,.3));animation-delay:0s}
-.st2{width:2.5px;height:56px;background:linear-gradient(transparent,rgba(245,122,40,.25));animation-delay:.9s}
-.st3{width:3px;height:38px;background:linear-gradient(transparent,rgba(245,122,40,.28));animation-delay:1.8s}
-@keyframes steam-up{0%{transform:translateY(0) scaleX(1);opacity:0}15%{opacity:1}60%{transform:translateY(-28px) scaleX(1.6);opacity:.5}100%{transform:translateY(-55px) scaleX(2.2);opacity:0}}
+  /* Switch from horizontal scroll to animated 2×2 grid */
+  .food-cards{
+    flex:0 0 460px;
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:14px;
+    overflow:visible;
+    scroll-snap-type:none;
+    padding-bottom:0;
+  }
+  .food-card{
+    flex:none;
+    scroll-snap-align:none;
+  }
+  .food-card img{height:218px}
+  .food-card:nth-child(2),.food-card:nth-child(4){margin-top:28px}
 
-/* Scroll hint */
-.h-scroll{position:absolute;bottom:28px;left:50%;transform:translateX(-50%);z-index:3;display:flex;flex-direction:column;align-items:center;gap:6px;color:var(--dim);font-size:9px;letter-spacing:2px;text-transform:uppercase;animation:fupin .8s 1.6s ease both}
-.h-mouse{width:18px;height:28px;border:1.5px solid rgba(255,255,255,.15);border-radius:9px;display:flex;justify-content:center;padding-top:4px}
-.h-wheel{width:2px;height:5px;background:rgba(255,255,255,.3);border-radius:2px;animation:wh 2.4s infinite}
-@keyframes wh{0%,100%{transform:translateY(0);opacity:1}50%{transform:translateY(6px);opacity:.1}}
+  .food-card:nth-child(1){animation:f1 5.2s ease-in-out infinite}
+  .food-card:nth-child(2){animation:f2 6.8s ease-in-out infinite}
+  .food-card:nth-child(3){animation:f3 4.9s ease-in-out infinite}
+  .food-card:nth-child(4){animation:f4 6.1s ease-in-out infinite}
 
-/* ─── Food ticker ─────────────────────────────────────────── */
-.food-ticker{overflow:hidden;padding:14px 0;background:rgba(255,255,255,.02);border-top:1px solid rgba(255,255,255,.04);border-bottom:1px solid rgba(255,255,255,.04);user-select:none}
-.ft-track{display:inline-flex;white-space:nowrap;animation:ftmove 36s linear infinite;will-change:transform}
-.ft-track:hover{animation-play-state:paused}
-.ft{font-size:13px;font-weight:700;letter-spacing:.3px;color:rgba(237,229,213,.22);padding:0 22px}
-.ft-dot{font-size:9px;color:var(--ember);align-self:center}
-@keyframes ftmove{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+  .how{padding:100px 48px}
+  .steps{grid-template-columns:repeat(3,1fr)}
 
-/* ─── PAIN section (cream) ────────────────────────────────── */
-.pain{padding:var(--sec) 0;background:var(--cream);color:var(--ink)}
-.pain .eye{color:var(--fire)}
-.pain-title{font-size:clamp(36px,5.5vw,66px);font-weight:800;letter-spacing:-2px;line-height:1.0;text-wrap:balance;color:var(--ink);margin-bottom:14px}
-.pain-sub{font-size:clamp(16px,2vw,19px);color:var(--ink2);max-width:520px;line-height:1.68;margin-bottom:64px;font-style:italic}
+  .showcase{padding:100px 0}
+  .showcase .head{padding:0 48px}
+  .reel{padding:0 48px 8px}
+  .reel-card{flex:0 0 280px}
+  .reel-card img{height:340px}
 
-.pain-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
-@media(max-width:760px){.pain-grid{grid-template-columns:1fr}}
+  .join{padding:100px 48px}
 
-.pain-card{background:var(--cream2);border-radius:var(--r);padding:30px 26px;border:1px solid rgba(27,20,12,.07);transition:border-color .3s,transform .3s}
-.pain-card:hover{border-color:rgba(232,64,28,.2);transform:translateY(-4px)}
-.pc-num{font-size:11px;font-weight:700;letter-spacing:2px;color:var(--fire);margin-bottom:20px}
-.pc-ico{font-size:28px;margin-bottom:14px}
-.pain-card h3{font-size:17px;font-weight:800;color:var(--ink);margin-bottom:8px;letter-spacing:-.4px}
-.pain-card p{font-size:13.5px;color:var(--ink2);line-height:1.65}
+  footer{flex-direction:row;justify-content:space-between;padding:28px 48px}
+}
 
-/* Avenzo solves line */
-.pain-bridge{text-align:center;padding:52px 24px 0;color:var(--ink)}
-.bridge-line{font-size:clamp(24px,4vw,42px);font-weight:800;letter-spacing:-1.5px;line-height:1.1;text-wrap:balance}
-.bridge-line .hi{color:var(--fire)}
-
-/* ─── JOURNEY (dark, sticky) ──────────────────────────────── */
-.journey{background:var(--noir)}
-.j-pin{height:480vh}
-@media(max-width:860px){.j-pin{height:560vh}}
-.j-sticky{position:sticky;top:0;height:100vh;display:flex;align-items:center;justify-content:center;background:var(--noir);overflow:hidden}
-.j-inner{max-width:1180px;width:100%;padding:0 var(--pad);display:grid;grid-template-columns:1fr 1.05fr;gap:clamp(40px,7vw,100px);align-items:center}
-@media(max-width:860px){.j-inner{grid-template-columns:1fr;gap:20px;padding:clamp(55px,9vw,70px) 22px 16px}.j-phone-col{order:-1}}
-
-.j-phone-col{display:flex;justify-content:center}
-.j-phone{width:250px}
-.jp-shell{background:#110F0C;border:1.5px solid rgba(255,255,255,.08);border-radius:46px;padding:10px;box-shadow:0 60px 130px rgba(0,0,0,.75),inset 0 1px 0 rgba(255,255,255,.06),0 0 80px rgba(232,64,28,.06)}
-.jp-notch{width:66px;height:20px;background:#110F0C;border-radius:0 0 11px 11px;margin:0 auto 6px}
-.jp-screen{background:#0C0A08;border-radius:34px;overflow:hidden;aspect-ratio:9/19.5;position:relative}
-
-/* Journey screen panels */
-.sp{position:absolute;inset:0;padding:17px 13px;opacity:0;transform:translateY(12px);transition:opacity .5s ease,transform .5s ease;pointer-events:none}
-.sp.on{opacity:1;transform:none;pointer-events:auto}
-
-/* jp0: QR */
-.jp0{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:14px}
-.jp0-lbl{font-size:9.5px;color:rgba(255,255,255,.36);letter-spacing:.6px}
-.jp0-frame{width:86px;height:86px;position:relative;border-radius:6px}
-.jp0-frame::before,.jp0-frame::after,.jpf3,.jpf4{content:'';position:absolute;width:16px;height:16px;border-color:var(--fire);border-style:solid;border-radius:3px}
-.jp0-frame::before{top:0;left:0;border-width:2.5px 0 0 2.5px;border-radius:4px 0 0 0}
-.jp0-frame::after{top:0;right:0;border-width:2.5px 2.5px 0 0;border-radius:0 4px 0 0}
-.jpf3{bottom:0;left:0;border-width:0 0 2.5px 2.5px;border-radius:0 0 0 4px}
-.jpf4{bottom:0;right:0;border-width:0 2.5px 2.5px 0;border-radius:0 0 4px 0}
-.jp0-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:3px;padding:10px;width:100%;height:100%}
-.jg{border-radius:1px;background:rgba(232,64,28,.55)}.je{background:transparent}
-.jp0-scan{position:absolute;left:3px;right:3px;height:1.5px;background:linear-gradient(90deg,transparent,var(--fire),transparent);animation:jpscan 2s ease-in-out infinite}
-@keyframes jpscan{0%,100%{top:8px}50%{top:calc(100% - 8px)}}
-.jp0-hint{font-size:10px;font-weight:700;color:rgba(232,64,28,.65);animation:blink-tip 2s infinite}
-
-/* jp1: Menu */
-.jp1-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px}
-.jp1-name{font-size:9.5px;font-weight:700;color:rgba(255,255,255,.5)}
-.jp1-badge{background:var(--fire);color:#fff;font-size:8px;font-weight:700;padding:2px 7px;border-radius:7px}
-.jmr{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.035);border-radius:8px;padding:8px 8px;margin-bottom:5px}
-.jmr.sel{background:rgba(232,64,28,.1);border:1px solid rgba(232,64,28,.2)}
-.jme{width:30px;height:30px;border-radius:7px;background:rgba(232,64,28,.1);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
-.jmn{font-size:10px;font-weight:700;color:rgba(255,255,255,.8)}
-.jmp{font-size:9px;color:var(--ember);margin-top:1px}
-.jma{width:18px;height:18px;background:var(--fire);border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff;flex-shrink:0;margin-left:auto}
-
-/* jp2: Confirmed */
-.jp2{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:10px;text-align:center;padding:0 8px}
-.jp2-ck{width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#166038,#20c06e);display:flex;align-items:center;justify-content:center;font-size:18px;box-shadow:0 0 22px rgba(32,192,110,.28)}
-.jp2-t{font-size:12px;font-weight:700;color:rgba(255,255,255,.9)}
-.jp2-c{font-size:8.5px;color:rgba(255,255,255,.3)}
-.jp2-tag{background:rgba(32,192,110,.1);border:1px solid rgba(32,192,110,.25);color:#20c06e;padding:4px 10px;border-radius:12px;font-size:9.5px;font-weight:700}
-.jp2-bar{width:110px;height:2.5px;background:rgba(255,255,255,.06);border-radius:2px;overflow:hidden}
-.jp2-bar::after{content:'';display:block;height:100%;background:linear-gradient(90deg,#20c06e,#168f52);border-radius:2px;animation:bar-prog 3.5s ease infinite}
-
-/* jp3: Ready */
-.jp3{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:11px;text-align:center}
-.jp3-em{font-size:46px;animation:pop .55s cubic-bezier(.16,1,.3,1)}
-.jp3-t{font-size:14px;font-weight:800;color:rgba(255,255,255,.95)}
-.jp3-s{font-size:9.5px;color:rgba(255,255,255,.32);line-height:1.6}
-.jp3-tag{background:rgba(232,168,48,.09);border:1px solid rgba(232,168,48,.22);color:var(--gold);padding:4px 12px;border-radius:12px;font-size:9.5px;font-weight:700}
-
-/* Journey text */
-.j-text{padding-left:4px}
-.eye{font-size:11px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--fire);margin-bottom:16px}
-.j-dots{display:flex;gap:8px;margin-bottom:36px}
-.jd{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.1);transition:all .42s ease}
-.jd.on{background:var(--fire);width:30px;border-radius:4px}
-.j-steps{position:relative;height:252px}
-@media(max-width:860px){.j-steps{height:290px}}
-.jst{position:absolute;inset:0;opacity:0;transform:translateY(22px);transition:opacity .5s ease,transform .5s ease;pointer-events:none}
-.jst.on{opacity:1;transform:none;pointer-events:auto}
-.jnum{font-size:11px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:var(--fire);margin-bottom:14px}
-.jh2{font-size:clamp(28px,3.8vw,54px);font-weight:800;letter-spacing:-1.5px;line-height:1.05;color:var(--tx);margin-bottom:18px;text-wrap:balance}
-.jp-copy{font-size:15px;color:var(--dim);line-height:1.72;max-width:430px}
-
-/* ─── RESTAURANT section (cream) ─────────────────────────── */
-.restaurant{padding:var(--sec) 0;background:var(--cream);color:var(--ink)}
-.restaurant .eye{color:var(--fire)}
-
-.r-grid{display:grid;grid-template-columns:1fr 1fr;gap:clamp(32px,6vw,80px);align-items:start;margin-top:0}
-@media(max-width:840px){.r-grid{grid-template-columns:1fr}}
-
-.r-title{font-size:clamp(38px,5.5vw,66px);font-weight:800;letter-spacing:-2px;line-height:1.0;text-wrap:balance;color:var(--ink);margin-bottom:14px}
-.r-sub{font-size:16px;color:var(--ink2);line-height:1.7;margin-bottom:44px;max-width:460px}
-.r-stats{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.rs{background:var(--cream2);border-radius:var(--r);padding:24px 22px;border:1px solid rgba(27,20,12,.07)}
-.rs-num{font-size:42px;font-weight:800;letter-spacing:-2px;line-height:1;background:linear-gradient(135deg,var(--fire),var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:4px}
-.rs-lbl{font-size:12px;color:var(--ink2);font-weight:600;line-height:1.4}
-
-.r-benefits{display:flex;flex-direction:column;gap:0;border:1px solid rgba(27,20,12,.08);border-radius:var(--r);overflow:hidden}
-.rb{padding:22px 26px;display:flex;align-items:flex-start;gap:16px;border-bottom:1px solid rgba(27,20,12,.06);transition:background .3s}
-.rb:last-child{border-bottom:none}
-.rb:hover{background:rgba(232,64,28,.03)}
-.rb-ico{font-size:20px;flex-shrink:0;margin-top:1px}
-.rb-h{font-size:15px;font-weight:700;color:var(--ink);margin-bottom:4px;letter-spacing:-.2px}
-.rb-p{font-size:13px;color:var(--ink2);line-height:1.6}
-
-/* ─── CTA ────────────────────────────────────────────────── */
-.cta{padding:var(--sec) 24px;background:var(--noir2);text-align:center;position:relative;overflow:hidden}
-.cta-g1{position:absolute;width:700px;height:700px;border-radius:50%;background:radial-gradient(circle,rgba(232,64,28,.16),transparent 65%);top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;animation:ring-drift 15s ease-in-out infinite}
-.cta-g2{position:absolute;width:400px;height:400px;border-radius:50%;background:radial-gradient(circle,rgba(232,168,48,.1),transparent 65%);top:20%;right:12%;pointer-events:none;animation:ring-drift 20s 2.5s ease-in-out infinite reverse}
-.cta-g3{position:absolute;width:300px;height:300px;border-radius:50%;background:radial-gradient(circle,rgba(245,122,40,.09),transparent 65%);bottom:10%;left:8%;pointer-events:none;animation:ring-drift 24s 5s ease-in-out infinite}
-.cta-in{position:relative;z-index:2;max-width:760px;margin:auto}
-.cta-in h2{font-size:clamp(44px,7.5vw,90px);font-weight:800;letter-spacing:clamp(-2px,-0.03em,-4.5px);line-height:.95;color:var(--tx);margin-bottom:26px;text-wrap:balance}
-.cta-in h2 .gd{background:linear-gradient(100deg,var(--fire),var(--ember),var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-.cta-in p{font-size:17px;color:var(--dim);max-width:440px;margin:0 auto 50px;line-height:1.7}
-.cta-btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
-
-/* ─── Footer ─────────────────────────────────────────────── */
-footer{background:#060504;border-top:1px solid rgba(255,255,255,.04);padding:32px var(--pad);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px}
-.fb{display:flex;align-items:center;gap:8px;font-weight:800;font-size:15px;color:var(--tx);text-decoration:none}
-.fb img{height:19px}
-.fl{display:flex;gap:18px;flex-wrap:wrap}
-.fl a{color:var(--dim);text-decoration:none;font-size:13px;font-weight:500;transition:color .2s}
-.fl a:hover{color:rgba(237,229,213,.7)}
-.fc2{width:100%;text-align:center;font-size:12px;color:rgba(255,255,255,.12);padding-top:16px;border-top:1px solid rgba(255,255,255,.04)}
-@media(max-width:600px){footer{padding:26px 22px}}
-
-/* ─── Entrance helpers ───────────────────────────────────── */
-.js-show{opacity:0;transform:translateY(26px);transition:opacity .68s ease,transform .68s ease}
-.js-show-l{opacity:0;transform:translateX(-20px);transition:opacity .68s ease,transform .68s ease}
-.js-show-r{opacity:0;transform:translateX(20px);transition:opacity .68s ease,transform .68s ease}
-.js-show.vis,.js-show-l.vis,.js-show-r.vis{opacity:1;transform:none}
-.d1{transition-delay:.06s}.d2{transition-delay:.12s}.d3{transition-delay:.18s}
-.d4{transition-delay:.24s}.d5{transition-delay:.30s}
-
-@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+@media(min-width:1200px){
+  .hero-inner{gap:80px}
+  .food-cards{flex:0 0 500px}
+}
 </style>
 </head>
 <body>
 
-<div id="cur"></div><div id="cur2"></div>
-
-<!-- ─── NAV ───────────────────────────────────────────────── -->
-<nav id="nav">
-  <a class="nbrand" href="/"><img src="/logo.png" alt="Avenzo"> AVENZO</a>
-  <ul class="nlinks">
-    <li><a href="#journey">How it works</a></li>
-    <li><a href="#restaurant">For restaurants</a></li>
-    <li><a href="/restaurant-interest.html" class="npill">List your restaurant</a></li>
-    <li><a href="/login.html">Sign in</a></li>
-  </ul>
-  <button class="nmob" onclick="location.href='/login.html'">Sign in</button>
+<!-- NAV -->
+<nav class="nav" id="mainNav">
+  <div class="nav-logo">
+    <img src="/logo.png" alt="Avenzo logo">
+    <span>AVENZO</span>
+  </div>
+  <a class="nav-cta" href="/customer-restaurants.html">Order now</a>
 </nav>
 
-<!-- ─── HERO ──────────────────────────────────────────────── -->
-<section class="hero" id="hero">
-  <canvas id="bg-canvas"></canvas>
-  <div class="h-ring"></div><div class="h-ring2"></div>
+<!-- ══════════════════════════════════════
+     HERO
+══════════════════════════════════════ -->
+<section class="hero">
+  <div class="hero-glow" aria-hidden="true"></div>
 
-  <div class="h-inner">
-    <!-- LEFT -->
-    <div class="h-left">
-      <div class="h-brand">
-        <img src="/logo.png" alt="Avenzo">
-        <span class="h-brand-name">AVENZO</span>
-      </div>
-
-      <div class="h-badge"><span class="h-pulse"></span>Contactless Table Ordering</div>
-
-      <h1 class="h-title">
-        <span class="line"><span class="w" style="--d:.08s">Your menu.</span></span>
-        <span class="line"><span class="w" style="--d:.2s">Your phone.</span></span>
-        <span class="line"><span class="w g" style="--d:.32s">Instantly.</span></span>
+  <div class="hero-inner">
+    <!-- Text -->
+    <div class="hero-text">
+      <div class="hero-badge">🍽️ &nbsp;Table ordering, reimagined</div>
+      <h1 class="hero-h1">
+        Scan.<br>
+        Order.<br>
+        <span class="grad">Enjoy.</span>
       </h1>
-
-      <p class="h-sub">Scan the QR at your table, browse the full menu, and order right from your phone — no app to download, no waiter to flag down.</p>
-
-      <div class="h-btns">
-        <a class="btn-fire" href="/restaurant-interest.html"><span>List your restaurant</span><span>→</span></a>
-        <a class="btn-out" href="#journey">How it works</a>
+      <p class="hero-sub">
+        Scan the QR at your table, browse the full menu with photos, and order in seconds. No app. No waiting in line.
+      </p>
+      <div class="hero-actions">
+        <a class="btn btn-primary" href="/customer-restaurants.html">Browse restaurants →</a>
+        <a class="btn btn-secondary" href="/signup.html">For restaurants</a>
       </div>
     </div>
 
-    <!-- RIGHT: Live phone demo -->
-    <div class="h-right">
-      <div class="h-demo-wrap">
-        <!-- Floating tags -->
-        <div class="h-qr-tag">
-          <div class="qr-mini">
-            <div class="qm"></div><div class="qe"></div><div class="qm"></div><div class="qm"></div>
-            <div class="qm"></div><div class="qe"></div><div class="qm"></div><div class="qe"></div>
-            <div class="qe"></div><div class="qm"></div><div class="qm"></div><div class="qe"></div>
-            <div class="qm"></div><div class="qm"></div><div class="qe"></div><div class="qm"></div>
-          </div>
-          <span>Scan to order</span>
-        </div>
-        <div class="h-speed-tag"><span>⚡ Kitchen notified</span></div>
-
-        <!-- Phone -->
-        <div class="demo-phone">
-          <div class="dp-shell">
-            <div class="dp-notch"></div>
-            <div class="dp-screen">
-
-              <!-- State 0: Scan QR -->
-              <div class="dp on" id="dp0">
-                <div class="dp0-inner">
-                  <div class="scan-label">Point camera at table QR</div>
-                  <div class="scan-frame">
-                    <div class="scan-grid">
-                      <div class="sg"></div><div class="se"></div><div class="sg"></div><div class="se"></div><div class="sg"></div>
-                      <div class="se"></div><div class="sg"></div><div class="se"></div><div class="sg"></div><div class="se"></div>
-                      <div class="sg"></div><div class="se"></div><div class="se"></div><div class="se"></div><div class="sg"></div>
-                      <div class="se"></div><div class="sg"></div><div class="sg"></div><div class="se"></div><div class="se"></div>
-                      <div class="sg"></div><div class="se"></div><div class="sg"></div><div class="se"></div><div class="sg"></div>
-                    </div>
-                    <div class="scan-line"></div>
-                  </div>
-                  <div class="scan-tip">Scanning…</div>
-                </div>
-              </div>
-
-              <!-- State 1: Menu -->
-              <div class="dp" id="dp1">
-                <div class="dp1-head">
-                  <span class="dp1-rest">Spice Garden</span>
-                  <span class="dp1-cart">Cart (1)</span>
-                </div>
-                <div class="mi"><div class="mi-em">🍛</div><div style="flex:1"><div class="mi-n">Chicken Biryani</div><div class="mi-p">₹ 320</div></div><div class="mi-add">+</div></div>
-                <div class="mi active"><div class="mi-em">🍕</div><div style="flex:1"><div class="mi-n">Paneer Pizza</div><div class="mi-p">₹ 260</div></div><div class="mi-add" style="background:var(--ember)">✓</div></div>
-                <div class="mi"><div class="mi-em">☕</div><div style="flex:1"><div class="mi-n">Filter Coffee</div><div class="mi-p">₹ 70</div></div><div class="mi-add">+</div></div>
-                <div class="mi"><div class="mi-em">🥗</div><div style="flex:1"><div class="mi-n">Garden Salad</div><div class="mi-p">₹ 190</div></div><div class="mi-add">+</div></div>
-                <div class="mi"><div class="mi-em">🍰</div><div style="flex:1"><div class="mi-n">Gulab Jamun</div><div class="mi-p">₹ 120</div></div><div class="mi-add">+</div></div>
-              </div>
-
-              <!-- State 2: Confirmed -->
-              <div class="dp" id="dp2">
-                <div class="dp2-inner">
-                  <div class="dp2-check">✓</div>
-                  <div class="dp2-t">Order Confirmed!</div>
-                  <div class="dp2-c">Order #SG-117 &nbsp;·&nbsp; Code 3842</div>
-                  <div class="dp2-tag">⚡ Kitchen notified</div>
-                  <div class="dp2-bar"></div>
-                  <div class="dp2-c" style="margin-top:4px">Preparing your order…</div>
-                </div>
-              </div>
-
-              <!-- State 3: Ready -->
-              <div class="dp" id="dp3">
-                <div class="dp3-inner">
-                  <div class="dp3-em">🍽️</div>
-                  <div class="dp3-t">Your food is ready!</div>
-                  <div class="dp3-s">Order #SG-117<br>Ready at your table.</div>
-                  <div class="dp3-tag">⭐ Rate your meal</div>
-                </div>
-              </div>
-
-            </div>
-          </div>
-        </div>
-
-        <!-- Steam below phone -->
-        <div class="steam-group" aria-hidden="true">
-          <div class="steam st1"></div>
-          <div class="steam st2"></div>
-          <div class="steam st3"></div>
-        </div>
+    <!-- Food photos — scroll on mobile, animated grid on desktop -->
+    <div class="food-cards">
+      <div class="food-card">
+        <img
+          src="https://images.unsplash.com/photo-1585937421612-70a008356fbe?w=420&h=440&q=85&auto=format&fit=crop"
+          alt="Butter Chicken"
+          loading="eager"
+          width="420" height="440">
+        <div class="food-card-tag">Butter Chicken</div>
+      </div>
+      <div class="food-card">
+        <img
+          src="https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=420&h=440&q=85&auto=format&fit=crop"
+          alt="Biryani"
+          loading="eager"
+          width="420" height="440">
+        <div class="food-card-tag">Biryani</div>
+      </div>
+      <div class="food-card">
+        <img
+          src="https://images.unsplash.com/photo-1567188040759-fb8a883dc6d8?w=420&h=440&q=85&auto=format&fit=crop"
+          alt="Masala Dosa"
+          loading="eager"
+          width="420" height="440">
+        <div class="food-card-tag">Masala Dosa</div>
+      </div>
+      <div class="food-card">
+        <img
+          src="https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=420&h=440&q=85&auto=format&fit=crop"
+          alt="Dal Makhani"
+          loading="eager"
+          width="420" height="440">
+        <div class="food-card-tag">Dal Makhani</div>
       </div>
     </div>
   </div>
-
-  <div class="h-scroll"><div class="h-mouse"><div class="h-wheel"></div></div><span>Scroll</span></div>
 </section>
 
-<!-- ─── FOOD TICKER ────────────────────────────────────────── -->
-<div class="food-ticker" aria-hidden="true">
-  <div class="ft-track">
-    <span class="ft">Biryani</span><span class="ft-dot">◆</span>
-    <span class="ft">Dal Makhani</span><span class="ft-dot">◆</span>
-    <span class="ft">Butter Chicken</span><span class="ft-dot">◆</span>
-    <span class="ft">Masala Dosa</span><span class="ft-dot">◆</span>
-    <span class="ft">Chole Bhature</span><span class="ft-dot">◆</span>
-    <span class="ft">Paneer Tikka</span><span class="ft-dot">◆</span>
-    <span class="ft">Margherita</span><span class="ft-dot">◆</span>
-    <span class="ft">Gulab Jamun</span><span class="ft-dot">◆</span>
-    <span class="ft">Pav Bhaji</span><span class="ft-dot">◆</span>
-    <span class="ft">Rajma Chawal</span><span class="ft-dot">◆</span>
-    <span class="ft">Filter Coffee</span><span class="ft-dot">◆</span>
-    <span class="ft">Tiramisu</span><span class="ft-dot">◆</span>
-    <span class="ft">Biryani</span><span class="ft-dot">◆</span>
-    <span class="ft">Dal Makhani</span><span class="ft-dot">◆</span>
-    <span class="ft">Butter Chicken</span><span class="ft-dot">◆</span>
-    <span class="ft">Masala Dosa</span><span class="ft-dot">◆</span>
-    <span class="ft">Chole Bhature</span><span class="ft-dot">◆</span>
-    <span class="ft">Paneer Tikka</span><span class="ft-dot">◆</span>
-    <span class="ft">Margherita</span><span class="ft-dot">◆</span>
-    <span class="ft">Gulab Jamun</span><span class="ft-dot">◆</span>
-    <span class="ft">Pav Bhaji</span><span class="ft-dot">◆</span>
-    <span class="ft">Rajma Chawal</span><span class="ft-dot">◆</span>
-    <span class="ft">Filter Coffee</span><span class="ft-dot">◆</span>
-    <span class="ft">Tiramisu</span><span class="ft-dot">◆</span>
+<!-- FOOD TICKER -->
+<div class="ticker" aria-hidden="true">
+  <div class="ticker-track">
+    <span class="ticker-item">Biryani</span><span class="ticker-dot">·</span>
+    <span class="ticker-item">Butter Chicken</span><span class="ticker-dot">·</span>
+    <span class="ticker-item">Masala Dosa</span><span class="ticker-dot">·</span>
+    <span class="ticker-item">Dal Makhani</span><span class="ticker-dot">·</span>
+    <span class="ticker-item">Paneer Tikka</span><span class="ticker-dot">·</span>
+    <span class="ticker-item">Chole Bhature</span><span class="ticker-dot">·</span>
+    <span class="ticker-item">Pav Bhaji</span><span class="ticker-dot">·</span>
+    <span class="ticker-item">Tandoori Chicken</span><span class="ticker-dot">·</span>
+    <span class="ticker-item">Gulab Jamun</span><span class="ticker-dot">·</span>
+    <!-- duplicate for seamless loop -->
+    <span class="ticker-item">Biryani</span><span class="ticker-dot">·</span>
+    <span class="ticker-item">Butter Chicken</span><span class="ticker-dot">·</span>
+    <span class="ticker-item">Masala Dosa</span><span class="ticker-dot">·</span>
+    <span class="ticker-item">Dal Makhani</span><span class="ticker-dot">·</span>
+    <span class="ticker-item">Paneer Tikka</span><span class="ticker-dot">·</span>
+    <span class="ticker-item">Chole Bhature</span><span class="ticker-dot">·</span>
+    <span class="ticker-item">Pav Bhaji</span><span class="ticker-dot">·</span>
+    <span class="ticker-item">Tandoori Chicken</span><span class="ticker-dot">·</span>
+    <span class="ticker-item">Gulab Jamun</span><span class="ticker-dot">·</span>
   </div>
 </div>
 
-<!-- ─── PAIN (cream) ──────────────────────────────────────── -->
-<section class="pain" id="pain">
-  <div style="max-width:1180px;margin:auto;padding:0 var(--pad)">
-    <div class="eye js-show">The problem we're solving</div>
-    <h2 class="pain-title js-show d1">The table experience<br>has been broken for decades.</h2>
-    <p class="pain-sub js-show d2">"Flag a waiter. Wait 10 minutes. Repeat your order twice. Get the wrong dish." — every restaurant, every day.</p>
+<!-- ══════════════════════════════════════
+     HOW IT WORKS
+══════════════════════════════════════ -->
+<section class="how">
+  <div class="sec-label">How it works</div>
+  <h2 class="sec-h">Three steps.<br>Zero friction.</h2>
+  <p class="sec-p">No app to download, no account needed. Works on every phone.</p>
 
-    <div class="pain-grid">
-      <div class="pain-card js-show d1">
-        <div class="pc-num">01</div>
-        <div class="pc-ico">⏳</div>
-        <h3>Waiting kills the experience</h3>
-        <p>Your food is in the kitchen but nobody told you. You're staring at an empty table, not knowing when it arrives.</p>
-      </div>
-      <div class="pain-card js-show d2">
-        <div class="pc-num">02</div>
-        <div class="pc-ico">📝</div>
-        <h3>Orders get lost in translation</h3>
-        <p>Waiter hears "chicken" instead of "paneer." Noisy floor, scribbled notes, wrong food — it happens every shift.</p>
-      </div>
-      <div class="pain-card js-show d3">
-        <div class="pc-num">03</div>
-        <div class="pc-ico">😤</div>
-        <h3>One bad experience, gone forever</h3>
-        <p>A frustrated customer doesn't complain. They leave, write a 2-star review, and book somewhere else next time.</p>
-      </div>
-    </div>
-
-    <div class="pain-bridge js-show">
-      <p class="bridge-line">Avenzo <span class="hi">fixes all three.</span><br>From the moment they sit down.</p>
-    </div>
-  </div>
-</section>
-
-<!-- ─── JOURNEY (dark, sticky) ────────────────────────────── -->
-<section class="journey" id="journey">
-  <div class="j-pin" id="jpin">
-    <div class="j-sticky">
-      <div class="j-inner">
-
-        <div class="j-phone-col">
-          <div class="j-phone" id="jph">
-            <div class="jp-shell">
-              <div class="jp-notch"></div>
-              <div class="jp-screen">
-                <!-- step 0 -->
-                <div class="sp on" id="sp0">
-                  <div class="jp0">
-                    <div class="jp0-lbl">Point camera at table QR</div>
-                    <div class="jp0-frame">
-                      <div class="jpf3"></div><div class="jpf4"></div>
-                      <div class="jp0-grid">
-                        <div class="jg"></div><div class="je"></div><div class="jg"></div><div class="je"></div><div class="jg"></div>
-                        <div class="je"></div><div class="jg"></div><div class="jg"></div><div class="je"></div><div class="je"></div>
-                        <div class="jg"></div><div class="je"></div><div class="je"></div><div class="jg"></div><div class="jg"></div>
-                        <div class="je"></div><div class="jg"></div><div class="je"></div><div class="je"></div><div class="jg"></div>
-                        <div class="jg"></div><div class="je"></div><div class="jg"></div><div class="jg"></div><div class="je"></div>
-                      </div>
-                      <div class="jp0-scan"></div>
-                    </div>
-                    <div class="jp0-hint">Scanning menu…</div>
-                  </div>
-                </div>
-                <!-- step 1 -->
-                <div class="sp" id="sp1">
-                  <div class="jp1-top"><span class="jp1-name">Spice Garden — Table 7</span><span class="jp1-badge">Cart (2)</span></div>
-                  <div class="jmr sel"><div class="jme">🍛</div><div style="flex:1"><div class="jmn">Chicken Biryani</div><div class="jmp">₹ 320</div></div><div class="jma">✓</div></div>
-                  <div class="jmr"><div class="jme">🍕</div><div style="flex:1"><div class="jmn">Paneer Pizza</div><div class="jmp">₹ 260</div></div><div class="jma">+</div></div>
-                  <div class="jmr sel"><div class="jme">☕</div><div style="flex:1"><div class="jmn">Filter Coffee</div><div class="jmp">₹ 70</div></div><div class="jma">✓</div></div>
-                  <div class="jmr"><div class="jme">🥗</div><div style="flex:1"><div class="jmn">Garden Salad</div><div class="jmp">₹ 190</div></div><div class="jma">+</div></div>
-                  <div class="jmr"><div class="jme">🍰</div><div style="flex:1"><div class="jmn">Gulab Jamun</div><div class="jmp">₹ 120</div></div><div class="jma">+</div></div>
-                </div>
-                <!-- step 2 -->
-                <div class="sp" id="sp2">
-                  <div class="jp2">
-                    <div class="jp2-ck">✓</div>
-                    <div class="jp2-t">Order Confirmed!</div>
-                    <div class="jp2-c">Order #SG-117 · Code 3842</div>
-                    <div class="jp2-tag">⚡ Kitchen notified</div>
-                    <div class="jp2-bar"></div>
-                    <div class="jp2-c" style="margin-top:6px">Preparing your order…</div>
-                  </div>
-                </div>
-                <!-- step 3 -->
-                <div class="sp" id="sp3">
-                  <div class="jp3">
-                    <div class="jp3-em">🍽️</div>
-                    <div class="jp3-t">Your food is ready!</div>
-                    <div class="jp3-s">Order #SG-117<br>Ready at your table.</div>
-                    <div class="jp3-tag">⭐ Rate your experience</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="j-text">
-          <div class="eye">How it works</div>
-          <div class="j-dots">
-            <div class="jd on" id="jd0"></div>
-            <div class="jd" id="jd1"></div>
-            <div class="jd" id="jd2"></div>
-            <div class="jd" id="jd3"></div>
-          </div>
-          <div class="j-steps">
-            <div class="jst on" id="js0">
-              <div class="jnum">Step 01 — Arrive</div>
-              <h2 class="jh2">Scan the QR<br>at your table</h2>
-              <p class="jp-copy">No app to install. No account to create. Open your camera, point it at the QR on the table, and the full menu opens instantly in your browser.</p>
-            </div>
-            <div class="jst" id="js1">
-              <div class="jnum">Step 02 — Browse</div>
-              <h2 class="jh2">Take your time.<br>Order when ready.</h2>
-              <p class="jp-copy">Browse every dish, see prices, add to your cart. No waiter hovering. No pressure. You're in control of your own pace.</p>
-            </div>
-            <div class="jst" id="js2">
-              <div class="jnum">Step 03 — Order</div>
-              <h2 class="jh2">Kitchen gets it<br>the instant you confirm</h2>
-              <p class="jp-copy">Tap confirm and your order lands on the kitchen display in milliseconds — exact, clear, and in sequence. Zero noise, zero errors.</p>
-            </div>
-            <div class="jst" id="js3">
-              <div class="jnum">Step 04 — Enjoy</div>
-              <h2 class="jh2">Food arrives.<br>Everyone's happy.</h2>
-              <p class="jp-copy">Track your order live. Get notified the moment it's ready. No mystery, no stress — just the experience dining should always feel like.</p>
-            </div>
-          </div>
-        </div>
-
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ─── RESTAURANT (cream) ─────────────────────────────────── -->
-<section class="restaurant" id="restaurant">
-  <div style="max-width:1180px;margin:auto;padding:0 var(--pad)">
-    <div class="eye js-show">For restaurant owners</div>
-    <div class="r-grid">
+  <div class="steps">
+    <div class="step r">
+      <div class="step-ico">📱</div>
       <div>
-        <h2 class="r-title js-show d1">More orders.<br>Same team.</h2>
-        <p class="r-sub js-show d2">When your staff stops taking orders and starts focused on serving, you handle more tables without hiring more people.</p>
-        <div class="r-stats js-show d3">
-          <div class="rs"><div class="rs-num" data-to="3" data-sfx="×">0×</div><div class="rs-lbl">Faster ordering vs flagging a waiter</div></div>
-          <div class="rs"><div class="rs-num" data-txt="Zero">Zero</div><div class="rs-lbl">Order errors — ever</div></div>
-          <div class="rs"><div class="rs-num" data-to="24" data-sfx="h">0h</div><div class="rs-lbl">Setup time for your restaurant</div></div>
-          <div class="rs"><div class="rs-num" data-to="100" data-sfx="%">0%</div><div class="rs-lbl">Web-based — nothing to install</div></div>
-        </div>
+        <h3>Scan the table QR</h3>
+        <p>Every table has its own QR code. Point your camera and tap — nothing to install.</p>
       </div>
-
-      <div class="r-benefits js-show-r d2">
-        <div class="rb">
-          <div class="rb-ico">⚡</div>
-          <div>
-            <div class="rb-h">Instant kitchen tickets</div>
-            <p class="rb-p">Every order hits your kitchen display the moment it's placed. No relay, no miscommunication — just a clean queue of what to cook next.</p>
-          </div>
-        </div>
-        <div class="rb">
-          <div class="rb-ico">📊</div>
-          <div>
-            <div class="rb-h">Live order dashboard</div>
-            <p class="rb-p">See every table's order status in real time. Pending, preparing, ready — one clear view for your whole kitchen team.</p>
-          </div>
-        </div>
-        <div class="rb">
-          <div class="rb-ico">📱</div>
-          <div>
-            <div class="rb-h">Zero app friction for your customers</div>
-            <p class="rb-p">Your customers order from a browser. No downloads, no logins required — they just scan and order, like it should be.</p>
-          </div>
-        </div>
-        <div class="rb">
-          <div class="rb-ico">💳</div>
-          <div>
-            <div class="rb-h">Payments built in</div>
-            <p class="rb-p">Razorpay checkout is built right in. Online, in-person, or bill later — every payment scenario handled without extra integrations.</p>
-          </div>
-        </div>
+    </div>
+    <div class="step r">
+      <div class="step-ico">🍛</div>
+      <div>
+        <h3>Browse &amp; order</h3>
+        <p>See the full menu with photos and prices. Pick your dishes and confirm in a few taps.</p>
+      </div>
+    </div>
+    <div class="step r">
+      <div class="step-ico">⚡</div>
+      <div>
+        <h3>Track in real time</h3>
+        <p>Watch your order move from the kitchen to your table. Get notified the moment it's ready.</p>
       </div>
     </div>
   </div>
 </section>
 
-<!-- ─── CTA ───────────────────────────────────────────────── -->
-<section class="cta" id="cta">
-  <div class="cta-g1"></div><div class="cta-g2"></div><div class="cta-g3"></div>
-  <div class="cta-in js-show">
-    <div class="eye" style="display:block;text-align:center;margin-bottom:22px">Get started</div>
-    <h2>Your restaurant,<br><span class="gd">running smarter.</span></h2>
-    <p>Join Avenzo. Your customers will feel the difference from the very first scan.</p>
-    <div class="cta-btns">
-      <a class="btn-fire" href="/restaurant-interest.html"><span>Partner with Avenzo</span><span>→</span></a>
-      <a class="btn-out" href="/login.html">Sign in to dashboard</a>
+<!-- ══════════════════════════════════════
+     FOOD PHOTO SHOWCASE
+══════════════════════════════════════ -->
+<section class="showcase">
+  <div class="head r">
+    <div class="sec-label" style="color:var(--ember)">On the menu</div>
+    <h2 class="sec-h">Food that deserves to be seen</h2>
+    <p class="sec-p">Restaurants show their dishes with photos you actually want to scroll through.</p>
+  </div>
+  <div class="reel">
+    <div class="reel-card">
+      <img src="https://images.unsplash.com/photo-1585937421612-70a008356fbe?w=560&h=680&q=85&auto=format&fit=crop"
+           alt="Butter Chicken" loading="lazy" width="560" height="680">
+      <div class="cap"><strong>Butter Chicken</strong><small>North Indian</small></div>
+    </div>
+    <div class="reel-card">
+      <img src="https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=560&h=680&q=85&auto=format&fit=crop"
+           alt="Biryani" loading="lazy" width="560" height="680">
+      <div class="cap"><strong>Biryani</strong><small>Hyderabadi style</small></div>
+    </div>
+    <div class="reel-card">
+      <img src="https://images.unsplash.com/photo-1567188040759-fb8a883dc6d8?w=560&h=680&q=85&auto=format&fit=crop"
+           alt="Masala Dosa" loading="lazy" width="560" height="680">
+      <div class="cap"><strong>Masala Dosa</strong><small>South Indian</small></div>
+    </div>
+    <div class="reel-card">
+      <img src="https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=560&h=680&q=85&auto=format&fit=crop"
+           alt="Dal Makhani" loading="lazy" width="560" height="680">
+      <div class="cap"><strong>Dal Makhani</strong><small>North Indian</small></div>
+    </div>
+    <div class="reel-card">
+      <img src="https://images.unsplash.com/photo-1565557623262-b51c2513a641?w=560&h=680&q=85&auto=format&fit=crop"
+           alt="Tandoori" loading="lazy" width="560" height="680">
+      <div class="cap"><strong>Tandoori Platter</strong><small>Clay oven</small></div>
     </div>
   </div>
 </section>
 
-<!-- ─── FOOTER ────────────────────────────────────────────── -->
+<!-- ══════════════════════════════════════
+     RESTAURANT CTA
+══════════════════════════════════════ -->
+<section class="join">
+  <div class="sec-label" style="color:var(--ember)">For restaurant owners</div>
+  <h2>Your restaurant,<br><em>digital-first</em></h2>
+  <p>Add your menu with photos, print QR codes, and start taking orders today. No hardware. No monthly minimum.</p>
+  <div class="join-btns">
+    <a class="btn btn-primary" href="/signup.html">Get started free →</a>
+    <a class="btn btn-secondary" href="/restaurant-login.html">Partner login</a>
+  </div>
+</section>
+
+<!-- FOOTER -->
 <footer>
-  <a class="fb" href="/"><img src="/logo.png" alt="Avenzo"> AVENZO</a>
-  <div class="fl">
-    <a href="/privacy.html">Privacy</a>
-    <a href="/terms.html">Terms</a>
-    <a href="/refund-policy.html">Refund Policy</a>
-    <a href="/restaurant-interest.html">List Restaurant</a>
-    <a href="/login.html">Sign In</a>
+  <div class="f-logo">
+    <img src="/logo.png" alt="Avenzo">
+    <span>AVENZO</span>
   </div>
-  <div class="fc2">&copy; 2026 Avenzo — Dine-in ordering, made joyful</div>
+  <p class="f-copy">© 2025 Avenzo · Built for the dine-in world</p>
 </footer>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
 <script>
-/* ─── Canvas food particles ──────────────────────────────── */
-(function(){
-  const canvas = document.getElementById('bg-canvas');
-  if(!canvas) return;
-  const ctx = canvas.getContext('2d');
-  let W, H, raf;
-  const COLS = ['#E8401C','#F57A28','#E8A830','#28C97E','#C44018','#F59830'];
-  const N = 20;
-  const pts = [];
+  /* Nav scroll class */
+  const nav = document.getElementById('mainNav');
+  window.addEventListener('scroll', () => {
+    nav.classList.toggle('on', window.scrollY > 48);
+  }, {passive: true});
 
-  function resize(){ W = canvas.width = canvas.offsetWidth; H = canvas.height = canvas.offsetHeight; }
-  window.addEventListener('resize', resize, {passive:true}); resize();
-
-  for(let i=0;i<N;i++){
-    pts.push({
-      x: Math.random()*1000, y: Math.random()*800,
-      r: Math.random()*2.6+0.7, c: COLS[~~(Math.random()*COLS.length)],
-      vx:(Math.random()-.5)*.3, vy:-(Math.random()*.55+.22),
-      a:Math.random()*.17+.04, life:0, max:Math.random()*480+320, init:true
+  /* Scroll reveal */
+  const io = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
     });
-  }
-
-  function draw(){
-    if(document.hidden){ raf=requestAnimationFrame(draw); return; }
-    ctx.clearRect(0,0,W,H);
-    pts.forEach(p=>{
-      p.x+=p.vx; p.y+=p.vy; p.life++;
-      const fade=1-Math.max(0,(p.life-p.max*.72)/(p.max*.28));
-      ctx.globalAlpha=p.a*fade;
-      ctx.fillStyle=p.c;
-      ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2); ctx.fill();
-      if(p.life>p.max||p.y<-8){
-        p.x=Math.random()*W; p.y=H+5;
-        p.r=Math.random()*2.6+0.7; p.c=COLS[~~(Math.random()*COLS.length)];
-        p.vx=(Math.random()-.5)*.3; p.vy=-(Math.random()*.55+.22);
-        p.a=Math.random()*.17+.04; p.life=0; p.max=Math.random()*480+320;
-      }
-    });
-    ctx.globalAlpha=1;
-    raf=requestAnimationFrame(draw);
-  }
-  const io=new IntersectionObserver(en=>en.forEach(e=>e.isIntersecting?raf=requestAnimationFrame(draw):cancelAnimationFrame(raf)));
-  io.observe(document.getElementById('hero'));
-})();
-
-/* ─── Hero phone demo: auto-cycle ───────────────────────────  */
-(function(){
-  const TOTAL=4; let s=0;
-  function next(){
-    document.getElementById('dp'+s).classList.remove('on');
-    s=(s+1)%TOTAL;
-    document.getElementById('dp'+s).classList.add('on');
-  }
-  setInterval(next, 2600);
-})();
-
-/* ─── Cursor ─────────────────────────────────────────────── */
-const cur=document.getElementById('cur'), cur2=document.getElementById('cur2');
-if(cur&&window.matchMedia('(pointer:fine)').matches){
-  let mx=0,my=0,cx=0,cy=0;
-  document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;cur2.style.left=mx+'px';cur2.style.top=my+'px'});
-  (function loop(){cx+=(mx-cx)*.12;cy+=(my-cy)*.12;cur.style.left=cx+'px';cur.style.top=cy+'px';requestAnimationFrame(loop)})();
-  document.querySelectorAll('a,button,.pain-card,.rb,.rs').forEach(el=>{
-    el.addEventListener('mouseenter',()=>document.body.classList.add('cur-on'));
-    el.addEventListener('mouseleave',()=>document.body.classList.remove('cur-on'));
-  });
-}
-
-/* ─── Nav ────────────────────────────────────────────────── */
-const navEl=document.getElementById('nav');
-window.addEventListener('scroll',()=>navEl.classList.toggle('nav-on',scrollY>44),{passive:true});
-
-/* ─── IntersectionObserver reveals ──────────────────────────  */
-const reveal=new IntersectionObserver(en=>{
-  en.forEach(e=>{if(e.isIntersecting){e.target.classList.add('vis');reveal.unobserve(e.target);}});
-},{threshold:.1,rootMargin:'0px 0px -36px 0px'});
-document.querySelectorAll('.js-show,.js-show-l,.js-show-r').forEach(el=>reveal.observe(el));
-
-/* ─── Journey: native scroll ─────────────────────────────── */
-(function(){
-  const pin=document.getElementById('jpin'); if(!pin) return;
-  let cur=0;
-  function set(n){
-    if(n===cur) return;
-    ['sp','js','jd'].forEach(p=>{
-      document.getElementById(p+cur).classList.remove('on');
-      document.getElementById(p+n).classList.add('on');
-    }); cur=n;
-  }
-  function tick(){
-    const r=pin.getBoundingClientRect(), scrolled=Math.max(0,-r.top), total=pin.offsetHeight-innerHeight;
-    if(total>0) set(Math.min(3,Math.floor(scrolled/total*4)));
-  }
-  window.addEventListener('scroll',tick,{passive:true}); tick();
-})();
-
-/* ─── GSAP enhancements ──────────────────────────────────── */
-if(typeof gsap!=='undefined'){
-  gsap.registerPlugin(ScrollTrigger);
-
-  /* Phone entrance */
-  ScrollTrigger.create({trigger:'#journey',start:'top 62%',once:true,
-    onEnter(){gsap.fromTo('#jph',{opacity:0,y:50,rotateY:-15},{opacity:1,y:0,rotateY:0,duration:1.1,ease:'power3.out'});}
-  });
-
-  /* Stats count-up */
-  ScrollTrigger.create({trigger:'#restaurant',start:'top 72%',once:true,
-    onEnter(){
-      document.querySelectorAll('[data-to]').forEach(el=>{
-        const to=+el.dataset.to, sfx=el.dataset.sfx||'';
-        gsap.to({v:0},{v:to,duration:1.5,ease:'power2.out',
-          onUpdate(){el.textContent=Math.round(this.targets()[0].v)+sfx;}});
-      });
-    }
-  });
-
-  /* Card 3D tilt */
-  document.querySelectorAll('.pain-card').forEach(c=>{
-    c.addEventListener('mousemove',e=>{
-      const r=c.getBoundingClientRect();
-      gsap.to(c,{rotateY:((e.clientX-r.left)/r.width-.5)*9,rotateX:-((e.clientY-r.top)/r.height-.5)*9,transformPerspective:700,duration:.22,ease:'power2.out'});
-    });
-    c.addEventListener('mouseleave',()=>gsap.to(c,{rotateX:0,rotateY:0,duration:.45,ease:'power2.out'}));
-  });
-
-  window.addEventListener('load',()=>ScrollTrigger.refresh());
-}
+  }, {threshold: 0.1, rootMargin: '0px 0px -20px 0px'});
+  document.querySelectorAll('.r').forEach(el => io.observe(el));
 </script>
 </body>
 </html>
