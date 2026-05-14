@@ -19,11 +19,11 @@
   --cr:#fefdf9; --r:16px;
 }
 
-html{overflow-x:hidden}
+html{overflow-x:clip}
 body{
   font-family:'Inter',sans-serif;
   background:var(--d1); color:var(--cr);
-  overflow-x:hidden; cursor:none;
+  overflow-x:clip; cursor:none;
 }
 @media(pointer:coarse){body{cursor:auto}#cur,#cur2{display:none}}
 
@@ -689,25 +689,31 @@ if (typeof gsap !== 'undefined' && typeof ScrollTrigger !== 'undefined') {
     document.getElementById('jd'+n).classList.add('on');
   }
 
-  /* Phone entrance when section scrolls into view */
-  gsap.set('#jph', { opacity:0, y:48, rotateY:-12 });
+  /* Phone entrance — fromTo so phone is visible if ScrollTrigger misfires */
   ScrollTrigger.create({
     trigger: '#journey', start: 'top 60%', once: true,
-    onEnter(){ gsap.to('#jph',{opacity:1,y:0,rotateY:0,duration:1,ease:'power3.out'}); }
+    onEnter(){ gsap.fromTo('#jph',{opacity:0,y:48,rotateY:-12},{opacity:1,y:0,rotateY:0,duration:1,ease:'power3.out'}); }
   });
 
-  /* Step switching — scrub on the full pinned container */
-  ScrollTrigger.create({
-    trigger: '#jpin', start: 'top top', end: 'bottom bottom',
-    onUpdate(self) { toStep(Math.min(3, Math.floor(self.progress * 4))); }
-  });
+  /* Step switching — native scroll listener (reliable in all browsers / deployments) */
+  (function(){
+    const pin = document.getElementById('jpin');
+    function onScroll(){
+      const rect = pin.getBoundingClientRect();
+      const scrolled = Math.max(0, -rect.top);
+      const total = pin.offsetHeight - window.innerHeight;
+      if (total <= 0) return;
+      toStep(Math.min(3, Math.floor((scrolled / total) * 4)));
+    }
+    window.addEventListener('scroll', onScroll, { passive:true });
+    onScroll();
+  })();
 
   /* ── Feature cards — scroll entrance + 3D tilt ─────────────────── */
-  gsap.set('.fc', { opacity:0, y:30 });
   document.querySelectorAll('.fc').forEach((c,i) => {
     ScrollTrigger.create({
       trigger:c, start:'top 88%', once:true,
-      onEnter(){ gsap.to(c,{opacity:1,y:0,duration:.5,delay:(i%3)*.07,ease:'power3.out'}); }
+      onEnter(){ gsap.fromTo(c,{opacity:0,y:30},{opacity:1,y:0,duration:.5,delay:(i%3)*.07,ease:'power3.out'}); }
     });
     c.addEventListener('mousemove', e => {
       const r = c.getBoundingClientRect();
@@ -723,10 +729,9 @@ if (typeof gsap !== 'undefined' && typeof ScrollTrigger !== 'undefined') {
   });
 
   /* ── How it works — scroll entrance + draggable ─────────────────── */
-  gsap.set('.hc', { opacity:0, x:36 });
   ScrollTrigger.create({
     trigger:'.how', start:'top 65%', once:true,
-    onEnter(){ gsap.to('.hc',{opacity:1,x:0,duration:.5,stagger:.07,ease:'power3.out'}); }
+    onEnter(){ gsap.fromTo('.hc',{opacity:0,x:36},{opacity:1,x:0,duration:.5,stagger:.07,ease:'power3.out'}); }
   });
   (function(){
     const w = document.getElementById('hwrap');
@@ -737,11 +742,10 @@ if (typeof gsap !== 'undefined' && typeof ScrollTrigger !== 'undefined') {
   })();
 
   /* ── Benefits — scroll entrance ──────────────────────────────────── */
-  gsap.set('.bi', { opacity:0, x:-16 });
   document.querySelectorAll('.bi').forEach((el,i) => {
     ScrollTrigger.create({
       trigger:el, start:'top 87%', once:true,
-      onEnter(){ gsap.to(el,{opacity:1,x:0,duration:.48,delay:(i%2)*.09,ease:'power2.out'}); }
+      onEnter(){ gsap.fromTo(el,{opacity:0,x:-16},{opacity:1,x:0,duration:.48,delay:(i%2)*.09,ease:'power2.out'}); }
     });
   });
 
@@ -754,10 +758,9 @@ if (typeof gsap !== 'undefined' && typeof ScrollTrigger !== 'undefined') {
   });
 
   /* ── CTA ──────────────────────────────────────────────────────────── */
-  gsap.set('#ci > *', { opacity:0, y:20 });
   ScrollTrigger.create({
     trigger:'#ci', start:'top 72%', once:true,
-    onEnter(){ gsap.to('#ci > *',{opacity:1,y:0,duration:.6,stagger:.12,ease:'power3.out'}); }
+    onEnter(){ gsap.fromTo('#ci > *',{opacity:0,y:20},{opacity:1,y:0,duration:.6,stagger:.12,ease:'power3.out'}); }
   });
 
   /* Refresh after all layout is calculated */
