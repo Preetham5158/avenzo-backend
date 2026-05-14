@@ -1,278 +1,314 @@
 <!DOCTYPE html>
-<html>
-
+<html lang="en">
 <head>
-  <title>Avenzo My Orders</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/assets/app.css">
+  <title>Avenzo — My Orders</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <script>try{if(localStorage.getItem('avenzo-theme')==='light')document.documentElement.classList.add('light')}catch(e){}</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
-    .order-controls {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr);
-      gap: 10px;
-    }
+    :root{--bg:#09080A;--bg-2:#131118;--bg-3:#1C1A22;--bg-4:#252230;--tx:#F5ECD7;--tx-2:#BEB09A;--tx-3:#6E6258;--brand:#E8401C;--brand-d:#C43318;--brand-soft:rgba(232,64,28,0.12);--line:rgba(255,255,255,0.07);--glass:rgba(9,8,10,0.84);--success:#27C96B;--warn:#E8A53A;--danger:#E8401C;--r:16px;--r-sm:11px;--nav-h:60px;--bn-h:66px}
+    html.light{--bg:#FAFAF8;--bg-2:#F2EEE5;--bg-3:#EAE4D9;--bg-4:#DDD6C8;--tx:#1A1008;--tx-2:#5C4F3C;--tx-3:#9A8B7A;--line:rgba(0,0,0,0.08);--glass:rgba(250,250,248,0.90)}
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}html{-webkit-font-smoothing:antialiased}
+    body{font-family:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg);color:var(--tx);padding-bottom:var(--bn-h);min-height:100dvh}
+    a{color:inherit;text-decoration:none}button,input{font:inherit;border:0;outline:none;background:none;color:inherit;cursor:pointer}
 
-    .order-card {
-      display: grid;
-      gap: 12px;
-    }
+    .toast{position:fixed;left:50%;bottom:calc(var(--bn-h)+14px);z-index:999;transform:translateX(-50%) translateY(10px);background:var(--bg-4);color:var(--tx);padding:9px 20px;border-radius:99px;font-size:13px;font-weight:600;border:1px solid var(--line);box-shadow:0 8px 32px rgba(0,0,0,0.5);opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;white-space:nowrap}
+    .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
-    .order-meta {
-      display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 10px;
-    }
+    .c-nav{position:sticky;top:0;z-index:50;height:var(--nav-h);background:var(--glass);backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);border-bottom:1px solid var(--line)}
+    .c-nav-inner{height:100%;max-width:1160px;margin:0 auto;padding:0 22px;display:flex;align-items:center;gap:16px}
+    .c-logo{display:flex;align-items:center;gap:9px}.c-logo img{width:26px;height:26px;border-radius:7px}.c-logo span{font-size:16px;font-weight:800;letter-spacing:1.6px}
+    .c-dlinks{display:none;align-items:center;gap:2px;margin-left:8px}.c-dlinks a{padding:7px 13px;border-radius:8px;font-size:14px;font-weight:600;color:var(--tx-2);transition:color .12s,background .12s}.c-dlinks a:hover{color:var(--tx);background:var(--bg-3)}.c-dlinks a.on{color:var(--tx)}
+    .c-spacer{flex:1}
+    .c-umenu-wrap{position:relative}.c-ubtn{display:flex;align-items:center;gap:8px;padding:5px 12px 5px 8px;background:var(--bg-3);border:1px solid var(--line);border-radius:99px;cursor:pointer;transition:border-color .12s}.c-ubtn:hover{border-color:rgba(255,255,255,0.16)}.c-uav{width:28px;height:28px;border-radius:50%;background:var(--brand);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0}.c-uname{font-size:13px;font-weight:600;max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.c-ucaret{color:var(--tx-3)}
+    .c-udropdown{display:none;position:absolute;right:0;top:calc(100% + 8px);min-width:186px;background:var(--bg-3);border:1px solid var(--line);border-radius:var(--r-sm);box-shadow:0 16px 50px rgba(0,0,0,0.55);overflow:hidden;z-index:80}.c-udropdown.open{display:block}
+    .c-uinfo{padding:12px 14px;border-bottom:1px solid var(--line)}.c-uinfo strong{display:block;font-size:13px;margin-bottom:2px}.c-uinfo small{font-size:12px;color:var(--tx-3)}
+    .c-umitem{display:block;width:100%;padding:11px 14px;text-align:left;font-size:13px;font-weight:600;color:var(--tx-2);cursor:pointer;transition:background .1s,color .1s}.c-umitem:hover{background:var(--bg-4);color:var(--tx)}.c-umitem.red{color:var(--brand)}
 
-    .order-items {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
+    .c-wrap{max-width:1160px;margin:0 auto;padding:0 22px}
+    .c-hero{padding:28px 0 24px;background:radial-gradient(ellipse 60% 80% at 90% 110%,rgba(232,64,28,0.10) 0%,transparent 55%),var(--bg);border-bottom:1px solid var(--line)}
+    .c-page-tag{font-size:12px;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;color:var(--brand);margin-bottom:8px}
+    .c-hero-h1{font-size:clamp(24px,3.5vw,36px);font-weight:800;line-height:1.12;color:var(--tx);margin-bottom:22px}
 
-    @media (max-width: 760px) {
-      .order-controls,
-      .order-meta {
-        grid-template-columns: 1fr;
-      }
-    }
+    /* search + tabs */
+    .c-sbar{display:flex;align-items:center;gap:10px;height:50px;max-width:460px;background:var(--bg-3);border:1.5px solid var(--line);border-radius:14px;padding:0 16px;transition:border-color .15s,box-shadow .15s}
+    .c-sbar:focus-within{border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-soft)}
+    .c-sbar svg{color:var(--tx-3);flex-shrink:0}.c-sbar input{flex:1;font-size:15px;color:var(--tx);background:transparent}.c-sbar input::placeholder{color:var(--tx-3)}
+    .c-tabs{display:flex;gap:6px;margin-top:16px}
+    .c-tab{padding:8px 18px;border-radius:99px;font-size:13px;font-weight:700;color:var(--tx-3);background:var(--bg-3);border:1.5px solid var(--line);cursor:pointer;transition:all .15s}
+    .c-tab:hover{color:var(--tx-2)}
+    .c-tab.on{background:var(--brand-soft);border-color:rgba(232,64,28,0.5);color:var(--brand)}
+
+    .c-sec{margin-top:32px}
+    .c-stack{display:grid;gap:12px}
+
+    /* order card */
+    .c-ocard{background:var(--bg-2);border:1px solid var(--line);border-radius:var(--r);padding:16px 18px;display:grid;gap:12px}
+    .c-ocard-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+    .c-ocard-rest{font-size:11px;font-weight:700;letter-spacing:0.6px;text-transform:uppercase;color:var(--tx-3);margin-bottom:4px}
+    .c-ocard-num{font-size:16px;font-weight:800;color:var(--tx);margin-bottom:2px}
+    .c-ocard-date{font-size:12px;color:var(--tx-3)}
+    .c-ocard-meta{display:flex;gap:8px;flex-wrap:wrap}
+    .c-ometa{font-size:12px;color:var(--tx-2);background:var(--bg-3);padding:4px 10px;border-radius:6px}
+    .c-ocard-items{display:flex;gap:6px;flex-wrap:wrap}
+    .c-oitem{font-size:12px;color:var(--tx-2);background:var(--bg-3);border:1px solid var(--line);padding:3px 10px;border-radius:99px}
+    .c-ocard-actions{display:flex;gap:8px;flex-wrap:wrap}
+
+    .c-pill{font-size:10px;font-weight:700;padding:4px 10px;border-radius:99px}
+    .c-pill-warn{background:rgba(232,165,58,0.15);color:var(--warn)}
+    .c-pill-ok{background:rgba(39,201,107,0.14);color:var(--success)}
+    .c-pill-danger{background:rgba(232,64,28,0.14);color:var(--danger)}
+    .c-pill-muted{background:var(--bg-3);color:var(--tx-3)}
+
+    .c-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:9px 18px;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;transition:all .15s;font-family:inherit}
+    .c-btn-primary{background:var(--brand);color:#fff;box-shadow:0 4px 18px rgba(232,64,28,0.3)}
+    .c-btn-primary:hover{background:var(--brand-d)}
+    .c-btn-ghost{background:var(--bg-3);color:var(--tx-2);border:1px solid var(--line)}
+    .c-btn-ghost:hover{color:var(--tx);border-color:rgba(255,255,255,0.15)}
+    .c-btn-danger{background:rgba(232,64,28,0.10);color:var(--danger);border:1px solid rgba(232,64,28,0.2)}
+    .c-btn-danger:hover{background:rgba(232,64,28,0.18)}
+
+    .c-skel{background:linear-gradient(90deg,var(--bg-3) 25%,var(--bg-4) 50%,var(--bg-3) 75%);background-size:200% 100%;border-radius:var(--r);animation:cskel 1.5s linear infinite}
+    @keyframes cskel{0%{background-position:200% 0}100%{background-position:-200% 0}}
+    .c-empty{padding:52px 20px;text-align:center;color:var(--tx-3)}.c-empty-icon{font-size:48px;margin-bottom:14px}.c-empty p{font-size:14px;color:var(--tx-2);margin:6px 0 18px}
+    .c-pager{display:flex;align-items:center;gap:10px;margin-top:24px}
+
+    /* rating modal */
+    .c-modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:200;align-items:center;justify-content:center;padding:20px}
+    .c-modal-bg.open{display:flex}
+    .c-modal{background:var(--bg-3);border:1px solid var(--line);border-radius:var(--r);padding:24px;width:100%;max-width:400px;display:grid;gap:16px}
+    .c-modal-head{display:flex;align-items:center;justify-content:space-between}
+    .c-modal-title{font-size:18px;font-weight:800}
+    .c-modal-close{width:32px;height:32px;border-radius:8px;background:var(--bg-4);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:18px;cursor:pointer;color:var(--tx-2)}
+    .c-stars{display:flex;gap:6px;justify-content:center}
+    .c-star-btn{font-size:36px;cursor:pointer;color:var(--bg-4);transition:color .1s,transform .1s}
+    .c-star-btn:hover,.c-star-btn.on{color:#E8A53A;transform:scale(1.15)}
+    .c-rate-input{width:100%;background:var(--bg-4);border:1.5px solid var(--line);border-radius:10px;padding:12px 14px;font-size:14px;color:var(--tx);resize:none;transition:border-color .15s}
+    .c-rate-input:focus{border-color:var(--brand)}
+    .c-rate-input::placeholder{color:var(--tx-3)}
+
+    .c-bnav{position:fixed;bottom:0;left:0;right:0;z-index:60;height:var(--bn-h);background:var(--glass);backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);border-top:1px solid var(--line);display:flex;padding-bottom:env(safe-area-inset-bottom,0)}
+    .c-bnav a{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:var(--tx-3);font-size:10px;font-weight:600;letter-spacing:0.3px;transition:color .15s}.c-bnav a svg{transition:stroke .15s}.c-bnav a.on{color:var(--brand)}.c-bnav a.on svg{stroke:var(--brand)}
+    .c-theme{position:fixed;right:20px;bottom:calc(var(--bn-h)+14px);z-index:55;display:flex;align-items:center;gap:7px;background:var(--bg-3);border:1px solid var(--line);border-radius:99px;padding:8px 14px 8px 10px;font-size:13px;font-weight:600;color:var(--tx-2);cursor:pointer;box-shadow:0 4px 20px rgba(0,0,0,0.35);transition:color .15s,border-color .15s}.c-theme:hover{color:var(--tx);border-color:rgba(255,255,255,0.18)}
+    html.light .c-theme .t-sun{display:none}html:not(.light) .c-theme .t-moon{display:none}html.light .c-theme .t-dark{display:none}html:not(.light) .c-theme .t-light{display:none}
+
+    @media(min-width:901px){:root{--bn-h:0px}body{padding-bottom:0}.c-bnav{display:none}.c-dlinks{display:flex}.c-theme{bottom:20px}}
+    @media(max-width:900px){.c-wrap{padding:0 16px}}
+    @media(max-width:480px){.c-modal-bg{align-items:flex-end;padding:10px}.c-modal{border-radius:var(--r) var(--r) 12px 12px}}
   </style>
 </head>
-
 <body>
-  <div class="shell">
-    <header class="topbar">
-      <div class="topbar-inner">
-        <a class="brand" href="/" aria-label="Avenzo home">
-          <img src="/logo.png" alt="Avenzo">
-          <span>AVENZO</span>
-        </a>
-        <div id="customerNav"></div>
-        <div id="accountMenu"></div>
-      </div>
-    </header>
-
-    <main class="page stack">
-      <section class="page-head">
-        <div>
-          <div class="eyebrow">My orders</div>
-          <h1>Your orders</h1>
-          <p class="muted mb-0">Only orders placed while logged in appear here. Guest orders stay private to tracking links.</p>
+  <header class="c-nav">
+    <div class="c-nav-inner">
+      <a class="c-logo" href="/customer.html"><img src="/logo.png" alt="Avenzo"><span>AVENZO</span></a>
+      <nav class="c-dlinks">
+        <a href="/customer.html">Home</a><a href="/customer-restaurants.html">Explore</a>
+        <a class="on" href="/customer-orders.html">Orders</a><a href="/customer-profile.html">Profile</a>
+      </nav>
+      <div class="c-spacer"></div>
+      <div class="c-umenu-wrap">
+        <button class="c-ubtn" id="uBtn" onclick="toggleUMenu()">
+          <div class="c-uav" id="uAv">U</div>
+          <span class="c-uname" id="uNm">…</span>
+          <svg class="c-ucaret" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
+        </button>
+        <div class="c-udropdown" id="uDrop">
+          <div class="c-uinfo"><strong id="uFullName">—</strong><small id="uEmail">—</small></div>
+          <a class="c-umitem" href="/customer-profile.html">My profile</a>
+          <button class="c-umitem red" onclick="doSignOut()">Sign out</button>
         </div>
-        <a class="btn btn-primary" href="/customer-restaurants.html">Browse restaurants</a>
-      </section>
+      </div>
+    </div>
+  </header>
 
-      <section class="order-controls">
-        <input class="input" id="orderSearch" placeholder="Search restaurant or order code" oninput="renderOrders()">
-      </section>
-      <section class="tabbar" aria-label="Order status tabs">
-        <button class="btn tab active" id="tab-active" type="button" onclick="setOrderGroup('active')">Active</button>
-        <button class="btn tab" id="tab-past" type="button" onclick="setOrderGroup('past')">Past</button>
-        <button class="btn tab" id="tab-cancelled" type="button" onclick="setOrderGroup('cancelled')">Cancelled</button>
-      </section>
+  <section class="c-hero">
+    <div class="c-wrap">
+      <p class="c-page-tag">My orders</p>
+      <h1 class="c-hero-h1">Your order history</h1>
+      <div class="c-sbar">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input id="searchIn" type="search" placeholder="Search restaurant or code…" oninput="renderOrders()">
+      </div>
+      <div class="c-tabs">
+        <button class="c-tab on" id="tab-active"    onclick="setGroup('active')">Active</button>
+        <button class="c-tab"    id="tab-past"      onclick="setGroup('past')">Completed</button>
+        <button class="c-tab"    id="tab-cancelled" onclick="setGroup('cancelled')">Cancelled</button>
+      </div>
+    </div>
+  </section>
 
-      <section class="stack" id="orders"></section>
-      <div class="row row-wrap" id="pager"></div>
-    </main>
+  <section class="c-sec">
+    <div class="c-wrap">
+      <div class="c-stack" id="ordersGrid">
+        <div class="c-skel" style="height:140px"></div>
+        <div class="c-skel" style="height:140px"></div>
+      </div>
+      <div class="c-pager" id="pager"></div>
+    </div>
+  </section>
+  <div style="height:36px"></div>
+
+  <!-- Rating modal -->
+  <div class="c-modal-bg" id="rateModal">
+    <form class="c-modal" onsubmit="submitRating(event)">
+      <div class="c-modal-head">
+        <span class="c-modal-title">Rate your order</span>
+        <button type="button" class="c-modal-close" onclick="closeRate()">×</button>
+      </div>
+      <div class="c-stars" id="rateStars"></div>
+      <textarea class="c-rate-input" id="rateComment" rows="2" maxlength="500" placeholder="Optional feedback…"></textarea>
+      <button id="rateSubmit" class="c-btn c-btn-primary" type="submit" disabled>Submit rating</button>
+    </form>
   </div>
 
-  <div id="customerBottomNav"></div>
+  <nav class="c-bnav">
+    <a href="/customer.html" aria-label="Home"><svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Home</a>
+    <a href="/customer-restaurants.html" aria-label="Explore"><svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>Explore</a>
+    <a class="on" href="/customer-orders.html" aria-label="Orders"><svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>Orders</a>
+    <a href="/customer-profile.html" aria-label="Profile"><svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Profile</a>
+  </nav>
+  <button class="c-theme" onclick="toggleTheme()">
+    <svg class="t-sun" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+    <svg class="t-moon" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+    <span class="t-light">Light</span><span class="t-dark">Dark</span>
+  </button>
+
   <script src="/assets/app.js"></script>
   <script>
-    let orders = [];
-    let pagination = { page: 1, totalPages: 1, total: 0 };
-    let activeGroup = "active";
+    if(!sessionStorage.getItem("token"))location.href="/customer-login.html";
+    let orders=[],pagination={page:1,totalPages:1},activeGroup="active",rateToken="",rateVal=0;
 
-    initCustomerPage("orders").then((user) => {
-      if (!user) return;
-      loadOrders(true);
-    });
+    (async()=>{
+      try{
+        const u=await request("/auth/me");
+        if(u.role!=="USER"){location.href="/admin/dashboard.html";return;}
+        document.getElementById("uAv").textContent=(u.name||u.email||"U")[0].toUpperCase();
+        document.getElementById("uNm").textContent=u.name?u.name.split(" ")[0]:u.email.split("@")[0];
+        document.getElementById("uFullName").textContent=u.name||u.email||"—";
+        document.getElementById("uEmail").textContent=u.email||"";
+        loadOrders(true);
+      }catch{location.href="/customer-login.html";}
+    })();
 
-    async function loadOrders(reset = false) {
-      if (reset) pagination.page = 1;
-      const target = document.getElementById("orders");
-      target.innerHTML = skeletonCards(4);
-      try {
-        const data = await request(`/customer/orders?page=${pagination.page}&limit=30`);
-        orders = data.orders || [];
-        pagination = data.pagination || { page: 1, totalPages: 1, total: orders.length };
+    async function loadOrders(reset=false){
+      if(reset)pagination.page=1;
+      document.getElementById("ordersGrid").innerHTML='<div class="c-skel" style="height:140px"></div><div class="c-skel" style="height:140px"></div>';
+      try{
+        const d=await request(`/customer/orders?page=${pagination.page}&limit=30`);
+        orders=d.orders||[];
+        pagination=d.pagination||{page:1,totalPages:1};
         renderOrders();
-      } catch (err) {
-        target.innerHTML = `<div class="empty">${escapeHtml(err.message)}</div>`;
-      }
+      }catch(e){document.getElementById("ordersGrid").innerHTML=`<div class="c-empty"><div class="c-empty-icon">😕</div><p>${escapeHtml(e.message)}</p></div>`;}
     }
 
-    function renderOrders() {
-      const query = document.getElementById("orderSearch").value.trim().toLowerCase();
-      const visible = orders.filter(order => !query || [
-        order.restaurant?.name,
-        order.pickupCode,
-        String(order.orderNumber)
-      ].join(" ").toLowerCase().includes(query)).filter(order => groupMatches(order.status));
+    function setGroup(g){
+      activeGroup=g;
+      document.querySelectorAll(".c-tab").forEach(t=>t.classList.toggle("on",t.id===`tab-${g}`));
+      renderOrders();
+    }
 
-      const target = document.getElementById("orders");
-      if (!visible.length) {
-        target.innerHTML = `
-          <div class="empty">
-            <h3 class="card-title-gap">No orders yet</h3>
-            <p class="muted">${emptyMessage()}</p>
-            <a class="btn btn-primary mt-12" href="/customer-restaurants.html">Browse restaurants</a>
-          </div>`;
-        renderPager();
-        return;
+    function renderOrders(){
+      const q=document.getElementById("searchIn").value.trim().toLowerCase();
+      const visible=orders.filter(o=>
+        (!q||[o.restaurant?.name,o.pickupCode,String(o.orderNumber)].join(" ").toLowerCase().includes(q))&&groupMatch(o.status)
+      );
+      const g=document.getElementById("ordersGrid");
+      if(!visible.length){
+        g.innerHTML=`<div class="c-empty"><div class="c-empty-icon">${activeGroup==="active"?"📭":activeGroup==="past"?"🧾":"🚫"}</div><p>${emptyMsg()}</p><a class="c-btn c-btn-ghost" href="/customer-restaurants.html" style="text-decoration:none">Browse restaurants</a></div>`;
+        renderPager(); return;
       }
-
-      target.innerHTML = visible.map(order => {
-        const preview = (order.items || []).slice(0, 4).map(item => `<span class="pill">${escapeHtml(item.nameAtOrder)} x ${item.quantity}</span>`).join("");
-        const menuHref = order.restaurant?.slug ? `/r/${encodeURIComponent(order.restaurant.slug)}` : "/customer-restaurants.html";
-        return `
-          <article class="card card-pad order-card">
-            <div class="row-between">
-              <div>
-                <div class="eyebrow">${escapeHtml(order.restaurant?.name || "Avenzo restaurant")}</div>
-                <h3 class="h3-tight">Order #${order.orderNumber}</h3>
-                <div class="muted">${formatDate(order.createdAt)}</div>
-              </div>
-              <span class="pill ${statusPill(order.status)}">${statusLabel(order.status)}</span>
+      g.innerHTML=visible.map(o=>{
+        const menuHref=o.restaurant?.slug?`/r/${encodeURIComponent(o.restaurant.slug)}`:"/customer-restaurants.html";
+        const preview=(o.items||[]).slice(0,4).map(i=>`<span class="c-oitem">${escapeHtml(i.nameAtOrder)} ×${i.quantity}</span>`).join("");
+        const canRate=o.status==="COMPLETED"&&o.rating===null;
+        return`<div class="c-ocard">
+          <div class="c-ocard-head">
+            <div>
+              <div class="c-ocard-rest">${escapeHtml(o.restaurant?.name||"Avenzo restaurant")}</div>
+              <div class="c-ocard-num">Order #${o.orderNumber}</div>
+              <div class="c-ocard-date">${formatDate(o.createdAt)}</div>
             </div>
-            <div class="order-meta">
-              <div><div class="muted">Pickup code</div><strong>${escapeHtml(order.pickupCode)}</strong></div>
-              <div><div class="muted">Payment</div><strong>${paymentLabel(order.paymentStatus)}</strong></div>
-              <div><div class="muted">Total</div><strong>${money(order.totalPrice)}</strong></div>
-              <div><div class="muted">Ready</div><strong>${order.readyAt ? formatDate(order.readyAt) : "Not yet"}</strong></div>
-              ${order.tableNumber ? `<div><div class="muted">Table</div><strong>${escapeHtml(order.tableNumber)}</strong></div>` : ""}
-            </div>
-            <div class="order-items">${preview || `<span class="muted">Items unavailable</span>`}</div>
-            <div class="row row-wrap">
-              <a class="btn btn-dark" href="/track/${order.trackingToken}">Track</a>
-              <a class="btn btn-ghost" href="${menuHref}">View restaurant</a>
-              ${["COMPLETED", "CANCELLED"].includes(order.status) ? `<a class="btn btn-ghost" href="${menuHref}">Order again</a>` : ""}
-              ${order.status === "COMPLETED" && order.rating === null
-                ? `<button class="btn btn-ghost" type="button" onclick="openRateModal('${order.trackingToken}')">Rate order</button>`
-                : order.rating ? `<span class="pill pill-success">${order.rating} ★</span>` : ""}
-            </div>
-          </article>`;
+            <span class="c-pill ${statusPillClass(o.status)}">${statusLabel(o.status)}</span>
+          </div>
+          <div class="c-ocard-meta">
+            <span class="c-ometa">Code: ${escapeHtml(o.pickupCode)}</span>
+            <span class="c-ometa">${money(o.totalPrice)}</span>
+            ${o.tableNumber?`<span class="c-ometa">Table ${escapeHtml(o.tableNumber)}</span>`:""}
+            <span class="c-ometa">${payLabel(o.paymentStatus)}</span>
+          </div>
+          ${preview?`<div class="c-ocard-items">${preview}</div>`:""}
+          <div class="c-ocard-actions">
+            <a class="c-btn c-btn-primary" href="/track/${o.trackingToken}" style="font-size:13px;padding:8px 16px">Track order</a>
+            <a class="c-btn c-btn-ghost" href="${menuHref}" style="font-size:13px;padding:8px 16px">Restaurant</a>
+            ${["COMPLETED","CANCELLED"].includes(o.status)?`<a class="c-btn c-btn-ghost" href="${menuHref}" style="font-size:13px;padding:8px 16px">Order again</a>`:""}
+            ${o.status==="PENDING"&&o.paymentStatus!=="PAID"?`<button class="c-btn c-btn-danger" style="font-size:13px;padding:8px 16px" onclick="cancelOrder('${o.trackingToken}')">Cancel</button>`:""}
+            ${canRate?`<button class="c-btn c-btn-ghost" style="font-size:13px;padding:8px 16px" onclick="openRate('${o.trackingToken}')">Rate ★</button>`:""}
+            ${o.rating?`<span class="c-pill c-pill-ok" style="display:inline-flex;align-items:center">${o.rating} ★</span>`:""}
+          </div>
+        </div>`;
       }).join("");
       renderPager();
     }
 
-    function setOrderGroup(group) {
-      activeGroup = group;
-      document.querySelectorAll(".tabbar .tab").forEach(button => {
-        button.classList.toggle("active", button.id === `tab-${group}`);
-      });
-      renderOrders();
+    function groupMatch(s){
+      if(activeGroup==="active")return["PENDING","PREPARING","READY"].includes(s);
+      if(activeGroup==="past")return s==="COMPLETED";
+      return s==="CANCELLED";
+    }
+    function emptyMsg(){
+      if(activeGroup==="past")return"Completed orders will appear here.";
+      if(activeGroup==="cancelled")return"Cancelled orders will appear here.";
+      return"No active orders right now — browse and start one!";
+    }
+    function statusLabel(s){return{PENDING:"Received",PREPARING:"Preparing",READY:"Ready",COMPLETED:"Completed",CANCELLED:"Cancelled"}[s]||s}
+    function statusPillClass(s){if(["READY","COMPLETED"].includes(s))return"c-pill-ok";if(s==="CANCELLED")return"c-pill-danger";return"c-pill-warn"}
+    function payLabel(s){return{PAYMENT_NOT_REQUIRED:"No payment",PAYMENT_PENDING:"Payment pending",PAID:"Paid",PAYMENT_FAILED:"Payment failed",REFUNDED:"Refunded",PARTIALLY_REFUNDED:"Partial refund"}[s]||"—"}
+
+    async function cancelOrder(t){
+      if(!confirm("Cancel this order?"))return;
+      try{await request(`/order/${t}/cancel`,{method:"POST"});toast("Order cancelled.");loadOrders(true);}
+      catch(e){toast(e.message||"Could not cancel order.");}
     }
 
-    function groupMatches(status) {
-      if (activeGroup === "active") return ["PENDING", "PREPARING", "READY"].includes(status);
-      if (activeGroup === "past") return status === "COMPLETED";
-      return status === "CANCELLED";
+    function renderPager(){
+      const tp=pagination.totalPages||1;
+      document.getElementById("pager").innerHTML=tp<=1?"":
+        `<button class="c-btn c-btn-ghost" style="padding:8px 16px;font-size:13px" ${pagination.page<=1?"disabled":""} onclick="changePage(-1)">← Previous</button>
+         <span style="font-size:13px;color:var(--tx-3)">Page ${pagination.page} of ${tp}</span>
+         <button class="c-btn c-btn-ghost" style="padding:8px 16px;font-size:13px" ${pagination.page>=tp?"disabled":""} onclick="changePage(1)">Next →</button>`;
     }
+    function changePage(d){pagination.page=Math.min(Math.max(1,pagination.page+d),pagination.totalPages||1);loadOrders(false);}
 
-    function emptyMessage() {
-      if (activeGroup === "past") return "Completed orders will appear here.";
-      if (activeGroup === "cancelled") return "Cancelled orders will appear here.";
-      return "No active orders yet. Browse restaurants and place your first Avenzo order.";
-    }
-
-    function renderPager() {
-      const totalPages = pagination.totalPages || 1;
-      document.getElementById("pager").innerHTML = totalPages <= 1 ? "" : `
-        <button class="btn btn-ghost" type="button" ${pagination.page <= 1 ? "disabled" : ""} onclick="changePage(-1)">Previous</button>
-        <span class="pill">Page ${pagination.page} of ${totalPages}</span>
-        <button class="btn btn-ghost" type="button" ${pagination.page >= totalPages ? "disabled" : ""} onclick="changePage(1)">Next</button>
-      `;
-    }
-
-    function changePage(delta) {
-      pagination.page = Math.min(Math.max(1, pagination.page + delta), pagination.totalPages || 1);
-      loadOrders(false);
-    }
-
-    function statusPill(status) {
-      if (["READY", "COMPLETED"].includes(status)) return "pill-success";
-      if (status === "CANCELLED") return "pill-danger";
-      return "pill-warning";
-    }
-
-    function statusLabel(value) {
-      return { PENDING: "Received", PREPARING: "Preparing", READY: "Ready", COMPLETED: "Done", CANCELLED: "Cancelled" }[value] || value;
-    }
-
-    function paymentLabel(value) {
-      return {
-        PAYMENT_NOT_REQUIRED: "Not required",
-        PAYMENT_PENDING: "Pending",
-        PAID: "Paid",
-        PAYMENT_FAILED: "Failed",
-        REFUNDED: "Refunded",
-        PARTIALLY_REFUNDED: "Partial refund"
-      }[value] || "Not required";
-    }
-
-    let rateToken = "";
-    let rateVal = 0;
-
-    function openRateModal(trackingToken) {
-      rateToken = trackingToken;
-      rateVal = 0;
-      document.getElementById("rateStars").innerHTML = [1,2,3,4,5].map(n =>
-        `<button class="rate-star" type="button" data-val="${n}" onclick="pickStar(${n})">★</button>`
-      ).join("");
-      document.getElementById("rateComment").value = "";
-      document.getElementById("rateSubmitBtn").disabled = true;
+    /* rating */
+    function openRate(t){
+      rateToken=t;rateVal=0;
+      document.getElementById("rateStars").innerHTML=[1,2,3,4,5].map(n=>`<button type="button" class="c-star-btn" data-v="${n}" onclick="pickStar(${n})">★</button>`).join("");
+      document.getElementById("rateComment").value="";
+      document.getElementById("rateSubmit").disabled=true;
       document.getElementById("rateModal").classList.add("open");
     }
-
-    function pickStar(val) {
-      rateVal = val;
-      document.querySelectorAll(".rate-star").forEach(btn => {
-        btn.style.color = Number(btn.dataset.val) <= val ? "var(--brand-2)" : "#d1d5db";
-      });
-      document.getElementById("rateSubmitBtn").disabled = false;
+    function closeRate(){document.getElementById("rateModal").classList.remove("open")}
+    function pickStar(v){
+      rateVal=v;
+      document.querySelectorAll(".c-star-btn").forEach(b=>b.classList.toggle("on",Number(b.dataset.v)<=v));
+      document.getElementById("rateSubmit").disabled=false;
+    }
+    async function submitRating(e){
+      e.preventDefault();if(!rateVal)return;
+      const btn=document.getElementById("rateSubmit");
+      btn.disabled=true;btn.textContent="Submitting…";
+      try{
+        await request(`/order/${rateToken}/rating`,{method:"POST",body:JSON.stringify({rating:rateVal,comment:document.getElementById("rateComment").value.trim()||null})});
+        closeRate();toast("Rating submitted — thank you!");loadOrders(true);
+      }catch(er){toast(er.message||"Could not submit rating");btn.disabled=false;btn.textContent="Submit rating";}
     }
 
-    async function submitOrderRating(event) {
-      event.preventDefault();
-      if (!rateVal) return;
-      const btn = document.getElementById("rateSubmitBtn");
-      setLoading(btn, true, "Submitting...");
-      try {
-        const comment = document.getElementById("rateComment").value.trim() || null;
-        await request(`/order/${rateToken}/rating`, {
-          method: "POST",
-          body: JSON.stringify({ rating: rateVal, comment })
-        });
-        document.getElementById("rateModal").classList.remove("open");
-        toast("Rating submitted. Thank you!");
-        loadOrders(true);
-      } catch (err) {
-        toast(err.message || "Could not submit rating");
-        setLoading(btn, false);
-      }
-    }
+    function toggleUMenu(){document.getElementById("uDrop").classList.toggle("open")}
+    document.addEventListener("click",e=>{if(!document.getElementById("uBtn")?.contains(e.target))document.getElementById("uDrop")?.classList.remove("open")});
+    function doSignOut(){sessionStorage.removeItem("token");location.href="/customer-login.html"}
+    function toggleTheme(){const on=document.documentElement.classList.toggle("light");localStorage.setItem("avenzo-theme",on?"light":"dark")}
   </script>
-
-  <div class="modal-backdrop" id="rateModal">
-    <form class="modal stack" onsubmit="submitOrderRating(event)">
-      <div class="modal-head row-between">
-        <div>
-          <h3 class="section-title">Rate this order</h3>
-          <div class="muted">Tap a star to leave your rating.</div>
-        </div>
-        <button type="button" class="btn btn-ghost icon-btn" onclick="document.getElementById('rateModal').classList.remove('open')">×</button>
-      </div>
-      <div class="modal-body stack text-center">
-        <div id="rateStars" style="display:flex;gap:4px;justify-content:center;font-size:34px"></div>
-        <textarea id="rateComment" class="input mt-12" rows="2" maxlength="500" placeholder="Optional feedback"></textarea>
-      </div>
-      <div class="modal-actions">
-        <button type="button" class="btn btn-ghost" onclick="document.getElementById('rateModal').classList.remove('open')">Cancel</button>
-        <button id="rateSubmitBtn" class="btn btn-primary" type="submit" disabled>Submit</button>
-      </div>
-    </form>
-  </div>
 </body>
-
 </html>
