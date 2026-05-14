@@ -1,523 +1,745 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <title>Avenzo — Home</title>
+  <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <script>try{if(localStorage.getItem('avenzo-theme')==='light')document.documentElement.classList.add('light')}catch(e){}</script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/assets/app.css">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
+    /* ── DESIGN TOKENS ── */
+    :root {
+      --bg:         #09080A;
+      --bg-2:       #131118;
+      --bg-3:       #1C1A22;
+      --bg-4:       #252230;
+      --tx:         #F5ECD7;
+      --tx-2:       #BEB09A;
+      --tx-3:       #6E6258;
+      --brand:      #E8401C;
+      --brand-d:    #C43318;
+      --brand-soft: rgba(232,64,28,0.12);
+      --line:       rgba(255,255,255,0.07);
+      --glass:      rgba(9,8,10,0.84);
+      --success:    #27C96B;
+      --warn:       #E8A53A;
+      --r:          16px;
+      --r-sm:       11px;
+      --nav-h:      60px;
+      --bn-h:       66px;
+    }
+    html.light {
+      --bg:    #FAFAF8;  --bg-2: #F2EEE5;  --bg-3: #EAE4D9;
+      --bg-4:  #DDD6C8;  --tx:   #1A1008;  --tx-2: #5C4F3C;
+      --tx-3:  #9A8B7A;  --line: rgba(0,0,0,0.08);
+      --glass: rgba(250,250,248,0.90);
+    }
+
+    *,*::before,*::after { box-sizing:border-box; margin:0; padding:0 }
+    html { -webkit-font-smoothing:antialiased }
+    body {
+      font-family:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,sans-serif;
+      background:var(--bg); color:var(--tx);
+      padding-bottom:var(--bn-h); min-height:100dvh;
+    }
+    a  { color:inherit; text-decoration:none }
+    button,input { font:inherit; border:0; outline:none; background:none; color:inherit; cursor:pointer }
+
+    /* ── TOAST (app.js hook) ── */
+    .toast {
+      position:fixed; left:50%; bottom:calc(var(--bn-h) + 14px); z-index:999;
+      transform:translateX(-50%) translateY(10px);
+      background:var(--bg-4); color:var(--tx);
+      padding:9px 20px; border-radius:99px;
+      font-size:13px; font-weight:600;
+      border:1px solid var(--line);
+      box-shadow:0 8px 32px rgba(0,0,0,0.5);
+      opacity:0; pointer-events:none;
+      transition:opacity .2s,transform .2s; white-space:nowrap;
+    }
+    .toast.show { opacity:1; transform:translateX(-50%) translateY(0) }
+
+    /* ── TOP NAV ── */
+    .c-nav {
+      position:sticky; top:0; z-index:50; height:var(--nav-h);
+      background:var(--glass);
+      backdrop-filter:blur(22px); -webkit-backdrop-filter:blur(22px);
+      border-bottom:1px solid var(--line);
+    }
+    .c-nav-inner {
+      height:100%; max-width:1160px; margin:0 auto; padding:0 22px;
+      display:flex; align-items:center; gap:16px;
+    }
+    .c-logo { display:flex; align-items:center; gap:9px }
+    .c-logo img  { width:26px; height:26px; border-radius:7px }
+    .c-logo span { font-size:16px; font-weight:800; letter-spacing:1.6px }
+
+    .c-dlinks { display:none; align-items:center; gap:2px; margin-left:8px }
+    .c-dlinks a {
+      padding:7px 13px; border-radius:8px;
+      font-size:14px; font-weight:600; color:var(--tx-2);
+      transition:color .12s,background .12s;
+    }
+    .c-dlinks a:hover { color:var(--tx); background:var(--bg-3) }
+    .c-dlinks a.on    { color:var(--tx) }
+
+    .c-spacer { flex:1 }
+
+    /* user menu */
+    .c-umenu-wrap { position:relative }
+    .c-ubtn {
+      display:flex; align-items:center; gap:8px;
+      padding:5px 12px 5px 8px;
+      background:var(--bg-3); border:1px solid var(--line);
+      border-radius:99px; cursor:pointer;
+      transition:border-color .12s;
+    }
+    .c-ubtn:hover { border-color:rgba(255,255,255,0.16) }
+    .c-uav {
+      width:28px; height:28px; border-radius:50%; background:var(--brand);
+      display:flex; align-items:center; justify-content:center;
+      font-size:12px; font-weight:700; color:#fff; flex-shrink:0;
+    }
+    .c-uname {
+      font-size:13px; font-weight:600;
+      max-width:110px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+    }
+    .c-ucaret { color:var(--tx-3) }
+
+    .c-udropdown {
+      display:none; position:absolute; right:0; top:calc(100% + 8px);
+      min-width:186px; background:var(--bg-3);
+      border:1px solid var(--line); border-radius:var(--r-sm);
+      box-shadow:0 16px 50px rgba(0,0,0,0.55); overflow:hidden; z-index:80;
+    }
+    .c-udropdown.open { display:block }
+    .c-uinfo {
+      padding:12px 14px; border-bottom:1px solid var(--line);
+    }
+    .c-uinfo strong { display:block; font-size:13px; margin-bottom:2px }
+    .c-uinfo small  { font-size:12px; color:var(--tx-3) }
+    .c-umitem {
+      display:block; width:100%; padding:11px 14px; text-align:left;
+      font-size:13px; font-weight:600; color:var(--tx-2); cursor:pointer;
+      transition:background .1s,color .1s;
+    }
+    .c-umitem:hover { background:var(--bg-4); color:var(--tx) }
+    .c-umitem.red   { color:var(--brand) }
+
+    /* ── CONTAINER ── */
+    .c-wrap { max-width:1160px; margin:0 auto; padding:0 22px }
+
     /* ── HERO ── */
-    .ch-hero {
-      background: linear-gradient(150deg, #fffaf4 0%, #fff5e6 55%, #ffefd5 100%);
-      border-bottom: 1px solid var(--line);
-      padding: 32px 0 28px;
+    .c-hero {
+      padding:28px 0 24px;
+      background:
+        radial-gradient(ellipse 70% 90% at 4% 120%, rgba(232,64,28,0.13) 0%, transparent 55%),
+        var(--bg);
+      border-bottom:1px solid var(--line);
     }
-    .ch-inner {
-      width: min(1120px, calc(100% - 28px));
-      margin: 0 auto;
+    .c-hero-tag {
+      font-size:13px; font-weight:600; color:var(--tx-2); margin-bottom:8px;
     }
-    .ch-eyebrow {
-      font-size: 13px;
-      font-weight: 600;
-      color: var(--muted);
-      margin-bottom: 4px;
+    .c-hero-h1 {
+      font-size:clamp(26px,4vw,40px); font-weight:800;
+      line-height:1.10; color:var(--tx); margin-bottom:22px;
     }
-    .ch-title {
-      font-size: clamp(24px, 4vw, 34px);
-      font-weight: 800;
-      color: var(--ink);
-      line-height: 1.15;
-      margin: 0 0 20px;
+    .c-hero-h1 b { font-weight:800; color:var(--brand) }
+    .c-sbar {
+      display:flex; align-items:center; gap:10px;
+      height:52px; max-width:580px;
+      background:var(--bg-3); border:1.5px solid var(--line);
+      border-radius:14px; padding:0 16px;
+      transition:border-color .15s,box-shadow .15s;
     }
-    .ch-title em { font-style: normal; color: var(--brand); }
-    .ch-search-row {
-      display: flex;
-      gap: 10px;
-      max-width: 580px;
+    .c-sbar:focus-within {
+      border-color:var(--brand); box-shadow:0 0 0 3px var(--brand-soft);
     }
-    .ch-search-wrap { position: relative; flex: 1; }
-    .ch-search-wrap svg {
-      position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
-      color: var(--muted); pointer-events: none;
+    .c-sbar svg   { color:var(--tx-3); flex-shrink:0 }
+    .c-sbar input {
+      flex:1; font-size:15px; color:var(--tx); background:transparent;
     }
-    .ch-search {
-      width: 100%; height: 50px;
-      padding: 0 14px 0 44px;
-      background: var(--surface);
-      border: 1.5px solid var(--line);
-      border-radius: 12px;
-      font-size: 15px; font-family: inherit; color: var(--ink);
-      outline: none;
-      box-shadow: 0 2px 10px rgba(64,31,15,0.06);
-      transition: border-color 0.15s, box-shadow 0.15s;
-    }
-    .ch-search:focus {
-      border-color: var(--brand);
-      box-shadow: 0 0 0 3px var(--brand-soft), 0 2px 10px rgba(64,31,15,0.06);
-    }
-    .ch-search::placeholder { color: var(--muted); }
+    .c-sbar input::placeholder { color:var(--tx-3) }
 
     /* ── LIVE ORDER ── */
-    .ch-live {
-      background: linear-gradient(135deg, #fff8f2, #fff0e0);
-      border: 1.5px solid rgba(255,107,22,0.28);
-      border-radius: 14px;
-      padding: 16px 18px;
-      display: grid;
-      gap: 12px;
+    .c-live {
+      margin-top:20px;
+      background:var(--bg-3);
+      border:1.5px solid rgba(232,64,28,0.32);
+      border-radius:var(--r); padding:16px 18px;
+      display:grid; gap:13px;
+      box-shadow:0 0 34px rgba(232,64,28,0.09);
     }
-    .ch-live-head {
-      display: flex; align-items: center; gap: 10px;
+    .c-live-top { display:flex; align-items:center; gap:10px }
+    .c-live-dot {
+      width:8px; height:8px; border-radius:50%; background:var(--brand); flex-shrink:0;
+      animation:lpulse 1.8s ease-in-out infinite;
     }
-    .ch-live-dot {
-      width: 8px; height: 8px; border-radius: 50%;
-      background: var(--brand);
-      animation: livepulse 1.8s ease-in-out infinite;
-      flex-shrink: 0;
+    @keyframes lpulse {
+      0%,100% { box-shadow:0 0 0 0 rgba(232,64,28,0.45) }
+      50%      { box-shadow:0 0 0 7px rgba(232,64,28,0) }
     }
-    @keyframes livepulse {
-      0%, 100% { box-shadow: 0 0 0 0 rgba(255,107,22,0.5); }
-      50%       { box-shadow: 0 0 0 7px rgba(255,107,22,0); }
+    .c-live-tag {
+      font-size:10px; font-weight:700; letter-spacing:0.9px; text-transform:uppercase;
+      color:var(--brand); background:var(--brand-soft);
+      padding:3px 8px; border-radius:99px;
     }
-    .ch-live-badge {
-      font-size: 10px; font-weight: 700; letter-spacing: 0.9px;
-      text-transform: uppercase; color: var(--brand);
-      background: rgba(255,107,22,0.1); padding: 3px 8px; border-radius: 99px;
+    .c-live-rname {
+      font-size:14px; font-weight:700; flex:1;
+      overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
     }
-    .ch-live-name {
-      font-size: 14px; font-weight: 700; color: var(--ink); flex: 1;
-      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-    }
-    .ch-live-order {
-      font-size: 12px; color: var(--muted); flex-shrink: 0;
-    }
-    .ch-live-foot {
-      display: flex; align-items: center; justify-content: space-between; gap: 12px;
-    }
-    .ch-live-status { font-size: 13px; color: var(--ink); }
+    .c-live-num { font-size:12px; color:var(--tx-3); flex-shrink:0 }
+    .c-live-foot { display:flex; align-items:center; justify-content:space-between; gap:12px }
+    .c-live-msg  { font-size:13px; color:var(--tx-2); line-height:1.45 }
 
-    /* ── PROFILE HINT ── */
-    .ch-hint {
-      display: flex; align-items: center; gap: 14px;
-      background: var(--surface-2);
-      border: 1.5px dashed rgba(255,107,22,0.35);
-      border-radius: 12px;
-      padding: 14px 16px;
-      text-decoration: none; color: inherit;
-      transition: border-color 0.15s, background 0.15s;
+    /* ── HINT ── */
+    .c-hint {
+      margin-top:14px;
+      display:flex; align-items:center; gap:14px;
+      background:var(--bg-3); border:1.5px dashed rgba(232,64,28,0.28);
+      border-radius:var(--r); padding:15px 17px;
+      transition:border-color .15s;
     }
-    .ch-hint:hover { border-color: var(--brand); background: #fff6ee; }
-    .ch-hint-icon {
-      width: 40px; height: 40px; border-radius: 50%;
-      background: var(--brand-soft);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 18px; flex-shrink: 0;
+    .c-hint:hover { border-color:var(--brand) }
+    .c-hint-icon {
+      width:40px; height:40px; border-radius:11px; background:var(--brand-soft);
+      display:flex; align-items:center; justify-content:center;
+      font-size:20px; flex-shrink:0;
     }
-    .ch-hint-body { flex: 1; }
-    .ch-hint-body strong { display: block; font-size: 13px; font-weight: 700; color: var(--ink); }
-    .ch-hint-body span { font-size: 12px; color: var(--muted); }
+    .c-hint-txt { flex:1 }
+    .c-hint-txt strong { display:block; font-size:13px; font-weight:700; margin-bottom:2px }
+    .c-hint-txt span   { font-size:12px; color:var(--tx-3) }
 
     /* ── SECTION ── */
-    .ch-section {
-      width: min(1120px, calc(100% - 28px));
-      margin: 0 auto;
+    .c-sec { margin-top:32px }
+    .c-sec-head {
+      display:flex; align-items:baseline;
+      justify-content:space-between; margin-bottom:18px;
     }
-    .ch-sec-head {
-      display: flex; align-items: baseline;
-      justify-content: space-between; margin-bottom: 14px;
-    }
-    .ch-sec-title { font-size: 17px; font-weight: 800; color: var(--ink); }
-    .ch-sec-link {
-      font-size: 13px; font-weight: 600;
-      color: var(--brand); text-decoration: none;
-    }
+    .c-sec-title  { font-size:18px; font-weight:800 }
+    .c-sec-action { font-size:13px; font-weight:600; color:var(--brand) }
 
     /* ── CATEGORY CHIPS ── */
-    .ch-chips {
-      display: flex; gap: 8px; overflow-x: auto;
-      scrollbar-width: none; padding-bottom: 2px;
+    .c-cats {
+      display:flex; gap:10px;
+      overflow-x:auto; scrollbar-width:none; padding-bottom:2px;
     }
-    .ch-chips::-webkit-scrollbar { display: none; }
-    .ch-chip {
-      display: inline-flex; align-items: center; gap: 5px;
-      padding: 7px 14px; white-space: nowrap;
-      background: var(--surface); border: 1.5px solid var(--line);
-      border-radius: 999px; cursor: pointer;
-      font-size: 13px; font-weight: 600; color: var(--ink);
-      font-family: inherit; outline: none;
-      transition: border-color 0.15s, background 0.15s, color 0.15s;
+    .c-cats::-webkit-scrollbar { display:none }
+    .c-cat {
+      flex:0 0 auto; display:flex; flex-direction:column;
+      align-items:center; gap:9px; padding:14px 16px; min-width:82px;
+      background:var(--bg-3); border:1.5px solid var(--line);
+      border-radius:var(--r); cursor:pointer;
+      transition:border-color .15s,background .15s;
     }
-    .ch-chip:hover { border-color: var(--brand); color: var(--brand); }
-    .ch-chip.on { background: var(--brand); border-color: var(--brand); color: #fff; }
+    .c-cat:hover { border-color:rgba(255,255,255,0.18) }
+    .c-cat.on    { background:var(--brand-soft); border-color:rgba(232,64,28,0.5) }
+    .c-cat-icon  { font-size:28px; line-height:1 }
+    .c-cat-label {
+      font-size:11px; font-weight:700; color:var(--tx-2); white-space:nowrap;
+    }
+    .c-cat.on .c-cat-label { color:var(--brand) }
 
     /* ── RESTAURANT GRID ── */
-    .ch-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 14px;
+    .c-grid {
+      display:grid;
+      grid-template-columns:repeat(3,1fr);
+      gap:14px;
     }
-    .ch-rest-card {
-      background: var(--surface);
-      border: 1px solid var(--line);
-      border-radius: 14px; overflow: hidden;
-      text-decoration: none; color: inherit;
-      display: flex; flex-direction: column;
-      box-shadow: var(--shadow-soft);
-      transition: transform 0.18s, box-shadow 0.18s;
+    .c-rcard {
+      background:var(--bg-2); border:1px solid var(--line);
+      border-radius:var(--r); overflow:hidden;
+      display:flex; flex-direction:column;
+      transition:transform .18s,border-color .18s,box-shadow .18s;
     }
-    .ch-rest-card:hover:not(.ch-rest-paused) {
-      transform: translateY(-3px); box-shadow: var(--shadow);
+    .c-rcard:hover:not(.c-rcard--paused) {
+      transform:translateY(-3px);
+      border-color:rgba(255,255,255,0.13);
+      box-shadow:0 14px 44px rgba(0,0,0,0.44);
     }
-    .ch-rest-banner {
-      height: 96px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 38px; position: relative; overflow: hidden;
+    .c-rcard-banner {
+      height:108px; display:flex; align-items:center; justify-content:center;
+      font-size:44px; position:relative; overflow:hidden;
     }
-    .ch-rest-paused .ch-rest-banner { filter: saturate(0.3); }
-    .ch-rest-overlay {
-      position: absolute; inset: 0;
-      background: rgba(255,255,255,0.55);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 11px; font-weight: 700; color: var(--muted);
-      letter-spacing: 0.4px; text-transform: uppercase;
+    .c-rcard--paused .c-rcard-banner { filter:saturate(0.15) brightness(0.65) }
+    .c-rcard-closed {
+      position:absolute; inset:0; background:rgba(9,8,10,0.52);
+      display:flex; align-items:center; justify-content:center;
     }
-    .ch-rest-body {
-      padding: 12px 14px 14px;
-      flex: 1; display: flex; flex-direction: column; gap: 5px;
+    .c-rcard-closed span {
+      font-size:11px; font-weight:700; letter-spacing:0.5px; text-transform:uppercase;
+      background:rgba(0,0,0,0.55); color:rgba(255,255,255,0.75);
+      padding:4px 11px; border-radius:99px; border:1px solid rgba(255,255,255,0.09);
     }
-    .ch-rest-name {
-      font-size: 14px; font-weight: 700; color: var(--ink); line-height: 1.25;
+    .c-rcard-body {
+      padding:12px 14px 14px; flex:1;
+      display:flex; flex-direction:column; gap:4px;
     }
-    .ch-rest-loc { font-size: 12px; color: var(--muted); }
-    .ch-rest-foot {
-      display: flex; align-items: center;
-      justify-content: space-between; margin-top: 8px;
+    .c-rcard-name {
+      font-size:14px; font-weight:700; line-height:1.2;
+      overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
     }
-    .ch-rest-rating {
-      font-size: 12px; font-weight: 600;
-      display: flex; align-items: center; gap: 3px;
+    .c-rcard-loc {
+      font-size:12px; color:var(--tx-3);
+      overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
     }
-    .ch-pill {
-      font-size: 10px; font-weight: 700; padding: 3px 8px;
-      border-radius: 99px; letter-spacing: 0.2px;
+    .c-rcard-foot {
+      display:flex; align-items:center; justify-content:space-between; margin-top:8px;
     }
-    .ch-pill-open { background: rgba(24,160,88,0.12); color: var(--success); }
-    .ch-pill-paused { background: rgba(245,158,11,0.12); color: var(--warning); }
+    .c-rcard-stars {
+      font-size:12px; font-weight:600; color:var(--tx-2);
+      display:flex; align-items:center; gap:3px;
+    }
+    .c-star-icon { color:#E8A53A }
+    .c-pill {
+      font-size:10px; font-weight:700; padding:3px 9px; border-radius:99px;
+    }
+    .c-pill-open   { background:rgba(39,201,107,0.14); color:var(--success) }
+    .c-pill-paused { background:rgba(232,165,58,0.14);  color:var(--warn) }
 
     /* ── SKELETON ── */
-    .ch-skel {
-      background: var(--line);
-      background: linear-gradient(90deg, var(--line) 25%, var(--surface-2) 50%, var(--line) 75%);
-      background-size: 200% 100%;
-      animation: ch-shim 1.4s linear infinite;
-      border-radius: 14px;
+    .c-skel {
+      background:linear-gradient(90deg,var(--bg-3) 25%,var(--bg-4) 50%,var(--bg-3) 75%);
+      background-size:200% 100%; border-radius:var(--r);
+      animation:cskel 1.5s linear infinite;
     }
-    @keyframes ch-shim {
-      0% { background-position: 200% 0; }
-      100% { background-position: -200% 0; }
-    }
+    @keyframes cskel { 0%{background-position:200% 0}100%{background-position:-200% 0} }
 
     /* ── EMPTY ── */
-    .ch-empty {
-      grid-column: 1 / -1; text-align: center;
-      padding: 40px 20px; color: var(--muted);
+    .c-empty {
+      grid-column:1/-1; padding:52px 20px;
+      text-align:center; color:var(--tx-3);
     }
-    .ch-empty-icon { font-size: 42px; line-height: 1; margin-bottom: 10px; }
-    .ch-empty p { font-size: 14px; margin: 6px 0 16px; }
+    .c-empty-icon { font-size:50px; margin-bottom:14px }
+    .c-empty p    { font-size:14px; color:var(--tx-2); margin:6px 0 18px }
 
     /* ── RECENT SCROLL ── */
-    .ch-scroll {
-      display: flex; gap: 12px;
-      overflow-x: auto; scrollbar-width: none; padding-bottom: 4px;
+    .c-hscroll {
+      display:flex; gap:12px;
+      overflow-x:auto; scrollbar-width:none; padding-bottom:4px;
     }
-    .ch-scroll::-webkit-scrollbar { display: none; }
-    .ch-recent-card {
-      flex: 0 0 168px; min-width: 0;
-      background: var(--surface); border: 1px solid var(--line);
-      border-radius: 14px; padding: 14px;
-      display: flex; flex-direction: column; gap: 8px;
-      text-decoration: none; color: inherit;
-      box-shadow: var(--shadow-soft);
-      transition: transform 0.18s, box-shadow 0.18s;
+    .c-hscroll::-webkit-scrollbar { display:none }
+    .c-rrecent {
+      flex:0 0 158px; background:var(--bg-2);
+      border:1px solid var(--line); border-radius:var(--r); overflow:hidden;
+      transition:transform .18s,border-color .18s;
     }
-    .ch-recent-card:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
-    .ch-recent-emoji { font-size: 28px; line-height: 1; }
-    .ch-recent-name {
-      font-size: 13px; font-weight: 700; color: var(--ink);
-      line-height: 1.3; overflow: hidden; text-overflow: ellipsis;
-      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+    .c-rrecent:hover { transform:translateY(-2px); border-color:rgba(255,255,255,0.13) }
+    .c-rrecent-banner {
+      height:72px; display:flex; align-items:center; justify-content:center; font-size:30px;
     }
-    .ch-recent-sub { font-size: 11px; color: var(--muted); margin-top: auto; }
+    .c-rrecent-body { padding:10px 12px 13px }
+    .c-rrecent-name {
+      font-size:13px; font-weight:700; line-height:1.2; margin-bottom:3px;
+      overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+    }
+    .c-rrecent-loc { font-size:11px; color:var(--tx-3) }
 
-    /* ── SPACING ── */
-    .ch-gap { height: 32px; }
-    .ch-gap-sm { height: 20px; }
-
-    /* ── MOBILE ── */
-    @media (max-width: 600px) {
-      .ch-grid { grid-template-columns: 1fr; }
-      .ch-hero { padding: 22px 0 20px; }
+    /* ── BTN ── */
+    .c-btn {
+      display:inline-flex; align-items:center; justify-content:center; gap:6px;
+      padding:10px 20px; border-radius:10px;
+      font-size:14px; font-weight:700; cursor:pointer;
+      transition:all .15s; font-family:inherit;
     }
-    @media (max-width: 900px) {
-      .shell { padding-bottom: 74px; }
+    .c-btn-primary {
+      background:var(--brand); color:#fff;
+      box-shadow:0 4px 18px rgba(232,64,28,0.32);
+    }
+    .c-btn-primary:hover { background:var(--brand-d) }
+    .c-btn-ghost {
+      background:var(--bg-4); color:var(--tx-2); border:1px solid var(--line);
+    }
+    .c-btn-ghost:hover { color:var(--tx); border-color:rgba(255,255,255,0.15) }
+
+    /* ── BOTTOM NAV ── */
+    .c-bnav {
+      position:fixed; bottom:0; left:0; right:0; z-index:60;
+      height:var(--bn-h);
+      background:var(--glass);
+      backdrop-filter:blur(22px); -webkit-backdrop-filter:blur(22px);
+      border-top:1px solid var(--line);
+      display:flex;
+      padding-bottom:env(safe-area-inset-bottom,0);
+    }
+    .c-bnav a {
+      flex:1; display:flex; flex-direction:column;
+      align-items:center; justify-content:center; gap:4px;
+      color:var(--tx-3); font-size:10px; font-weight:600; letter-spacing:0.3px;
+      transition:color .15s;
+    }
+    .c-bnav a svg { transition:stroke .15s }
+    .c-bnav a.on  { color:var(--brand) }
+    .c-bnav a.on svg { stroke:var(--brand) }
+
+    /* ── THEME PILL ── */
+    .c-theme {
+      position:fixed; right:20px; bottom:calc(var(--bn-h) + 14px); z-index:55;
+      display:flex; align-items:center; gap:7px;
+      background:var(--bg-3); border:1px solid var(--line);
+      border-radius:99px; padding:8px 14px 8px 10px;
+      font-size:13px; font-weight:600; color:var(--tx-2); cursor:pointer;
+      box-shadow:0 4px 20px rgba(0,0,0,0.35);
+      transition:color .15s,border-color .15s;
+    }
+    .c-theme:hover { color:var(--tx); border-color:rgba(255,255,255,0.18) }
+    .c-theme svg { color:var(--tx-2) }
+    html.light     .c-theme .t-sun  { display:none }
+    html:not(.light) .c-theme .t-moon { display:none }
+    html.light     .c-theme .t-dark  { display:none }
+    html:not(.light) .c-theme .t-light { display:none }
+
+    /* ── RESPONSIVE ── */
+    @media (min-width:901px) {
+      :root   { --bn-h:0px }
+      body    { padding-bottom:0 }
+      .c-bnav { display:none }
+      .c-dlinks { display:flex }
+      .c-theme  { bottom:20px }
+    }
+    @media (max-width:900px) {
+      .c-grid { grid-template-columns:repeat(2,1fr) }
+      .c-wrap { padding:0 16px }
+    }
+    @media (max-width:480px) {
+      .c-hero          { padding:20px 0 18px }
+      .c-sec           { margin-top:26px }
+      .c-cat           { min-width:74px; padding:12px 13px }
+      .c-cat-icon      { font-size:24px }
+      .c-rcard-banner  { height:90px; font-size:36px }
+      .c-hero-h1       { margin-bottom:18px }
     }
   </style>
 </head>
 <body>
-  <div class="shell">
-    <!-- Topbar -->
-    <header class="topbar">
-      <div class="topbar-inner">
-        <a class="brand" href="/customer.html">
-          <img src="/logo.png" alt="Avenzo">
-          <span>AVENZO</span>
-        </a>
-        <div id="customerNav"></div>
-        <div id="accountMenu"></div>
-      </div>
-    </header>
 
-    <!-- Hero -->
-    <section class="ch-hero">
-      <div class="ch-inner">
-        <div class="ch-eyebrow" id="chGreeting">Welcome</div>
-        <h1 class="ch-title">What are you <em>craving</em> today?</h1>
-        <div class="ch-search-row">
-          <div class="ch-search-wrap">
-            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-            <input class="ch-search" id="chSearch" type="search" placeholder="Search restaurants..." oninput="doFilter()">
-          </div>
+  <!-- ── TOP NAV ── -->
+  <header class="c-nav">
+    <div class="c-nav-inner">
+      <a class="c-logo" href="/customer.html">
+        <img src="/logo.png" alt="Avenzo">
+        <span>AVENZO</span>
+      </a>
+      <nav class="c-dlinks">
+        <a class="on"  href="/customer.html">Home</a>
+        <a href="/customer-restaurants.html">Explore</a>
+        <a href="/customer-orders.html">Orders</a>
+        <a href="/customer-profile.html">Profile</a>
+      </nav>
+      <div class="c-spacer"></div>
+      <div class="c-umenu-wrap">
+        <button class="c-ubtn" id="uBtn" onclick="toggleUMenu()">
+          <div class="c-uav"  id="uAv">U</div>
+          <span class="c-uname" id="uNm">…</span>
+          <svg class="c-ucaret" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
+        </button>
+        <div class="c-udropdown" id="uDrop">
+          <div class="c-uinfo"><strong id="uFullName">—</strong><small id="uEmail">—</small></div>
+          <a class="c-umitem" href="/customer-profile.html">My profile</a>
+          <a class="c-umitem" href="/customer-orders.html">My orders</a>
+          <button class="c-umitem red" onclick="doSignOut()">Sign out</button>
         </div>
       </div>
-    </section>
+    </div>
+  </header>
 
-    <main style="padding-top:0">
+  <!-- ── HERO ── -->
+  <section class="c-hero">
+    <div class="c-wrap">
+      <p class="c-hero-tag" id="heroTag">Good morning 👋</p>
+      <h1 class="c-hero-h1" id="heroH1">What are you <b>craving</b><br>this morning?</h1>
+      <div class="c-sbar">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input id="searchIn" type="search" placeholder="Search restaurants…" oninput="doSearch()">
+      </div>
+    </div>
+  </section>
 
-      <!-- Live order (populated by JS) -->
-      <div id="chLiveWrap" style="width:min(1120px,calc(100% - 28px));margin:20px auto 0"></div>
+  <!-- ── LIVE + HINT (JS-populated) ── -->
+  <div class="c-wrap" id="liveMount"></div>
+  <div class="c-wrap" id="hintMount"></div>
 
-      <!-- Profile hint (populated by JS) -->
-      <div id="chHintWrap" class="ch-section" style="margin-top:14px"></div>
+  <!-- ── CATEGORY FILTER ── -->
+  <section class="c-sec">
+    <div class="c-wrap">
+      <div class="c-sec-head"><span class="c-sec-title">What's on your mind?</span></div>
+      <div class="c-cats">
+        <button class="c-cat on" onclick="setF(this,'all')">
+          <span class="c-cat-icon">🍽️</span><span class="c-cat-label">All</span>
+        </button>
+        <button class="c-cat" onclick="setF(this,'open')">
+          <span class="c-cat-icon">⚡</span><span class="c-cat-label">Open Now</span>
+        </button>
+        <button class="c-cat" onclick="setF(this,'PURE_VEG')">
+          <span class="c-cat-icon">🌿</span><span class="c-cat-label">Pure Veg</span>
+        </button>
+        <button class="c-cat" onclick="setF(this,'BOTH')">
+          <span class="c-cat-icon">🍱</span><span class="c-cat-label">Veg &amp; Non-Veg</span>
+        </button>
+        <button class="c-cat" onclick="setF(this,'NON_VEG')">
+          <span class="c-cat-icon">🍖</span><span class="c-cat-label">Non-Veg</span>
+        </button>
+      </div>
+    </div>
+  </section>
 
-      <!-- Category filter -->
-      <section class="ch-section" style="margin-top:24px">
-        <div class="ch-sec-head">
-          <span class="ch-sec-title">Filter</span>
-        </div>
-        <div class="ch-chips" id="chChips">
-          <button class="ch-chip on" data-filter="all"    onclick="setFilter(this,'all')">All</button>
-          <button class="ch-chip"    data-filter="open"   onclick="setFilter(this,'open')">✓ Open now</button>
-          <button class="ch-chip"    data-filter="PURE_VEG" onclick="setFilter(this,'PURE_VEG')">🌿 Pure Veg</button>
-          <button class="ch-chip"    data-filter="BOTH"   onclick="setFilter(this,'BOTH')">🍽️ Veg &amp; Non-Veg</button>
-          <button class="ch-chip"    data-filter="NON_VEG" onclick="setFilter(this,'NON_VEG')">🍖 Non-Veg</button>
-        </div>
-      </section>
+  <!-- ── RESTAURANT GRID ── -->
+  <section class="c-sec">
+    <div class="c-wrap">
+      <div class="c-sec-head">
+        <span class="c-sec-title" id="restHd">Restaurants</span>
+        <a class="c-sec-action" href="/customer-restaurants.html">View all →</a>
+      </div>
+      <div class="c-grid" id="restGrid">
+        <div class="c-skel" style="height:210px"></div>
+        <div class="c-skel" style="height:210px"></div>
+        <div class="c-skel" style="height:210px"></div>
+      </div>
+    </div>
+  </section>
 
-      <!-- Restaurant grid -->
-      <section class="ch-section" style="margin-top:24px">
-        <div class="ch-sec-head">
-          <span class="ch-sec-title" id="chRestCount">Restaurants</span>
-          <a class="ch-sec-link" href="/customer-restaurants.html">View all</a>
-        </div>
-        <div class="ch-grid" id="chGrid">
-          <div class="ch-skel" style="height:218px"></div>
-          <div class="ch-skel" style="height:218px"></div>
-          <div class="ch-skel" style="height:218px"></div>
-          <div class="ch-skel" style="height:218px"></div>
-        </div>
-      </section>
+  <!-- ── ORDER AGAIN (JS-populated) ── -->
+  <div id="recentMount"></div>
 
-      <!-- Order again (populated by JS) -->
-      <div id="chRecentWrap"></div>
+  <div style="height:36px"></div>
 
-      <div class="ch-gap"></div>
-    </main>
-  </div>
+  <!-- ── BOTTOM NAV ── -->
+  <nav class="c-bnav" aria-label="Main navigation">
+    <a class="on" href="/customer.html" aria-label="Home">
+      <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      Home
+    </a>
+    <a href="/customer-restaurants.html" aria-label="Explore">
+      <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      Explore
+    </a>
+    <a href="/customer-orders.html" aria-label="Orders">
+      <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>
+      Orders
+    </a>
+    <a href="/customer-profile.html" aria-label="Profile">
+      <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      Profile
+    </a>
+  </nav>
 
-  <!-- Bottom nav (injected by app.js) -->
-  <div id="customerBottomNav"></div>
+  <!-- ── THEME TOGGLE ── -->
+  <button class="c-theme" onclick="toggleTheme()" aria-label="Toggle theme">
+    <svg class="t-sun"  width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+    <svg class="t-moon" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+    <span class="t-light">Light</span>
+    <span class="t-dark">Dark</span>
+  </button>
 
+  <!-- app.js provides: request(), escapeHtml(), money(), formatDate(), toast() -->
   <script src="/assets/app.js"></script>
   <script>
-    const BANNERS = [
-      ["#fff8ee","#ffe8c8"],["#eef8ee","#c8eac8"],["#fdeef4","#f9d0df"],
-      ["#eef4fd","#cddff9"],["#f5eef9","#e5d0f6"],["#fffde6","#fff7b0"]
+    /* ── GUARD ── */
+    if (!sessionStorage.getItem("token")) location.href = "/customer-login.html";
+
+    const PALETTES = [
+      ["rgba(232,64,28,0.32)","rgba(232,64,28,0.07)"],
+      ["rgba(39,201,107,0.28)","rgba(39,201,107,0.06)"],
+      ["rgba(88,118,255,0.28)","rgba(88,118,255,0.06)"],
+      ["rgba(255,186,48,0.30)","rgba(255,186,48,0.06)"],
+      ["rgba(195,80,220,0.26)","rgba(195,80,220,0.05)"],
+      ["rgba(0,184,222,0.26)","rgba(0,184,222,0.05)"],
     ];
-    const FOOD_EMOJI = { PURE_VEG: "🌿", BOTH: "🍽️", NON_VEG: "🍖" };
+    const EMOJIS = { PURE_VEG:"🌿", BOTH:"🍱", NON_VEG:"🍖" };
 
-    let allRests = [];
-    let currentFilter = "all";
-    let currentSearch = "";
+    let allRests = [], curF = "all", curQ = "";
 
-    initCustomerPage("home").then(async user => {
-      if (!user) return;
+    (async () => {
+      try {
+        const u = await request("/auth/me");
+        if (u.role !== "USER") { location.href = "/admin/dashboard.html"; return; }
+        hydrateUser(u);
+        if (!u.phone) renderHint();
+        await Promise.all([loadRests(), loadOrders()]);
+      } catch { location.href = "/customer-login.html"; }
+    })();
 
-      // Personalized greeting
-      const hour = new Date().getHours();
-      const gr = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
-      const name = user.name ? `, ${user.name.split(" ")[0]}` : "";
-      document.getElementById("chGreeting").textContent = `${gr}${name} 👋`;
+    function hydrateUser(u) {
+      const name  = u.name || u.email || "You";
+      const first = u.name ? u.name.split(" ")[0] : null;
+      const h = new Date().getHours();
+      const gr = h<5?"Good night":h<12?"Good morning":h<17?"Good afternoon":"Good evening";
+      const ph = h<5?"right now?":h<12?"this morning?":h<17?"this afternoon?":"tonight?";
 
-      if (!user.phone) showProfileHint();
+      document.getElementById("uAv").textContent       = name[0].toUpperCase();
+      document.getElementById("uNm").textContent       = first || u.email.split("@")[0];
+      document.getElementById("uFullName").textContent = name;
+      document.getElementById("uEmail").textContent    = u.email || "";
+      document.getElementById("heroTag").textContent   = `${gr}${first?", "+first:""} 👋`;
+      document.getElementById("heroH1").innerHTML = `What are you <b>craving</b><br>${ph}`;
+    }
 
-      await Promise.all([loadRests(), loadOrders()]);
+    function toggleUMenu() { document.getElementById("uDrop").classList.toggle("open") }
+    document.addEventListener("click", e => {
+      if (!document.getElementById("uBtn")?.contains(e.target))
+        document.getElementById("uDrop")?.classList.remove("open");
     });
+    function doSignOut() { sessionStorage.removeItem("token"); location.href = "/customer-login.html" }
+    function toggleTheme() {
+      const on = document.documentElement.classList.toggle("light");
+      localStorage.setItem("avenzo-theme", on ? "light" : "dark");
+    }
 
-    /* ── restaurants ── */
+    /* ── RESTAURANTS ── */
     async function loadRests() {
       try {
         const d = await request("/customer/restaurants");
         allRests = d.restaurants || [];
         renderRests();
-      } catch (err) {
-        document.getElementById("chGrid").innerHTML =
-          `<div class="ch-empty"><div class="ch-empty-icon">😕</div><p>${escapeHtml(err.message)}</p></div>`;
+      } catch (e) {
+        document.getElementById("restGrid").innerHTML =
+          `<div class="c-empty"><div class="c-empty-icon">😕</div><p>${escapeHtml(e.message)}</p></div>`;
       }
     }
 
-    function setFilter(btn, val) {
-      currentFilter = val;
-      document.querySelectorAll(".ch-chip").forEach(c => c.classList.remove("on"));
+    function setF(btn, val) {
+      curF = val;
+      document.querySelectorAll(".c-cat").forEach(c => c.classList.remove("on"));
       btn.classList.add("on");
       renderRests();
     }
 
-    function doFilter() {
-      currentSearch = document.getElementById("chSearch").value.trim().toLowerCase();
+    function doSearch() {
+      curQ = document.getElementById("searchIn").value.trim().toLowerCase();
       renderRests();
     }
 
     function renderRests() {
       let list = allRests;
-      if (currentSearch)
-        list = list.filter(r => [r.name,r.locality,r.address].join(" ").toLowerCase().includes(currentSearch));
-      if (currentFilter === "open") list = list.filter(r => r.serviceAvailable !== false);
-      else if (currentFilter !== "all") list = list.filter(r => r.foodType === currentFilter);
+      if (curQ)         list = list.filter(r => [r.name,r.locality,r.address].join(" ").toLowerCase().includes(curQ));
+      if (curF==="open") list = list.filter(r => r.serviceAvailable!==false);
+      else if (curF!=="all") list = list.filter(r => r.foodType===curF);
 
-      const count = document.getElementById("chRestCount");
-      count.textContent = list.length ? `${list.length} Restaurant${list.length !== 1 ? "s" : ""}` : "Restaurants";
+      document.getElementById("restHd").textContent =
+        list.length ? `${list.length} Restaurant${list.length!==1?"s":""}` : "Restaurants";
 
-      const grid = document.getElementById("chGrid");
+      const g = document.getElementById("restGrid");
       if (!list.length) {
-        grid.innerHTML = `
-          <div class="ch-empty">
-            <div class="ch-empty-icon">🔍</div>
+        g.innerHTML = `
+          <div class="c-empty">
+            <div class="c-empty-icon">🔍</div>
             <p>No restaurants match your filter.</p>
-            <button class="btn btn-ghost" onclick="clearFilters()">Clear filters</button>
+            <button class="c-btn c-btn-ghost" style="padding:8px 18px;font-size:13px" onclick="clearF()">Clear filter</button>
           </div>`;
         return;
       }
 
-      grid.innerHTML = list.map(r => {
+      g.innerHTML = list.map(r => {
         const open = r.serviceAvailable !== false;
-        const hash = [...r.name].reduce((h,c) => (h * 31 + c.charCodeAt(0)) & 0xffff, 0);
-        const [c1, c2] = BANNERS[hash % BANNERS.length];
-        const emoji = FOOD_EMOJI[r.foodType] || "🍴";
-        const href = open ? `/r/${encodeURIComponent(r.slug)}` : "javascript:void(0)";
-        const rating = r.avgRating
-          ? `⭐ ${r.avgRating} <span style="color:var(--muted);font-weight:400">(${r.ratingCount})</span>`
-          : `<span style="color:var(--muted);font-weight:400">No ratings yet</span>`;
+        const hh   = [...r.name].reduce((s,c)=>(s*31+c.charCodeAt(0))&0xffff, 0);
+        const [a,b] = PALETTES[hh % PALETTES.length];
+        const emoji = EMOJIS[r.foodType] || "🍴";
+        const href  = open ? `/r/${encodeURIComponent(r.slug)}` : "javascript:void(0)";
+        const stars = r.avgRating
+          ? `<span class="c-star-icon">★</span>${r.avgRating}<span style="color:var(--tx-3);font-weight:400"> (${r.ratingCount})</span>`
+          : `<span style="color:var(--tx-3)">No ratings yet</span>`;
         return `
-          <a class="ch-rest-card${open ? "" : " ch-rest-paused"}" href="${href}">
-            <div class="ch-rest-banner" style="background:linear-gradient(135deg,${c1},${c2})">
+          <a class="c-rcard${open?"":" c-rcard--paused"}" href="${href}">
+            <div class="c-rcard-banner" style="background:linear-gradient(135deg,${a},${b})">
               ${emoji}
-              ${open ? "" : `<div class="ch-rest-overlay">Ordering paused</div>`}
+              ${open?"":`<div class="c-rcard-closed"><span>Paused</span></div>`}
             </div>
-            <div class="ch-rest-body">
-              <div class="ch-rest-name">${escapeHtml(r.name)}</div>
-              <div class="ch-rest-loc">${escapeHtml(r.locality || r.address || "Dine-in partner")}</div>
-              <div class="ch-rest-foot">
-                <div class="ch-rest-rating">${rating}</div>
-                <span class="ch-pill ${open ? "ch-pill-open" : "ch-pill-paused"}">${open ? "Open" : "Paused"}</span>
+            <div class="c-rcard-body">
+              <div class="c-rcard-name">${escapeHtml(r.name)}</div>
+              <div class="c-rcard-loc">${escapeHtml(r.locality||r.address||"Dine-in partner")}</div>
+              <div class="c-rcard-foot">
+                <div class="c-rcard-stars">${stars}</div>
+                <span class="c-pill ${open?"c-pill-open":"c-pill-paused"}">${open?"Open":"Paused"}</span>
               </div>
             </div>
           </a>`;
       }).join("");
     }
 
-    function clearFilters() {
-      currentFilter = "all"; currentSearch = "";
-      document.getElementById("chSearch").value = "";
-      document.querySelectorAll(".ch-chip").forEach((c, i) => c.classList.toggle("on", i === 0));
+    function clearF() {
+      curF="all"; curQ="";
+      document.getElementById("searchIn").value="";
+      document.querySelectorAll(".c-cat").forEach((c,i)=>c.classList.toggle("on",i===0));
       renderRests();
     }
 
-    /* ── orders ── */
+    /* ── ORDERS ── */
     async function loadOrders() {
       try {
         const d = await request("/customer/orders?page=1&limit=20");
         const orders = d.orders || [];
-
-        // Live order
         const active = orders.find(o => ["PENDING","PREPARING","READY"].includes(o.status));
-        if (active) renderLiveOrder(active);
+        if (active) renderLive(active);
 
-        // Recent (deduplicated by restaurant slug)
-        const past = orders.filter(o => o.status === "COMPLETED");
         const seen = new Set();
-        const recent = past.filter(o => {
-          const k = o.restaurant?.slug;
-          if (!k || seen.has(k)) return false;
-          seen.add(k); return true;
-        }).slice(0, 7);
+        const recent = orders
+          .filter(o => o.status==="COMPLETED" && o.restaurant?.slug)
+          .filter(o => { const k=o.restaurant.slug; if(seen.has(k))return false; seen.add(k); return true; })
+          .slice(0, 8);
         if (recent.length) renderRecent(recent);
-      } catch { /* silent — orders are optional on home */ }
+      } catch { /* orders enhance home — fail silently */ }
     }
 
-    function renderLiveOrder(o) {
+    function renderLive(o) {
       const msgs = {
-        PENDING:   "Your order has been received — the kitchen is next 📋",
-        PREPARING: "The kitchen is preparing your food right now 👨‍🍳",
+        PENDING:   "Order received — the kitchen is next 📋",
+        PREPARING: "Chefs are cooking your food right now 👨‍🍳",
         READY:     "Your order is ready for pickup! 🎉"
       };
-      document.getElementById("chLiveWrap").innerHTML = `
-        <div class="ch-live">
-          <div class="ch-live-head">
-            <div class="ch-live-dot"></div>
-            <span class="ch-live-badge">Live order</span>
-            <span class="ch-live-name">${escapeHtml(o.restaurant?.name || "Your order")}</span>
-            <span class="ch-live-order">Order #${o.orderNumber}</span>
+      document.getElementById("liveMount").innerHTML = `
+        <div class="c-live">
+          <div class="c-live-top">
+            <div class="c-live-dot"></div>
+            <span class="c-live-tag">Live</span>
+            <span class="c-live-rname">${escapeHtml(o.restaurant?.name||"Your order")}</span>
+            <span class="c-live-num">Order #${o.orderNumber}</span>
           </div>
-          <div class="ch-live-foot">
-            <div class="ch-live-status">${msgs[o.status] || o.status}</div>
-            <a class="btn btn-primary" style="padding:8px 20px;font-size:13px;width:auto" href="/track/${o.trackingToken}">Track →</a>
+          <div class="c-live-foot">
+            <div class="c-live-msg">${msgs[o.status]||o.status}</div>
+            <a class="c-btn c-btn-primary" style="padding:9px 18px;font-size:13px;flex-shrink:0" href="/track/${o.trackingToken}">Track →</a>
           </div>
         </div>`;
     }
 
     function renderRecent(orders) {
-      document.getElementById("chRecentWrap").innerHTML = `
-        <section class="ch-section" style="margin-top:32px">
-          <div class="ch-sec-head">
-            <span class="ch-sec-title">Order again</span>
-            <a class="ch-sec-link" href="/customer-orders.html">All orders</a>
-          </div>
-          <div class="ch-scroll">
-            ${orders.map(o => {
-              const r = o.restaurant || {};
-              const emoji = FOOD_EMOJI[r.foodType] || "🍴";
-              const href = r.slug ? `/r/${encodeURIComponent(r.slug)}` : "/customer-restaurants.html";
-              return `
-                <a class="ch-recent-card" href="${href}">
-                  <div class="ch-recent-emoji">${emoji}</div>
-                  <div class="ch-recent-name">${escapeHtml(r.name || "Restaurant")}</div>
-                  <div class="ch-recent-sub">${escapeHtml(r.locality || r.address || "Dine-in partner")}</div>
-                </a>`;
-            }).join("")}
+      document.getElementById("recentMount").innerHTML = `
+        <section class="c-sec">
+          <div class="c-wrap">
+            <div class="c-sec-head">
+              <span class="c-sec-title">Order again</span>
+              <a class="c-sec-action" href="/customer-orders.html">All orders →</a>
+            </div>
+            <div class="c-hscroll">
+              ${orders.map(o => {
+                const r = o.restaurant||{};
+                const emoji = EMOJIS[r.foodType]||"🍴";
+                const href  = r.slug?`/r/${encodeURIComponent(r.slug)}`:"/customer-restaurants.html";
+                const hh = [...(r.name||"X")].reduce((s,c)=>(s*31+c.charCodeAt(0))&0xffff,0);
+                const [a,b] = PALETTES[hh%PALETTES.length];
+                return `
+                  <a class="c-rrecent" href="${href}">
+                    <div class="c-rrecent-banner" style="background:linear-gradient(135deg,${a},${b})">${emoji}</div>
+                    <div class="c-rrecent-body">
+                      <div class="c-rrecent-name">${escapeHtml(r.name||"Restaurant")}</div>
+                      <div class="c-rrecent-loc">${escapeHtml(r.locality||r.address||"Dine-in")}</div>
+                    </div>
+                  </a>`;
+              }).join("")}
+            </div>
           </div>
         </section>`;
     }
 
-    function showProfileHint() {
-      document.getElementById("chHintWrap").innerHTML = `
-        <a class="ch-hint" href="/customer-profile.html">
-          <div class="ch-hint-icon">📱</div>
-          <div class="ch-hint-body">
+    function renderHint() {
+      document.getElementById("hintMount").innerHTML = `
+        <a class="c-hint" href="/customer-profile.html">
+          <div class="c-hint-icon">📱</div>
+          <div class="c-hint-txt">
             <strong>Add your phone number</strong>
             <span>Skip the phone step at every checkout.</span>
           </div>
-          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>
+          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" style="margin-left:auto;flex-shrink:0;color:var(--tx-3)"><path d="m9 18 6-6-6-6"/></svg>
         </a>`;
     }
   </script>
