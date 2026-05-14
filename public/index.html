@@ -523,7 +523,63 @@ a{color:inherit;text-decoration:none}
   .food-cards{flex:0 0 520px}
   .food-card img{height:234px}
 }
+
+/* Hide hero logo block on mobile — nav already shows the logo */
+@media(max-width:899px){
+  .hero-logo-block{display:none}
+}
+
+/* ── Theme toggle button ── */
+.theme-btn{
+  width:36px;height:36px;border-radius:50%;
+  background:rgba(255,255,255,.08);border:1px solid var(--bdr);
+  color:var(--tx-2);cursor:pointer;font-family:inherit;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  transition:background .2s,color .2s,transform .2s;
+}
+.theme-btn:hover{background:rgba(255,255,255,.15);color:var(--tx);transform:rotate(20deg)}
+.theme-sun{display:flex}
+.theme-moon{display:none}
+
+/* ══════════════════════════════════════════════════
+   LIGHT MODE
+══════════════════════════════════════════════════ */
+html.light{
+  --bg:   #FFFFFF;
+  --bg-2: #F5F2EC;
+  --bg-3: #ECE8DF;
+  --tx:   #1A1008;
+  --tx-2: rgba(26,16,8,.55);
+  --tx-3: rgba(26,16,8,.22);
+  --bdr:   rgba(26,16,8,.1);
+  --bdr-2: rgba(26,16,8,.06);
+  --sh-s: 0 2px 10px rgba(0,0,0,.07);
+  --sh-m: 0 6px 28px rgba(0,0,0,.1);
+  --sh-l: 0 12px 52px rgba(0,0,0,.14);
+}
+html.light .nav.on{background:rgba(255,255,255,.94);border-color:rgba(26,16,8,.1)}
+html.light .theme-btn{background:rgba(0,0,0,.06);border-color:rgba(0,0,0,.1)}
+html.light .theme-btn:hover{background:rgba(0,0,0,.12)}
+html.light .theme-sun{display:none}
+html.light .theme-moon{display:flex}
+html.light .ff{opacity:.13}
+html.light .btn-ghost{background:rgba(0,0,0,.06);border-color:rgba(0,0,0,.12);color:var(--tx-2)}
+html.light .btn-ghost:hover{background:rgba(0,0,0,.1);color:var(--tx)}
+html.light .store-btn{background:rgba(0,0,0,.05);border-color:rgba(0,0,0,.12)}
+html.light .store-btn:hover{background:rgba(0,0,0,.09);border-color:rgba(0,0,0,.2)}
+html.light .store-svg{color:var(--tx)}
+html.light .pp{background:rgba(0,0,0,.05);border-color:rgba(0,0,0,.08);color:var(--tx-2)}
+html.light .phone-mock{background:rgba(0,0,0,.03);border-color:rgba(124,92,252,.5)}
+html.light .phone-blur-strip{background:linear-gradient(transparent,rgba(236,232,223,.98))}
+html.light .usp-card{background:#fff;box-shadow:0 2px 14px rgba(0,0,0,.07)}
+html.light .review{box-shadow:0 2px 16px rgba(0,0,0,.07)}
+html.light .faq-item{background:var(--bg-2)}
+html.light .appt::before{background:radial-gradient(ellipse,rgba(124,92,252,.07) 0%,transparent 64%)}
+html.light .appt::after{background:radial-gradient(ellipse,rgba(40,201,126,.04) 0%,transparent 65%)}
+html.light .badge-fire{background:rgba(232,64,28,.1);border-color:rgba(232,64,28,.22)}
+html.light .badge-violet{background:rgba(124,92,252,.1);border-color:rgba(124,92,252,.22)}
 </style>
+<script>if(localStorage.getItem('avenzo-theme')==='light')document.documentElement.classList.add('light')</script>
 </head>
 <body>
 
@@ -537,6 +593,10 @@ a{color:inherit;text-decoration:none}
     <a href="/customer-restaurants.html">Browse Restaurants</a>
     <a href="/restaurant-login.html">Restaurant Login</a>
   </div>
+  <button class="theme-btn" id="themeToggle" onclick="toggleTheme()" aria-label="Toggle light/dark mode">
+    <svg class="theme-sun" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+    <svg class="theme-moon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+  </button>
   <a class="btn btn-fire btn-sm" href="/customer-restaurants.html">Order now →</a>
 </nav>
 
@@ -582,8 +642,8 @@ a{color:inherit;text-decoration:none}
     <div class="food-cards">
       <div class="food-card">
         <img src="/images/food/makhani.jpg"
-             alt="Creamy butter makhani" loading="eager" width="460" height="480">
-        <div class="food-card-name">Creamy Makhani</div>
+             alt="Seekh kebab platter" loading="eager" width="460" height="480">
+        <div class="food-card-name">Seekh Kebab</div>
       </div>
       <div class="food-card">
         <img src="/images/food/biryani.jpg"
@@ -592,13 +652,13 @@ a{color:inherit;text-decoration:none}
       </div>
       <div class="food-card">
         <img src="/images/food/south-indian.jpg"
-             alt="South Indian platter" loading="eager" width="460" height="480">
-        <div class="food-card-name">South Indian</div>
+             alt="Paneer tikka sizzler" loading="eager" width="460" height="480">
+        <div class="food-card-name">Paneer Tikka</div>
       </div>
       <div class="food-card">
         <img src="/images/food/tandoori.jpg"
-             alt="Tandoori grill" loading="eager" width="460" height="480">
-        <div class="food-card-name">Tandoori Grill</div>
+             alt="Paneer butter masala with roti" loading="eager" width="460" height="480">
+        <div class="food-card-name">Butter Masala</div>
       </div>
     </div>
   </div>
@@ -739,8 +799,8 @@ a{color:inherit;text-decoration:none}
   <div class="reel">
     <div class="reel-card">
       <img src="/images/food/makhani.jpg"
-           alt="Creamy butter makhani" loading="lazy" width="600" height="740">
-      <div class="reel-cap"><strong>Creamy Makhani</strong><small>Rich &amp; indulgent</small></div>
+           alt="Seekh kebab platter" loading="lazy" width="600" height="740">
+      <div class="reel-cap"><strong>Seekh Kebab</strong><small>Grilled &amp; juicy</small></div>
     </div>
     <div class="reel-card">
       <img src="/images/food/biryani.jpg"
@@ -749,23 +809,23 @@ a{color:inherit;text-decoration:none}
     </div>
     <div class="reel-card">
       <img src="/images/food/south-indian.jpg"
-           alt="South Indian platter" loading="lazy" width="600" height="740">
-      <div class="reel-cap"><strong>South Indian Platter</strong><small>Crispy, light &amp; fresh</small></div>
+           alt="Paneer tikka on sizzler" loading="lazy" width="600" height="740">
+      <div class="reel-cap"><strong>Paneer Tikka</strong><small>Smoky sizzler</small></div>
     </div>
     <div class="reel-card">
       <img src="/images/food/curry.jpg"
-           alt="North Indian curry" loading="lazy" width="600" height="740">
-      <div class="reel-cap"><strong>North Indian Special</strong><small>Hearty &amp; aromatic</small></div>
+           alt="Creamy Indian curry with rice" loading="lazy" width="600" height="740">
+      <div class="reel-cap"><strong>Creamy Curry</strong><small>Rich &amp; aromatic</small></div>
     </div>
     <div class="reel-card">
       <img src="/images/food/tandoori.jpg"
-           alt="Tandoori grill" loading="lazy" width="600" height="740">
-      <div class="reel-cap"><strong>Tandoori Grill</strong><small>Clay oven perfection</small></div>
+           alt="Paneer butter masala with roti" loading="lazy" width="600" height="740">
+      <div class="reel-cap"><strong>Butter Masala</strong><small>Creamy &amp; indulgent</small></div>
     </div>
     <div class="reel-card">
       <img src="/images/food/bowl.jpg"
-           alt="Wholesome bowl" loading="lazy" width="600" height="740">
-      <div class="reel-cap"><strong>Wholesome Bowl</strong><small>Comforting &amp; nourishing</small></div>
+           alt="Wholesome protein bowl" loading="lazy" width="600" height="740">
+      <div class="reel-cap"><strong>Power Bowl</strong><small>Fresh &amp; nourishing</small></div>
     </div>
   </div>
 </section>
@@ -996,6 +1056,12 @@ a{color:inherit;text-decoration:none}
 </footer>
 
 <script>
+/* Theme toggle */
+function toggleTheme() {
+  const isLight = document.documentElement.classList.toggle('light');
+  localStorage.setItem('avenzo-theme', isLight ? 'light' : 'dark');
+}
+
 /* Coming soon toast for store buttons */
 function showSoon() {
   let t = document.getElementById('soonToast');
