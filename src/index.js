@@ -791,6 +791,11 @@ app.post("/order", orderLimiter, optionalAuth, async (req, res) => {
             recipientEmail: customer?.email
         }).catch((err) => logRouteError("notifyOrderConfirmation", err));
 
+        // Include enough payment context for the frontend to route to the right payment UI.
+        const selectedMethod = resolvedPaymentMethodId
+            ? enabledMethods.find(m => m.id === resolvedPaymentMethodId) || null
+            : null;
+
         if (idempotencyKey) {
             const cacheKey = `${restaurantId}:${deviceId}:${idempotencyKey}`;
             const cachePayload = {
@@ -804,11 +809,6 @@ app.post("/order", orderLimiter, optionalAuth, async (req, res) => {
             };
             orderIdempotencyCache.set(cacheKey, { ...cachePayload, at: Date.now() });
         }
-
-        // Include enough payment context for the frontend to route to the right payment UI.
-        const selectedMethod = resolvedPaymentMethodId
-            ? enabledMethods.find(m => m.id === resolvedPaymentMethodId) || null
-            : null;
 
         res.json({
             trackingToken: order.trackingToken,
