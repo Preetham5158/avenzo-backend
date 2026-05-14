@@ -305,7 +305,7 @@
       if (!phone || !code) { msg.textContent = "Enter your mobile number and order code."; return; }
       setLoading(btn, true, "Searching...");
       try {
-        const data = await request(`/order/find?phone=${encodeURIComponent(phone)}&code=${encodeURIComponent(code)}`, { auth: false });
+        const data = await request(`/orders/find?phone=${encodeURIComponent(phone)}&code=${encodeURIComponent(code)}`, { auth: false });
         window.location.href = `/track/${data.trackingToken}?guest=1`;
       } catch (err) {
         msg.textContent = err.message || "No order found.";
