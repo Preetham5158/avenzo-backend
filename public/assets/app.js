@@ -196,10 +196,29 @@ function customerNavHtml(active = "home") {
   `;
 }
 
+function customerBottomNavHtml(active = "home") {
+  const items = [
+    { key: "home",        href: "/customer.html",             label: "Home",
+      icon: `<svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>` },
+    { key: "restaurants", href: "/customer-restaurants.html", label: "Explore",
+      icon: `<svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>` },
+    { key: "orders",      href: "/customer-orders.html",      label: "Orders",
+      icon: `<svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>` },
+    { key: "profile",     href: "/customer-profile.html",     label: "Profile",
+      icon: `<svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>` },
+  ];
+  return `<nav class="c-bottom-nav" aria-label="Customer navigation">${
+    items.map(i => `<a href="${i.href}" class="${active === i.key ? "active" : ""}" aria-label="${i.label}">${i.icon}<span>${i.label}</span></a>`).join("")
+  }</nav>`;
+}
+
 async function initCustomerPage(active = "home") {
   requireAuth();
   const navTarget = document.getElementById("customerNav");
   if (navTarget) navTarget.innerHTML = customerNavHtml(active);
+
+  const bnTarget = document.getElementById("customerBottomNav");
+  if (bnTarget) bnTarget.innerHTML = customerBottomNavHtml(active);
 
   const user = await initAccountMenu();
   if (user && user.role !== "USER") {
