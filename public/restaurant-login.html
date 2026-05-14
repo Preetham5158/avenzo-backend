@@ -1,176 +1,433 @@
 <!DOCTYPE html>
-<html>
-
+<html lang="en">
 <head>
-  <title>Restaurant partner sign in</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/assets/app.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Partner Sign In — Avenzo</title>
+<meta name="description" content="Sign in to the Avenzo restaurant partner dashboard">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<script>if(localStorage.getItem('avenzo-theme')==='light')document.documentElement.classList.add('light')</script>
+<style>
+:root{
+  --brand:#E8401C;--brand-2:#F5781C;--gold:#E8A428;--mint:#28C97E;
+  --bg:#09080A;--bg-2:#131118;--bg-3:#1C1A22;
+  --tx:#F2ECE5;--tx-2:rgba(242,236,229,.5);--tx-3:rgba(242,236,229,.22);
+  --bdr:rgba(255,255,255,.08);
+  --rs:8px;--rm:12px;--rl:18px;--rxl:24px;--rp:100px;
+  --sh-s:0 2px 10px rgba(0,0,0,.18);--sh-m:0 6px 28px rgba(0,0,0,.32);--sh-l:0 12px 52px rgba(0,0,0,.5);
+}
+html.light{
+  --bg:#FFFFFF;--bg-2:#F5F2EC;--bg-3:#ECE8DF;
+  --tx:#1A1008;--tx-2:rgba(26,16,8,.55);--tx-3:rgba(26,16,8,.22);
+  --bdr:rgba(26,16,8,.1);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(--tx);-webkit-font-smoothing:antialiased;overflow-x:clip}
+a{color:inherit;text-decoration:none}
+img{display:block;max-width:100%}
+
+@keyframes fa{0%,100%{transform:translateY(0) rotate(0deg)}50%{transform:translateY(-20px) rotate(10deg)}}
+@keyframes fb{0%,100%{transform:translateY(0) rotate(4deg)}50%{transform:translateY(-14px) rotate(-6deg)}}
+@keyframes fc{0%,100%{transform:translateY(4px) rotate(-4deg)}50%{transform:translateY(-18px) rotate(5deg)}}
+@keyframes fd{0%,100%{transform:translateY(0) rotate(3deg)}50%{transform:translateY(-16px) rotate(-3deg)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+
+.auth-shell{display:grid;grid-template-columns:1fr;min-height:100svh}
+
+/* ── Brand panel ── */
+.auth-brand{
+  display:none;position:relative;overflow:hidden;
+  background:var(--bg-2);border-right:1px solid var(--bdr);
+  padding:52px;flex-direction:column;justify-content:space-between;
+}
+.bglow{position:absolute;inset:0;background:radial-gradient(ellipse at 30% 40%,rgba(232,64,28,.12) 0%,transparent 60%);pointer-events:none}
+.bglow2{position:absolute;inset:0;background:radial-gradient(ellipse at 72% 82%,rgba(232,164,40,.06) 0%,transparent 58%);pointer-events:none}
+.ff{position:absolute;pointer-events:none;user-select:none;opacity:.06;font-size:44px;will-change:transform}
+.ff1{top:11%;left:7%;animation:fa 9s ease-in-out infinite}
+.ff2{bottom:20%;left:9%;animation:fb 11s ease-in-out infinite;animation-delay:-3.5s}
+.ff3{top:28%;right:8%;animation:fc 7.5s ease-in-out infinite;animation-delay:-1.8s}
+.ff4{bottom:28%;right:8%;animation:fd 9.5s ease-in-out infinite;animation-delay:-5s}
+
+.bl{display:flex;align-items:center;gap:12px;position:relative;z-index:1}
+.bl img{width:42px;height:42px;object-fit:contain;filter:drop-shadow(0 0 12px rgba(232,64,28,.42))}
+.bl span{font-size:20px;font-weight:900;letter-spacing:.08em}
+
+.bb{position:relative;z-index:1;flex:1;display:flex;flex-direction:column;justify-content:center}
+.bh{font-size:clamp(28px,3vw,44px);font-weight:900;letter-spacing:-.03em;line-height:1.1}
+.bh em{font-style:normal;background:linear-gradient(110deg,var(--brand) 0%,var(--gold) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.bsp{font-size:15px;color:var(--tx-2);line-height:1.72;max-width:340px;margin-top:16px}
+
+/* Dashboard feature cards */
+.bfeats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:36px}
+.bfeat{
+  background:rgba(255,255,255,.04);border:1px solid var(--bdr);
+  border-radius:16px;padding:18px 16px;
+}
+html.light .bfeat{background:rgba(0,0,0,.03)}
+.bfeat-ico{font-size:20px;margin-bottom:9px}
+.bfeat strong{display:block;font-size:13px;font-weight:700;color:var(--tx);margin-bottom:4px}
+.bfeat span{font-size:12px;color:var(--tx-2);line-height:1.5}
+
+/* Access badge */
+.b-access{
+  display:inline-flex;align-items:center;gap:7px;
+  background:rgba(40,201,126,.1);border:1px solid rgba(40,201,126,.22);
+  border-radius:var(--rp);padding:6px 14px;
+  font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;
+  color:var(--mint);margin-top:28px;width:fit-content;
+}
+.b-access-dot{width:6px;height:6px;border-radius:50%;background:var(--mint);flex-shrink:0}
+
+.bfoot{position:relative;z-index:1;font-size:12px;color:var(--tx-3)}
+
+/* ── Form panel ── */
+.auth-panel{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:36px 20px;overflow-y:auto;background:var(--bg);min-height:100svh;
+}
+.mob-logo{display:flex;align-items:center;gap:10px;margin-bottom:36px;align-self:flex-start}
+.mob-logo img{width:32px;height:32px;object-fit:contain;filter:drop-shadow(0 0 8px rgba(232,64,28,.38))}
+.mob-logo span{font-size:16px;font-weight:900;letter-spacing:.08em}
+
+/* ── Card ── */
+.auth-card{width:100%;max-width:400px;animation:fadeUp .4s ease both}
+.auth-eyebrow{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--brand-2);margin-bottom:10px}
+.auth-h{font-size:26px;font-weight:800;letter-spacing:-.022em;line-height:1.2;color:var(--tx)}
+.auth-sub{font-size:14px;color:var(--tx-2);margin-top:7px;line-height:1.6}
+
+/* Security note */
+.security-note{
+  display:flex;align-items:center;gap:9px;
+  background:rgba(40,201,126,.07);border:1px solid rgba(40,201,126,.18);
+  border-radius:var(--rm);padding:11px 14px;
+  font-size:13px;font-weight:600;color:var(--mint);
+  margin-top:20px;
+}
+.security-note svg{flex-shrink:0;opacity:.8}
+
+/* ── Fields ── */
+.a-form{display:flex;flex-direction:column;gap:10px;margin-top:24px}
+.fld{position:relative}
+.fld input{
+  width:100%;background:var(--bg-2);border:1.5px solid var(--bdr);border-radius:var(--rl);
+  padding:14px 16px;font-family:inherit;font-size:15px;font-weight:500;color:var(--tx);
+  outline:none;transition:border-color .2s,box-shadow .2s;-webkit-appearance:none;
+}
+.fld input::placeholder{color:var(--tx-3)}
+.fld input:focus{border-color:rgba(232,64,28,.5);box-shadow:0 0 0 3px rgba(232,64,28,.1)}
+.pw-eye{position:absolute;right:14px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--tx-2);padding:4px;display:flex;align-items:center;transition:color .2s}
+.pw-eye:hover{color:var(--tx)}
+
+/* ── Submit ── */
+.a-btn{
+  width:100%;margin-top:16px;padding:14px;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  border:none;border-radius:var(--rl);
+  font-family:inherit;font-size:16px;font-weight:800;color:#fff;
+  background:var(--brand);cursor:pointer;
+  box-shadow:0 4px 22px rgba(232,64,28,.3);
+  transition:transform .14s,box-shadow .14s;
+}
+.a-btn:hover{transform:translateY(-2px);box-shadow:0 8px 32px rgba(232,64,28,.42)}
+.a-btn:active{transform:translateY(0)}
+.a-btn:disabled{opacity:.6;cursor:not-allowed;transform:none;box-shadow:none}
+
+/* ── Error ── */
+.a-err{background:rgba(232,64,28,.09);border:1px solid rgba(232,64,28,.24);border-radius:var(--rm);padding:11px 14px;font-size:13px;font-weight:600;color:#ff7043;margin-top:10px;display:none}
+.a-err.on{display:block}
+
+/* ── OTP view ── */
+.otp-h{font-size:24px;font-weight:800;letter-spacing:-.022em;color:var(--tx)}
+.otp-p{font-size:14px;color:var(--tx-2);margin-top:8px;line-height:1.65}
+.otp-target{color:var(--tx);font-weight:700}
+.otp-boxes{display:flex;gap:8px;margin-top:28px}
+.otp-d{
+  flex:1;aspect-ratio:1;max-width:56px;text-align:center;
+  background:var(--bg-2);border:1.5px solid var(--bdr);border-radius:var(--rm);
+  font-family:inherit;font-size:22px;font-weight:800;color:var(--tx);
+  outline:none;-webkit-appearance:none;caret-color:var(--brand);
+  transition:border-color .2s,box-shadow .2s;
+}
+.otp-d:focus{border-color:rgba(232,64,28,.5);box-shadow:0 0 0 3px rgba(232,64,28,.1)}
+.otp-d.ok{border-color:rgba(232,64,28,.35)}
+.otp-row{display:flex;align-items:center;justify-content:space-between;margin-top:14px}
+.otp-re{font-size:13px;color:var(--tx-2);font-weight:600}
+.otp-re-btn{background:none;border:none;cursor:pointer;font-family:inherit;font-size:13px;font-weight:700;color:var(--brand-2);padding:0;transition:color .2s;display:none}
+.otp-re-btn:hover{color:var(--tx)}
+.otp-re-btn:disabled{color:var(--tx-3);cursor:default}
+.otp-bk{font-size:13px;font-weight:700;color:var(--tx-2);cursor:pointer;background:none;border:none;font-family:inherit;padding:0;transition:color .2s}
+.otp-bk:hover{color:var(--tx)}
+
+/* ── Footer links ── */
+.auth-footer{margin-top:32px;display:flex;flex-direction:column;gap:10px;padding-top:24px;border-top:1px solid var(--bdr)}
+.auth-footer-row{font-size:13px;color:var(--tx-2);text-align:center}
+.auth-footer-row a{color:var(--brand-2);font-weight:600;transition:color .2s}
+.auth-footer-row a:hover{color:var(--tx)}
+.auth-footer-legal{font-size:12px;color:var(--tx-3);text-align:center}
+.auth-footer-legal a{color:var(--tx-3);transition:color .2s}
+.auth-footer-legal a:hover{color:var(--tx-2)}
+
+/* ── Theme pill ── */
+.theme-pill{
+  position:fixed;bottom:24px;right:24px;z-index:200;
+  display:flex;align-items:center;gap:9px;
+  background:var(--bg-2);border:1px solid var(--bdr);border-radius:var(--rp);
+  padding:9px 18px;cursor:pointer;font-family:inherit;font-size:13px;font-weight:700;color:var(--tx-2);
+  box-shadow:var(--sh-m);transition:background .2s,color .2s,transform .16s,box-shadow .2s;
+}
+.theme-pill:hover{color:var(--tx);transform:translateY(-3px);box-shadow:var(--sh-l)}
+.theme-pill svg{flex-shrink:0;transition:transform .3s}.theme-pill:hover svg{transform:rotate(20deg)}
+.t-sun{display:flex}.t-moon{display:none}
+html.light .t-sun{display:none}html.light .t-moon{display:flex}
+
+@media(min-width:900px){
+  .auth-shell{grid-template-columns:44% 56%;min-height:100svh;overflow:hidden}
+  .auth-brand{display:flex}
+  .auth-panel{min-height:auto}
+  .mob-logo{display:none}
+}
+</style>
 </head>
-
 <body>
-  <main class="auth-page">
-    <section class="card auth-card">
-      <div class="brand center-brand">
-        <img src="/logo.png" alt="Avenzo">
-        <span>AVENZO</span>
-      </div>
+<div class="auth-shell">
 
-      <div class="stack text-center mb-20">
-        <div class="eyebrow">Restaurant partner sign in</div>
-        <h1 class="h1-auth">Restaurant Partner Sign in</h1>
-        <p class="muted">For Avenzo admins, restaurant owners, and approved team members.</p>
-      </div>
+  <!-- BRAND PANEL -->
+  <aside class="auth-brand" aria-hidden="true">
+    <div class="bglow"></div><div class="bglow2"></div>
+    <span class="ff ff1">🍽️</span><span class="ff ff2">📊</span>
+    <span class="ff ff3">🧾</span><span class="ff ff4">⚡</span>
 
-      <div class="auth-benefits mb-20">
-        <span>Approved partners</span>
-        <span>Operations dashboard</span>
-        <span>Verification step</span>
-      </div>
+    <a class="bl" href="/"><img src="/logo.png" alt="Avenzo"><span>AVENZO</span></a>
 
-      <form class="stack" id="passwordForm" onsubmit="login(event)">
-        <div class="field">
-          <label for="email">Email</label>
-          <input id="email" class="input" type="email" autocomplete="email" placeholder="owner@example.com" required>
+    <div class="bb">
+      <h1 class="bh">Your restaurant,<br><em>run smarter.</em></h1>
+      <p class="bsp">The complete operations dashboard for restaurants on Avenzo — orders, menus, QR codes, and your team in one place.</p>
+
+      <div class="bfeats">
+        <div class="bfeat">
+          <div class="bfeat-ico">📋</div>
+          <strong>Live orders</strong>
+          <span>Accept, track and manage every order in real time</span>
         </div>
-
-        <div class="field">
-          <label for="password">Password</label>
-          <input id="password" class="input" type="password" autocomplete="current-password" placeholder="Enter password" required>
+        <div class="bfeat">
+          <div class="bfeat-ico">🍛</div>
+          <strong>Menu builder</strong>
+          <span>Add dishes with photos, prices and categories</span>
         </div>
+        <div class="bfeat">
+          <div class="bfeat-ico">📱</div>
+          <strong>QR codes</strong>
+          <span>Generate and print QR codes for every table</span>
+        </div>
+        <div class="bfeat">
+          <div class="bfeat-ico">👥</div>
+          <strong>Team access</strong>
+          <span>Add owners and employees with role-based access</span>
+        </div>
+      </div>
 
-        <button id="loginBtn" class="btn btn-dark" type="submit">Restaurant login</button>
-        <div id="error" class="muted feedback-line"></div>
+      <div class="b-access">
+        <span class="b-access-dot"></span>
+        Approved partners only
+      </div>
+    </div>
+
+    <div class="bfoot">© 2025 Avenzo Technologies · Made in Bengaluru</div>
+  </aside>
+
+  <!-- FORM PANEL -->
+  <main class="auth-panel">
+    <a class="mob-logo" href="/"><img src="/logo.png" alt="Avenzo"><span>AVENZO</span></a>
+
+    <!-- ── Login view ── -->
+    <div class="auth-card" id="viewLogin">
+      <div class="auth-eyebrow">Restaurant Partner</div>
+      <div class="auth-h">Partner sign in</div>
+      <div class="auth-sub">For Avenzo admins, restaurant owners, and approved team members.</div>
+
+      <div class="security-note">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        A verification code is always sent to confirm your identity
+      </div>
+
+      <form class="a-form" id="loginForm" onsubmit="doLogin(event)" novalidate>
+        <div class="fld">
+          <input type="email" id="eml" placeholder="Partner email address" autocomplete="email" inputmode="email">
+        </div>
+        <div class="fld">
+          <input type="password" id="pw" placeholder="Password" autocomplete="current-password">
+          <button type="button" class="pw-eye" id="pwEye" onclick="togglePw()" aria-label="Show password">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+        <div class="a-err" id="loginErr"></div>
+        <button type="submit" class="a-btn" id="loginBtn">Sign in →</button>
       </form>
 
-      <form class="stack" id="otpForm" onsubmit="verifyOtp(event)" hidden>
-        <div class="stack text-center mb-16">
-          <p class="muted mb-0">We sent a verification code to your registered email.</p>
-          <p class="muted mb-0" id="maskedEmailHint"></p>
-        </div>
-        <div class="field">
-          <label for="otp">Verification code</label>
-          <input id="otp" class="input" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="6-digit code" required>
-        </div>
-        <button id="otpBtn" class="btn btn-dark" type="submit">Verify and continue</button>
-        <button id="resendBtn" class="btn btn-ghost" type="button" onclick="resendOtp()">Resend code</button>
-        <div id="otpHelp" class="muted feedback-line"></div>
-      </form>
+      <div class="auth-footer">
+        <div class="auth-footer-row">Not listed yet? <a href="/restaurant-interest.html">Submit restaurant interest</a></div>
+        <div class="auth-footer-row">Customer account? <a href="/customer-login.html">Sign in here</a></div>
+        <div class="auth-footer-legal"><a href="/privacy.html">Privacy</a> · <a href="/terms.html">Terms</a> · <a href="/refund-policy.html">Refund policy</a></div>
+      </div>
+    </div>
 
-      <p class="muted auth-footnote">
-        Want to list your restaurant?
-        <a href="/restaurant-interest.html" class="auth-link">Submit restaurant interest</a>
-      </p>
-      <p class="muted auth-footnote">
-        Customer account?
-        <a href="/customer-login.html" class="auth-link">Customer sign in</a>
-      </p>
-      <p class="muted auth-footnote">
-        <a href="/privacy.html" class="auth-link">Privacy</a> ·
-        <a href="/terms.html" class="auth-link">Terms</a> ·
-        <a href="/refund-policy.html" class="auth-link">Refund policy</a>
-      </p>
-    </section>
+    <!-- ── OTP view ── -->
+    <div class="auth-card" id="viewOtp" style="display:none">
+      <div class="auth-eyebrow">Verification</div>
+      <div class="otp-h">Check your email</div>
+      <p class="otp-p">We sent a 6-digit code to <span class="otp-target" id="otpTarget"></span>. This step keeps your dashboard secure.</p>
+      <div class="otp-boxes" id="otpBoxes">
+        <input class="otp-d" maxlength="1" inputmode="numeric" autocomplete="one-time-code">
+        <input class="otp-d" maxlength="1" inputmode="numeric">
+        <input class="otp-d" maxlength="1" inputmode="numeric">
+        <input class="otp-d" maxlength="1" inputmode="numeric">
+        <input class="otp-d" maxlength="1" inputmode="numeric">
+        <input class="otp-d" maxlength="1" inputmode="numeric">
+      </div>
+      <div class="a-err" id="otpErr"></div>
+      <button class="a-btn" id="otpBtn" type="button" onclick="doVerify()">Verify and continue →</button>
+      <div class="otp-row">
+        <div class="otp-re">
+          <span id="reCd">Resend in <strong id="reSecs">30</strong>s</span>
+          <button class="otp-re-btn" id="reBtn" type="button" onclick="doResend()">Resend code</button>
+        </div>
+        <button class="otp-bk" type="button" onclick="toLogin()">← Back</button>
+      </div>
+    </div>
+
   </main>
+</div>
 
-  <script src="/assets/app.js"></script>
-  <script>
-    let challengeId = "";
+<!-- Theme toggle -->
+<button class="theme-pill" onclick="toggleTheme()" aria-label="Toggle theme">
+  <svg class="t-sun" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+  <svg class="t-moon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+  <span class="t-sun">Light</span><span class="t-moon">Dark</span>
+</button>
 
-    async function login(event) {
-      event.preventDefault();
-      const btn = document.getElementById("loginBtn");
-      const errorEl = document.getElementById("error");
-      errorEl.textContent = "";
-      setLoading(btn, true, "Checking...");
+<script src="/assets/app.js"></script>
+<script>
+if (sessionStorage.getItem('token')) location.href = '/admin/dashboard.html';
 
-      try {
-        const data = await request("/auth/restaurant/login", {
-          method: "POST",
-          body: JSON.stringify({
-            email: document.getElementById("email").value.trim(),
-            password: document.getElementById("password").value
-          })
-        });
+let cid = null, reTimer = null, pwVis = false;
 
-        if (data.otpRequired) {
-          challengeId = data.challengeId;
-          if (data.maskedEmail) {
-            document.getElementById("maskedEmailHint").textContent = data.maskedEmail;
-          }
-          document.getElementById("passwordForm").hidden = true;
-          document.getElementById("otpForm").hidden = false;
-          document.getElementById("otp").focus();
-          return;
-        }
+function togglePw() {
+  pwVis = !pwVis;
+  document.getElementById('pw').type = pwVis ? 'text' : 'password';
+  document.getElementById('pwEye').innerHTML = pwVis
+    ? `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>`
+    : `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`;
+}
 
-        finishLogin(data);
-      } catch (err) {
-        const msg = err.message || "";
-        errorEl.textContent = msg.includes("customer account")
-          ? "This account is for customer ordering. Please use Customer sign in."
-          : msg.includes("could not send") || msg.includes("verification code")
-            ? "We couldn't send the verification code. Please try again."
-            : "Sign in failed. Please check your email and password.";
-        toast(errorEl.textContent);
-      } finally {
-        setLoading(btn, false);
-      }
+async function doLogin(e) {
+  e.preventDefault();
+  const email = document.getElementById('eml').value.trim();
+  const pw = document.getElementById('pw').value;
+  clrErr('loginErr');
+  if (!email) { setErr('loginErr', 'Enter your partner email address.'); return; }
+  if (!pw) { setErr('loginErr', 'Enter your password.'); return; }
+  const btn = document.getElementById('loginBtn');
+  btn.disabled = true; btn.textContent = 'Signing in…';
+  try {
+    const data = await request('/auth/restaurant/login', { method: 'POST', body: JSON.stringify({ email, password: pw }) });
+    if (data.otpRequired) {
+      cid = data.challengeId;
+      showOtp(data.maskedEmail || email);
+    } else {
+      finish(data);
     }
+  } catch (err) {
+    const msg = err.message || '';
+    setErr('loginErr',
+      msg.includes('customer') ? 'This is a customer account. Use Customer sign in instead.' :
+      msg.includes('verification') || msg.includes('send') ? 'Could not send verification code. Please try again.' :
+      'Incorrect email or password.'
+    );
+  } finally {
+    btn.disabled = false; btn.textContent = 'Sign in →';
+  }
+}
 
-    async function verifyOtp(event) {
-      event.preventDefault();
-      const btn = document.getElementById("otpBtn");
-      const helpEl = document.getElementById("otpHelp");
-      helpEl.textContent = "";
-      setLoading(btn, true, "Verifying...");
-      try {
-        const data = await request("/auth/otp/verify", {
-          method: "POST",
-          body: JSON.stringify({
-            challengeId,
-            otp: document.getElementById("otp").value.trim(),
-            purpose: "RESTAURANT_LOGIN"
-          })
-        });
-        finishLogin(data);
-      } catch (err) {
-        const msg = err.message || "";
-        helpEl.textContent = msg.includes("expired")
-          ? "This code has expired. Please request a new one."
-          : msg.includes("attempts")
-            ? "Too many attempts. Please go back and sign in again."
-            : "That code doesn't look right. Please try again.";
-        toast(helpEl.textContent);
-      } finally {
-        setLoading(btn, false);
-      }
-    }
+function showOtp(target) {
+  document.getElementById('viewLogin').style.display = 'none';
+  document.getElementById('viewOtp').style.display = 'flex';
+  document.getElementById('otpTarget').textContent = target;
+  document.querySelectorAll('.otp-d').forEach(i => { i.value = ''; i.classList.remove('ok'); });
+  document.querySelector('.otp-d').focus();
+  startRe();
+}
 
-    async function resendOtp() {
-      const btn = document.getElementById("resendBtn");
-      const helpEl = document.getElementById("otpHelp");
-      setLoading(btn, true, "Sending...");
-      try {
-        const data = await request("/auth/otp/resend", {
-          method: "POST",
-          body: JSON.stringify({ challengeId })
-        });
-        challengeId = data.challengeId;
-        helpEl.textContent = "A new code was sent to your email.";
-        document.getElementById("otp").value = "";
-      } catch (err) {
-        helpEl.textContent = "We couldn't send the verification code. Please try again.";
-      } finally {
-        setLoading(btn, false);
-      }
-    }
+function toLogin() {
+  clearInterval(reTimer);
+  document.getElementById('viewOtp').style.display = 'none';
+  document.getElementById('viewLogin').style.display = 'flex';
+}
 
-    function finishLogin(data) {
-      sessionStorage.setItem("token", data.token);
-      window.location.href = "/admin/dashboard.html";
-    }
-  </script>
+function startRe() {
+  clearInterval(reTimer);
+  let s = 30;
+  document.getElementById('reCd').style.display = 'inline';
+  document.getElementById('reBtn').style.display = 'none';
+  reTimer = setInterval(() => {
+    document.getElementById('reSecs').textContent = --s;
+    if (s <= 0) { clearInterval(reTimer); document.getElementById('reCd').style.display = 'none'; document.getElementById('reBtn').style.display = 'inline'; }
+  }, 1000);
+}
+
+async function doResend() {
+  const btn = document.getElementById('reBtn'); btn.disabled = true;
+  try {
+    const data = await request('/auth/otp/resend', { method: 'POST', body: JSON.stringify({ challengeId: cid }) });
+    cid = data.challengeId; clrErr('otpErr'); startRe();
+  } catch (err) { setErr('otpErr', 'Could not resend. Try again.'); btn.disabled = false; }
+}
+
+async function doVerify() {
+  const digits = [...document.querySelectorAll('.otp-d')].map(i => i.value).join('');
+  if (digits.length < 6) { setErr('otpErr', 'Enter the complete 6-digit code.'); return; }
+  const btn = document.getElementById('otpBtn');
+  btn.disabled = true; btn.textContent = 'Verifying…'; clrErr('otpErr');
+  try {
+    const data = await request('/auth/otp/verify', { method: 'POST', body: JSON.stringify({ challengeId: cid, otp: digits, purpose: 'RESTAURANT_LOGIN' }) });
+    finish(data);
+  } catch (err) {
+    const msg = err.message || '';
+    setErr('otpErr',
+      msg.includes('expired') ? 'This code has expired. Request a new one.' :
+      msg.includes('attempts') ? 'Too many attempts. Please go back and sign in again.' :
+      'Invalid code. Please try again.'
+    );
+  } finally { btn.disabled = false; btn.textContent = 'Verify and continue →'; }
+}
+
+document.querySelectorAll('.otp-d').forEach((inp, i, all) => {
+  inp.addEventListener('input', () => {
+    inp.value = inp.value.replace(/\D/g, '').slice(-1);
+    inp.classList.toggle('ok', !!inp.value);
+    if (inp.value && i < all.length - 1) all[i + 1].focus();
+    if ([...all].every(d => d.value)) doVerify();
+  });
+  inp.addEventListener('keydown', e => { if (e.key === 'Backspace' && !inp.value && i > 0) all[i - 1].focus(); });
+  inp.addEventListener('paste', e => {
+    e.preventDefault();
+    const txt = (e.clipboardData || window.clipboardData).getData('text').replace(/\D/g, '');
+    [...txt.slice(0, 6)].forEach((ch, j) => { if (all[j]) { all[j].value = ch; all[j].classList.add('ok'); } });
+    all[Math.min(txt.length, 5)].focus();
+    if (txt.length >= 6) doVerify();
+  });
+});
+
+function finish(data) {
+  sessionStorage.setItem('token', data.token);
+  location.href = '/admin/dashboard.html';
+}
+
+function setErr(id, msg) { const e = document.getElementById(id); if (e) { e.textContent = msg; e.classList.add('on'); } }
+function clrErr(id) { const e = document.getElementById(id); if (e) e.classList.remove('on'); }
+function toggleTheme() { localStorage.setItem('avenzo-theme', document.documentElement.classList.toggle('light') ? 'light' : 'dark'); }
+</script>
 </body>
-
 </html>
