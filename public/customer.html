@@ -8,418 +8,308 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
-    /* ── DESIGN TOKENS ── */
+    /* ── DESIGN TOKENS ───────────────────────────────────────────
+       Key contrast fix: --tx-3 was #6E6258 (3:1 fail on dark).
+       Now #9A8C7A (4.6:1 pass). All muted text is now legible.
+       Banner colours: opaque dark tints instead of alpha overlays
+       so restaurant cards have clear visual identity.
+    ────────────────────────────────────────────────────────────── */
     :root {
-      --bg:         #09080A;
-      --bg-2:       #131118;
-      --bg-3:       #1C1A22;
-      --bg-4:       #252230;
-      --tx:         #F5ECD7;
-      --tx-2:       #BEB09A;
-      --tx-3:       #6E6258;
+      --bg:         #0C0B0F;
+      --bg-2:       #151318;
+      --bg-3:       #1E1C24;
+      --bg-4:       #272530;
+      --bg-5:       #302E3C;
+      --tx:         #F2E8D4;   /* warm cream, primary */
+      --tx-2:       #C8BA9C;   /* warm beige, secondary */
+      --tx-3:       #9A8C7A;   /* warm muted — was #6E6258 (too dark) */
       --brand:      #E8401C;
       --brand-d:    #C43318;
-      --brand-soft: rgba(232,64,28,0.12);
-      --line:       rgba(255,255,255,0.07);
-      --glass:      rgba(9,8,10,0.84);
+      --brand-soft: rgba(232,64,28,0.14);
+      --brand-glow: rgba(232,64,28,0.22);
+      --line:       rgba(255,255,255,0.09);
+      --line-2:     rgba(255,255,255,0.05);
+      --glass:      rgba(12,11,15,0.86);
       --success:    #27C96B;
       --warn:       #E8A53A;
+      --info:       #5B8EF0;
       --r:          16px;
-      --r-sm:       11px;
-      --nav-h:      60px;
+      --r-sm:       12px;
+      --nav-h:      62px;
       --bn-h:       66px;
     }
     html.light {
-      --bg:    #FAFAF8;  --bg-2: #F2EEE5;  --bg-3: #EAE4D9;
-      --bg-4:  #DDD6C8;  --tx:   #1A1008;  --tx-2: #5C4F3C;
-      --tx-3:  #9A8B7A;  --line: rgba(0,0,0,0.08);
-      --glass: rgba(250,250,248,0.90);
+      --bg:#F8F5EF; --bg-2:#EDEAD F; --bg-3:#E4DFD5; --bg-4:#D9D2C6; --bg-5:#CECA BB;
+      --tx:#1A1008; --tx-2:#5A4E3C; --tx-3:#7E6E5C;
+      --line:rgba(0,0,0,0.09); --line-2:rgba(0,0,0,0.05);
+      --glass:rgba(248,245,239,0.92);
     }
 
-    *,*::before,*::after { box-sizing:border-box; margin:0; padding:0 }
-    html { -webkit-font-smoothing:antialiased }
-    body {
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    html{-webkit-font-smoothing:antialiased}
+    body{
       font-family:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,sans-serif;
       background:var(--bg); color:var(--tx);
       padding-bottom:var(--bn-h); min-height:100dvh;
     }
-    a  { color:inherit; text-decoration:none }
-    button,input { font:inherit; border:0; outline:none; background:none; color:inherit; cursor:pointer }
+    a{color:inherit;text-decoration:none}
+    button,input,select{font:inherit;border:0;outline:none;background:none;color:inherit;cursor:pointer}
+    img{display:block}
 
-    /* ── TOAST (app.js hook) ── */
-    .toast {
-      position:fixed; left:50%; bottom:calc(var(--bn-h) + 14px); z-index:999;
-      transform:translateX(-50%) translateY(10px);
-      background:var(--bg-4); color:var(--tx);
-      padding:9px 20px; border-radius:99px;
-      font-size:13px; font-weight:600;
-      border:1px solid var(--line);
-      box-shadow:0 8px 32px rgba(0,0,0,0.5);
-      opacity:0; pointer-events:none;
-      transition:opacity .2s,transform .2s; white-space:nowrap;
-    }
-    .toast.show { opacity:1; transform:translateX(-50%) translateY(0) }
+    /* ── TOAST ── */
+    .toast{position:fixed;left:50%;bottom:calc(var(--bn-h)+14px);z-index:999;transform:translateX(-50%) translateY(10px);background:var(--bg-4);color:var(--tx);padding:10px 22px;border-radius:99px;font-size:13px;font-weight:600;border:1px solid var(--line);box-shadow:0 8px 36px rgba(0,0,0,0.55);opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;white-space:nowrap}
+    .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
-    /* ── TOP NAV ── */
-    .c-nav {
-      position:sticky; top:0; z-index:50; height:var(--nav-h);
-      background:var(--glass);
-      backdrop-filter:blur(22px); -webkit-backdrop-filter:blur(22px);
-      border-bottom:1px solid var(--line);
-    }
-    .c-nav-inner {
-      height:100%; max-width:1160px; margin:0 auto; padding:0 22px;
-      display:flex; align-items:center; gap:16px;
-    }
-    .c-logo { display:flex; align-items:center; gap:9px }
-    .c-logo img  { width:26px; height:26px; border-radius:7px }
-    .c-logo span { font-size:16px; font-weight:800; letter-spacing:1.6px }
+    /* ── NAV ── */
+    .c-nav{position:sticky;top:0;z-index:50;height:var(--nav-h);background:var(--glass);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border-bottom:1px solid var(--line)}
+    .c-nav-inner{height:100%;max-width:1160px;margin:0 auto;padding:0 22px;display:flex;align-items:center;gap:16px}
+    .c-logo{display:flex;align-items:center;gap:9px}
+    .c-logo img{width:28px;height:28px;border-radius:7px}
+    .c-logo-text{font-size:16px;font-weight:800;letter-spacing:1.6px;color:var(--tx)}
+    .c-dlinks{display:none;align-items:center;gap:2px;margin-left:8px}
+    .c-dlinks a{padding:7px 13px;border-radius:8px;font-size:14px;font-weight:600;color:var(--tx-2);transition:color .12s,background .12s}
+    .c-dlinks a:hover{color:var(--tx);background:var(--bg-3)}
+    .c-dlinks a.on{color:var(--tx)}
+    .c-spacer{flex:1}
+    .c-umenu-wrap{position:relative}
+    .c-ubtn{display:flex;align-items:center;gap:8px;padding:5px 13px 5px 8px;background:var(--bg-3);border:1px solid var(--line);border-radius:99px;cursor:pointer;transition:border-color .12s}
+    .c-ubtn:hover{border-color:rgba(255,255,255,0.17)}
+    .c-uav{width:30px;height:30px;border-radius:50%;background:var(--brand);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;flex-shrink:0}
+    .c-uname{font-size:13px;font-weight:600;color:var(--tx);max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .c-ucaret{color:var(--tx-3)}
+    .c-udropdown{display:none;position:absolute;right:0;top:calc(100% + 8px);min-width:190px;background:var(--bg-3);border:1px solid var(--line);border-radius:var(--r-sm);box-shadow:0 18px 55px rgba(0,0,0,0.6);overflow:hidden;z-index:80}
+    .c-udropdown.open{display:block}
+    .c-uinfo{padding:12px 16px;border-bottom:1px solid var(--line)}
+    .c-uinfo strong{display:block;font-size:13px;font-weight:700;color:var(--tx);margin-bottom:2px}
+    .c-uinfo small{font-size:12px;color:var(--tx-3)}
+    .c-umitem{display:block;width:100%;padding:11px 16px;text-align:left;font-size:13px;font-weight:600;color:var(--tx-2);cursor:pointer;transition:background .1s,color .1s}
+    .c-umitem:hover{background:var(--bg-4);color:var(--tx)}
+    .c-umitem.red{color:var(--brand)}
 
-    .c-dlinks { display:none; align-items:center; gap:2px; margin-left:8px }
-    .c-dlinks a {
-      padding:7px 13px; border-radius:8px;
-      font-size:14px; font-weight:600; color:var(--tx-2);
-      transition:color .12s,background .12s;
-    }
-    .c-dlinks a:hover { color:var(--tx); background:var(--bg-3) }
-    .c-dlinks a.on    { color:var(--tx) }
-
-    .c-spacer { flex:1 }
-
-    /* user menu */
-    .c-umenu-wrap { position:relative }
-    .c-ubtn {
-      display:flex; align-items:center; gap:8px;
-      padding:5px 12px 5px 8px;
-      background:var(--bg-3); border:1px solid var(--line);
-      border-radius:99px; cursor:pointer;
-      transition:border-color .12s;
-    }
-    .c-ubtn:hover { border-color:rgba(255,255,255,0.16) }
-    .c-uav {
-      width:28px; height:28px; border-radius:50%; background:var(--brand);
-      display:flex; align-items:center; justify-content:center;
-      font-size:12px; font-weight:700; color:#fff; flex-shrink:0;
-    }
-    .c-uname {
-      font-size:13px; font-weight:600;
-      max-width:110px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
-    }
-    .c-ucaret { color:var(--tx-3) }
-
-    .c-udropdown {
-      display:none; position:absolute; right:0; top:calc(100% + 8px);
-      min-width:186px; background:var(--bg-3);
-      border:1px solid var(--line); border-radius:var(--r-sm);
-      box-shadow:0 16px 50px rgba(0,0,0,0.55); overflow:hidden; z-index:80;
-    }
-    .c-udropdown.open { display:block }
-    .c-uinfo {
-      padding:12px 14px; border-bottom:1px solid var(--line);
-    }
-    .c-uinfo strong { display:block; font-size:13px; margin-bottom:2px }
-    .c-uinfo small  { font-size:12px; color:var(--tx-3) }
-    .c-umitem {
-      display:block; width:100%; padding:11px 14px; text-align:left;
-      font-size:13px; font-weight:600; color:var(--tx-2); cursor:pointer;
-      transition:background .1s,color .1s;
-    }
-    .c-umitem:hover { background:var(--bg-4); color:var(--tx) }
-    .c-umitem.red   { color:var(--brand) }
-
-    /* ── CONTAINER ── */
-    .c-wrap { max-width:1160px; margin:0 auto; padding:0 22px }
+    /* ── LAYOUT ── */
+    .c-wrap{max-width:1160px;margin:0 auto;padding:0 22px}
 
     /* ── HERO ── */
-    .c-hero {
+    .c-hero{
       padding:28px 0 24px;
       background:
-        radial-gradient(ellipse 70% 90% at 4% 120%, rgba(232,64,28,0.13) 0%, transparent 55%),
+        radial-gradient(ellipse 55% 70% at 5% 110%,rgba(232,64,28,0.14) 0%,transparent 55%),
+        radial-gradient(ellipse 40% 50% at 95% 0%,rgba(88,118,255,0.08) 0%,transparent 50%),
         var(--bg);
       border-bottom:1px solid var(--line);
     }
-    .c-hero-tag {
-      font-size:13px; font-weight:600; color:var(--tx-2); margin-bottom:8px;
-    }
-    .c-hero-h1 {
-      font-size:clamp(26px,4vw,40px); font-weight:800;
-      line-height:1.10; color:var(--tx); margin-bottom:22px;
-    }
-    .c-hero-h1 b { font-weight:800; color:var(--brand) }
-    .c-sbar {
-      display:flex; align-items:center; gap:10px;
-      height:52px; max-width:580px;
-      background:var(--bg-3); border:1.5px solid var(--line);
-      border-radius:14px; padding:0 16px;
-      transition:border-color .15s,box-shadow .15s;
-    }
-    .c-sbar:focus-within {
-      border-color:var(--brand); box-shadow:0 0 0 3px var(--brand-soft);
-    }
-    .c-sbar svg   { color:var(--tx-3); flex-shrink:0 }
-    .c-sbar input {
-      flex:1; font-size:15px; color:var(--tx); background:transparent;
-    }
-    .c-sbar input::placeholder { color:var(--tx-3) }
+    .c-hero-tag{font-size:13px;font-weight:600;color:var(--tx-2);margin-bottom:8px}
+    .c-hero-h1{font-size:clamp(26px,4vw,40px);font-weight:800;line-height:1.10;color:var(--tx);margin-bottom:22px}
+    .c-hero-h1 b{font-weight:800;color:var(--brand)}
+    .c-sbar{display:flex;align-items:center;gap:10px;height:52px;max-width:580px;background:var(--bg-3);border:1.5px solid var(--line);border-radius:14px;padding:0 16px;transition:border-color .15s,box-shadow .15s}
+    .c-sbar:focus-within{border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-soft)}
+    .c-sbar svg{color:var(--tx-3);flex-shrink:0}
+    .c-sbar input{flex:1;font-size:15px;color:var(--tx);background:transparent}
+    .c-sbar input::placeholder{color:var(--tx-3)}
+    .c-sbar-clear{width:24px;height:24px;border-radius:50%;background:var(--bg-4);display:none;align-items:center;justify-content:center;font-size:14px;color:var(--tx-3);flex-shrink:0;transition:background .12s}
+    .c-sbar-clear:hover{background:var(--bg-5);color:var(--tx)}
+    .c-sbar-clear.vis{display:flex}
 
     /* ── LIVE ORDER ── */
-    .c-live {
-      margin-top:20px;
+    .c-live{
+      margin-top:18px;
       background:var(--bg-3);
-      border:1.5px solid rgba(232,64,28,0.32);
-      border-radius:var(--r); padding:16px 18px;
-      display:grid; gap:13px;
-      box-shadow:0 0 34px rgba(232,64,28,0.09);
+      border:1.5px solid rgba(232,64,28,0.30);
+      border-radius:var(--r);
+      padding:16px 18px; display:grid; gap:14px;
+      box-shadow:0 0 38px rgba(232,64,28,0.10);
     }
-    .c-live-top { display:flex; align-items:center; gap:10px }
-    .c-live-dot {
-      width:8px; height:8px; border-radius:50%; background:var(--brand); flex-shrink:0;
-      animation:lpulse 1.8s ease-in-out infinite;
-    }
-    @keyframes lpulse {
-      0%,100% { box-shadow:0 0 0 0 rgba(232,64,28,0.45) }
-      50%      { box-shadow:0 0 0 7px rgba(232,64,28,0) }
-    }
-    .c-live-tag {
-      font-size:10px; font-weight:700; letter-spacing:0.9px; text-transform:uppercase;
-      color:var(--brand); background:var(--brand-soft);
-      padding:3px 8px; border-radius:99px;
-    }
-    .c-live-rname {
-      font-size:14px; font-weight:700; flex:1;
-      overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
-    }
-    .c-live-num { font-size:12px; color:var(--tx-3); flex-shrink:0 }
-    .c-live-foot { display:flex; align-items:center; justify-content:space-between; gap:12px }
-    .c-live-msg  { font-size:13px; color:var(--tx-2); line-height:1.45 }
+    .c-live-top{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+    .c-live-dot{width:8px;height:8px;border-radius:50%;background:var(--brand);flex-shrink:0;animation:lpulse 1.8s ease-in-out infinite}
+    @keyframes lpulse{0%,100%{box-shadow:0 0 0 0 rgba(232,64,28,0.5)}50%{box-shadow:0 0 0 8px rgba(232,64,28,0)}}
+    .c-live-badge{font-size:10px;font-weight:700;letter-spacing:0.9px;text-transform:uppercase;color:var(--brand);background:var(--brand-soft);padding:3px 9px;border-radius:99px;flex-shrink:0}
+    .c-live-rname{font-size:15px;font-weight:700;color:var(--tx);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .c-live-num{font-size:12px;font-weight:600;color:var(--tx-3);flex-shrink:0}
+
+    /* progress steps */
+    .c-steps{display:flex;align-items:center;gap:0}
+    .c-step{display:flex;flex-direction:column;align-items:center;gap:5px;flex-shrink:0}
+    .c-step-circle{width:32px;height:32px;border-radius:50%;border:2px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:14px;background:var(--bg-4);color:var(--tx-3);transition:all .3s}
+    .c-step.done .c-step-circle{background:var(--brand);border-color:var(--brand);color:#fff}
+    .c-step.cur  .c-step-circle{border-color:var(--brand);color:var(--brand);background:var(--brand-soft);animation:lpulse 1.8s ease-in-out infinite}
+    .c-step-lbl{font-size:10px;font-weight:700;color:var(--tx-3);letter-spacing:0.3px;white-space:nowrap}
+    .c-step.done .c-step-lbl{color:var(--tx-2)}
+    .c-step.cur  .c-step-lbl{color:var(--brand)}
+    .c-step-line{flex:1;height:2px;background:var(--line);margin-bottom:18px;min-width:24px;transition:background .3s}
+    .c-step-line.done{background:var(--brand)}
+
+    .c-live-foot{display:flex;align-items:center;justify-content:space-between;gap:12px}
+    .c-live-msg{font-size:13px;color:var(--tx-2);line-height:1.45}
 
     /* ── HINT ── */
-    .c-hint {
-      margin-top:14px;
-      display:flex; align-items:center; gap:14px;
-      background:var(--bg-3); border:1.5px dashed rgba(232,64,28,0.28);
-      border-radius:var(--r); padding:15px 17px;
-      transition:border-color .15s;
+    .c-hint{margin-top:14px;display:flex;align-items:center;gap:14px;background:var(--bg-3);border:1.5px dashed rgba(232,64,28,0.28);border-radius:var(--r);padding:14px 16px;transition:border-color .15s}
+    .c-hint:hover{border-color:var(--brand)}
+    .c-hint-icon{width:40px;height:40px;border-radius:11px;background:var(--brand-soft);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+    .c-hint-txt{flex:1}
+    .c-hint-txt strong{display:block;font-size:13px;font-weight:700;color:var(--tx);margin-bottom:2px}
+    .c-hint-txt span{font-size:12px;color:var(--tx-3)}
+
+    /* ── QUICK STATS ── */
+    .c-stats{
+      display:flex;align-items:center;
+      background:var(--bg-2); border:1px solid var(--line);
+      border-radius:var(--r); overflow:hidden;
+      margin-top:18px;
     }
-    .c-hint:hover { border-color:var(--brand) }
-    .c-hint-icon {
-      width:40px; height:40px; border-radius:11px; background:var(--brand-soft);
-      display:flex; align-items:center; justify-content:center;
-      font-size:20px; flex-shrink:0;
-    }
-    .c-hint-txt { flex:1 }
-    .c-hint-txt strong { display:block; font-size:13px; font-weight:700; margin-bottom:2px }
-    .c-hint-txt span   { font-size:12px; color:var(--tx-3) }
+    .c-stat{flex:1;padding:14px 10px;text-align:center}
+    .c-stat-num{display:block;font-size:22px;font-weight:800;color:var(--tx);line-height:1;margin-bottom:4px}
+    .c-stat-lbl{font-size:11px;font-weight:600;color:var(--tx-3);letter-spacing:0.3px}
+    .c-stat-sep{width:1px;height:40px;background:var(--line);flex-shrink:0}
 
     /* ── SECTION ── */
-    .c-sec { margin-top:32px }
-    .c-sec-head {
-      display:flex; align-items:baseline;
-      justify-content:space-between; margin-bottom:18px;
-    }
-    .c-sec-title  { font-size:18px; font-weight:800 }
-    .c-sec-action { font-size:13px; font-weight:600; color:var(--brand) }
+    .c-sec{margin-top:32px}
+    .c-sec-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;gap:12px}
+    .c-sec-title{font-size:18px;font-weight:800;color:var(--tx)}
+    .c-sec-action{font-size:13px;font-weight:600;color:var(--brand);flex-shrink:0}
+    .c-sec-count{font-size:13px;font-weight:600;color:var(--tx-3)}
+
+    /* ── COLLECTIONS ── */
+    .c-colls{display:flex;gap:10px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+    .c-colls::-webkit-scrollbar{display:none}
+    .c-coll{flex:0 0 auto;min-width:130px;padding:14px 16px;background:var(--bg-3);border:1.5px solid var(--line);border-radius:var(--r);cursor:pointer;display:flex;align-items:center;gap:10px;transition:border-color .15s,transform .15s}
+    .c-coll:hover{border-color:rgba(255,255,255,0.18);transform:translateY(-1px)}
+    .c-coll.on{border-color:rgba(232,64,28,0.45);background:var(--brand-soft)}
+    .c-coll-icon{font-size:22px;line-height:1;flex-shrink:0}
+    .c-coll-body{}
+    .c-coll-label{font-size:13px;font-weight:700;color:var(--tx);line-height:1.2}
+    .c-coll-sub{font-size:11px;color:var(--tx-3);margin-top:2px}
+    .c-coll.on .c-coll-label{color:var(--brand)}
+    .c-coll.on .c-coll-sub{color:rgba(232,64,28,0.7)}
 
     /* ── CATEGORY CHIPS ── */
-    .c-cats {
-      display:flex; gap:10px;
-      overflow-x:auto; scrollbar-width:none; padding-bottom:2px;
-    }
-    .c-cats::-webkit-scrollbar { display:none }
-    .c-cat {
-      flex:0 0 auto; display:flex; flex-direction:column;
-      align-items:center; gap:9px; padding:14px 16px; min-width:82px;
+    .c-cats{display:flex;gap:9px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+    .c-cats::-webkit-scrollbar{display:none}
+    .c-cat{flex:0 0 auto;display:flex;flex-direction:column;align-items:center;gap:8px;padding:12px 15px;min-width:76px;background:var(--bg-3);border:1.5px solid var(--line);border-radius:var(--r);cursor:pointer;transition:border-color .15s,background .15s}
+    .c-cat:hover{border-color:rgba(255,255,255,0.18)}
+    .c-cat.on{background:var(--brand-soft);border-color:rgba(232,64,28,0.48)}
+    .c-cat-icon{font-size:26px;line-height:1}
+    .c-cat-label{font-size:11px;font-weight:700;color:var(--tx-2);white-space:nowrap}
+    .c-cat.on .c-cat-label{color:var(--brand)}
+
+    /* sort select */
+    .c-sort{
+      padding:7px 32px 7px 12px;
       background:var(--bg-3); border:1.5px solid var(--line);
-      border-radius:var(--r); cursor:pointer;
-      transition:border-color .15s,background .15s;
+      border-radius:8px; font-size:13px; font-weight:600; color:var(--tx-2);
+      appearance:none;
+      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none' stroke='%239A8C7A' stroke-width='2.5' viewBox='0 0 24 24'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+      background-repeat:no-repeat; background-position:right 10px center;
+      cursor:pointer; transition:border-color .15s;
     }
-    .c-cat:hover { border-color:rgba(255,255,255,0.18) }
-    .c-cat.on    { background:var(--brand-soft); border-color:rgba(232,64,28,0.5) }
-    .c-cat-icon  { font-size:28px; line-height:1 }
-    .c-cat-label {
-      font-size:11px; font-weight:700; color:var(--tx-2); white-space:nowrap;
-    }
-    .c-cat.on .c-cat-label { color:var(--brand) }
+    .c-sort:focus{border-color:var(--brand);outline:none}
 
     /* ── RESTAURANT GRID ── */
-    .c-grid {
-      display:grid;
-      grid-template-columns:repeat(3,1fr);
-      gap:14px;
-    }
-    .c-rcard {
+    .c-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+
+    .c-rcard{
       background:var(--bg-2); border:1px solid var(--line);
       border-radius:var(--r); overflow:hidden;
       display:flex; flex-direction:column;
       transition:transform .18s,border-color .18s,box-shadow .18s;
     }
-    .c-rcard:hover:not(.c-rcard--paused) {
-      transform:translateY(-3px);
-      border-color:rgba(255,255,255,0.13);
-      box-shadow:0 14px 44px rgba(0,0,0,0.44);
-    }
-    .c-rcard-banner {
-      height:108px; display:flex; align-items:center; justify-content:center;
-      font-size:44px; position:relative; overflow:hidden;
-    }
-    .c-rcard--paused .c-rcard-banner { filter:saturate(0.15) brightness(0.65) }
-    .c-rcard-closed {
-      position:absolute; inset:0; background:rgba(9,8,10,0.52);
-      display:flex; align-items:center; justify-content:center;
-    }
-    .c-rcard-closed span {
-      font-size:11px; font-weight:700; letter-spacing:0.5px; text-transform:uppercase;
-      background:rgba(0,0,0,0.55); color:rgba(255,255,255,0.75);
-      padding:4px 11px; border-radius:99px; border:1px solid rgba(255,255,255,0.09);
-    }
-    .c-rcard-body {
-      padding:12px 14px 14px; flex:1;
-      display:flex; flex-direction:column; gap:4px;
-    }
-    .c-rcard-name {
-      font-size:14px; font-weight:700; line-height:1.2;
-      overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
-    }
-    .c-rcard-loc {
-      font-size:12px; color:var(--tx-3);
-      overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
-    }
-    .c-rcard-foot {
-      display:flex; align-items:center; justify-content:space-between; margin-top:8px;
-    }
-    .c-rcard-stars {
-      font-size:12px; font-weight:600; color:var(--tx-2);
-      display:flex; align-items:center; gap:3px;
-    }
-    .c-star-icon { color:#E8A53A }
-    .c-pill {
-      font-size:10px; font-weight:700; padding:3px 9px; border-radius:99px;
-    }
-    .c-pill-open   { background:rgba(39,201,107,0.14); color:var(--success) }
-    .c-pill-paused { background:rgba(232,165,58,0.14);  color:var(--warn) }
+    .c-rcard:hover:not(.c-rcard--paused){transform:translateY(-3px);border-color:rgba(255,255,255,0.14);box-shadow:0 16px 48px rgba(0,0,0,0.45)}
+    .c-rcard-banner{height:116px;display:flex;align-items:center;justify-content:center;font-size:48px;position:relative;overflow:hidden}
+    /* subtle bottom vignette for readability */
+    .c-rcard-banner::after{content:"";position:absolute;bottom:0;left:0;right:0;height:40px;background:linear-gradient(to top,rgba(0,0,0,0.35),transparent);pointer-events:none}
+    .c-rcard--paused .c-rcard-banner{filter:saturate(0.12) brightness(0.6)}
+    .c-rcard-badge{position:absolute;top:8px;right:8px;font-size:10px;font-weight:700;letter-spacing:0.5px;padding:3px 8px;border-radius:99px;z-index:1}
+    .c-badge-toprated{background:rgba(232,165,58,0.22);color:#E8A53A;border:1px solid rgba(232,165,58,0.3)}
+    .c-badge-popular{background:rgba(88,118,255,0.22);color:#7EA4F4;border:1px solid rgba(88,118,255,0.3)}
+    .c-rcard-paused-overlay{position:absolute;inset:0;background:rgba(12,11,15,0.55);display:flex;align-items:center;justify-content:center}
+    .c-rcard-paused-overlay span{font-size:11px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;color:rgba(255,255,255,0.65);background:rgba(0,0,0,0.5);padding:4px 12px;border-radius:99px;border:1px solid rgba(255,255,255,0.08)}
+    .c-rcard-body{padding:12px 14px 14px;flex:1;display:flex;flex-direction:column;gap:5px}
+    .c-rcard-name{font-size:14px;font-weight:700;color:var(--tx);line-height:1.25;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .c-rcard-loc{font-size:12px;color:var(--tx-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .c-rcard-foot{display:flex;align-items:center;justify-content:space-between;margin-top:8px;gap:4px}
+    .c-rcard-rating{font-size:12px;font-weight:600;color:var(--tx-2);display:flex;align-items:center;gap:3px;flex:1;min-width:0;overflow:hidden}
+    .c-star{color:#E8A53A}
+    .c-rcard-right{display:flex;align-items:center;gap:6px;flex-shrink:0}
+    .c-food-dot{width:10px;height:10px;border-radius:2px;border:1.5px solid;flex-shrink:0}
+    .c-food-dot.veg{border-color:#27C96B;background:rgba(39,201,107,0.15)}
+    .c-food-dot.nonveg{border-color:#E8401C;background:rgba(232,64,28,0.15)}
+    .c-pill{font-size:10px;font-weight:700;padding:3px 9px;border-radius:99px}
+    .c-pill-open{background:rgba(39,201,107,0.14);color:var(--success)}
+    .c-pill-paused{background:rgba(232,165,58,0.14);color:var(--warn)}
 
     /* ── SKELETON ── */
-    .c-skel {
-      background:linear-gradient(90deg,var(--bg-3) 25%,var(--bg-4) 50%,var(--bg-3) 75%);
-      background-size:200% 100%; border-radius:var(--r);
-      animation:cskel 1.5s linear infinite;
-    }
-    @keyframes cskel { 0%{background-position:200% 0}100%{background-position:-200% 0} }
+    .c-skel{background:linear-gradient(90deg,var(--bg-3) 25%,var(--bg-4) 50%,var(--bg-3) 75%);background-size:200% 100%;border-radius:var(--r);animation:cskel 1.5s linear infinite}
+    @keyframes cskel{0%{background-position:200% 0}100%{background-position:-200% 0}}
 
     /* ── EMPTY ── */
-    .c-empty {
-      grid-column:1/-1; padding:52px 20px;
-      text-align:center; color:var(--tx-3);
-    }
-    .c-empty-icon { font-size:50px; margin-bottom:14px }
-    .c-empty p    { font-size:14px; color:var(--tx-2); margin:6px 0 18px }
+    .c-empty{grid-column:1/-1;padding:52px 20px;text-align:center}
+    .c-empty-icon{font-size:52px;margin-bottom:14px}
+    .c-empty-title{font-size:16px;font-weight:700;color:var(--tx);margin-bottom:6px}
+    .c-empty-sub{font-size:13px;color:var(--tx-3);margin-bottom:18px}
 
     /* ── RECENT SCROLL ── */
-    .c-hscroll {
-      display:flex; gap:12px;
-      overflow-x:auto; scrollbar-width:none; padding-bottom:4px;
-    }
-    .c-hscroll::-webkit-scrollbar { display:none }
-    .c-rrecent {
-      flex:0 0 158px; background:var(--bg-2);
-      border:1px solid var(--line); border-radius:var(--r); overflow:hidden;
-      transition:transform .18s,border-color .18s;
-    }
-    .c-rrecent:hover { transform:translateY(-2px); border-color:rgba(255,255,255,0.13) }
-    .c-rrecent-banner {
-      height:72px; display:flex; align-items:center; justify-content:center; font-size:30px;
-    }
-    .c-rrecent-body { padding:10px 12px 13px }
-    .c-rrecent-name {
-      font-size:13px; font-weight:700; line-height:1.2; margin-bottom:3px;
-      overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
-    }
-    .c-rrecent-loc { font-size:11px; color:var(--tx-3) }
+    .c-hscroll{display:flex;gap:12px;overflow-x:auto;scrollbar-width:none;padding-bottom:4px}
+    .c-hscroll::-webkit-scrollbar{display:none}
+    .c-rrecent{flex:0 0 160px;background:var(--bg-2);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;transition:transform .18s,border-color .18s}
+    .c-rrecent:hover{transform:translateY(-2px);border-color:rgba(255,255,255,0.14)}
+    .c-rrecent-banner{height:74px;display:flex;align-items:center;justify-content:center;font-size:32px}
+    .c-rrecent-body{padding:10px 12px 13px}
+    .c-rrecent-name{font-size:13px;font-weight:700;color:var(--tx);line-height:1.25;margin-bottom:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .c-rrecent-loc{font-size:11px;color:var(--tx-3)}
 
-    /* ── BTN ── */
-    .c-btn {
-      display:inline-flex; align-items:center; justify-content:center; gap:6px;
-      padding:10px 20px; border-radius:10px;
-      font-size:14px; font-weight:700; cursor:pointer;
-      transition:all .15s; font-family:inherit;
-    }
-    .c-btn-primary {
-      background:var(--brand); color:#fff;
-      box-shadow:0 4px 18px rgba(232,64,28,0.32);
-    }
-    .c-btn-primary:hover { background:var(--brand-d) }
-    .c-btn-ghost {
-      background:var(--bg-4); color:var(--tx-2); border:1px solid var(--line);
-    }
-    .c-btn-ghost:hover { color:var(--tx); border-color:rgba(255,255,255,0.15) }
+    /* ── BUTTONS ── */
+    .c-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:10px 20px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;transition:all .15s;font-family:inherit}
+    .c-btn-primary{background:var(--brand);color:#fff;box-shadow:0 4px 20px rgba(232,64,28,0.32)}
+    .c-btn-primary:hover{background:var(--brand-d)}
+    .c-btn-ghost{background:var(--bg-4);color:var(--tx-2);border:1px solid var(--line)}
+    .c-btn-ghost:hover{color:var(--tx);border-color:rgba(255,255,255,0.16)}
 
     /* ── BOTTOM NAV ── */
-    .c-bnav {
-      position:fixed; bottom:0; left:0; right:0; z-index:60;
-      height:var(--bn-h);
-      background:var(--glass);
-      backdrop-filter:blur(22px); -webkit-backdrop-filter:blur(22px);
-      border-top:1px solid var(--line);
-      display:flex;
-      padding-bottom:env(safe-area-inset-bottom,0);
-    }
-    .c-bnav a {
-      flex:1; display:flex; flex-direction:column;
-      align-items:center; justify-content:center; gap:4px;
-      color:var(--tx-3); font-size:10px; font-weight:600; letter-spacing:0.3px;
-      transition:color .15s;
-    }
-    .c-bnav a svg { transition:stroke .15s }
-    .c-bnav a.on  { color:var(--brand) }
-    .c-bnav a.on svg { stroke:var(--brand) }
+    .c-bnav{position:fixed;bottom:0;left:0;right:0;z-index:60;height:var(--bn-h);background:var(--glass);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border-top:1px solid var(--line);display:flex;padding-bottom:env(safe-area-inset-bottom,0)}
+    .c-bnav a{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:var(--tx-3);font-size:10px;font-weight:600;letter-spacing:0.3px;transition:color .15s}
+    .c-bnav a svg{transition:stroke .15s}
+    .c-bnav a.on{color:var(--brand)}
+    .c-bnav a.on svg{stroke:var(--brand)}
 
-    /* ── THEME PILL ── */
-    .c-theme {
-      position:fixed; right:20px; bottom:calc(var(--bn-h) + 14px); z-index:55;
-      display:flex; align-items:center; gap:7px;
-      background:var(--bg-3); border:1px solid var(--line);
-      border-radius:99px; padding:8px 14px 8px 10px;
-      font-size:13px; font-weight:600; color:var(--tx-2); cursor:pointer;
-      box-shadow:0 4px 20px rgba(0,0,0,0.35);
-      transition:color .15s,border-color .15s;
-    }
-    .c-theme:hover { color:var(--tx); border-color:rgba(255,255,255,0.18) }
-    .c-theme svg { color:var(--tx-2) }
-    html.light     .c-theme .t-sun  { display:none }
-    html:not(.light) .c-theme .t-moon { display:none }
-    html.light     .c-theme .t-dark  { display:none }
-    html:not(.light) .c-theme .t-light { display:none }
+    /* ── THEME TOGGLE ── */
+    .c-theme{position:fixed;right:20px;bottom:calc(var(--bn-h)+14px);z-index:55;display:flex;align-items:center;gap:7px;background:var(--bg-3);border:1px solid var(--line);border-radius:99px;padding:8px 14px 8px 10px;font-size:13px;font-weight:600;color:var(--tx-2);cursor:pointer;box-shadow:0 4px 22px rgba(0,0,0,0.38);transition:color .15s,border-color .15s}
+    .c-theme:hover{color:var(--tx);border-color:rgba(255,255,255,0.2)}
+    html.light     .c-theme .t-sun  {display:none}
+    html:not(.light) .c-theme .t-moon{display:none}
+    html.light     .c-theme .t-dark {display:none}
+    html:not(.light) .c-theme .t-light{display:none}
 
     /* ── RESPONSIVE ── */
-    @media (min-width:901px) {
-      :root   { --bn-h:0px }
-      body    { padding-bottom:0 }
-      .c-bnav { display:none }
-      .c-dlinks { display:flex }
-      .c-theme  { bottom:20px }
+    @media(min-width:901px){
+      :root{--bn-h:0px}
+      body{padding-bottom:0}
+      .c-bnav{display:none}
+      .c-dlinks{display:flex}
+      .c-theme{bottom:20px}
     }
-    @media (max-width:900px) {
-      .c-grid { grid-template-columns:repeat(2,1fr) }
-      .c-wrap { padding:0 16px }
+    @media(max-width:900px){
+      .c-grid{grid-template-columns:repeat(2,1fr)}
+      .c-wrap{padding:0 16px}
     }
-    @media (max-width:480px) {
-      .c-hero          { padding:20px 0 18px }
-      .c-sec           { margin-top:26px }
-      .c-cat           { min-width:74px; padding:12px 13px }
-      .c-cat-icon      { font-size:24px }
-      .c-rcard-banner  { height:90px; font-size:36px }
-      .c-hero-h1       { margin-bottom:18px }
+    @media(max-width:480px){
+      .c-hero{padding:20px 0 18px}
+      .c-sec{margin-top:26px}
+      .c-cat{min-width:70px;padding:11px 12px}
+      .c-cat-icon{font-size:22px}
+      .c-rcard-banner{height:94px;font-size:38px}
+      .c-coll{min-width:120px;padding:12px 14px}
+      .c-step-circle{width:28px;height:28px;font-size:12px}
+      .c-step-lbl{font-size:9px}
     }
   </style>
 </head>
 <body>
 
-  <!-- ── TOP NAV ── -->
+  <!-- ── NAV ── -->
   <header class="c-nav">
     <div class="c-nav-inner">
       <a class="c-logo" href="/customer.html">
-        <img src="/logo.png" alt="Avenzo">
-        <span>AVENZO</span>
+        <img src="/logo.png" alt="">
+        <span class="c-logo-text">AVENZO</span>
       </a>
       <nav class="c-dlinks">
         <a class="on"  href="/customer.html">Home</a>
@@ -430,7 +320,7 @@
       <div class="c-spacer"></div>
       <div class="c-umenu-wrap">
         <button class="c-ubtn" id="uBtn" onclick="toggleUMenu()">
-          <div class="c-uav"  id="uAv">U</div>
+          <div class="c-uav"   id="uAv">U</div>
           <span class="c-uname" id="uNm">…</span>
           <svg class="c-ucaret" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
         </button>
@@ -449,16 +339,26 @@
     <div class="c-wrap">
       <p class="c-hero-tag" id="heroTag">Good morning 👋</p>
       <h1 class="c-hero-h1" id="heroH1">What are you <b>craving</b><br>this morning?</h1>
-      <div class="c-sbar">
+      <div class="c-sbar" id="sbarWrap">
         <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-        <input id="searchIn" type="search" placeholder="Search restaurants…" oninput="doSearch()">
+        <input id="searchIn" type="search" placeholder="Search restaurants…" oninput="onSearch()">
+        <button class="c-sbar-clear" id="clearBtn" onclick="clearSearch()" aria-label="Clear search">✕</button>
       </div>
     </div>
   </section>
 
-  <!-- ── LIVE + HINT (JS-populated) ── -->
+  <!-- JS-mounted sections -->
   <div class="c-wrap" id="liveMount"></div>
   <div class="c-wrap" id="hintMount"></div>
+  <div class="c-wrap" id="statsMount"></div>
+
+  <!-- ── COLLECTIONS ── -->
+  <section class="c-sec" id="collSec" style="display:none">
+    <div class="c-wrap">
+      <div class="c-sec-head"><span class="c-sec-title">Browse by mood</span></div>
+      <div class="c-colls" id="collRow"></div>
+    </div>
+  </section>
 
   <!-- ── CATEGORY FILTER ── -->
   <section class="c-sec">
@@ -480,76 +380,87 @@
         <button class="c-cat" onclick="setF(this,'NON_VEG')">
           <span class="c-cat-icon">🍖</span><span class="c-cat-label">Non-Veg</span>
         </button>
+        <button class="c-cat" onclick="setF(this,'toprated')">
+          <span class="c-cat-icon">🏆</span><span class="c-cat-label">Top Rated</span>
+        </button>
       </div>
     </div>
   </section>
 
-  <!-- ── RESTAURANT GRID ── -->
+  <!-- ── RESTAURANTS ── -->
   <section class="c-sec">
     <div class="c-wrap">
       <div class="c-sec-head">
-        <span class="c-sec-title" id="restHd">Restaurants</span>
-        <a class="c-sec-action" href="/customer-restaurants.html">View all →</a>
+        <div style="display:flex;align-items:baseline;gap:10px">
+          <span class="c-sec-title" id="restHd">Restaurants</span>
+          <span class="c-sec-count" id="restCount"></span>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <select class="c-sort" id="sortSel" onchange="renderRests()">
+            <option value="">Best match</option>
+            <option value="rating">Top rated</option>
+            <option value="az">A–Z</option>
+            <option value="open">Open first</option>
+          </select>
+          <a class="c-sec-action" href="/customer-restaurants.html" style="white-space:nowrap">All →</a>
+        </div>
       </div>
       <div class="c-grid" id="restGrid">
-        <div class="c-skel" style="height:210px"></div>
-        <div class="c-skel" style="height:210px"></div>
-        <div class="c-skel" style="height:210px"></div>
+        <div class="c-skel" style="height:214px"></div>
+        <div class="c-skel" style="height:214px"></div>
+        <div class="c-skel" style="height:214px"></div>
       </div>
     </div>
   </section>
 
-  <!-- ── ORDER AGAIN (JS-populated) ── -->
+  <!-- JS-mounted: order again -->
   <div id="recentMount"></div>
 
   <div style="height:36px"></div>
 
   <!-- ── BOTTOM NAV ── -->
-  <nav class="c-bnav" aria-label="Main navigation">
+  <nav class="c-bnav">
     <a class="on" href="/customer.html" aria-label="Home">
-      <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-      Home
+      <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Home
     </a>
     <a href="/customer-restaurants.html" aria-label="Explore">
-      <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-      Explore
+      <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>Explore
     </a>
     <a href="/customer-orders.html" aria-label="Orders">
-      <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>
-      Orders
+      <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>Orders
     </a>
     <a href="/customer-profile.html" aria-label="Profile">
-      <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-      Profile
+      <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Profile
     </a>
   </nav>
 
   <!-- ── THEME TOGGLE ── -->
-  <button class="c-theme" onclick="toggleTheme()" aria-label="Toggle theme">
+  <button class="c-theme" onclick="toggleTheme()">
     <svg class="t-sun"  width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
     <svg class="t-moon" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
     <span class="t-light">Light</span>
     <span class="t-dark">Dark</span>
   </button>
 
-  <!-- app.js provides: request(), escapeHtml(), money(), formatDate(), toast() -->
   <script src="/assets/app.js"></script>
   <script>
-    /* ── GUARD ── */
     if (!sessionStorage.getItem("token")) location.href = "/customer-login.html";
 
-    const PALETTES = [
-      ["rgba(232,64,28,0.32)","rgba(232,64,28,0.07)"],
-      ["rgba(39,201,107,0.28)","rgba(39,201,107,0.06)"],
-      ["rgba(88,118,255,0.28)","rgba(88,118,255,0.06)"],
-      ["rgba(255,186,48,0.30)","rgba(255,186,48,0.06)"],
-      ["rgba(195,80,220,0.26)","rgba(195,80,220,0.05)"],
-      ["rgba(0,184,222,0.26)","rgba(0,184,222,0.05)"],
+    /* ── BANNER PALETTE: opaque dark tints — clearly distinct on dark bg ── */
+    const BANNERS = [
+      { grad:"linear-gradient(135deg,#2E1510,#1A0C08)", emoji:"🍖" },  // warm red
+      { grad:"linear-gradient(135deg,#0D2018,#081410)", emoji:"🌿" },  // forest green
+      { grad:"linear-gradient(135deg,#0E1832,#09102A)", emoji:"🍱" },  // midnight blue
+      { grad:"linear-gradient(135deg,#261F08,#181404)", emoji:"🍛" },  // amber spice
+      { grad:"linear-gradient(135deg,#1E0D26,#130919)", emoji:"🫕" },  // deep purple
+      { grad:"linear-gradient(135deg,#081E28,#051318)", emoji:"🥘" },  // ocean teal
     ];
     const EMOJIS = { PURE_VEG:"🌿", BOTH:"🍱", NON_VEG:"🍖" };
+    const FOODDOT = { PURE_VEG:"veg", BOTH:"veg", NON_VEG:"nonveg" };
 
     let allRests = [], curF = "all", curQ = "";
 
+    /* ── BOOT ── */
     (async () => {
       try {
         const u = await request("/auth/me");
@@ -566,7 +477,6 @@
       const h = new Date().getHours();
       const gr = h<5?"Good night":h<12?"Good morning":h<17?"Good afternoon":"Good evening";
       const ph = h<5?"right now?":h<12?"this morning?":h<17?"this afternoon?":"tonight?";
-
       document.getElementById("uAv").textContent       = name[0].toUpperCase();
       document.getElementById("uNm").textContent       = first || u.email.split("@")[0];
       document.getElementById("uFullName").textContent = name;
@@ -575,129 +485,237 @@
       document.getElementById("heroH1").innerHTML = `What are you <b>craving</b><br>${ph}`;
     }
 
-    function toggleUMenu() { document.getElementById("uDrop").classList.toggle("open") }
-    document.addEventListener("click", e => {
-      if (!document.getElementById("uBtn")?.contains(e.target))
-        document.getElementById("uDrop")?.classList.remove("open");
-    });
-    function doSignOut() { sessionStorage.removeItem("token"); location.href = "/customer-login.html" }
-    function toggleTheme() {
-      const on = document.documentElement.classList.toggle("light");
-      localStorage.setItem("avenzo-theme", on ? "light" : "dark");
-    }
-
     /* ── RESTAURANTS ── */
     async function loadRests() {
       try {
         const d = await request("/customer/restaurants");
         allRests = d.restaurants || [];
+        buildCollections();
         renderRests();
       } catch (e) {
         document.getElementById("restGrid").innerHTML =
-          `<div class="c-empty"><div class="c-empty-icon">😕</div><p>${escapeHtml(e.message)}</p></div>`;
+          `<div class="c-empty"><div class="c-empty-icon">😕</div><div class="c-empty-title">Couldn't load restaurants</div><div class="c-empty-sub">${escapeHtml(e.message)}</div></div>`;
       }
+    }
+
+    function buildCollections() {
+      const topRated = allRests.filter(r => r.avgRating >= 4.0 && r.ratingCount >= 3);
+      const pureVeg  = allRests.filter(r => r.foodType === "PURE_VEG");
+      const openNow  = allRests.filter(r => r.serviceAvailable !== false);
+
+      const colls = [
+        { icon:"🏆", label:"Top Rated",  sub:`${topRated.length} spot${topRated.length!==1?"s":""}`, f:"toprated" },
+        { icon:"🌿", label:"Pure Veg",   sub:`${pureVeg.length} spot${pureVeg.length!==1?"s":""}`,  f:"PURE_VEG" },
+        { icon:"⚡", label:"Open Now",   sub:`${openNow.length} open now`,                           f:"open"     },
+      ].filter(c => !c.sub.startsWith("0"));  // hide empty collections
+
+      if (!colls.length) return;
+      document.getElementById("collSec").style.display = "";
+      document.getElementById("collRow").innerHTML = colls.map(c => `
+        <button class="c-coll" data-f="${c.f}" onclick="setColl(this,'${c.f}')">
+          <span class="c-coll-icon">${c.icon}</span>
+          <div class="c-coll-body">
+            <div class="c-coll-label">${c.label}</div>
+            <div class="c-coll-sub">${c.sub}</div>
+          </div>
+        </button>`).join("");
+    }
+
+    function setColl(btn, val) {
+      setF(null, val);
+      // sync collection highlight
+      document.querySelectorAll(".c-coll").forEach(c => c.classList.remove("on"));
+      btn.classList.add("on");
     }
 
     function setF(btn, val) {
       curF = val;
       document.querySelectorAll(".c-cat").forEach(c => c.classList.remove("on"));
-      btn.classList.add("on");
+      document.querySelectorAll(".c-coll").forEach(c => c.classList.remove("on"));
+      if (btn) btn.classList.add("on");
+      else {
+        // sync category chip when collection is clicked
+        const chip = [...document.querySelectorAll(".c-cat")].find(c => {
+          const onclick = c.getAttribute("onclick")||"";
+          return onclick.includes(`'${val}'`);
+        });
+        if (chip) chip.classList.add("on");
+      }
       renderRests();
     }
 
-    function doSearch() {
+    function onSearch() {
       curQ = document.getElementById("searchIn").value.trim().toLowerCase();
+      document.getElementById("clearBtn").classList.toggle("vis", !!curQ);
+      renderRests();
+    }
+
+    function clearSearch() {
+      document.getElementById("searchIn").value = "";
+      document.getElementById("clearBtn").classList.remove("vis");
+      curQ = "";
       renderRests();
     }
 
     function renderRests() {
       let list = allRests;
-      if (curQ)         list = list.filter(r => [r.name,r.locality,r.address].join(" ").toLowerCase().includes(curQ));
-      if (curF==="open") list = list.filter(r => r.serviceAvailable!==false);
-      else if (curF!=="all") list = list.filter(r => r.foodType===curF);
+      if (curQ) list = list.filter(r => [r.name,r.locality,r.address].join(" ").toLowerCase().includes(curQ));
+      if (curF === "open")     list = list.filter(r => r.serviceAvailable !== false);
+      else if (curF === "toprated") list = list.filter(r => r.avgRating >= 4.0 && r.ratingCount >= 3);
+      else if (curF !== "all") list = list.filter(r => r.foodType === curF);
 
-      document.getElementById("restHd").textContent =
-        list.length ? `${list.length} Restaurant${list.length!==1?"s":""}` : "Restaurants";
+      /* sort */
+      const sort = document.getElementById("sortSel").value;
+      if (sort === "rating")  list = [...list].sort((a,b) => (b.avgRating||0)-(a.avgRating||0));
+      else if (sort === "az") list = [...list].sort((a,b) => a.name.localeCompare(b.name));
+      else if (sort === "open") list = [...list].sort((a,b) => (b.serviceAvailable?1:0)-(a.serviceAvailable?1:0));
+
+      const hd = document.getElementById("restHd");
+      const ct = document.getElementById("restCount");
+      hd.textContent = curQ || curF !== "all" ? "Results" : "Restaurants";
+      ct.textContent = list.length ? `${list.length} found` : "";
 
       const g = document.getElementById("restGrid");
       if (!list.length) {
         g.innerHTML = `
           <div class="c-empty">
             <div class="c-empty-icon">🔍</div>
-            <p>No restaurants match your filter.</p>
-            <button class="c-btn c-btn-ghost" style="padding:8px 18px;font-size:13px" onclick="clearF()">Clear filter</button>
+            <div class="c-empty-title">No restaurants found</div>
+            <div class="c-empty-sub">Try a different filter or search term.</div>
+            <button class="c-btn c-btn-ghost" style="padding:8px 18px;font-size:13px" onclick="resetAll()">Clear filters</button>
           </div>`;
         return;
       }
 
       g.innerHTML = list.map(r => {
-        const open = r.serviceAvailable !== false;
-        const hh   = [...r.name].reduce((s,c)=>(s*31+c.charCodeAt(0))&0xffff, 0);
-        const [a,b] = PALETTES[hh % PALETTES.length];
-        const emoji = EMOJIS[r.foodType] || "🍴";
+        const open  = r.serviceAvailable !== false;
+        const hh    = [...r.name].reduce((s,c)=>(s*31+c.charCodeAt(0))&0xffff, 0);
+        const bnr   = BANNERS[hh % BANNERS.length];
+        const emoji = EMOJIS[r.foodType] || bnr.emoji;
         const href  = open ? `/r/${encodeURIComponent(r.slug)}` : "javascript:void(0)";
+        const isTop = r.avgRating >= 4.5 && r.ratingCount >= 5;
+        const isPop = !isTop && r.ratingCount >= 15;
+        const dot   = FOODDOT[r.foodType] || "veg";
         const stars = r.avgRating
-          ? `<span class="c-star-icon">★</span>${r.avgRating}<span style="color:var(--tx-3);font-weight:400"> (${r.ratingCount})</span>`
+          ? `<span class="c-star">★</span>${r.avgRating}<span style="color:var(--tx-3);font-weight:400;font-size:11px"> (${r.ratingCount})</span>`
           : `<span style="color:var(--tx-3)">No ratings yet</span>`;
         return `
-          <a class="c-rcard${open?"":" c-rcard--paused"}" href="${href}">
-            <div class="c-rcard-banner" style="background:linear-gradient(135deg,${a},${b})">
+          <a class="c-rcard${open?"":' c-rcard--paused'}" href="${href}">
+            <div class="c-rcard-banner" style="background:${bnr.grad}">
+              ${isTop ? `<span class="c-rcard-badge c-badge-toprated">★ Top Rated</span>` : ""}
+              ${isPop && !isTop ? `<span class="c-rcard-badge c-badge-popular">🔥 Popular</span>` : ""}
               ${emoji}
-              ${open?"":`<div class="c-rcard-closed"><span>Paused</span></div>`}
+              ${open?"":` <div class="c-rcard-paused-overlay"><span>Paused</span></div>`}
             </div>
             <div class="c-rcard-body">
               <div class="c-rcard-name">${escapeHtml(r.name)}</div>
               <div class="c-rcard-loc">${escapeHtml(r.locality||r.address||"Dine-in partner")}</div>
               <div class="c-rcard-foot">
-                <div class="c-rcard-stars">${stars}</div>
-                <span class="c-pill ${open?"c-pill-open":"c-pill-paused"}">${open?"Open":"Paused"}</span>
+                <div class="c-rcard-rating">${stars}</div>
+                <div class="c-rcard-right">
+                  <div class="c-food-dot ${dot}" title="${r.foodType||""}"></div>
+                  <span class="c-pill ${open?"c-pill-open":"c-pill-paused"}">${open?"Open":"Paused"}</span>
+                </div>
               </div>
             </div>
           </a>`;
       }).join("");
     }
 
-    function clearF() {
-      curF="all"; curQ="";
-      document.getElementById("searchIn").value="";
-      document.querySelectorAll(".c-cat").forEach((c,i)=>c.classList.toggle("on",i===0));
+    function resetAll() {
+      curF = "all"; curQ = "";
+      document.getElementById("searchIn").value = "";
+      document.getElementById("clearBtn").classList.remove("vis");
+      document.getElementById("sortSel").value = "";
+      document.querySelectorAll(".c-cat").forEach((c,i) => c.classList.toggle("on", i===0));
+      document.querySelectorAll(".c-coll").forEach(c => c.classList.remove("on"));
       renderRests();
     }
 
     /* ── ORDERS ── */
     async function loadOrders() {
       try {
-        const d = await request("/customer/orders?page=1&limit=20");
+        const d = await request("/customer/orders?page=1&limit=30");
         const orders = d.orders || [];
+
+        /* live order */
         const active = orders.find(o => ["PENDING","PREPARING","READY"].includes(o.status));
         if (active) renderLive(active);
 
+        /* stats */
+        const completed = orders.filter(o => o.status === "COMPLETED");
+        const uniqueRests = new Set(orders.filter(o=>o.restaurant?.slug).map(o=>o.restaurant.slug)).size;
+        renderStats(orders.length, uniqueRests, d.pagination?.total || orders.length);
+
+        /* recent */
         const seen = new Set();
-        const recent = orders
-          .filter(o => o.status==="COMPLETED" && o.restaurant?.slug)
+        const recent = completed
+          .filter(o => o.restaurant?.slug)
           .filter(o => { const k=o.restaurant.slug; if(seen.has(k))return false; seen.add(k); return true; })
           .slice(0, 8);
         if (recent.length) renderRecent(recent);
-      } catch { /* orders enhance home — fail silently */ }
+      } catch { /* orders enhance home page — fail silently */ }
+    }
+
+    function renderStats(orderCount, restCount, total) {
+      const shown = total || orderCount;
+      if (!shown) return;
+      document.getElementById("statsMount").innerHTML = `
+        <div class="c-stats">
+          <div class="c-stat">
+            <span class="c-stat-num">${shown}</span>
+            <span class="c-stat-lbl">Total orders</span>
+          </div>
+          <div class="c-stat-sep"></div>
+          <div class="c-stat">
+            <span class="c-stat-num">${restCount}</span>
+            <span class="c-stat-lbl">Restaurants tried</span>
+          </div>
+          <div class="c-stat-sep"></div>
+          <div class="c-stat">
+            <span class="c-stat-num">${orderCount > 0 ? "Dine-in" : "New"}</span>
+            <span class="c-stat-lbl">Account type</span>
+          </div>
+        </div>`;
     }
 
     function renderLive(o) {
+      const STEPS = [
+        { status:["PENDING"],             icon:"📋", label:"Received" },
+        { status:["PREPARING"],           icon:"👨‍🍳", label:"Preparing" },
+        { status:["READY","COMPLETED"],   icon:"✓",  label:"Ready!" },
+      ];
+      const curIdx = STEPS.findIndex(s => s.status.includes(o.status));
+
+      const stepsHtml = STEPS.map((s, i) => {
+        const isDone = i < curIdx;
+        const isCur  = i === curIdx;
+        return `
+          ${i > 0 ? `<div class="c-step-line${isDone||isCur?" done":""}"></div>` : ""}
+          <div class="c-step${isDone?" done":isCur?" cur":""}">
+            <div class="c-step-circle">${isDone ? "✓" : s.icon}</div>
+            <span class="c-step-lbl">${s.label}</span>
+          </div>`;
+      }).join("");
+
       const msgs = {
-        PENDING:   "Order received — the kitchen is next 📋",
-        PREPARING: "Chefs are cooking your food right now 👨‍🍳",
-        READY:     "Your order is ready for pickup! 🎉"
+        PENDING:   "Received! The kitchen is about to start 📋",
+        PREPARING: "Your food is being prepared right now 👨‍🍳",
+        READY:     "Your order is ready — go collect it! 🎉"
       };
+
       document.getElementById("liveMount").innerHTML = `
         <div class="c-live">
           <div class="c-live-top">
             <div class="c-live-dot"></div>
-            <span class="c-live-tag">Live</span>
+            <span class="c-live-badge">Live order</span>
             <span class="c-live-rname">${escapeHtml(o.restaurant?.name||"Your order")}</span>
             <span class="c-live-num">Order #${o.orderNumber}</span>
           </div>
+          <div class="c-steps">${stepsHtml}</div>
           <div class="c-live-foot">
             <div class="c-live-msg">${msgs[o.status]||o.status}</div>
-            <a class="c-btn c-btn-primary" style="padding:9px 18px;font-size:13px;flex-shrink:0" href="/track/${o.trackingToken}">Track →</a>
+            <a class="c-btn c-btn-primary" style="padding:9px 18px;font-size:13px;flex-shrink:0;white-space:nowrap" href="/track/${o.trackingToken}">Track →</a>
           </div>
         </div>`;
     }
@@ -712,14 +730,14 @@
             </div>
             <div class="c-hscroll">
               ${orders.map(o => {
-                const r = o.restaurant||{};
-                const emoji = EMOJIS[r.foodType]||"🍴";
-                const href  = r.slug?`/r/${encodeURIComponent(r.slug)}`:"/customer-restaurants.html";
-                const hh = [...(r.name||"X")].reduce((s,c)=>(s*31+c.charCodeAt(0))&0xffff,0);
-                const [a,b] = PALETTES[hh%PALETTES.length];
+                const r  = o.restaurant || {};
+                const emoji = EMOJIS[r.foodType] || "🍴";
+                const href  = r.slug ? `/r/${encodeURIComponent(r.slug)}` : "/customer-restaurants.html";
+                const hh    = [...(r.name||"X")].reduce((s,c)=>(s*31+c.charCodeAt(0))&0xffff, 0);
+                const bnr   = BANNERS[hh % BANNERS.length];
                 return `
                   <a class="c-rrecent" href="${href}">
-                    <div class="c-rrecent-banner" style="background:linear-gradient(135deg,${a},${b})">${emoji}</div>
+                    <div class="c-rrecent-banner" style="background:${bnr.grad}">${EMOJIS[r.foodType]||bnr.emoji}</div>
                     <div class="c-rrecent-body">
                       <div class="c-rrecent-name">${escapeHtml(r.name||"Restaurant")}</div>
                       <div class="c-rrecent-loc">${escapeHtml(r.locality||r.address||"Dine-in")}</div>
@@ -737,10 +755,22 @@
           <div class="c-hint-icon">📱</div>
           <div class="c-hint-txt">
             <strong>Add your phone number</strong>
-            <span>Skip the phone step at every checkout.</span>
+            <span>Skip the phone step at every dine-in checkout.</span>
           </div>
           <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" style="margin-left:auto;flex-shrink:0;color:var(--tx-3)"><path d="m9 18 6-6-6-6"/></svg>
         </a>`;
+    }
+
+    /* ── UX HANDLERS ── */
+    function toggleUMenu() { document.getElementById("uDrop").classList.toggle("open") }
+    document.addEventListener("click", e => {
+      if (!document.getElementById("uBtn")?.contains(e.target))
+        document.getElementById("uDrop")?.classList.remove("open");
+    });
+    function doSignOut() { sessionStorage.removeItem("token"); location.href = "/customer-login.html" }
+    function toggleTheme() {
+      const on = document.documentElement.classList.toggle("light");
+      localStorage.setItem("avenzo-theme", on ? "light" : "dark");
     }
   </script>
 </body>
