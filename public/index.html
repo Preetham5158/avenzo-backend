@@ -343,17 +343,14 @@ a{color:inherit;text-decoration:none}
   display:flex;align-items:center;gap:12px;
   background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);
   border-radius:var(--rl);padding:13px 20px;
-  position:relative;opacity:.72;cursor:default;
+  cursor:pointer;font-family:inherit;
+  transition:background .2s,border-color .2s,transform .14s;
 }
-.store-ico{font-size:22px}
+.store-btn:hover{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.24);transform:translateY(-2px)}
+.store-btn:active{transform:translateY(0)}
+.store-svg{width:24px;height:24px;flex-shrink:0;color:var(--tx)}
 .store-dl{font-size:10px;color:var(--tx-2);letter-spacing:.04em;text-transform:uppercase}
 .store-name{font-size:15px;font-weight:700;color:var(--tx);margin-top:1px}
-.store-soon{
-  position:absolute;top:-8px;right:-8px;
-  background:var(--mint);color:var(--bg);
-  font-size:9px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;
-  padding:3px 8px;border-radius:var(--rp);
-}
 
 /* Phone mock */
 .phone-wrap{display:flex;justify-content:center;align-items:center}
@@ -564,8 +561,8 @@ a{color:inherit;text-decoration:none}
         <span class="badge badge-fire">🌆 Born in Bengaluru · Spreading across India</span>
       </div>
       <h1 class="hero-h1">
-        Your table.<br>Your phone.<br>
-        <span class="grad">Your food, now.</span>
+        Skip the wait.<br>
+        <span class="grad">Not the meal.</span>
       </h1>
       <p class="hero-sub">
         Scan the QR at your table or counter, browse the full menu with photos, and order in 30 seconds. Works for dine-in restaurants, self-service counters, cafés and more — no installation required to order.
@@ -578,29 +575,29 @@ a{color:inherit;text-decoration:none}
         <div class="proof-item"><span class="live-dot"></span>Live across India</div>
         <div class="proof-item"><span>⚡</span>Order in 30 seconds</div>
         <div class="proof-item"><span>📲</span>No install to order</div>
-        <div class="proof-item"><span>📱</span>iOS &amp; Android app coming</div>
+        <div class="proof-item"><span>📱</span>iOS &amp; Android app</div>
       </div>
     </div>
 
     <div class="food-cards">
       <div class="food-card">
-        <img src="https://images.unsplash.com/photo-1603360946369-dc9bb6258143?w=460&h=480&q=90&auto=format&fit=crop&crop=entropy"
-             alt="Rich Indian curry" loading="eager" width="460" height="480">
+        <img src="/images/food/makhani.jpg"
+             alt="Creamy butter makhani" loading="eager" width="460" height="480">
         <div class="food-card-name">Creamy Makhani</div>
       </div>
       <div class="food-card">
-        <img src="https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=460&h=480&q=90&auto=format&fit=crop&crop=entropy"
+        <img src="/images/food/biryani.jpg"
              alt="Dum Biryani" loading="eager" width="460" height="480">
         <div class="food-card-name">Dum Biryani</div>
       </div>
       <div class="food-card">
-        <img src="https://images.unsplash.com/photo-1567188040759-fb8a883dc6d8?w=460&h=480&q=90&auto=format&fit=crop&crop=entropy"
-             alt="South Indian" loading="eager" width="460" height="480">
+        <img src="/images/food/south-indian.jpg"
+             alt="South Indian platter" loading="eager" width="460" height="480">
         <div class="food-card-name">South Indian</div>
       </div>
       <div class="food-card">
-        <img src="https://images.unsplash.com/photo-1631452180539-96aca7d48617?w=460&h=480&q=90&auto=format&fit=crop&crop=entropy"
-             alt="Tandoori" loading="eager" width="460" height="480">
+        <img src="/images/food/tandoori.jpg"
+             alt="Tandoori grill" loading="eager" width="460" height="480">
         <div class="food-card-name">Tandoori Grill</div>
       </div>
     </div>
@@ -741,32 +738,32 @@ a{color:inherit;text-decoration:none}
   </div>
   <div class="reel">
     <div class="reel-card">
-      <img src="https://images.unsplash.com/photo-1603360946369-dc9bb6258143?w=600&h=740&q=90&auto=format&fit=crop&crop=entropy"
-           alt="Creamy curry" loading="lazy" width="600" height="740">
+      <img src="/images/food/makhani.jpg"
+           alt="Creamy butter makhani" loading="lazy" width="600" height="740">
       <div class="reel-cap"><strong>Creamy Makhani</strong><small>Rich &amp; indulgent</small></div>
     </div>
     <div class="reel-card">
-      <img src="https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=600&h=740&q=90&auto=format&fit=crop&crop=entropy"
-           alt="Biryani" loading="lazy" width="600" height="740">
+      <img src="/images/food/biryani.jpg"
+           alt="Dum Biryani" loading="lazy" width="600" height="740">
       <div class="reel-cap"><strong>Dum Biryani</strong><small>Slow-cooked fragrant rice</small></div>
     </div>
     <div class="reel-card">
-      <img src="https://images.unsplash.com/photo-1567188040759-fb8a883dc6d8?w=600&h=740&q=90&auto=format&fit=crop&crop=entropy"
-           alt="South Indian" loading="lazy" width="600" height="740">
+      <img src="/images/food/south-indian.jpg"
+           alt="South Indian platter" loading="lazy" width="600" height="740">
       <div class="reel-cap"><strong>South Indian Platter</strong><small>Crispy, light &amp; fresh</small></div>
     </div>
     <div class="reel-card">
-      <img src="https://images.unsplash.com/photo-1585937421612-70a008356fbe?w=600&h=740&q=90&auto=format&fit=crop&crop=entropy"
-           alt="North Indian" loading="lazy" width="600" height="740">
+      <img src="/images/food/curry.jpg"
+           alt="North Indian curry" loading="lazy" width="600" height="740">
       <div class="reel-cap"><strong>North Indian Special</strong><small>Hearty &amp; aromatic</small></div>
     </div>
     <div class="reel-card">
-      <img src="https://images.unsplash.com/photo-1631452180539-96aca7d48617?w=600&h=740&q=90&auto=format&fit=crop&crop=entropy"
-           alt="Tandoori" loading="lazy" width="600" height="740">
+      <img src="/images/food/tandoori.jpg"
+           alt="Tandoori grill" loading="lazy" width="600" height="740">
       <div class="reel-cap"><strong>Tandoori Grill</strong><small>Clay oven perfection</small></div>
     </div>
     <div class="reel-card">
-      <img src="https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&h=740&q=90&auto=format&fit=crop&crop=entropy"
+      <img src="/images/food/bowl.jpg"
            alt="Wholesome bowl" loading="lazy" width="600" height="740">
       <div class="reel-cap"><strong>Wholesome Bowl</strong><small>Comforting &amp; nourishing</small></div>
     </div>
@@ -823,7 +820,6 @@ a{color:inherit;text-decoration:none}
 <section class="appt">
   <div class="appt-inner">
     <div class="appt-text rl">
-      <span class="badge badge-violet">📱 iOS &amp; Android · Coming Soon</span>
       <h2 class="appt-h2">
         The Avenzo app.<br>
         <span class="grad">An ocean of features.</span>
@@ -839,22 +835,20 @@ a{color:inherit;text-decoration:none}
         <div class="app-hint hint-mystery"><span class="app-hint-ico">👀</span> And a lot more we can't tell you just yet...</div>
       </div>
       <div class="store-row">
-        <div class="store-btn">
-          <span class="store-ico">🍎</span>
+        <button class="store-btn" onclick="showSoon()" aria-label="Download on the App Store">
+          <svg class="store-svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
           <div>
             <div class="store-dl">Download on the</div>
             <div class="store-name">App Store</div>
           </div>
-          <span class="store-soon">Soon</span>
-        </div>
-        <div class="store-btn">
-          <span class="store-ico">▶</span>
+        </button>
+        <button class="store-btn" onclick="showSoon()" aria-label="Get it on Google Play">
+          <svg class="store-svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 20.5v-17c0-.59.34-1.11.84-1.35L13.69 12 3.84 21.85C3.34 21.6 3 21.09 3 20.5m13.81-5.38-10.76 6.22 8.49-8.49 2.27 2.27m3.35-3.31c.34.27.59.69.59 1.19s-.22.9-.57 1.18l-2.29 1.32-2.5-2.5 2.5-2.5 2.27 1.31M6.05 2.66 16.81 8.88 14.54 11.15 6.05 2.66Z"/></svg>
           <div>
             <div class="store-dl">Get it on</div>
             <div class="store-name">Google Play</div>
           </div>
-          <span class="store-soon">Soon</span>
-        </div>
+        </button>
       </div>
     </div>
 
@@ -1002,6 +996,25 @@ a{color:inherit;text-decoration:none}
 </footer>
 
 <script>
+/* Coming soon toast for store buttons */
+function showSoon() {
+  let t = document.getElementById('soonToast');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = 'soonToast';
+    t.style.cssText = 'position:fixed;bottom:32px;left:50%;transform:translateX(-50%) translateY(12px);background:#fff;color:#1a1008;font-family:inherit;font-weight:700;font-size:14px;padding:13px 26px;border-radius:100px;box-shadow:0 8px 36px rgba(0,0,0,.22);z-index:999;opacity:0;transition:opacity .25s,transform .25s;pointer-events:none;white-space:nowrap';
+    document.body.appendChild(t);
+  }
+  t.textContent = 'Coming soon — stay tuned! 🎉';
+  t.style.opacity = '1';
+  t.style.transform = 'translateX(-50%) translateY(0)';
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => {
+    t.style.opacity = '0';
+    t.style.transform = 'translateX(-50%) translateY(12px)';
+  }, 2600);
+}
+
 /* Nav scroll */
 const nav = document.getElementById('mainNav');
 window.addEventListener('scroll', () => nav.classList.toggle('on', scrollY > 44), {passive:true});
