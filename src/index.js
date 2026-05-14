@@ -943,7 +943,7 @@ app.post("/order/:trackingToken/cancel", orderLimiter, optionalAuth, async (req,
 });
 
 // Global guest order lookup by phone + pickup code — no restaurant context needed.
-app.get("/order/find", orderLookupLimiter, async (req, res) => {
+app.get("/orders/find", orderLookupLimiter, async (req, res) => {
     try {
         const phone = normalizePhone(req.query.phone);
         const code = cleanString(req.query.code, 10);
