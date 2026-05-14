@@ -1,631 +1,684 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <title>Avenzo — Dine-in Ordering, Made Joyful</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <meta name="description" content="Avenzo makes dine-in ordering smooth for guests and simpler for restaurants. Scan, browse, order — no app needed.">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <style>
+<title>Avenzo — From your table. To the kitchen. Instantly.</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="description" content="Avenzo turns every restaurant table into a QR-powered ordering station. Guests browse and order from their phone. Kitchens get perfect tickets instantly.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+@property --ga{syntax:'<angle>';initial-value:0deg;inherits:false}
 
-/* ── Houdini typed prop for spinning gradient button ─────────────── */
-@property --ga { syntax:'<angle>'; initial-value:0deg; inherits:false; }
-
-/* ── Reset ───────────────────────────────────────────────────────── */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 
 :root{
-  --or:#ff6a00; --am:#ffb347; --gd:#ffd060;
-  --d1:#080807; --d2:#0d0d0b; --d3:#131311;
-  --cr:#fefdf9; --r:16px;
+  /* Backgrounds */
+  --bg:    #07060500;
+  --bg1:   #080706;
+  --bg2:   #0e0c0a;
+  --bg3:   #171410;
+  --bg4:   #1f1c17;
+  /* Text */
+  --tx:    #ede7db;
+  --tx2:   rgba(237,231,219,.44);
+  --tx3:   rgba(237,231,219,.22);
+  /* Accent palette */
+  --fire:  #ff3d1a;
+  --ember: #ff7a38;
+  --gold:  #f5be00;
+  --green: #26c97a;
+  /* Cream section */
+  --cr:    #f7f2e8;
+  --cr2:   #edeade;
+  --ink:   #1a1610;
+  --ink2:  rgba(26,22,16,.48);
+  /* Radius / spacing */
+  --r:18px; --r2:12px;
+  --pad: clamp(20px,5vw,88px);
+  --sec: clamp(80px,11vw,148px)
 }
 
-html{overflow-x:clip}
-body{
-  font-family:'Inter',sans-serif;
-  background:var(--d1); color:var(--cr);
-  overflow-x:clip; cursor:none;
-}
+html{overflow-x:clip;scroll-behavior:smooth}
+body{font-family:'Inter',sans-serif;background:var(--bg1);color:var(--tx);overflow-x:clip;cursor:none;-webkit-font-smoothing:antialiased}
 @media(pointer:coarse){body{cursor:auto}#cur,#cur2{display:none}}
 
-/* ── Grain overlay ───────────────────────────────────────────────── */
-body::before{
-  content:''; position:fixed; inset:0; z-index:9000;
-  pointer-events:none; opacity:.035; mix-blend-mode:overlay;
-  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-  background-size:200px 200px;
-}
+/* ─── Custom cursor ──────────────────────────────────────── */
+#cur{width:30px;height:30px;border:1.5px solid rgba(255,61,26,.55);border-radius:50%;position:fixed;top:0;left:0;pointer-events:none;z-index:9999;transform:translate(-50%,-50%);transition:width .18s,height .18s,border-color .2s,opacity .2s;will-change:transform}
+#cur2{width:5px;height:5px;background:var(--fire);border-radius:50%;position:fixed;top:0;left:0;pointer-events:none;z-index:10000;transform:translate(-50%,-50%);will-change:transform}
+body.ch #cur{width:52px;height:52px;border-color:var(--ember);opacity:.5}
 
-/* ── Cursor ──────────────────────────────────────────────────────── */
-#cur{
-  width:34px;height:34px;border:1.5px solid rgba(255,106,0,.65);border-radius:50%;
-  position:fixed;top:0;left:0;pointer-events:none;z-index:9999;
-  transform:translate(-50%,-50%);
-  transition:width .18s,height .18s,border-color .2s;
-  will-change:transform;
-}
-#cur2{
-  width:5px;height:5px;background:var(--or);border-radius:50%;
-  position:fixed;top:0;left:0;pointer-events:none;z-index:10000;
-  transform:translate(-50%,-50%); will-change:transform;
-}
-body.ch #cur{width:50px;height:50px;border-color:var(--am);opacity:.55}
+/* ─── Nav ────────────────────────────────────────────────── */
+nav{position:fixed;top:0;left:0;right:0;z-index:500;padding:24px var(--pad);display:flex;align-items:center;justify-content:space-between;transition:all .4s;border-bottom:1px solid transparent}
+nav.scrolled{background:rgba(8,7,6,.94);backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);padding:14px var(--pad);border-color:rgba(255,255,255,.055)}
+.n-brand{display:flex;align-items:center;gap:9px;text-decoration:none;color:var(--tx);font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:17px;letter-spacing:-.4px}
+.n-brand img{height:26px}
+.n-links{display:flex;align-items:center;gap:28px;list-style:none}
+.n-links a{color:var(--tx2);text-decoration:none;font-size:14px;font-weight:500;transition:color .2s;white-space:nowrap}
+.n-links a:hover{color:var(--tx)}
+.n-pill{background:var(--fire);color:#fff!important;padding:9px 22px;border-radius:50px;font-size:13px;font-weight:700!important;transition:background .25s,transform .2s,box-shadow .25s!important}
+.n-pill:hover{background:#d93115!important;transform:translateY(-1px)!important;box-shadow:0 6px 22px rgba(255,61,26,.4)!important}
+.n-mob{display:none;background:none;border:1px solid rgba(255,255,255,.14);color:var(--tx);padding:8px 18px;border-radius:50px;font-size:13px;font-weight:600;cursor:pointer;transition:background .2s}
+.n-mob:hover{background:rgba(255,255,255,.06)}
+@media(max-width:860px){nav{padding:16px 24px}nav.scrolled{padding:12px 24px}.n-links{display:none}.n-mob{display:block}}
 
-/* ── Nav ─────────────────────────────────────────────────────────── */
-.nav{
-  position:fixed;top:0;left:0;right:0;z-index:500;padding:22px 48px;
-  display:flex;align-items:center;justify-content:space-between;
-  transition:padding .4s,background .4s,border-color .4s;
-  border-bottom:1px solid transparent;
-}
-.nav.on{
-  background:rgba(8,8,7,.92);
-  backdrop-filter:blur(20px) saturate(1.4);
-  -webkit-backdrop-filter:blur(20px) saturate(1.4);
-  padding:12px 48px;
-  border-color:rgba(255,255,255,.06);
-}
-.nav-brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:18px;color:var(--cr);text-decoration:none;letter-spacing:-.3px}
-.nav-brand img{height:26px}
-.nl{display:flex;align-items:center;gap:28px;list-style:none}
-.nl a{color:rgba(255,255,255,.55);text-decoration:none;font-size:14px;font-weight:500;transition:color .2s}
-.nl a:hover{color:var(--cr)}
-.nl .pill{
-  background:var(--or);color:#fff!important;padding:9px 20px;border-radius:50px;
-  font-weight:600!important;
-  transition:background .25s,box-shadow .25s,transform .25s!important;
-}
-.nl .pill:hover{background:var(--am)!important;transform:translateY(-1px)!important;box-shadow:0 6px 20px rgba(255,106,0,.42)!important}
-.nav-mob{
-  display:none;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.13);
-  color:var(--cr);padding:8px 18px;border-radius:50px;font-size:13px;font-weight:600;cursor:pointer;
-}
-@media(max-width:820px){
-  .nav{padding:14px 20px}.nav.on{padding:10px 20px}
-  .nl{display:none}.nav-mob{display:block}
-}
-
-/* ── Hero ────────────────────────────────────────────────────────── */
-.hero{
-  position:relative;min-height:100vh;
-  display:flex;align-items:center;justify-content:center;
-  overflow:hidden;background:var(--d1);
-}
-
-/* Aurora orbs — radial-gradient ONLY, zero filter:blur (no GPU repaint per frame) */
-.orb{position:absolute;border-radius:50%;pointer-events:none;will-change:transform}
-.o1{
-  width:70vw;height:70vw;max-width:900px;max-height:900px;
-  background:radial-gradient(circle at 40% 40%,rgba(255,70,0,.22) 0%,rgba(255,90,0,.07) 38%,transparent 65%);
-  top:-22%;left:-18%;animation:drift1 18s ease-in-out infinite;
-}
-.o2{
-  width:55vw;height:55vw;max-width:700px;max-height:700px;
-  background:radial-gradient(circle at 60% 40%,rgba(255,160,0,.18) 0%,rgba(255,140,0,.05) 40%,transparent 65%);
-  top:15%;right:-16%;animation:drift2 22s ease-in-out infinite;
-}
-.o3{
-  width:50vw;height:50vw;max-width:640px;max-height:640px;
-  background:radial-gradient(circle at 50% 60%,rgba(220,40,0,.14) 0%,rgba(200,30,0,.04) 38%,transparent 62%);
-  bottom:-20%;left:22%;animation:drift3 15s ease-in-out infinite;
-}
-.o4{
-  width:25vw;height:25vw;max-width:320px;max-height:320px;
-  background:radial-gradient(circle at 50% 50%,rgba(255,200,50,.12) 0%,transparent 65%);
-  top:55%;left:62%;animation:drift1 25s 3s ease-in-out infinite reverse;
-}
-@keyframes drift1{0%,100%{transform:translate(0,0) scale(1)}40%{transform:translate(4vw,3vh) scale(1.07)}70%{transform:translate(-2vw,5vh) scale(.95)}}
-@keyframes drift2{0%,100%{transform:translate(0,0) scale(1)}35%{transform:translate(-5vw,4vh) scale(1.09)}68%{transform:translate(3vw,-3vh) scale(.93)}}
-@keyframes drift3{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(5vw,-4vh) scale(1.05)}}
-
-.vignette{position:absolute;inset:0;z-index:1;pointer-events:none;background:radial-gradient(ellipse 80% 65% at 50% 50%,transparent 28%,rgba(8,8,7,.68) 100%)}
-.vbot{position:absolute;bottom:0;left:0;right:0;height:200px;z-index:1;pointer-events:none;background:linear-gradient(transparent,#080807)}
-
-/* Hero body — CSS animations, no GSAP required for initial render */
-.hbody{position:relative;z-index:2;text-align:center;max-width:920px;padding:0 24px}
-
-.h-pill{
-  display:inline-flex;align-items:center;gap:8px;
-  background:rgba(255,106,0,.09);border:1px solid rgba(255,106,0,.22);
-  color:var(--am);padding:7px 16px;border-radius:50px;
-  font-size:12px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;
-  margin-bottom:38px;
-  animation:fupin .6s .05s ease both;
-}
-.h-pill .dot{width:7px;height:7px;background:var(--or);border-radius:50%;animation:pdot 2s infinite}
-@keyframes pdot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.25;transform:scale(.55)}}
-
-.h1{font-size:clamp(48px,9.5vw,108px);font-weight:900;letter-spacing:-3.5px;line-height:.97;color:var(--cr);margin-bottom:30px}
-.h1 .line{display:block;overflow:hidden}
-.h1 .w{display:inline-block;animation:wup .78s cubic-bezier(.16,1,.3,1) both;animation-delay:var(--d,0s)}
-.h1 .fire{
-  background:linear-gradient(92deg,var(--or) 10%,var(--gd) 60%,var(--am) 100%);
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
-}
-
-.hsub{
-  font-size:clamp(16px,2.2vw,20px);color:rgba(255,255,255,.48);
-  max-width:540px;margin:0 auto 52px;line-height:1.65;text-wrap:balance;
-  animation:fupin .6s .56s ease both;
-}
-.hbtns{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;animation:fupin .6s .7s ease both}
-
-/* CSS keyframes for all hero entrances — no JS dependency */
-@keyframes wup  {from{transform:translateY(108%)}to{transform:translateY(0)}}
-@keyframes fupin{from{opacity:0;transform:translateY(13px)}to{opacity:1;transform:none}}
-@keyframes fin  {from{opacity:0}to{opacity:1}}
-
-/* Buttons */
-.btn-p{
-  --ga:0deg;
-  background:conic-gradient(from var(--ga),var(--or),var(--am),var(--gd),var(--or));
-  animation:spinga 4s linear infinite;
-  color:#fff;border:none;padding:15px 34px;border-radius:50px;font-size:15px;font-weight:700;
-  cursor:pointer;position:relative;overflow:hidden;
-  box-shadow:0 0 36px rgba(255,106,0,.28);transition:transform .3s,box-shadow .3s;
-}
-.btn-p::before{content:'';position:absolute;inset:2px;background:var(--or);border-radius:50px;transition:background .3s}
-.btn-p:hover::before{background:#e55e00}
-.btn-p:hover{transform:translateY(-3px);box-shadow:0 18px 48px rgba(255,106,0,.52)}
-.btn-p span{position:relative;z-index:1}
+/* ─── Buttons ────────────────────────────────────────────── */
+.btn-f{--ga:0deg;background:conic-gradient(from var(--ga),var(--fire),var(--ember),var(--gold),var(--fire));animation:spinga 4s linear infinite;border:none;padding:16px 38px;border-radius:50px;font-size:15px;font-weight:700;color:#fff;cursor:pointer;position:relative;overflow:hidden;box-shadow:0 0 44px rgba(255,61,26,.22);transition:transform .3s,box-shadow .3s;text-decoration:none;display:inline-block}
+.btn-f::before{content:'';position:absolute;inset:2px;background:var(--fire);border-radius:50px;transition:background .3s}
+.btn-f:hover::before{background:#d93015}
+.btn-f:hover{transform:translateY(-3px);box-shadow:0 22px 54px rgba(255,61,26,.42)}
+.btn-f span{position:relative;z-index:1;color:#fff}
 @keyframes spinga{to{--ga:360deg}}
+.btn-o{background:rgba(255,255,255,.06);color:var(--tx);border:1px solid rgba(255,255,255,.12);padding:16px 38px;border-radius:50px;font-size:15px;font-weight:600;cursor:pointer;transition:all .3s;text-decoration:none;display:inline-block}
+.btn-o:hover{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.22);transform:translateY(-2px)}
 
-.btn-g{
-  background:rgba(255,255,255,.055);color:var(--cr);
-  border:1px solid rgba(255,255,255,.14);padding:15px 34px;border-radius:50px;
-  font-size:15px;font-weight:600;cursor:pointer;
-  transition:background .3s,border-color .3s,transform .3s;
-  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
-}
-.btn-g:hover{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.26);transform:translateY(-2px)}
+/* ─── Section shell ──────────────────────────────────────── */
+.wrap{max-width:1180px;margin:auto;padding:0 var(--pad)}
+.eye{font-family:'Plus Jakarta Sans',sans-serif;font-size:11px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--fire);margin-bottom:18px}
+.stitle{font-family:'Plus Jakarta Sans',sans-serif;font-size:clamp(38px,6vw,72px);font-weight:800;letter-spacing:-2px;line-height:1.0;text-wrap:balance;color:var(--tx)}
+.stitle .dim{color:var(--tx2)}
 
-/* Food chips */
-.chips{position:absolute;inset:0;z-index:1;pointer-events:none}
-.chip{
-  position:absolute;background:rgba(16,16,14,.72);
-  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
-  border:1px solid rgba(255,255,255,.1);
-  padding:9px 15px;border-radius:50px;font-size:13px;font-weight:600;
-  color:rgba(255,255,255,.72);white-space:nowrap;will-change:transform;
-}
-.chip:nth-child(1){top:18%;left:7%  ;animation:cf 8s  2.0s ease-in-out infinite}
-.chip:nth-child(2){top:22%;right:8% ;animation:cf 9s  0.5s ease-in-out infinite}
-.chip:nth-child(3){top:66%;left:6%  ;animation:cf 7s  1.2s ease-in-out infinite}
-.chip:nth-child(4){top:71%;right:7% ;animation:cf 10s 3.0s ease-in-out infinite}
-.chip:nth-child(5){top:45%;left:3%  ;animation:cf 8s  4.0s ease-in-out infinite}
-.chip:nth-child(6){top:42%;right:3% ;animation:cf 9s  1.8s ease-in-out infinite}
-@keyframes cf{0%,100%{transform:translateY(0) rotate(-1.5deg)}50%{transform:translateY(-20px) rotate(1.5deg)}}
-@media(max-width:768px){.chips{display:none}}
+/* ─── HERO ───────────────────────────────────────────────── */
+.hero{position:relative;min-height:100vh;display:flex;align-items:center;justify-content:center;text-align:center;overflow:hidden;background:var(--bg1)}
+#bg-canvas{position:absolute;inset:0;z-index:0;pointer-events:none}
+.h-vbot{position:absolute;bottom:0;left:0;right:0;height:220px;z-index:1;pointer-events:none;background:linear-gradient(transparent,var(--bg1))}
 
-.shint{
-  position:absolute;bottom:30px;left:50%;transform:translateX(-50%);z-index:3;
-  display:flex;flex-direction:column;align-items:center;gap:8px;
-  color:rgba(255,255,255,.28);font-size:10px;letter-spacing:2px;text-transform:uppercase;
-  animation:fin .8s 1.5s ease both;
-}
-.smouse{width:22px;height:36px;border:1.5px solid rgba(255,255,255,.2);border-radius:12px;display:flex;justify-content:center;padding-top:5px}
-.swheel{width:3px;height:7px;background:rgba(255,255,255,.4);border-radius:2px;animation:swhl 2.3s infinite}
-@keyframes swhl{0%,100%{transform:translateY(0);opacity:1}50%{transform:translateY(7px);opacity:.18}}
+.h-inner{position:relative;z-index:2;padding:0 clamp(16px,4vw,60px);max-width:1080px;width:100%}
 
-/* ── Ticker ──────────────────────────────────────────────────────── */
-.ticker{
-  overflow:hidden;padding:17px 0;user-select:none;
-  background:rgba(255,106,0,.055);
-  border-top:1px solid rgba(255,106,0,.12);border-bottom:1px solid rgba(255,106,0,.12);
-}
-.ttrack{display:inline-flex;animation:tmove 30s linear infinite;will-change:transform;white-space:nowrap}
-.ttrack:hover{animation-play-state:paused}
-.ti{font-size:12px;font-weight:700;letter-spacing:1.8px;text-transform:uppercase;color:rgba(255,255,255,.4);padding:0 30px}
-.td{font-size:7px;color:var(--or);align-self:center;flex-shrink:0}
-@keyframes tmove{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+/* Logo mark — BIG in hero */
+.h-brand{display:flex;align-items:center;justify-content:center;gap:16px;margin-bottom:64px;animation:fade-in .6s ease both}
+.h-brand img{height:56px;filter:drop-shadow(0 0 32px rgba(255,61,26,.5)) drop-shadow(0 0 64px rgba(255,122,56,.2))}
+.h-brand-text{font-family:'Plus Jakarta Sans',sans-serif;font-size:46px;font-weight:800;letter-spacing:-2.5px;background:linear-gradient(140deg,var(--tx) 30%,var(--ember) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+@keyframes fade-in{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:none}}
 
-/* ── Stats ───────────────────────────────────────────────────────── */
-.stats{padding:64px 0;background:var(--d2);border-bottom:1px solid rgba(255,255,255,.05)}
-.sr{max-width:1100px;margin:auto;padding:0 48px;display:flex;justify-content:space-around;align-items:center;flex-wrap:wrap}
-.stat{text-align:center;padding:16px 28px}
-.sn{
-  font-size:56px;font-weight:900;letter-spacing:-2.5px;line-height:1;
-  background:linear-gradient(135deg,var(--or),var(--gd));
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
-}
-.sl{font-size:12px;color:rgba(255,255,255,.35);margin-top:6px;font-weight:600;text-transform:uppercase;letter-spacing:.8px}
-.sdiv{width:1px;height:60px;background:rgba(255,255,255,.07)}
-@media(max-width:600px){.sdiv{display:none}.sn{font-size:42px}.sr{padding:0 20px}}
+.h-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(255,61,26,.09);border:1px solid rgba(255,61,26,.2);color:var(--ember);padding:7px 16px;border-radius:50px;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:40px;animation:fade-up .6s .08s ease both}
+.h-dot{width:6px;height:6px;background:var(--fire);border-radius:50%;animation:dot-pulse 2s infinite}
+@keyframes dot-pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.2;transform:scale(.5)}}
 
-/* ── Section header ──────────────────────────────────────────────── */
-.shead{text-align:center;margin-bottom:72px;padding:0 24px}
-.seye{display:inline-block;font-size:11px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--or);margin-bottom:14px}
-.stitle{font-size:clamp(36px,5.5vw,64px);font-weight:900;letter-spacing:-2px;line-height:1.05;color:var(--cr);text-wrap:balance}
-.stitle .dim{color:rgba(255,255,255,.2)}
+.h-title{font-family:'Plus Jakarta Sans',sans-serif;font-size:clamp(58px,11vw,122px);font-weight:800;line-height:.92;letter-spacing:clamp(-2.5px,-0.04em,-4.5px);margin-bottom:36px;color:var(--tx)}
+.h-title .line{display:block;overflow:hidden}
+.h-title .w{display:inline-block;animation:clip-up .78s cubic-bezier(.16,1,.3,1) both;animation-delay:var(--d,0s)}
+@keyframes clip-up{from{transform:translateY(112%)}to{transform:translateY(0)}}
+.h-title .accent{background:linear-gradient(100deg,var(--fire) 0%,var(--ember) 55%,var(--gold) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
 
-/* ── Journey (sticky scroll) ─────────────────────────────────────── */
-.j-pin{height:420vh}                        /* 4 steps × 105vh */
-@media(max-width:820px){.j-pin{height:500vh}}
-.j-fix{
-  position:sticky;top:0;height:100vh;
-  display:flex;align-items:center;justify-content:center;
-  overflow:hidden;background:var(--d2);
-}
-.j-in{
-  max-width:1140px;width:100%;padding:0 48px;
-  display:grid;grid-template-columns:1fr 1fr;gap:80px;align-items:center;
-}
-@media(max-width:820px){
-  .j-in{grid-template-columns:1fr;gap:20px;padding:70px 22px 16px}
-  .jph{order:-1}
-}
+.h-sub{font-size:clamp(15px,2vw,19px);color:var(--tx2);max-width:510px;margin:0 auto 52px;line-height:1.75;text-wrap:balance;animation:fade-up .7s .7s ease both}
+@keyframes fade-up{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+
+.h-btns{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;animation:fade-up .7s .86s ease both}
+
+.h-scroll{position:absolute;bottom:26px;left:50%;transform:translateX(-50%);z-index:3;display:flex;flex-direction:column;align-items:center;gap:7px;color:var(--tx3);font-size:9px;letter-spacing:2.5px;text-transform:uppercase;animation:fade-up .8s 1.5s ease both}
+.h-mouse{width:20px;height:30px;border:1.5px solid rgba(255,255,255,.16);border-radius:10px;display:flex;justify-content:center;padding-top:4px}
+.h-wheel{width:2px;height:6px;background:rgba(255,255,255,.3);border-radius:2px;animation:wheel 2.4s infinite}
+@keyframes wheel{0%,100%{transform:translateY(0);opacity:1}50%{transform:translateY(7px);opacity:.1}}
+
+/* ─── Marquee ────────────────────────────────────────────── */
+.marquee-wrap{overflow:hidden;padding:15px 0;background:rgba(255,255,255,.02);border-top:1px solid rgba(255,255,255,.045);border-bottom:1px solid rgba(255,255,255,.045);user-select:none}
+.marquee-track{display:inline-flex;white-space:nowrap;animation:marquee 34s linear infinite;will-change:transform}
+.marquee-track:hover{animation-play-state:paused}
+.m-item{font-size:12px;font-weight:700;letter-spacing:1.8px;text-transform:uppercase;color:rgba(237,231,219,.28);padding:0 28px}
+.m-dot{font-size:8px;color:var(--ember);align-self:center;flex-shrink:0}
+@keyframes marquee{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+
+/* ─── PROBLEM (cream section) ────────────────────────────── */
+.problem{padding:var(--sec) 0;background:var(--cr);color:var(--ink)}
+.problem .eye{color:var(--fire)}
+.p-title{font-family:'Plus Jakarta Sans',sans-serif;font-size:clamp(36px,5.5vw,66px);font-weight:800;letter-spacing:-2px;line-height:1.02;text-wrap:balance;color:var(--ink);margin-bottom:18px}
+.p-sub{font-size:16px;color:var(--ink2);max-width:500px;line-height:1.7;margin-bottom:72px}
+
+/* "Before and after" split */
+.ba-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+@media(max-width:680px){.ba-grid{grid-template-columns:1fr}}
+.ba-col{border-radius:var(--r);overflow:hidden}
+.ba-head{padding:18px 26px;display:flex;align-items:center;gap:10px;font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;font-weight:700;letter-spacing:.3px}
+.ba-before .ba-head{background:rgba(26,22,16,.06);color:rgba(26,22,16,.4)}
+.ba-after .ba-head{background:rgba(255,61,26,.08);color:var(--fire)}
+.ba-indicator{width:8px;height:8px;border-radius:50%}
+.ba-before .ba-indicator{background:rgba(26,22,16,.25)}
+.ba-after .ba-indicator{background:var(--fire)}
+.ba-list{border:1px solid rgba(26,22,16,.08);border-top:none;border-radius:0 0 var(--r) var(--r)}
+.ba-item{padding:18px 26px;display:flex;align-items:flex-start;gap:14px;border-bottom:1px solid rgba(26,22,16,.06)}
+.ba-item:last-child{border-bottom:none}
+.ba-ico{font-size:17px;flex-shrink:0;margin-top:1px}
+.ba-item b{display:block;font-size:14px;font-weight:700;color:var(--ink);margin-bottom:3px;letter-spacing:-.2px}
+.ba-item span{font-size:13px;color:var(--ink2);line-height:1.55}
+.ba-after .ba-item b{color:var(--ink)}
+.ba-after .ba-item span{color:rgba(26,22,16,.5)}
+
+/* ─── JOURNEY (sticky) ───────────────────────────────────── */
+.journey{background:var(--bg1)}
+.j-pin{height:480vh}
+@media(max-width:840px){.j-pin{height:560vh}}
+.j-fix{position:sticky;top:0;height:100vh;display:flex;align-items:center;justify-content:center;background:var(--bg1);overflow:hidden}
+.j-in{max-width:1180px;width:100%;padding:0 var(--pad);display:grid;grid-template-columns:1fr 1.1fr;gap:80px;align-items:center}
+@media(max-width:840px){.j-in{grid-template-columns:1fr;gap:20px;padding:clamp(52px,9vw,70px) 22px 16px}.j-phone-col{order:-1}}
 
 /* Phone mockup */
-.jph{width:255px;margin:auto}
-.psh{
-  background:#1a1a18;border:1.5px solid rgba(255,255,255,.09);border-radius:44px;padding:11px;
-  box-shadow:0 40px 80px rgba(0,0,0,.75),inset 0 0 0 1px rgba(255,255,255,.04),0 0 60px rgba(255,106,0,.07);
-}
-.pnt{width:80px;height:24px;background:#1a1a18;border-radius:0 0 14px 14px;margin:0 auto 8px}
-.psc{background:#0c0c0b;border-radius:30px;overflow:hidden;aspect-ratio:9/20;position:relative}
-
-/* Screen panels — CSS transition driven */
-.sp{position:absolute;inset:0;padding:18px 13px;opacity:0;transform:translateY(16px);transition:opacity .5s ease,transform .5s ease;pointer-events:none}
+.j-phone-col{display:flex;justify-content:center}
+.j-phone{width:260px}
+.phone-shell{background:#131109;border:1.5px solid rgba(255,255,255,.09);border-radius:50px;padding:11px;box-shadow:0 60px 120px rgba(0,0,0,.75),inset 0 1px 0 rgba(255,255,255,.06),0 0 80px rgba(255,61,26,.06)}
+.phone-notch{width:70px;height:22px;background:#131109;border-radius:0 0 12px 12px;margin:0 auto 6px}
+.phone-screen{background:#0b0a08;border-radius:36px;overflow:hidden;aspect-ratio:9/19.5;position:relative}
+.sp{position:absolute;inset:0;padding:18px 14px;opacity:0;transform:translateY(14px);transition:opacity .5s ease,transform .5s ease;pointer-events:none}
 .sp.on{opacity:1;transform:none;pointer-events:auto}
 
-/* QR panel */
-.qrc{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:14px}
-.qrb{width:88px;height:88px;border:2px solid var(--or);border-radius:12px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;padding:7px;animation:qrg 2.5s infinite}
-@keyframes qrg{0%,100%{box-shadow:0 0 0 0 rgba(255,106,0,.35)}50%{box-shadow:0 0 0 8px rgba(255,106,0,0)}}
-.qf{background:var(--or);border-radius:2px}.qe{background:transparent}
-.qrl{font-size:11px;color:rgba(255,255,255,.38);text-align:center;line-height:1.5}
-.qrh{font-size:11px;color:rgba(255,106,0,.7);font-weight:600}
+/* Panel 0: QR scan */
+.qr-scene{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:14px}
+.qr-prompt{font-size:10px;color:rgba(255,255,255,.4);letter-spacing:.5px;text-align:center}
+.qr-frame{width:88px;height:88px;position:relative;border-radius:10px}
+.qr-frame::before,.qr-frame::after,.qr-corner-br,.qr-corner-tl2{content:'';position:absolute;width:16px;height:16px;border-color:var(--fire);border-style:solid;border-radius:3px}
+.qr-frame::before{top:0;left:0;border-width:2.5px 0 0 2.5px;border-radius:4px 0 0 0}
+.qr-frame::after{bottom:0;right:0;border-width:0 2.5px 2.5px 0;border-radius:0 0 4px 0}
+.qr-corner-br{top:0;right:0;border-width:2.5px 2.5px 0 0;border-radius:0 4px 0 0}
+.qr-corner-tl2{bottom:0;left:0;border-width:0 0 2.5px 2.5px;border-radius:0 0 0 4px}
+.qr-dots{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;padding:14px;width:100%;height:100%}
+.qd{background:rgba(255,61,26,.65);border-radius:1px}
+.qr-scan-line{position:absolute;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--fire),transparent);animation:scan 2.2s ease-in-out infinite}
+@keyframes scan{0%,100%{top:14px;opacity:1}50%{top:calc(100% - 14px);opacity:.7}}
+.qr-hint{font-size:11px;color:rgba(255,61,26,.7);font-weight:600;animation:blink 2s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
 
-/* Menu panel */
-.mh{font-size:11px;font-weight:700;color:rgba(255,255,255,.35);margin-bottom:10px}
-.mr{display:flex;align-items:center;gap:9px;background:rgba(255,255,255,.04);border-radius:10px;padding:8px 9px;margin-bottom:7px}
-.mi{width:32px;height:32px;border-radius:8px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:17px;background:rgba(255,106,0,.1)}
-.mn{font-size:11px;font-weight:600;color:rgba(255,255,255,.8)}
-.mp{font-size:10px;color:rgba(255,255,255,.3)}
-.ma{width:20px;height:20px;background:var(--or);border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:12px;color:#fff;flex-shrink:0}
+/* Panel 1: Menu */
+.menu-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.menu-rest{font-size:10px;font-weight:700;color:rgba(255,255,255,.55)}
+.menu-cart-badge{background:var(--fire);color:#fff;font-size:9px;font-weight:700;padding:3px 8px;border-radius:8px}
+.m-row{display:flex;align-items:center;gap:9px;background:rgba(255,255,255,.04);border-radius:9px;padding:9px 9px;margin-bottom:5px;transition:background .2s}
+.m-row:hover{background:rgba(255,255,255,.07)}
+.m-em{width:32px;height:32px;border-radius:8px;background:rgba(255,61,26,.1);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.m-name{font-size:10.5px;font-weight:700;color:rgba(255,255,255,.85);line-height:1.3}
+.m-price{font-size:10px;color:var(--ember);margin-top:1px}
+.m-plus{width:20px;height:20px;background:var(--fire);border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:12px;color:#fff;flex-shrink:0;margin-left:auto}
 
-/* Confirm/ready panels */
-.cc{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:12px}
-.chk{width:58px;height:58px;border-radius:50%;background:linear-gradient(135deg,#1a8c6e,#23b88d);display:flex;align-items:center;justify-content:center;font-size:24px}
-.ct{font-size:14px;font-weight:700;color:#fff}
-.cs{font-size:10px;color:rgba(255,255,255,.36);text-align:center;line-height:1.5}
-.cbg{background:rgba(35,184,141,.14);border:1px solid rgba(35,184,141,.3);color:#23b88d;padding:5px 12px;border-radius:20px;font-size:11px;font-weight:600}
-.cbo{background:rgba(255,106,0,.12);border:1px solid rgba(255,106,0,.28);color:var(--am);padding:5px 12px;border-radius:20px;font-size:11px;font-weight:600}
+/* Panel 2: Confirmed */
+.confirmed{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:11px;text-align:center;padding:0 10px}
+.cf-check{width:54px;height:54px;border-radius:50%;background:linear-gradient(135deg,#186840,#22c974);display:flex;align-items:center;justify-content:center;font-size:22px;box-shadow:0 0 28px rgba(34,201,116,.3)}
+.cf-title{font-size:13px;font-weight:700;color:rgba(255,255,255,.92)}
+.cf-code{font-size:10px;color:rgba(255,255,255,.3)}
+.cf-tag{background:rgba(34,201,116,.1);border:1px solid rgba(34,201,116,.28);color:#22c974;padding:5px 12px;border-radius:16px;font-size:10px;font-weight:700}
+.cf-prog{width:130px;height:3px;background:rgba(255,255,255,.06);border-radius:2px;position:relative;overflow:hidden}
+.cf-prog::after{content:'';position:absolute;left:0;top:0;height:100%;background:linear-gradient(90deg,#22c974,#18a85c);border-radius:2px;animation:prog-anim 3s ease infinite}
+@keyframes prog-anim{0%{width:20%}60%{width:80%}100%{width:20%}}
+.cf-msg{font-size:9px;color:rgba(255,255,255,.28);line-height:1.5}
+
+/* Panel 3: Ready */
+.ready{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:12px;text-align:center}
+.rd-emoji{font-size:46px;animation:pop-in .5s cubic-bezier(.16,1,.3,1)}
+@keyframes pop-in{from{transform:scale(.2);opacity:0}to{transform:scale(1);opacity:1}}
+.rd-title{font-size:15px;font-weight:700;color:rgba(255,255,255,.95)}
+.rd-sub{font-size:10px;color:rgba(255,255,255,.32);line-height:1.65}
+.rd-tag{background:rgba(245,190,0,.1);border:1px solid rgba(245,190,0,.25);color:var(--gold);padding:5px 14px;border-radius:16px;font-size:10px;font-weight:700}
 
 /* Journey text */
-.jdots{display:flex;gap:8px;margin-bottom:28px}
-.jd{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.12);transition:all .4s ease}
-.jd.on{background:var(--or);width:28px;border-radius:4px}
-.jsteps{position:relative;height:230px}
-@media(max-width:820px){.jsteps{height:265px}}
+.j-text{padding-left:4px}
+.j-dots-row{display:flex;gap:8px;margin-bottom:34px}
+.jd{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.1);transition:all .42s ease}
+.jd.on{background:var(--fire);width:30px;border-radius:4px}
+.j-steps-wrap{position:relative;height:248px}
+@media(max-width:840px){.j-steps-wrap{height:290px}}
 .jst{position:absolute;inset:0;opacity:0;transform:translateY(22px);transition:opacity .5s ease,transform .5s ease;pointer-events:none}
 .jst.on{opacity:1;transform:none;pointer-events:auto}
-.jeye{font-size:11px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:var(--or);margin-bottom:12px}
-.jh2{font-size:clamp(26px,3.5vw,50px);font-weight:800;letter-spacing:-1.5px;line-height:1.1;color:var(--cr);margin-bottom:16px;text-wrap:balance}
-.jp{font-size:15px;color:rgba(255,255,255,.42);line-height:1.65;max-width:400px}
+.j-num{font-family:'Plus Jakarta Sans',sans-serif;font-size:11px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:var(--fire);margin-bottom:14px}
+.j-h2{font-family:'Plus Jakarta Sans',sans-serif;font-size:clamp(26px,3.6vw,52px);font-weight:800;letter-spacing:-1.5px;line-height:1.06;color:var(--tx);margin-bottom:18px;text-wrap:balance}
+.j-p{font-size:15px;color:var(--tx2);line-height:1.72;max-width:420px}
 
-/* ── Features ────────────────────────────────────────────────────── */
-.feat{padding:130px 0;background:var(--d1)}
-.fgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;max-width:1200px;margin:auto;padding:0 48px}
-@media(max-width:900px){.fgrid{grid-template-columns:1fr 1fr}}
-@media(max-width:560px){.fgrid{grid-template-columns:1fr;padding:0 20px}}
+/* ─── BENTO Features ─────────────────────────────────────── */
+.features{padding:var(--sec) 0;background:var(--bg2)}
+.bento{display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:auto auto;gap:12px;margin-top:64px}
+@media(max-width:900px){.bento{grid-template-columns:1fr 1fr}}
+@media(max-width:560px){.bento{grid-template-columns:1fr}}
 
-/* Gradient border card (CSS mask technique) */
-.fc{
-  position:relative;border-radius:var(--r);padding:32px 26px;
-  background:rgba(255,255,255,.025);
-  transform-style:preserve-3d;will-change:transform;
-  transition:transform .12s ease;isolation:isolate;
-}
-.fc::before{
-  content:'';position:absolute;inset:0;border-radius:inherit;padding:1px;
-  background:linear-gradient(135deg,rgba(255,106,0,.3) 0%,rgba(255,255,255,.06) 50%,rgba(255,106,0,.08) 100%);
-  -webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);
-  -webkit-mask-composite:xor;mask-composite:exclude;
-  opacity:.65;transition:opacity .3s;
-}
-.fc:hover::before{opacity:1}
-.fg{position:absolute;width:180px;height:180px;background:radial-gradient(circle,rgba(255,106,0,.1),transparent);border-radius:50%;top:-30px;right:-30px;pointer-events:none;z-index:0}
-.fi{width:48px;height:48px;background:rgba(255,106,0,.1);border:1px solid rgba(255,106,0,.18);border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:21px;margin-bottom:20px;position:relative;z-index:1}
-.fc h3{font-size:17px;font-weight:700;color:var(--cr);margin-bottom:9px;letter-spacing:-.4px;position:relative;z-index:1}
-.fc p{font-size:14px;color:rgba(255,255,255,.4);line-height:1.6;position:relative;z-index:1}
+.bc{position:relative;border-radius:var(--r);padding:32px 28px;background:var(--bg3);overflow:hidden;border:1px solid rgba(255,255,255,.05);transition:border-color .3s,transform .2s}
+.bc:hover{border-color:rgba(255,61,26,.14);transform:translateY(-2px)}
+.bc.wide{grid-column:span 2}
+@media(max-width:900px){.bc.wide{grid-column:span 1}}
+.bc-glow{position:absolute;top:-50px;right:-50px;width:180px;height:180px;background:radial-gradient(circle,rgba(255,61,26,.07),transparent);border-radius:50%;pointer-events:none}
+.bc-ico{width:46px;height:46px;background:rgba(255,61,26,.1);border:1px solid rgba(255,61,26,.14);border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:22px;position:relative;z-index:1}
+.bc h3{font-family:'Plus Jakarta Sans',sans-serif;font-size:17px;font-weight:700;color:var(--tx);margin-bottom:10px;letter-spacing:-.3px;position:relative;z-index:1}
+.bc p{font-size:14px;color:var(--tx2);line-height:1.65;position:relative;z-index:1}
+/* Gradient border via mask */
+.bc::before{content:'';position:absolute;inset:0;border-radius:inherit;padding:1px;background:linear-gradient(140deg,rgba(255,61,26,.22) 0%,rgba(255,255,255,.04) 50%,rgba(255,61,26,.06) 100%);-webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);-webkit-mask-composite:xor;mask-composite:exclude;opacity:.6;transition:opacity .3s;pointer-events:none}
+.bc:hover::before{opacity:1}
 
-/* ── How it works ────────────────────────────────────────────────── */
-.how{padding:130px 0;background:var(--d3);overflow:hidden}
-.hwrap{
-  margin-top:56px;overflow-x:auto;cursor:grab;
-  -webkit-overflow-scrolling:touch;
-  scroll-snap-type:x mandatory;
-  scroll-behavior:smooth;
-}
-.hwrap::-webkit-scrollbar{display:none}
-.hwrap{scrollbar-width:none}
-.htrack{display:flex;gap:20px;padding:4px 48px 16px;width:max-content}
-@media(max-width:600px){.htrack{padding:4px 20px 16px}}
-.hc{
-  flex:0 0 300px;border-radius:var(--r);padding:34px 28px;
-  background:rgba(255,255,255,.025);position:relative;overflow:hidden;
-  scroll-snap-align:start;
-  border:1px solid rgba(255,255,255,.06);
-  transition:transform .3s,border-color .3s;
-}
-.hc:hover{transform:translateY(-5px);border-color:rgba(255,106,0,.18)}
-.hn{font-size:92px;font-weight:900;color:rgba(255,255,255,.03);line-height:1;position:absolute;top:8px;right:16px;letter-spacing:-5px}
-.hico{font-size:32px;margin-bottom:16px}
-.hc h3{font-size:19px;font-weight:700;color:var(--cr);margin-bottom:9px;letter-spacing:-.4px}
-.hc p{font-size:14px;color:rgba(255,255,255,.38);line-height:1.6}
+/* Wide card extra */
+.bc.wide .bc-inner{display:grid;grid-template-columns:1fr 1fr;gap:28px;align-items:center}
+@media(max-width:900px){.bc.wide .bc-inner{grid-template-columns:1fr}}
+.bc-kpi{display:flex;flex-direction:column;gap:14px;margin-top:16px}
+.kpi{display:flex;align-items:center;gap:12px}
+.kpi-bar-wrap{flex:1;height:5px;background:rgba(255,255,255,.06);border-radius:3px;overflow:hidden}
+.kpi-bar{height:100%;background:linear-gradient(90deg,var(--fire),var(--ember));border-radius:3px;transition:width .8s ease}
+.kpi-label{font-size:12px;color:var(--tx2);white-space:nowrap;width:90px}
+.kpi-val{font-size:12px;font-weight:700;color:var(--tx);width:30px;text-align:right}
 
-/* ── Benefits ────────────────────────────────────────────────────── */
-.ben{padding:130px 0;background:var(--d2)}
-.bgrid{
-  display:grid;grid-template-columns:1fr 1fr;
-  border:1px solid rgba(255,255,255,.06);border-radius:24px;overflow:hidden;
-  max-width:1060px;margin:64px auto 0;padding:0 48px;
-}
-.bi{
-  padding:44px 36px;display:flex;gap:18px;align-items:flex-start;
-  border-bottom:1px solid rgba(255,255,255,.06);
-  transition:background .3s;
-}
-.bi:hover{background:rgba(255,106,0,.028)}
-.bi:nth-child(odd){border-right:1px solid rgba(255,255,255,.06)}
-.bi:nth-last-child(-n+2){border-bottom:none}
-.bnum{font-size:12px;font-weight:700;color:var(--or);flex-shrink:0;margin-top:3px}
-.bi h3{font-size:17px;font-weight:700;color:var(--cr);margin-bottom:8px;letter-spacing:-.4px}
-.bi p{font-size:14px;color:rgba(255,255,255,.4);line-height:1.6}
-@media(max-width:700px){
-  .bgrid{grid-template-columns:1fr;padding:0 20px}
-  .bi:nth-child(odd){border-right:none}
-  .bi:nth-last-child(-n+2){border-bottom:1px solid rgba(255,255,255,.06)}
-  .bi:last-child{border-bottom:none}
-}
+/* ─── CTA ────────────────────────────────────────────────── */
+.cta{padding:var(--sec) 24px;background:var(--bg1);text-align:center;position:relative;overflow:hidden}
+.cta-o1{position:absolute;width:700px;height:700px;border-radius:50%;background:radial-gradient(circle,rgba(255,61,26,.18),transparent 65%);top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;animation:gd1 14s ease-in-out infinite}
+.cta-o2{position:absolute;width:420px;height:420px;border-radius:50%;background:radial-gradient(circle,rgba(245,190,0,.11),transparent 65%);top:25%;right:15%;pointer-events:none;animation:gd2 18s 2s ease-in-out infinite}
+.cta-o3{position:absolute;width:300px;height:300px;border-radius:50%;background:radial-gradient(circle,rgba(255,122,56,.1),transparent 65%);bottom:10%;left:10%;pointer-events:none;animation:gd1 22s 4s ease-in-out infinite reverse}
+@keyframes gd1{0%,100%{transform:translate(-50%,-50%) scale(1)}50%{transform:translate(calc(-50% + 40px),calc(-50% - 24px)) scale(1.06)}}
+@keyframes gd2{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(-30px,20px) scale(.94)}}
+.cta-inner{position:relative;z-index:2;max-width:800px;margin:auto}
+.cta-inner h2{font-family:'Plus Jakarta Sans',sans-serif;font-size:clamp(42px,7vw,88px);font-weight:800;letter-spacing:clamp(-2px,-0.03em,-4px);line-height:.95;color:var(--tx);margin-bottom:28px;text-wrap:balance}
+.cta-inner h2 .grd{background:linear-gradient(100deg,var(--fire),var(--ember),var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.cta-inner p{font-size:17px;color:var(--tx2);max-width:460px;margin:0 auto 52px;line-height:1.7}
+.cta-btns{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
 
-/* ── CTA ─────────────────────────────────────────────────────────── */
-.cta{padding:180px 0;background:var(--d1);text-align:center;position:relative;overflow:hidden;isolation:isolate}
-.co1{position:absolute;width:640px;height:640px;border-radius:50%;background:radial-gradient(circle,rgba(255,106,0,.2) 0%,rgba(255,80,0,.06) 40%,transparent 65%);top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;animation:drift1 14s ease-in-out infinite}
-.co2{position:absolute;width:420px;height:420px;border-radius:50%;background:radial-gradient(circle,rgba(255,200,0,.13) 0%,transparent 65%);top:30%;left:65%;transform:translate(-50%,-50%);pointer-events:none;animation:drift2 18s ease-in-out infinite}
-.ci{position:relative;z-index:2;max-width:820px;margin:auto;padding:0 24px}
-.ci h2{font-size:clamp(38px,6.5vw,76px);font-weight:900;letter-spacing:-3px;line-height:1.0;color:var(--cr);margin-bottom:22px;text-wrap:balance}
-.ci p{font-size:17px;color:rgba(255,255,255,.42);max-width:460px;margin:0 auto 52px;line-height:1.65}
-.cbtns{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
+/* ─── Footer ─────────────────────────────────────────────── */
+footer{background:#050404;border-top:1px solid rgba(255,255,255,.04);padding:36px var(--pad);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px}
+.f-brand{display:flex;align-items:center;gap:8px;font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:15px;color:var(--tx);text-decoration:none}
+.f-brand img{height:20px}
+.f-links{display:flex;gap:20px;flex-wrap:wrap}
+.f-links a{color:var(--tx2);text-decoration:none;font-size:13px;font-weight:500;transition:color .2s}
+.f-links a:hover{color:rgba(237,231,219,.7)}
+.f-copy{width:100%;text-align:center;font-size:12px;color:rgba(255,255,255,.14);padding-top:18px;border-top:1px solid rgba(255,255,255,.04)}
+@media(max-width:600px){footer{padding:28px 22px}}
 
-/* ── Footer ──────────────────────────────────────────────────────── */
-footer{background:#050504;border-top:1px solid rgba(255,255,255,.05);padding:40px 48px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:20px}
-.fb{display:flex;align-items:center;gap:9px;font-weight:800;font-size:15px;color:var(--cr)}
-.fb img{height:22px}
-.fl{display:flex;gap:20px;flex-wrap:wrap}
-.fl a{color:rgba(255,255,255,.3);text-decoration:none;font-size:13px;font-weight:500;transition:color .2s}
-.fl a:hover{color:rgba(255,255,255,.65)}
-.fc2{width:100%;text-align:center;font-size:12px;color:rgba(255,255,255,.18);padding-top:20px;border-top:1px solid rgba(255,255,255,.04)}
-@media(max-width:600px){footer{padding:28px 20px}.fl{gap:14px}}
+/* ─── Entrance animation helpers ─────────────────────────── */
+.will-show{opacity:0;transform:translateY(28px);transition:opacity .65s ease,transform .65s ease}
+.will-show.shown{opacity:1;transform:none}
+.will-show-l{opacity:0;transform:translateX(-22px);transition:opacity .65s ease,transform .65s ease}
+.will-show-l.shown{opacity:1;transform:none}
+.will-show-r{opacity:0;transform:translateX(22px);transition:opacity .65s ease,transform .65s ease}
+.will-show-r.shown{opacity:1;transform:none}
 
-/* ── Reduced motion ──────────────────────────────────────────────── */
-@media(prefers-reduced-motion:reduce){
-  *,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}
-}
-  </style>
+/* Stagger */
+.stagger-1{transition-delay:.07s}.stagger-2{transition-delay:.14s}.stagger-3{transition-delay:.21s}
+.stagger-4{transition-delay:.28s}.stagger-5{transition-delay:.35s}
+
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+</style>
 </head>
 <body>
 
 <div id="cur"></div>
 <div id="cur2"></div>
 
-<!-- NAV -->
-<header class="nav" id="nav">
-  <a class="nav-brand" href="/"><img src="/logo.png" alt="Avenzo"> AVENZO</a>
-  <ul class="nl">
+<!-- ─── NAV ───────────────────────────────────────────────── -->
+<nav id="nav">
+  <a class="n-brand" href="/"><img src="/logo.png" alt="Avenzo"> AVENZO</a>
+  <ul class="n-links">
     <li><a href="#journey">How it works</a></li>
     <li><a href="#features">Features</a></li>
-    <li><a href="#benefits">Benefits</a></li>
-    <li><a href="/restaurant-interest.html" class="pill">List your restaurant</a></li>
+    <li><a href="#cta">For restaurants</a></li>
+    <li><a href="/restaurant-interest.html" class="n-pill">List your restaurant</a></li>
     <li><a href="/login.html">Sign in</a></li>
   </ul>
-  <button class="nav-mob" onclick="location.href='/login.html'">Sign in</button>
-</header>
+  <button class="n-mob" onclick="location.href='/login.html'">Sign in</button>
+</nav>
 
-<!-- HERO — all entrances are pure CSS, no JS needed -->
+<!-- ─── HERO ──────────────────────────────────────────────── -->
 <section class="hero" id="hero">
-  <div class="o1 orb"></div><div class="o2 orb"></div>
-  <div class="o3 orb"></div><div class="o4 orb"></div>
-  <div class="vignette"></div><div class="vbot"></div>
+  <canvas id="bg-canvas"></canvas>
+  <div class="h-vbot"></div>
 
-  <div class="chips" aria-hidden="true">
-    <div class="chip">🍛 Biryani</div>
-    <div class="chip">🍕 Pizza</div>
-    <div class="chip">🍜 Noodles</div>
-    <div class="chip">🥗 Salad</div>
-    <div class="chip">☕ Coffee</div>
-    <div class="chip">🍰 Dessert</div>
-  </div>
+  <div class="h-inner">
+    <!-- Logo — big, lit, prominent -->
+    <div class="h-brand">
+      <img src="/logo.png" alt="Avenzo logo">
+      <span class="h-brand-text">AVENZO</span>
+    </div>
 
-  <div class="hbody">
-    <div class="h-pill"><span class="dot"></span>Dine-in ordering, reimagined</div>
-    <h1 class="h1">
-      <span class="line"><span class="w" style="--d:.08s">Joyful</span>&nbsp;<span class="w" style="--d:.16s">dine-in</span></span>
-      <span class="line"><span class="w" style="--d:.24s">for</span>&nbsp;<span class="w fire" style="--d:.32s" id="hfire">every</span></span>
-      <span class="line"><span class="w" style="--d:.42s">table.</span></span>
+    <div class="h-badge"><span class="h-dot"></span>Restaurant Ordering Platform</div>
+
+    <h1 class="h-title">
+      <span class="line"><span class="w" style="--d:.1s">From your</span></span>
+      <span class="line"><span class="w" style="--d:.2s">table. To</span></span>
+      <span class="line"><span class="w accent" style="--d:.3s">the kitchen.</span></span>
     </h1>
-    <p class="hsub">Guests scan, browse and order without pressure.<br>Restaurants get cleaner orders and smoother service.</p>
-    <div class="hbtns">
-      <button class="btn-p" onclick="location.href='/restaurant-interest.html'"><span>List your restaurant &rarr;</span></button>
-      <button class="btn-g" onclick="location.href='/login.html'">Sign in</button>
+
+    <p class="h-sub">Guests scan a QR code at their table and order from their phone — no apps, no waiting. Your kitchen gets crystal-clear tickets the moment an order is placed.</p>
+
+    <div class="h-btns">
+      <a class="btn-f" href="/restaurant-interest.html"><span>List your restaurant &rarr;</span></a>
+      <a class="btn-o" href="#journey">See how it works</a>
     </div>
   </div>
 
-  <div class="shint"><div class="smouse"><div class="swheel"></div></div><span>Scroll</span></div>
+  <div class="h-scroll"><div class="h-mouse"><div class="h-wheel"></div></div><span>Scroll</span></div>
 </section>
 
-<!-- TICKER -->
-<div class="ticker" aria-hidden="true">
-  <div class="ttrack">
-    <span class="ti">Scan &amp; Order</span><span class="td">●</span>
-    <span class="ti">Real-time Kitchen</span><span class="td">●</span>
-    <span class="ti">No App Needed</span><span class="td">●</span>
-    <span class="ti">Zero Waiting</span><span class="td">●</span>
-    <span class="ti">Live Tracking</span><span class="td">●</span>
-    <span class="ti">Instant Notifications</span><span class="td">●</span>
-    <span class="ti">Guest &amp; Account Orders</span><span class="td">●</span>
-    <span class="ti">Scan &amp; Order</span><span class="td">●</span>
-    <span class="ti">Real-time Kitchen</span><span class="td">●</span>
-    <span class="ti">No App Needed</span><span class="td">●</span>
-    <span class="ti">Zero Waiting</span><span class="td">●</span>
-    <span class="ti">Live Tracking</span><span class="td">●</span>
-    <span class="ti">Instant Notifications</span><span class="td">●</span>
-    <span class="ti">Guest &amp; Account Orders</span><span class="td">●</span>
+<!-- ─── MARQUEE ───────────────────────────────────────────── -->
+<div class="marquee-wrap" aria-hidden="true">
+  <div class="marquee-track">
+    <span class="m-item">QR Table Ordering</span><span class="m-dot">◆</span>
+    <span class="m-item">Real-time Kitchen Tickets</span><span class="m-dot">◆</span>
+    <span class="m-item">Zero App Downloads</span><span class="m-dot">◆</span>
+    <span class="m-item">Guest &amp; Account Orders</span><span class="m-dot">◆</span>
+    <span class="m-item">Live Order Tracking</span><span class="m-dot">◆</span>
+    <span class="m-item">Instant Notifications</span><span class="m-dot">◆</span>
+    <span class="m-item">Smart Kitchen Dashboard</span><span class="m-dot">◆</span>
+    <span class="m-item">QR Table Ordering</span><span class="m-dot">◆</span>
+    <span class="m-item">Real-time Kitchen Tickets</span><span class="m-dot">◆</span>
+    <span class="m-item">Zero App Downloads</span><span class="m-dot">◆</span>
+    <span class="m-item">Guest &amp; Account Orders</span><span class="m-dot">◆</span>
+    <span class="m-item">Live Order Tracking</span><span class="m-dot">◆</span>
+    <span class="m-item">Instant Notifications</span><span class="m-dot">◆</span>
+    <span class="m-item">Smart Kitchen Dashboard</span><span class="m-dot">◆</span>
   </div>
 </div>
 
-<!-- STATS -->
-<div class="stats" id="stats">
-  <div class="sr">
-    <div class="stat"><div class="sn" data-to="98" data-sfx="%">0%</div><div class="sl">Guest Satisfaction</div></div>
-    <div class="sdiv"></div>
-    <div class="stat"><div class="sn" data-to="3" data-sfx="x">0x</div><div class="sl">Faster Ordering</div></div>
-    <div class="sdiv"></div>
-    <div class="stat"><div class="sn" data-txt="Zero">Zero</div><div class="sl">Apps Needed</div></div>
-    <div class="sdiv"></div>
-    <div class="stat"><div class="sn" data-to="24" data-sfx="/7">0/7</div><div class="sl">Always On</div></div>
-  </div>
-</div>
+<!-- ─── PROBLEM (cream / light contrast) ─────────────────── -->
+<section class="problem" id="problem">
+  <div class="wrap">
+    <div class="eye will-show">The broken dining experience</div>
+    <h2 class="p-title will-show stagger-1">Every restaurant has<br>the same friction.</h2>
+    <p class="p-sub will-show stagger-2">The waiter system was designed for the 1950s. Hungry guests wait, orders get lost, and kitchens work blind. There's a better way.</p>
 
-<!-- JOURNEY -->
-<div id="journey">
+    <div class="ba-grid will-show stagger-3">
+      <!-- Before -->
+      <div class="ba-col ba-before">
+        <div class="ba-head">
+          <span class="ba-indicator"></span> The old way
+        </div>
+        <div class="ba-list">
+          <div class="ba-item">
+            <span class="ba-ico">⌛</span>
+            <div><b>Guest waits for a waiter</b><span>5–10 minutes to get a menu. First impression ruined before a single order is placed.</span></div>
+          </div>
+          <div class="ba-item">
+            <span class="ba-ico">📝</span>
+            <div><b>Order gets miscommunicated</b><span>Scribbled notes, noisy floors, misheard items. Wrong food arrives. Guest is frustrated.</span></div>
+          </div>
+          <div class="ba-item">
+            <span class="ba-ico">🔁</span>
+            <div><b>Kitchen works on guesswork</b><span>Handwritten tickets stacked up, unclear priorities, no live view of what's pending or ready.</span></div>
+          </div>
+          <div class="ba-item">
+            <span class="ba-ico">📉</span>
+            <div><b>Guest doesn't come back</b><span>One bad experience is enough. They leave a 2-star review and book somewhere else next time.</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- After -->
+      <div class="ba-col ba-after">
+        <div class="ba-head">
+          <span class="ba-indicator"></span> The Avenzo way
+        </div>
+        <div class="ba-list">
+          <div class="ba-item">
+            <span class="ba-ico">📱</span>
+            <div><b>Guest scans QR and browses instantly</b><span>No app, no waiting. Full menu on their phone in seconds. They order when they're ready.</span></div>
+          </div>
+          <div class="ba-item">
+            <span class="ba-ico">✅</span>
+            <div><b>Orders are always exact</b><span>Digital orders have zero ambiguity. What the guest types is exactly what the kitchen sees.</span></div>
+          </div>
+          <div class="ba-item">
+            <span class="ba-ico">⚡</span>
+            <div><b>Kitchen sees every order live</b><span>Tickets appear the moment an order is placed — with status, priority, and table number.</span></div>
+          </div>
+          <div class="ba-item">
+            <span class="ba-ico">⭐</span>
+            <div><b>Guest comes back — and brings friends</b><span>A smooth, calm experience earns 5-star reviews and turns first-timers into regulars.</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── JOURNEY ───────────────────────────────────────────── -->
+<section class="journey" id="journey">
   <div class="j-pin" id="jpin">
     <div class="j-fix">
       <div class="j-in">
 
         <!-- Phone mockup -->
-        <div class="jph" id="jph">
-          <div class="psh">
-            <div class="pnt"></div>
-            <div class="psc">
-              <!-- Panel 0: QR -->
-              <div class="sp on" id="sp0">
-                <div class="qrc">
-                  <div class="qrl">Scan the QR code<br>at your table</div>
-                  <div class="qrb">
-                    <div class="qf"></div><div class="qe"></div><div class="qf"></div>
-                    <div class="qe"></div><div class="qf"></div><div class="qe"></div>
-                    <div class="qf"></div><div class="qe"></div><div class="qf"></div>
+        <div class="j-phone-col">
+          <div class="j-phone" id="jph">
+            <div class="phone-shell">
+              <div class="phone-notch"></div>
+              <div class="phone-screen">
+
+                <!-- Step 0: QR scan -->
+                <div class="sp on" id="sp0">
+                  <div class="qr-scene">
+                    <div class="qr-prompt">Point camera at table QR code</div>
+                    <div class="qr-frame">
+                      <div class="qr-corner-br"></div><div class="qr-corner-tl2"></div>
+                      <div class="qr-dots">
+                        <div class="qd"></div><div class="qd" style="opacity:.3"></div><div class="qd"></div><div class="qd" style="opacity:.5"></div><div class="qd"></div>
+                        <div class="qd" style="opacity:.4"></div><div class="qd"></div><div class="qd" style="opacity:.6"></div><div class="qd"></div><div class="qd" style="opacity:.3"></div>
+                        <div class="qd"></div><div class="qd" style="opacity:.5"></div><div class="qd"></div><div class="qd" style="opacity:.7"></div><div class="qd"></div>
+                        <div class="qd" style="opacity:.3"></div><div class="qd"></div><div class="qd" style="opacity:.4"></div><div class="qd"></div><div class="qd"></div>
+                        <div class="qd"></div><div class="qd" style="opacity:.6"></div><div class="qd"></div><div class="qd" style="opacity:.3"></div><div class="qd"></div>
+                      </div>
+                      <div class="qr-scan-line"></div>
+                    </div>
+                    <div class="qr-hint">Scanning…</div>
                   </div>
-                  <div class="qrh">Point camera at code</div>
                 </div>
-              </div>
-              <!-- Panel 1: Menu -->
-              <div class="sp" id="sp1">
-                <div class="mh">Avenzo Cafe — Menu</div>
-                <div class="mr"><div class="mi">🍛</div><div style="flex:1"><div class="mn">Chicken Biryani</div><div class="mp">₹ 320</div></div><div class="ma">+</div></div>
-                <div class="mr"><div class="mi">🍕</div><div style="flex:1"><div class="mn">Margherita Pizza</div><div class="mp">₹ 280</div></div><div class="ma">+</div></div>
-                <div class="mr"><div class="mi">☕</div><div style="flex:1"><div class="mn">Filter Coffee</div><div class="mp">₹ 80</div></div><div class="ma">+</div></div>
-                <div class="mr"><div class="mi">🥗</div><div style="flex:1"><div class="mn">Caesar Salad</div><div class="mp">₹ 220</div></div><div class="ma">+</div></div>
-              </div>
-              <!-- Panel 2: Confirmed -->
-              <div class="sp" id="sp2">
-                <div class="cc"><div class="chk">✓</div><div class="ct">Order Confirmed!</div><div class="cs">Order #A-042 · Code 9381</div><div class="cbg">⚡ Kitchen Notified</div></div>
-              </div>
-              <!-- Panel 3: Ready -->
-              <div class="sp" id="sp3">
-                <div class="cc"><div style="font-size:44px">🍽️</div><div class="ct">Food is Ready!</div><div class="cs">Your order is ready.<br>Enjoy your meal!</div><div class="cbo">⭐ Rate your experience</div></div>
+
+                <!-- Step 1: Menu -->
+                <div class="sp" id="sp1">
+                  <div class="menu-top">
+                    <span class="menu-rest">The Grand Table</span>
+                    <span class="menu-cart-badge">Cart (2)</span>
+                  </div>
+                  <div class="m-row"><div class="m-em">🍛</div><div style="flex:1"><div class="m-name">Chicken Biryani</div><div class="m-price">₹ 320</div></div><div class="m-plus">+</div></div>
+                  <div class="m-row" style="background:rgba(255,61,26,.1);border:1px solid rgba(255,61,26,.2)"><div class="m-em">🍕</div><div style="flex:1"><div class="m-name">Margherita Pizza</div><div class="m-price">₹ 280</div></div><div class="m-plus" style="background:var(--ember)">✓</div></div>
+                  <div class="m-row"><div class="m-em">☕</div><div style="flex:1"><div class="m-name">Filter Coffee</div><div class="m-price">₹ 80</div></div><div class="m-plus">+</div></div>
+                  <div class="m-row"><div class="m-em">🥗</div><div style="flex:1"><div class="m-name">Caesar Salad</div><div class="m-price">₹ 220</div></div><div class="m-plus">+</div></div>
+                  <div class="m-row"><div class="m-em">🍰</div><div style="flex:1"><div class="m-name">Tiramisu</div><div class="m-price">₹ 180</div></div><div class="m-plus">+</div></div>
+                </div>
+
+                <!-- Step 2: Confirmed -->
+                <div class="sp" id="sp2">
+                  <div class="confirmed">
+                    <div class="cf-check">✓</div>
+                    <div class="cf-title">Order Confirmed!</div>
+                    <div class="cf-code">Order #A-084 &nbsp;·&nbsp; Pickup code 4827</div>
+                    <div class="cf-tag">⚡ Kitchen notified</div>
+                    <div class="cf-prog"></div>
+                    <div class="cf-msg">Your food is being prepared.<br>We'll notify you when it's ready.</div>
+                  </div>
+                </div>
+
+                <!-- Step 3: Ready -->
+                <div class="sp" id="sp3">
+                  <div class="ready">
+                    <div class="rd-emoji">🍽️</div>
+                    <div class="rd-title">Your food is ready!</div>
+                    <div class="rd-sub">Order #A-084 is plated and<br>ready at your table.</div>
+                    <div class="rd-tag">⭐ Rate your experience</div>
+                  </div>
+                </div>
+
               </div>
             </div>
           </div>
         </div>
 
         <!-- Journey text -->
-        <div>
-          <div class="jdots">
-            <div class="jd on" id="jd0"></div><div class="jd" id="jd1"></div>
-            <div class="jd" id="jd2"></div><div class="jd" id="jd3"></div>
+        <div class="j-text">
+          <div class="eye">How it works</div>
+          <div class="j-dots-row">
+            <div class="jd on" id="jd0"></div>
+            <div class="jd" id="jd1"></div>
+            <div class="jd" id="jd2"></div>
+            <div class="jd" id="jd3"></div>
           </div>
-          <div class="jsteps">
-            <div class="jst on" id="js0"><div class="jeye">Step 01 — Arrive</div><h2 class="jh2">Scan the QR at<br>your table</h2><p class="jp">No app download. No sign-up. Point your camera at the QR and you're inside the menu in seconds.</p></div>
-            <div class="jst" id="js1"><div class="jeye">Step 02 — Browse</div><h2 class="jh2">Browse the full menu<br>at your own pace</h2><p class="jp">See every dish, photo, and price. No waiter hovering. Take all the time you need — order when ready.</p></div>
-            <div class="jst" id="js2"><div class="jeye">Step 03 — Order</div><h2 class="jh2">Your order goes<br>straight to the kitchen</h2><p class="jp">Crystal-clear orders, instantly. No miscommunication, no scribbled notes, no shouting across the floor.</p></div>
-            <div class="jst" id="js3"><div class="jeye">Step 04 — Enjoy</div><h2 class="jh2">Food arrives,<br>everyone's happy</h2><p class="jp">Track in real time. Get notified when it's ready. The whole experience feels calm and surprisingly delightful.</p></div>
+          <div class="j-steps-wrap">
+            <div class="jst on" id="js0">
+              <div class="j-num">Step 01 — Arrive</div>
+              <h2 class="j-h2">Scan the QR at<br>your table</h2>
+              <p class="j-p">No app to download. No account to create. Open your phone camera, point it at the QR code on the table, and your menu opens instantly.</p>
+            </div>
+            <div class="jst" id="js1">
+              <div class="j-num">Step 02 — Browse</div>
+              <h2 class="j-h2">Browse at your<br>own pace</h2>
+              <p class="j-p">See every dish, price, and photo. No waiter hovering. No pressure. Take your time — add to cart when you're ready, and order when you want.</p>
+            </div>
+            <div class="jst" id="js2">
+              <div class="j-num">Step 03 — Order</div>
+              <h2 class="j-h2">Kitchen gets it<br>the instant you confirm</h2>
+              <p class="j-p">Your order goes straight to the kitchen display — crystal clear, no noise, no errors. The chef sees it the moment you tap confirm.</p>
+            </div>
+            <div class="jst" id="js3">
+              <div class="j-num">Step 04 — Enjoy</div>
+              <h2 class="j-h2">Food arrives.<br>Everyone's happy.</h2>
+              <p class="j-p">Track your order in real time. Get notified the moment your food is ready. The whole experience feels calm — the way dining should feel.</p>
+            </div>
           </div>
         </div>
 
       </div>
     </div>
   </div>
-</div>
-
-<!-- FEATURES -->
-<section class="feat" id="features">
-  <div class="shead"><div class="seye">Why Avenzo</div><h2 class="stitle">Built for the real<br><span class="dim">restaurant experience</span></h2></div>
-  <div class="fgrid">
-    <div class="fc"><div class="fg"></div><div class="fi">📱</div><h3>No app required</h3><p>Guests order from their browser. Scan, browse, order — in seconds, zero friction.</p></div>
-    <div class="fc"><div class="fg"></div><div class="fi">⚡</div><h3>Real-time kitchen sync</h3><p>Orders reach the kitchen the moment they're placed. No paper, no shouting, no errors.</p></div>
-    <div class="fc"><div class="fg"></div><div class="fi">🔒</div><h3>Guest &amp; account orders</h3><p>Walk-ins order with a phone number. Regulars log in for history and one-tap reorder.</p></div>
-    <div class="fc"><div class="fg"></div><div class="fi">📊</div><h3>Live order dashboard</h3><p>Kitchen staff see every order live — pending, preparing, ready. One clear view.</p></div>
-    <div class="fc"><div class="fg"></div><div class="fi">💳</div><h3>Seamless payments</h3><p>Razorpay checkout built in. Online, in-person, or later — every scenario handled.</p></div>
-    <div class="fc"><div class="fg"></div><div class="fi">⭐</div><h3>Ratings &amp; insights</h3><p>Collect post-meal ratings automatically. See what guests love and act on it.</p></div>
-  </div>
 </section>
 
-<!-- HOW IT WORKS -->
-<section class="how" id="how">
-  <div class="shead"><div class="seye">For Restaurants</div><h2 class="stitle">Set up in minutes,<br><span class="dim">not months</span></h2></div>
-  <div class="hwrap" id="hwrap">
-    <div class="htrack">
-      <div class="hc"><div class="hn">01</div><div class="hico">🏪</div><h3>Register your restaurant</h3><p>Submit your details. Our team approves and sets up your workspace within 24 hours.</p></div>
-      <div class="hc"><div class="hn">02</div><div class="hico">🍽️</div><h3>Upload your menu</h3><p>Add categories, dishes, prices, and photos. Your menu is live and visible instantly.</p></div>
-      <div class="hc"><div class="hn">03</div><div class="hico">📋</div><h3>Print QR codes</h3><p>Download table QR codes from your dashboard. Print, laminate, stick — done.</p></div>
-      <div class="hc"><div class="hn">04</div><div class="hico">🚀</div><h3>Start taking orders</h3><p>Guests scan, browse and order. You see everything live in the kitchen dashboard.</p></div>
-      <div class="hc"><div class="hn">05</div><div class="hico">📈</div><h3>Grow with data</h3><p>Track popular dishes, peak times, and ratings. Real insights to sharpen every service.</p></div>
+<!-- ─── FEATURES (Bento grid) ─────────────────────────────── -->
+<section class="features" id="features">
+  <div class="wrap">
+    <div class="eye will-show">Why restaurants choose Avenzo</div>
+    <h2 class="stitle will-show stagger-1">Every table, working<br><span class="dim">smarter than before.</span></h2>
+
+    <div class="bento">
+      <!-- Wide card: No app needed + performance bars -->
+      <div class="bc wide will-show stagger-1">
+        <div class="bc-glow"></div>
+        <div class="bc-inner">
+          <div>
+            <div class="bc-ico">📱</div>
+            <h3>Zero app friction</h3>
+            <p>Guests order straight from the browser. Scan, tap, order — no download, no account, no barrier. Works on any phone made in the last 10 years.</p>
+          </div>
+          <div class="bc-kpi">
+            <div class="kpi"><span class="kpi-label">Order speed</span><div class="kpi-bar-wrap"><div class="kpi-bar" style="width:92%"></div></div><span class="kpi-val">3×</span></div>
+            <div class="kpi"><span class="kpi-label">Guest friction</span><div class="kpi-bar-wrap"><div class="kpi-bar" style="width:5%;background:linear-gradient(90deg,var(--green),#1fa866)"></div></div><span class="kpi-val">−95%</span></div>
+            <div class="kpi"><span class="kpi-label">Order accuracy</span><div class="kpi-bar-wrap"><div class="kpi-bar" style="width:99%;background:linear-gradient(90deg,var(--green),#1fa866)"></div></div><span class="kpi-val">99%</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card: Real-time kitchen -->
+      <div class="bc will-show stagger-2">
+        <div class="bc-glow"></div>
+        <div class="bc-ico">⚡</div>
+        <h3>Real-time kitchen tickets</h3>
+        <p>Orders hit the kitchen display the millisecond they're placed. No relay, no printing, no shouting. Just instant, clear tickets.</p>
+      </div>
+
+      <!-- Card: Guest + Account -->
+      <div class="bc will-show stagger-1">
+        <div class="bc-glow"></div>
+        <div class="bc-ico">🔐</div>
+        <h3>Guests &amp; accounts, both</h3>
+        <p>Walk-ins order with just a phone number. Regulars log in for full history and one-tap reorder. Both experiences are seamless.</p>
+      </div>
+
+      <!-- Card: Payments -->
+      <div class="bc will-show stagger-2">
+        <div class="bc-glow"></div>
+        <div class="bc-ico">💳</div>
+        <h3>Payments built in</h3>
+        <p>Razorpay checkout is built in. Online, in-person, or settle later — every scenario handled without a third-party workaround.</p>
+      </div>
+
+      <!-- Card: Analytics -->
+      <div class="bc will-show stagger-3">
+        <div class="bc-glow"></div>
+        <div class="bc-ico">📊</div>
+        <h3>Data you can act on</h3>
+        <p>See your busiest items, peak hours, and guest ratings in one live dashboard. Make better decisions every single shift.</p>
+      </div>
     </div>
   </div>
 </section>
 
-<!-- BENEFITS -->
-<section class="ben" id="benefits">
-  <div class="shead"><div class="seye">Benefits</div><h2 class="stitle">Every table, every shift,<br><span class="dim">running smoother</span></h2></div>
-  <div class="bgrid">
-    <div class="bi"><div class="bnum">01</div><div><h3>Handle rush hours with ease</h3><p>Guests self-order from phones. Your team focuses on cooking and serving, not taking orders.</p></div></div>
-    <div class="bi"><div class="bnum">02</div><div><h3>Reduce order errors to zero</h3><p>Digital orders are exact. No misheard items, no scribbled notes, no "I said chicken not lamb."</p></div></div>
-    <div class="bi"><div class="bnum">03</div><div><h3>Serve more without more staff</h3><p>The same team handles more tables when ordering is automated. Better throughput, no extra cost.</p></div></div>
-    <div class="bi"><div class="bnum">04</div><div><h3>Guests discover more, order more</h3><p>Browsing freely means guests find items they'd never have asked for. Average order value rises.</p></div></div>
-    <div class="bi"><div class="bnum">05</div><div><h3>Better reviews, more regulars</h3><p>A smooth, calm experience earns 5-star reviews. Happy guests return and bring their friends.</p></div></div>
-    <div class="bi"><div class="bnum">06</div><div><h3>Works with any restaurant type</h3><p>Cafes, fine dining, QSRs, food courts — Avenzo's system fits any service style and size.</p></div></div>
-  </div>
-</section>
-
-<!-- CTA -->
-<section class="cta">
-  <div class="co1"></div><div class="co2"></div>
-  <div class="ci" id="ci">
-    <div class="seye" style="display:block;text-align:center;margin-bottom:20px">Ready to get started?</div>
-    <h2>Make dine-in joyful<br>for every guest.</h2>
-    <p>Join Avenzo. Your guests will feel the difference from the very first scan.</p>
-    <div class="cbtns">
-      <button class="btn-p" onclick="location.href='/restaurant-interest.html'"><span>Partner with Avenzo &rarr;</span></button>
-      <button class="btn-g" onclick="location.href='/login.html'">Sign in to dashboard</button>
+<!-- ─── CTA ───────────────────────────────────────────────── -->
+<section class="cta" id="cta">
+  <div class="cta-o1"></div><div class="cta-o2"></div><div class="cta-o3"></div>
+  <div class="cta-inner will-show">
+    <div class="eye" style="text-align:center;display:block;margin-bottom:22px">Ready to transform your restaurant?</div>
+    <h2>Make every table<br><span class="grd">work for you.</span></h2>
+    <p>Join Avenzo. Your guests will feel the difference from the very first scan — and so will your kitchen.</p>
+    <div class="cta-btns">
+      <a class="btn-f" href="/restaurant-interest.html"><span>Partner with Avenzo &rarr;</span></a>
+      <a class="btn-o" href="/login.html">Sign in to dashboard</a>
     </div>
   </div>
 </section>
 
-<!-- FOOTER -->
+<!-- ─── FOOTER ────────────────────────────────────────────── -->
 <footer>
-  <div class="fb"><img src="/logo.png" alt="Avenzo"> AVENZO</div>
-  <div class="fl">
+  <a class="f-brand" href="/"><img src="/logo.png" alt="Avenzo"> AVENZO</a>
+  <div class="f-links">
     <a href="/privacy.html">Privacy</a>
     <a href="/terms.html">Terms</a>
     <a href="/refund-policy.html">Refund Policy</a>
     <a href="/restaurant-interest.html">List Restaurant</a>
     <a href="/login.html">Sign In</a>
   </div>
-  <div class="fc2">&copy; 2026 Avenzo &mdash; Dine-in ordering, made joyful</div>
+  <div class="f-copy">&copy; 2026 Avenzo &mdash; Dine-in ordering, made joyful</div>
 </footer>
 
-<!-- GSAP + ScrollTrigger only — NO Three.js, NO Lenis, NO filter:blur -->
+<!-- GSAP + ScrollTrigger -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
 <script>
-if (typeof gsap !== 'undefined' && typeof ScrollTrigger !== 'undefined') {
-  gsap.registerPlugin(ScrollTrigger);
+/* ─── Canvas food particles ──────────────────────────────── */
+(function(){
+  const canvas = document.getElementById('bg-canvas');
+  const ctx = canvas.getContext('2d');
+  let W, H, raf;
+  // Food-warm colors + small geometric shapes
+  const COLORS = ['#FF3D1A','#FF7A38','#F5BE00','#26C97A','#C44E20','#FF9040'];
+  const COUNT = 22;
+  const particles = [];
 
-  /* ── Cursor (smooth follow) ────────────────────────────────────── */
-  const cur = document.getElementById('cur');
-  const cur2 = document.getElementById('cur2');
+  function resize(){
+    W = canvas.width  = canvas.offsetWidth;
+    H = canvas.height = canvas.offsetHeight;
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  function P(init){
+    this.reset = (init) => {
+      this.x  = Math.random() * W;
+      this.y  = init ? Math.random() * H : H + 8;
+      this.r  = Math.random() * 2.8 + 0.8;
+      this.c  = COLORS[~~(Math.random()*COLORS.length)];
+      this.vx = (Math.random()-.5) * 0.35;
+      this.vy = -(Math.random() * 0.55 + 0.25);
+      this.a  = Math.random() * 0.18 + 0.04;
+      this.life = 0;
+      this.max = Math.random() * 500 + 320;
+    };
+    this.reset(init);
+  }
+  for(let i=0;i<COUNT;i++) particles.push(new P(true));
+
+  function loop(){
+    if(document.hidden){ raf = requestAnimationFrame(loop); return; }
+    ctx.clearRect(0,0,W,H);
+    particles.forEach(p => {
+      p.x += p.vx; p.y += p.vy; p.life++;
+      const fade = 1 - Math.max(0, (p.life - p.max*.7) / (p.max*.3));
+      ctx.globalAlpha = p.a * fade;
+      ctx.fillStyle = p.c;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
+      ctx.fill();
+      if(p.life > p.max || p.y < -10) p.reset(false);
+    });
+    ctx.globalAlpha = 1;
+    raf = requestAnimationFrame(loop);
+  }
+  // Pause canvas when hero is out of view
+  const io = new IntersectionObserver(en => {
+    en.forEach(e => {
+      if(e.isIntersecting){ raf = requestAnimationFrame(loop); }
+      else { cancelAnimationFrame(raf); }
+    });
+  });
+  io.observe(document.getElementById('hero'));
+})();
+
+/* ─── Cursor ─────────────────────────────────────────────── */
+const cur = document.getElementById('cur');
+const cur2= document.getElementById('cur2');
+if(cur && window.matchMedia('(pointer:fine)').matches){
   let mx=0,my=0,cx=0,cy=0;
   document.addEventListener('mousemove', e => {
     mx = e.clientX; my = e.clientY;
@@ -636,134 +689,103 @@ if (typeof gsap !== 'undefined' && typeof ScrollTrigger !== 'undefined') {
     cur.style.left = cx+'px'; cur.style.top = cy+'px';
     requestAnimationFrame(loop);
   })();
-  document.querySelectorAll('a,button,.fc,.hc,.bi').forEach(el => {
+  document.querySelectorAll('a,button,.bc,.ba-item').forEach(el => {
     el.addEventListener('mouseenter', () => document.body.classList.add('ch'));
     el.addEventListener('mouseleave', () => document.body.classList.remove('ch'));
   });
+}
 
-  /* ── Nav scroll ────────────────────────────────────────────────── */
-  const navEl = document.getElementById('nav');
-  window.addEventListener('scroll', () => {
-    navEl.classList.toggle('on', window.scrollY > 50);
-  }, { passive:true });
+/* ─── Nav ────────────────────────────────────────────────── */
+const navEl = document.getElementById('nav');
+window.addEventListener('scroll', () => {
+  navEl.classList.toggle('scrolled', window.scrollY > 48);
+}, {passive:true});
 
-  /* ── Text scramble on "every" (premium micro-interaction) ─────── */
-  const fireEl = document.getElementById('hfire');
-  const CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-  const FINAL = 'every';
-  setTimeout(() => {
-    let frame = 0, total = 18;
-    const id = setInterval(() => {
-      fireEl.textContent = FINAL.split('').map((c,i) =>
-        i < (frame/total)*FINAL.length ? c : CHARS[Math.floor(Math.random()*26)]
-      ).join('');
-      if (++frame > total) { fireEl.textContent = FINAL; clearInterval(id); }
-    }, 40);
-  }, 900);
-
-  /* ── Stats counters ────────────────────────────────────────────── */
-  ScrollTrigger.create({
-    trigger: '#stats', start: 'top 78%', once: true,
-    onEnter() {
-      document.querySelectorAll('.sn').forEach(el => {
-        if (el.dataset.txt) return;
-        const to = +el.dataset.to, sfx = el.dataset.sfx||'';
-        gsap.to({v:0},{
-          v:to, duration:1.6, ease:'power2.out',
-          onUpdate(){ el.textContent = Math.round(this.targets()[0].v)+sfx; }
-        });
-      });
+/* ─── Entrance animations (IntersectionObserver) ─────────── */
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if(e.isIntersecting){
+      e.target.classList.add('shown');
+      observer.unobserve(e.target);
     }
   });
+}, {threshold: 0.1, rootMargin:'0px 0px -40px 0px'});
+document.querySelectorAll('.will-show,.will-show-l,.will-show-r').forEach(el => observer.observe(el));
 
-  /* ── Journey: scrub through 4 steps ───────────────────────────── */
-  let step = 0;
-  function toStep(n) {
-    if (n === step) return;
-    document.getElementById('sp'+step).classList.remove('on');
-    document.getElementById('js'+step).classList.remove('on');
-    document.getElementById('jd'+step).classList.remove('on');
-    step = n;
-    document.getElementById('sp'+n).classList.add('on');
-    document.getElementById('js'+n).classList.add('on');
-    document.getElementById('jd'+n).classList.add('on');
+/* ─── Journey: native scroll step switching ──────────────── */
+(function(){
+  const pin = document.getElementById('jpin');
+  if(!pin) return;
+  let cur = 0;
+
+  function setStep(n){
+    if(n === cur) return;
+    ['sp','js','jd'].forEach(pfx => {
+      document.getElementById(pfx+cur).classList.remove('on');
+      document.getElementById(pfx+n).classList.add('on');
+    });
+    cur = n;
   }
 
-  /* Phone entrance — fromTo so phone is visible if ScrollTrigger misfires */
+  function onScroll(){
+    const rect  = pin.getBoundingClientRect();
+    const scrolled = Math.max(0, -rect.top);
+    const total    = pin.offsetHeight - window.innerHeight;
+    if(total <= 0) return;
+    setStep(Math.min(3, Math.floor((scrolled/total) * 4)));
+  }
+
+  window.addEventListener('scroll', onScroll, {passive:true});
+  onScroll();
+})();
+
+/* ─── GSAP enhancements (non-critical, graceful if blocked) ─ */
+if(typeof gsap !== 'undefined'){
+  gsap.registerPlugin(ScrollTrigger);
+
+  /* Phone entrance */
   ScrollTrigger.create({
-    trigger: '#journey', start: 'top 60%', once: true,
-    onEnter(){ gsap.fromTo('#jph',{opacity:0,y:48,rotateY:-12},{opacity:1,y:0,rotateY:0,duration:1,ease:'power3.out'}); }
+    trigger:'#journey', start:'top 62%', once:true,
+    onEnter(){ gsap.fromTo('#jph',{opacity:0,y:52,rotateY:-14},{opacity:1,y:0,rotateY:0,duration:1.1,ease:'power3.out'}); }
   });
 
-  /* Step switching — native scroll listener (reliable in all browsers / deployments) */
-  (function(){
-    const pin = document.getElementById('jpin');
-    function onScroll(){
-      const rect = pin.getBoundingClientRect();
-      const scrolled = Math.max(0, -rect.top);
-      const total = pin.offsetHeight - window.innerHeight;
-      if (total <= 0) return;
-      toStep(Math.min(3, Math.floor((scrolled / total) * 4)));
+  /* KPI bars animate in */
+  ScrollTrigger.create({
+    trigger:'.features', start:'top 70%', once:true,
+    onEnter(){
+      document.querySelectorAll('.kpi-bar').forEach((b,i) => {
+        const target = b.style.width;
+        b.style.width = '0%';
+        gsap.to(b,{width:target, duration:1.1, delay:i*.18, ease:'power2.out'});
+      });
     }
-    window.addEventListener('scroll', onScroll, { passive:true });
-    onScroll();
-  })();
+  });
 
-  /* ── Feature cards — scroll entrance + 3D tilt ─────────────────── */
-  document.querySelectorAll('.fc').forEach((c,i) => {
+  /* Section titles split-word reveal */
+  document.querySelectorAll('.stitle, .p-title').forEach(h => {
     ScrollTrigger.create({
-      trigger:c, start:'top 88%', once:true,
-      onEnter(){ gsap.fromTo(c,{opacity:0,y:30},{opacity:1,y:0,duration:.5,delay:(i%3)*.07,ease:'power3.out'}); }
+      trigger:h, start:'top 84%', once:true,
+      onEnter(){ gsap.fromTo(h,{opacity:0,y:20},{opacity:1,y:0,duration:.7,ease:'power3.out'}); }
     });
+  });
+
+  /* Feature card 3D tilt */
+  document.querySelectorAll('.bc').forEach(c => {
     c.addEventListener('mousemove', e => {
       const r = c.getBoundingClientRect();
-      gsap.to(c,{
-        rotateY: ((e.clientX-r.left)/r.width-.5)*10,
-        rotateX: -((e.clientY-r.top)/r.height-.5)*10,
-        transformPerspective:700, duration:.25, ease:'power2.out'
-      });
+      gsap.to(c,{rotateY:((e.clientX-r.left)/r.width-.5)*8, rotateX:-((e.clientY-r.top)/r.height-.5)*8, transformPerspective:800, duration:.25, ease:'power2.out'});
     });
     c.addEventListener('mouseleave', () => {
-      gsap.to(c,{rotateX:0,rotateY:0,duration:.4,ease:'power2.out'});
+      gsap.to(c,{rotateX:0,rotateY:0,duration:.5,ease:'power2.out'});
     });
   });
 
-  /* ── How it works — scroll entrance + draggable ─────────────────── */
+  /* CTA headline stagger */
   ScrollTrigger.create({
-    trigger:'.how', start:'top 65%', once:true,
-    onEnter(){ gsap.fromTo('.hc',{opacity:0,x:36},{opacity:1,x:0,duration:.5,stagger:.07,ease:'power3.out'}); }
-  });
-  (function(){
-    const w = document.getElementById('hwrap');
-    let dn=false,sx=0,sl=0;
-    w.addEventListener('mousedown', e=>{ dn=true; w.style.cursor='grabbing'; sx=e.pageX-w.offsetLeft; sl=w.scrollLeft; });
-    document.addEventListener('mouseup', ()=>{ dn=false; w.style.cursor='grab'; });
-    w.addEventListener('mousemove', e=>{ if(!dn)return; e.preventDefault(); w.scrollLeft=sl-(e.pageX-w.offsetLeft-sx)*1.8; });
-  })();
-
-  /* ── Benefits — scroll entrance ──────────────────────────────────── */
-  document.querySelectorAll('.bi').forEach((el,i) => {
-    ScrollTrigger.create({
-      trigger:el, start:'top 87%', once:true,
-      onEnter(){ gsap.fromTo(el,{opacity:0,x:-16},{opacity:1,x:0,duration:.48,delay:(i%2)*.09,ease:'power2.out'}); }
-    });
+    trigger:'.cta-inner', start:'top 72%', once:true,
+    onEnter(){ gsap.fromTo('.cta-inner > *',{opacity:0,y:22},{opacity:1,y:0,duration:.65,stagger:.1,ease:'power3.out'}); }
   });
 
-  /* ── Section headers ──────────────────────────────────────────────── */
-  document.querySelectorAll('.shead').forEach(h => {
-    ScrollTrigger.create({
-      trigger:h, start:'top 82%', once:true,
-      onEnter(){ gsap.fromTo(h,{opacity:0,y:24},{opacity:1,y:0,duration:.65,ease:'power3.out'}); }
-    });
-  });
-
-  /* ── CTA ──────────────────────────────────────────────────────────── */
-  ScrollTrigger.create({
-    trigger:'#ci', start:'top 72%', once:true,
-    onEnter(){ gsap.fromTo('#ci > *',{opacity:0,y:20},{opacity:1,y:0,duration:.6,stagger:.12,ease:'power3.out'}); }
-  });
-
-  /* Refresh after all layout is calculated */
   window.addEventListener('load', () => ScrollTrigger.refresh());
 }
 </script>
