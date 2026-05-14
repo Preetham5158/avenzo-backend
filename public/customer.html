@@ -1,53 +1,275 @@
 <!DOCTYPE html>
 <html>
-
 <head>
-  <title>Avenzo</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <title>Avenzo — Home</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/assets/app.css">
   <style>
-    .home-hero {
-      display: grid;
-      grid-template-columns: 1fr auto;
-      align-items: start;
-      gap: 16px;
+    /* ── HERO ── */
+    .ch-hero {
+      background: linear-gradient(150deg, #fffaf4 0%, #fff5e6 55%, #ffefd5 100%);
+      border-bottom: 1px solid var(--line);
+      padding: 32px 0 28px;
     }
-
-    .home-columns {
-      display: grid;
-      grid-template-columns: 1.1fr 0.9fr;
-      gap: 16px;
-      align-items: start;
+    .ch-inner {
+      width: min(1120px, calc(100% - 28px));
+      margin: 0 auto;
     }
-
-    .active-order-card {
-      display: grid;
+    .ch-eyebrow {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+    .ch-title {
+      font-size: clamp(24px, 4vw, 34px);
+      font-weight: 800;
+      color: var(--ink);
+      line-height: 1.15;
+      margin: 0 0 20px;
+    }
+    .ch-title em { font-style: normal; color: var(--brand); }
+    .ch-search-row {
+      display: flex;
       gap: 10px;
+      max-width: 580px;
     }
+    .ch-search-wrap { position: relative; flex: 1; }
+    .ch-search-wrap svg {
+      position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+      color: var(--muted); pointer-events: none;
+    }
+    .ch-search {
+      width: 100%; height: 50px;
+      padding: 0 14px 0 44px;
+      background: var(--surface);
+      border: 1.5px solid var(--line);
+      border-radius: 12px;
+      font-size: 15px; font-family: inherit; color: var(--ink);
+      outline: none;
+      box-shadow: 0 2px 10px rgba(64,31,15,0.06);
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .ch-search:focus {
+      border-color: var(--brand);
+      box-shadow: 0 0 0 3px var(--brand-soft), 0 2px 10px rgba(64,31,15,0.06);
+    }
+    .ch-search::placeholder { color: var(--muted); }
 
-    .recent-list {
+    /* ── LIVE ORDER ── */
+    .ch-live {
+      background: linear-gradient(135deg, #fff8f2, #fff0e0);
+      border: 1.5px solid rgba(255,107,22,0.28);
+      border-radius: 14px;
+      padding: 16px 18px;
       display: grid;
-      gap: 8px;
+      gap: 12px;
+    }
+    .ch-live-head {
+      display: flex; align-items: center; gap: 10px;
+    }
+    .ch-live-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--brand);
+      animation: livepulse 1.8s ease-in-out infinite;
+      flex-shrink: 0;
+    }
+    @keyframes livepulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(255,107,22,0.5); }
+      50%       { box-shadow: 0 0 0 7px rgba(255,107,22,0); }
+    }
+    .ch-live-badge {
+      font-size: 10px; font-weight: 700; letter-spacing: 0.9px;
+      text-transform: uppercase; color: var(--brand);
+      background: rgba(255,107,22,0.1); padding: 3px 8px; border-radius: 99px;
+    }
+    .ch-live-name {
+      font-size: 14px; font-weight: 700; color: var(--ink); flex: 1;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .ch-live-order {
+      font-size: 12px; color: var(--muted); flex-shrink: 0;
+    }
+    .ch-live-foot {
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    }
+    .ch-live-status { font-size: 13px; color: var(--ink); }
+
+    /* ── PROFILE HINT ── */
+    .ch-hint {
+      display: flex; align-items: center; gap: 14px;
+      background: var(--surface-2);
+      border: 1.5px dashed rgba(255,107,22,0.35);
+      border-radius: 12px;
+      padding: 14px 16px;
+      text-decoration: none; color: inherit;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .ch-hint:hover { border-color: var(--brand); background: #fff6ee; }
+    .ch-hint-icon {
+      width: 40px; height: 40px; border-radius: 50%;
+      background: var(--brand-soft);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; flex-shrink: 0;
+    }
+    .ch-hint-body { flex: 1; }
+    .ch-hint-body strong { display: block; font-size: 13px; font-weight: 700; color: var(--ink); }
+    .ch-hint-body span { font-size: 12px; color: var(--muted); }
+
+    /* ── SECTION ── */
+    .ch-section {
+      width: min(1120px, calc(100% - 28px));
+      margin: 0 auto;
+    }
+    .ch-sec-head {
+      display: flex; align-items: baseline;
+      justify-content: space-between; margin-bottom: 14px;
+    }
+    .ch-sec-title { font-size: 17px; font-weight: 800; color: var(--ink); }
+    .ch-sec-link {
+      font-size: 13px; font-weight: 600;
+      color: var(--brand); text-decoration: none;
     }
 
-    @media (max-width: 860px) {
-      .home-hero {
-        grid-template-columns: 1fr;
-      }
+    /* ── CATEGORY CHIPS ── */
+    .ch-chips {
+      display: flex; gap: 8px; overflow-x: auto;
+      scrollbar-width: none; padding-bottom: 2px;
+    }
+    .ch-chips::-webkit-scrollbar { display: none; }
+    .ch-chip {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 7px 14px; white-space: nowrap;
+      background: var(--surface); border: 1.5px solid var(--line);
+      border-radius: 999px; cursor: pointer;
+      font-size: 13px; font-weight: 600; color: var(--ink);
+      font-family: inherit; outline: none;
+      transition: border-color 0.15s, background 0.15s, color 0.15s;
+    }
+    .ch-chip:hover { border-color: var(--brand); color: var(--brand); }
+    .ch-chip.on { background: var(--brand); border-color: var(--brand); color: #fff; }
 
-      .home-columns {
-        grid-template-columns: 1fr;
-      }
+    /* ── RESTAURANT GRID ── */
+    .ch-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 14px;
+    }
+    .ch-rest-card {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 14px; overflow: hidden;
+      text-decoration: none; color: inherit;
+      display: flex; flex-direction: column;
+      box-shadow: var(--shadow-soft);
+      transition: transform 0.18s, box-shadow 0.18s;
+    }
+    .ch-rest-card:hover:not(.ch-rest-paused) {
+      transform: translateY(-3px); box-shadow: var(--shadow);
+    }
+    .ch-rest-banner {
+      height: 96px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 38px; position: relative; overflow: hidden;
+    }
+    .ch-rest-paused .ch-rest-banner { filter: saturate(0.3); }
+    .ch-rest-overlay {
+      position: absolute; inset: 0;
+      background: rgba(255,255,255,0.55);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 700; color: var(--muted);
+      letter-spacing: 0.4px; text-transform: uppercase;
+    }
+    .ch-rest-body {
+      padding: 12px 14px 14px;
+      flex: 1; display: flex; flex-direction: column; gap: 5px;
+    }
+    .ch-rest-name {
+      font-size: 14px; font-weight: 700; color: var(--ink); line-height: 1.25;
+    }
+    .ch-rest-loc { font-size: 12px; color: var(--muted); }
+    .ch-rest-foot {
+      display: flex; align-items: center;
+      justify-content: space-between; margin-top: 8px;
+    }
+    .ch-rest-rating {
+      font-size: 12px; font-weight: 600;
+      display: flex; align-items: center; gap: 3px;
+    }
+    .ch-pill {
+      font-size: 10px; font-weight: 700; padding: 3px 8px;
+      border-radius: 99px; letter-spacing: 0.2px;
+    }
+    .ch-pill-open { background: rgba(24,160,88,0.12); color: var(--success); }
+    .ch-pill-paused { background: rgba(245,158,11,0.12); color: var(--warning); }
+
+    /* ── SKELETON ── */
+    .ch-skel {
+      background: var(--line);
+      background: linear-gradient(90deg, var(--line) 25%, var(--surface-2) 50%, var(--line) 75%);
+      background-size: 200% 100%;
+      animation: ch-shim 1.4s linear infinite;
+      border-radius: 14px;
+    }
+    @keyframes ch-shim {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    /* ── EMPTY ── */
+    .ch-empty {
+      grid-column: 1 / -1; text-align: center;
+      padding: 40px 20px; color: var(--muted);
+    }
+    .ch-empty-icon { font-size: 42px; line-height: 1; margin-bottom: 10px; }
+    .ch-empty p { font-size: 14px; margin: 6px 0 16px; }
+
+    /* ── RECENT SCROLL ── */
+    .ch-scroll {
+      display: flex; gap: 12px;
+      overflow-x: auto; scrollbar-width: none; padding-bottom: 4px;
+    }
+    .ch-scroll::-webkit-scrollbar { display: none; }
+    .ch-recent-card {
+      flex: 0 0 168px; min-width: 0;
+      background: var(--surface); border: 1px solid var(--line);
+      border-radius: 14px; padding: 14px;
+      display: flex; flex-direction: column; gap: 8px;
+      text-decoration: none; color: inherit;
+      box-shadow: var(--shadow-soft);
+      transition: transform 0.18s, box-shadow 0.18s;
+    }
+    .ch-recent-card:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
+    .ch-recent-emoji { font-size: 28px; line-height: 1; }
+    .ch-recent-name {
+      font-size: 13px; font-weight: 700; color: var(--ink);
+      line-height: 1.3; overflow: hidden; text-overflow: ellipsis;
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+    }
+    .ch-recent-sub { font-size: 11px; color: var(--muted); margin-top: auto; }
+
+    /* ── SPACING ── */
+    .ch-gap { height: 32px; }
+    .ch-gap-sm { height: 20px; }
+
+    /* ── MOBILE ── */
+    @media (max-width: 600px) {
+      .ch-grid { grid-template-columns: 1fr; }
+      .ch-hero { padding: 22px 0 20px; }
+    }
+    @media (max-width: 900px) {
+      .shell { padding-bottom: 74px; }
     }
   </style>
 </head>
-
 <body>
   <div class="shell">
+    <!-- Topbar -->
     <header class="topbar">
       <div class="topbar-inner">
-        <a class="brand" href="/" aria-label="Avenzo home">
+        <a class="brand" href="/customer.html">
           <img src="/logo.png" alt="Avenzo">
           <span>AVENZO</span>
         </a>
@@ -56,153 +278,248 @@
       </div>
     </header>
 
-    <main class="page stack">
-      <section class="hero-panel home-hero">
-        <div>
-          <div class="eyebrow" id="greetingEyebrow">Welcome</div>
-          <h1 id="welcomeTitle">What would you like today?</h1>
-          <p class="muted">Find a dine-in restaurant, order from your table, and track your food in real time.</p>
-          <div class="row row-wrap mt-18">
-            <a class="btn btn-primary" href="/customer-restaurants.html">Browse restaurants</a>
-            <a class="btn btn-ghost" href="/customer-orders.html">My orders</a>
+    <!-- Hero -->
+    <section class="ch-hero">
+      <div class="ch-inner">
+        <div class="ch-eyebrow" id="chGreeting">Welcome</div>
+        <h1 class="ch-title">What are you <em>craving</em> today?</h1>
+        <div class="ch-search-row">
+          <div class="ch-search-wrap">
+            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            <input class="ch-search" id="chSearch" type="search" placeholder="Search restaurants..." oninput="doFilter()">
           </div>
         </div>
-        <article class="card card-pad stack" id="profileHint" hidden>
-          <div class="eyebrow">Quick tip</div>
-          <h3>Add your phone once</h3>
-          <p class="muted mb-0">Save your number so checkout skips the phone step next time.</p>
-          <a class="btn btn-dark" href="/customer-profile.html">Add phone</a>
-        </article>
+      </div>
+    </section>
+
+    <main style="padding-top:0">
+
+      <!-- Live order (populated by JS) -->
+      <div id="chLiveWrap" style="width:min(1120px,calc(100% - 28px));margin:20px auto 0"></div>
+
+      <!-- Profile hint (populated by JS) -->
+      <div id="chHintWrap" class="ch-section" style="margin-top:14px"></div>
+
+      <!-- Category filter -->
+      <section class="ch-section" style="margin-top:24px">
+        <div class="ch-sec-head">
+          <span class="ch-sec-title">Filter</span>
+        </div>
+        <div class="ch-chips" id="chChips">
+          <button class="ch-chip on" data-filter="all"    onclick="setFilter(this,'all')">All</button>
+          <button class="ch-chip"    data-filter="open"   onclick="setFilter(this,'open')">✓ Open now</button>
+          <button class="ch-chip"    data-filter="PURE_VEG" onclick="setFilter(this,'PURE_VEG')">🌿 Pure Veg</button>
+          <button class="ch-chip"    data-filter="BOTH"   onclick="setFilter(this,'BOTH')">🍽️ Veg &amp; Non-Veg</button>
+          <button class="ch-chip"    data-filter="NON_VEG" onclick="setFilter(this,'NON_VEG')">🍖 Non-Veg</button>
+        </div>
       </section>
 
-      <section class="home-columns mt-16">
-        <article class="card card-pad stack">
-          <div class="row-between">
-            <div>
-              <div class="eyebrow">Right now</div>
-              <h2 class="section-title">Active order</h2>
-            </div>
-            <a class="btn btn-ghost" href="/customer-orders.html">All orders</a>
-          </div>
-          <div id="activeOrder" class="active-order-card"></div>
-        </article>
-
-        <article class="card card-pad stack">
-          <div class="row-between">
-            <div>
-              <div class="eyebrow">Order again</div>
-              <h2 class="section-title">Recent orders</h2>
-            </div>
-            <a class="btn btn-ghost" href="/customer-restaurants.html">Browse</a>
-          </div>
-          <div id="recentOrders" class="recent-list"></div>
-        </article>
+      <!-- Restaurant grid -->
+      <section class="ch-section" style="margin-top:24px">
+        <div class="ch-sec-head">
+          <span class="ch-sec-title" id="chRestCount">Restaurants</span>
+          <a class="ch-sec-link" href="/customer-restaurants.html">View all</a>
+        </div>
+        <div class="ch-grid" id="chGrid">
+          <div class="ch-skel" style="height:218px"></div>
+          <div class="ch-skel" style="height:218px"></div>
+          <div class="ch-skel" style="height:218px"></div>
+          <div class="ch-skel" style="height:218px"></div>
+        </div>
       </section>
+
+      <!-- Order again (populated by JS) -->
+      <div id="chRecentWrap"></div>
+
+      <div class="ch-gap"></div>
     </main>
   </div>
 
+  <!-- Bottom nav (injected by app.js) -->
+  <div id="customerBottomNav"></div>
+
   <script src="/assets/app.js"></script>
   <script>
-    let user = null;
+    const BANNERS = [
+      ["#fff8ee","#ffe8c8"],["#eef8ee","#c8eac8"],["#fdeef4","#f9d0df"],
+      ["#eef4fd","#cddff9"],["#f5eef9","#e5d0f6"],["#fffde6","#fff7b0"]
+    ];
+    const FOOD_EMOJI = { PURE_VEG: "🌿", BOTH: "🍽️", NON_VEG: "🍖" };
 
-    function greeting() {
-      const hour = new Date().getHours();
-      if (hour < 12) return "Good morning";
-      if (hour < 17) return "Good afternoon";
-      return "Good evening";
-    }
+    let allRests = [];
+    let currentFilter = "all";
+    let currentSearch = "";
 
-    initCustomerPage("home").then((loadedUser) => {
-      user = loadedUser;
+    initCustomerPage("home").then(async user => {
       if (!user) return;
-      const name = user.name ? `, ${user.name}` : "";
-      document.getElementById("greetingEyebrow").textContent = greeting();
-      document.getElementById("welcomeTitle").textContent = `${greeting()}${name}. What would you like today?`;
-      document.getElementById("profileHint").hidden = !!user.phone;
-      loadHomeOrders();
+
+      // Personalized greeting
+      const hour = new Date().getHours();
+      const gr = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
+      const name = user.name ? `, ${user.name.split(" ")[0]}` : "";
+      document.getElementById("chGreeting").textContent = `${gr}${name} 👋`;
+
+      if (!user.phone) showProfileHint();
+
+      await Promise.all([loadRests(), loadOrders()]);
     });
 
-    async function loadHomeOrders() {
+    /* ── restaurants ── */
+    async function loadRests() {
       try {
-        const data = await request("/customer/orders?page=1&limit=5");
-        const orders = data.orders || [];
-        const active = orders.find(o => ["PENDING", "PREPARING", "READY"].includes(o.status));
-        renderActiveOrder(active);
-        renderRecentOrders(orders.filter(o => !["PENDING", "PREPARING", "READY"].includes(o.status)).slice(0, 3));
+        const d = await request("/customer/restaurants");
+        allRests = d.restaurants || [];
+        renderRests();
       } catch (err) {
-        document.getElementById("activeOrder").innerHTML = `<div class="empty">${escapeHtml(err.message)}</div>`;
+        document.getElementById("chGrid").innerHTML =
+          `<div class="ch-empty"><div class="ch-empty-icon">😕</div><p>${escapeHtml(err.message)}</p></div>`;
       }
     }
 
-    function renderActiveOrder(order) {
-      const target = document.getElementById("activeOrder");
-      if (!order) {
-        target.innerHTML = `
-          <div class="empty">
-            <p class="muted mb-0">No active orders right now.</p>
-            <a class="btn btn-primary mt-12" href="/customer-restaurants.html">Start an order</a>
+    function setFilter(btn, val) {
+      currentFilter = val;
+      document.querySelectorAll(".ch-chip").forEach(c => c.classList.remove("on"));
+      btn.classList.add("on");
+      renderRests();
+    }
+
+    function doFilter() {
+      currentSearch = document.getElementById("chSearch").value.trim().toLowerCase();
+      renderRests();
+    }
+
+    function renderRests() {
+      let list = allRests;
+      if (currentSearch)
+        list = list.filter(r => [r.name,r.locality,r.address].join(" ").toLowerCase().includes(currentSearch));
+      if (currentFilter === "open") list = list.filter(r => r.serviceAvailable !== false);
+      else if (currentFilter !== "all") list = list.filter(r => r.foodType === currentFilter);
+
+      const count = document.getElementById("chRestCount");
+      count.textContent = list.length ? `${list.length} Restaurant${list.length !== 1 ? "s" : ""}` : "Restaurants";
+
+      const grid = document.getElementById("chGrid");
+      if (!list.length) {
+        grid.innerHTML = `
+          <div class="ch-empty">
+            <div class="ch-empty-icon">🔍</div>
+            <p>No restaurants match your filter.</p>
+            <button class="btn btn-ghost" onclick="clearFilters()">Clear filters</button>
           </div>`;
         return;
       }
 
-      target.innerHTML = `
-        <div class="row-between">
-          <div>
-            <strong>${escapeHtml(order.restaurant?.name || "Avenzo restaurant")}</strong>
-            <div class="muted">Order #${order.orderNumber} · ${formatDate(order.createdAt)}</div>
+      grid.innerHTML = list.map(r => {
+        const open = r.serviceAvailable !== false;
+        const hash = [...r.name].reduce((h,c) => (h * 31 + c.charCodeAt(0)) & 0xffff, 0);
+        const [c1, c2] = BANNERS[hash % BANNERS.length];
+        const emoji = FOOD_EMOJI[r.foodType] || "🍴";
+        const href = open ? `/r/${encodeURIComponent(r.slug)}` : "javascript:void(0)";
+        const rating = r.avgRating
+          ? `⭐ ${r.avgRating} <span style="color:var(--muted);font-weight:400">(${r.ratingCount})</span>`
+          : `<span style="color:var(--muted);font-weight:400">No ratings yet</span>`;
+        return `
+          <a class="ch-rest-card${open ? "" : " ch-rest-paused"}" href="${href}">
+            <div class="ch-rest-banner" style="background:linear-gradient(135deg,${c1},${c2})">
+              ${emoji}
+              ${open ? "" : `<div class="ch-rest-overlay">Ordering paused</div>`}
+            </div>
+            <div class="ch-rest-body">
+              <div class="ch-rest-name">${escapeHtml(r.name)}</div>
+              <div class="ch-rest-loc">${escapeHtml(r.locality || r.address || "Dine-in partner")}</div>
+              <div class="ch-rest-foot">
+                <div class="ch-rest-rating">${rating}</div>
+                <span class="ch-pill ${open ? "ch-pill-open" : "ch-pill-paused"}">${open ? "Open" : "Paused"}</span>
+              </div>
+            </div>
+          </a>`;
+      }).join("");
+    }
+
+    function clearFilters() {
+      currentFilter = "all"; currentSearch = "";
+      document.getElementById("chSearch").value = "";
+      document.querySelectorAll(".ch-chip").forEach((c, i) => c.classList.toggle("on", i === 0));
+      renderRests();
+    }
+
+    /* ── orders ── */
+    async function loadOrders() {
+      try {
+        const d = await request("/customer/orders?page=1&limit=20");
+        const orders = d.orders || [];
+
+        // Live order
+        const active = orders.find(o => ["PENDING","PREPARING","READY"].includes(o.status));
+        if (active) renderLiveOrder(active);
+
+        // Recent (deduplicated by restaurant slug)
+        const past = orders.filter(o => o.status === "COMPLETED");
+        const seen = new Set();
+        const recent = past.filter(o => {
+          const k = o.restaurant?.slug;
+          if (!k || seen.has(k)) return false;
+          seen.add(k); return true;
+        }).slice(0, 7);
+        if (recent.length) renderRecent(recent);
+      } catch { /* silent — orders are optional on home */ }
+    }
+
+    function renderLiveOrder(o) {
+      const msgs = {
+        PENDING:   "Your order has been received — the kitchen is next 📋",
+        PREPARING: "The kitchen is preparing your food right now 👨‍🍳",
+        READY:     "Your order is ready for pickup! 🎉"
+      };
+      document.getElementById("chLiveWrap").innerHTML = `
+        <div class="ch-live">
+          <div class="ch-live-head">
+            <div class="ch-live-dot"></div>
+            <span class="ch-live-badge">Live order</span>
+            <span class="ch-live-name">${escapeHtml(o.restaurant?.name || "Your order")}</span>
+            <span class="ch-live-order">Order #${o.orderNumber}</span>
           </div>
-          <span class="pill ${statusPill(order.status)}">${statusLabel(order.status)}</span>
-        </div>
-        <div class="row row-wrap">
-          <span class="pill">Code ${escapeHtml(order.pickupCode)}</span>
-          <span class="pill">${money(order.totalPrice)}</span>
-        </div>
-        <div class="row row-wrap">
-          <a class="btn btn-dark" href="/track/${order.trackingToken}">Track order</a>
-          ${order.status === "PENDING" && order.paymentStatus !== "PAID"
-            ? `<button class="btn btn-ghost" style="color:var(--danger,#c62828)" onclick="cancelOrder('${order.trackingToken}')">Cancel</button>`
-            : ""}
+          <div class="ch-live-foot">
+            <div class="ch-live-status">${msgs[o.status] || o.status}</div>
+            <a class="btn btn-primary" style="padding:8px 20px;font-size:13px;width:auto" href="/track/${o.trackingToken}">Track →</a>
+          </div>
         </div>`;
     }
 
-    function renderRecentOrders(orders) {
-      const target = document.getElementById("recentOrders");
-      if (!orders.length) {
-        target.innerHTML = `<div class="empty">Your past orders will appear here.</div>`;
-        return;
-      }
-      target.innerHTML = orders.map(order => `
-        <a class="card card-pad row-between" href="/track/${order.trackingToken}">
-          <span>
-            <strong>${escapeHtml(order.restaurant?.name || "Avenzo restaurant")}</strong>
-            <span class="muted">#${order.orderNumber} · ${money(order.totalPrice)}</span>
-          </span>
-          <span class="pill ${statusPill(order.status)}">${statusLabel(order.status)}</span>
-        </a>
-      `).join("");
+    function renderRecent(orders) {
+      document.getElementById("chRecentWrap").innerHTML = `
+        <section class="ch-section" style="margin-top:32px">
+          <div class="ch-sec-head">
+            <span class="ch-sec-title">Order again</span>
+            <a class="ch-sec-link" href="/customer-orders.html">All orders</a>
+          </div>
+          <div class="ch-scroll">
+            ${orders.map(o => {
+              const r = o.restaurant || {};
+              const emoji = FOOD_EMOJI[r.foodType] || "🍴";
+              const href = r.slug ? `/r/${encodeURIComponent(r.slug)}` : "/customer-restaurants.html";
+              return `
+                <a class="ch-recent-card" href="${href}">
+                  <div class="ch-recent-emoji">${emoji}</div>
+                  <div class="ch-recent-name">${escapeHtml(r.name || "Restaurant")}</div>
+                  <div class="ch-recent-sub">${escapeHtml(r.locality || r.address || "Dine-in partner")}</div>
+                </a>`;
+            }).join("")}
+          </div>
+        </section>`;
     }
 
-    async function cancelOrder(trackingToken) {
-      if (!confirm("Cancel this order?")) return;
-      try {
-        await request(`/order/${trackingToken}/cancel`, { method: "POST" });
-        toast("Order cancelled.");
-        loadHomeOrders();
-      } catch (err) {
-        toast(err.message || "Could not cancel order.");
-      }
-    }
-
-    function statusPill(status) {
-      if (["READY", "COMPLETED"].includes(status)) return "pill-success";
-      if (status === "CANCELLED") return "pill-danger";
-      return "pill-warning";
-    }
-
-    function statusLabel(value) {
-      return { PENDING: "Received", PREPARING: "Preparing", READY: "Ready", COMPLETED: "Done", CANCELLED: "Cancelled" }[value] || value;
+    function showProfileHint() {
+      document.getElementById("chHintWrap").innerHTML = `
+        <a class="ch-hint" href="/customer-profile.html">
+          <div class="ch-hint-icon">📱</div>
+          <div class="ch-hint-body">
+            <strong>Add your phone number</strong>
+            <span>Skip the phone step at every checkout.</span>
+          </div>
+          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>
+        </a>`;
     }
   </script>
 </body>
-
 </html>
