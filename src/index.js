@@ -89,6 +89,8 @@ app.get("/health", (req, res) => {
     res.json({ status: "ok", uptime: Math.floor(process.uptime()) });
 });
 
+app.get("/favicon.ico", (req, res) => res.redirect("/logo.png"));
+
 const BASE_URL = process.env.BASE_URL || "http://localhost:5000";
 
 function rateLimit({ windowMs, max }) {
@@ -162,6 +164,24 @@ function cleanString(value, maxLength = 500) {
 function isValidEmail(value) {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || "").trim());
 }
+
+function isValidHttpsUrl(value) {
+    try {
+        const url = new URL(String(value || ""));
+        return url.protocol === "https:";
+    } catch {
+        return false;
+    }
+}
+
+// In-memory idempotency cache for order creation — prevents double-submit on network retry.
+const orderIdempotencyCache = new Map();
+setInterval(() => {
+    const cutoff = Date.now() - 5 * 60 * 1000;
+    for (const [key, entry] of orderIdempotencyCache.entries()) {
+        if (entry.at < cutoff) orderIdempotencyCache.delete(key);
+    }
+}, 5 * 60 * 1000);
 
 function menuFoodFilter(value) {
     if (!value || String(value).toUpperCase() === "ALL") return {};
@@ -257,15 +277,20 @@ async function createOtpChallenge(user, purpose) {
         select: { id: true, expiresAt: true, channel: true }
     });
 
-    await sendOtp({
-        prisma,
-        userId: user.id,
-        channel,
-        phone: user.phone,
-        email: user.email,
-        purpose,
-        otp
-    });
+    try {
+        await sendOtp({
+            prisma,
+            userId: user.id,
+            channel,
+            phone: user.phone,
+            email: user.email,
+            purpose,
+            otp
+        });
+    } catch (err) {
+        logRouteError("sendOtp", err);
+        throw new Error("We could not send the verification code. Please try again in a moment.");
+    }
 
     return { ...challenge, maskedEmail: maskEmail(user.email) };
 }
@@ -531,6 +556,7 @@ app.get("/categories/:restaurantId", authMiddleware, async (req, res) => {
 app.post("/order", orderLimiter, optionalAuth, async (req, res) => {
     try {
         const { items, sessionId, phone } = req.body;
+        const idempotencyKey = cleanString(req.body.idempotencyKey, 100);
         const tableNumber = cleanString(req.body.tableNumber, 40) || null;
         const paymentMethodId = cleanString(req.body.paymentMethodId, 80) || null;
         const guestOrder = req.body.guest === true;
@@ -648,6 +674,13 @@ app.post("/order", orderLimiter, optionalAuth, async (req, res) => {
             return res.status(429).json({ error: abuse.reason });
         }
 
+        // Return cached result if client retries the same order submit.
+        if (idempotencyKey) {
+            const cacheKey = `${restaurantId}:${deviceId}:${idempotencyKey}`;
+            const cached = orderIdempotencyCache.get(cacheKey);
+            if (cached) return res.json(cached);
+        }
+
         const pickupCode = crypto.randomInt(1000, 10000).toString();
         const trackingToken = crypto.randomUUID();
 
@@ -758,6 +791,20 @@ app.post("/order", orderLimiter, optionalAuth, async (req, res) => {
             recipientEmail: customer?.email
         }).catch((err) => logRouteError("notifyOrderConfirmation", err));
 
+        if (idempotencyKey) {
+            const cacheKey = `${restaurantId}:${deviceId}:${idempotencyKey}`;
+            const cachePayload = {
+                trackingToken: order.trackingToken,
+                orderNumber: order.orderNumber,
+                pickupCode,
+                paymentStatus: order.paymentStatus,
+                paymentMethod: selectedMethod ? { id: selectedMethod.id, type: selectedMethod.type, displayName: selectedMethod.displayName, ...(selectedMethod.type === "UPI_QR" && { qrImageUrl: selectedMethod.qrImageUrl || null, upiId: selectedMethod.upiId || null }) } : null,
+                message: "Order placed.",
+                trackingUrl: `${BASE_URL}/track/${order.trackingToken}`
+            };
+            orderIdempotencyCache.set(cacheKey, { ...cachePayload, at: Date.now() });
+        }
+
         // Include enough payment context for the frontend to route to the right payment UI.
         const selectedMethod = resolvedPaymentMethodId
             ? enabledMethods.find(m => m.id === resolvedPaymentMethodId) || null
@@ -860,6 +907,60 @@ app.get("/orders/lookup", orderLookupLimiter, async (req, res) => {
     } catch (err) {
         logRouteError("GET /orders/lookup", err);
         res.status(500).json({ error: "Error finding orders" });
+    }
+});
+
+// Customer self-cancel — only allowed while status is PENDING and payment is not PAID.
+app.post("/order/:trackingToken/cancel", orderLimiter, optionalAuth, async (req, res) => {
+    try {
+        const order = await prisma.order.findUnique({
+            where: { trackingToken: req.params.trackingToken },
+            select: { id: true, status: true, customerId: true, paymentStatus: true, restaurantId: true }
+        });
+        if (!order) return res.status(404).json({ error: "Order not found" });
+        if (order.status === "CANCELLED") return res.json({ ok: true });
+        if (order.status !== "PENDING") {
+            return res.status(400).json({ error: "This order is already being prepared and cannot be cancelled. Please speak to the restaurant." });
+        }
+        if (order.paymentStatus === "PAID") {
+            return res.status(400).json({ error: "A paid order cannot be self-cancelled. Please contact the restaurant." });
+        }
+        // For logged-in customers, verify ownership. Guest orders are protected by tracking token alone.
+        if (order.customerId && req.user?.userId && order.customerId !== req.user.userId) {
+            return res.status(403).json({ error: "You cannot cancel this order." });
+        }
+        await prisma.order.update({ where: { id: order.id }, data: { status: "CANCELLED" } });
+        await auditLog("ORDER_CANCELLED_BY_CUSTOMER", {
+            restaurantId: order.restaurantId,
+            orderId: order.id,
+            actorUserId: req.user?.userId || null
+        });
+        res.json({ ok: true });
+    } catch (err) {
+        logRouteError("POST /order/:trackingToken/cancel", err);
+        res.status(500).json({ error: "Could not cancel order" });
+    }
+});
+
+// Global guest order lookup by phone + pickup code — no restaurant context needed.
+app.get("/order/find", orderLookupLimiter, async (req, res) => {
+    try {
+        const phone = normalizePhone(req.query.phone);
+        const code = cleanString(req.query.code, 10);
+        if (!phone || !isValidPhone(phone) || !code) {
+            return res.status(400).json({ error: "Mobile number and order code are required" });
+        }
+        // Limit lookups to the last 48 hours to avoid exposing old orders.
+        const since = new Date(Date.now() - 48 * 60 * 60 * 1000);
+        const order = await prisma.order.findFirst({
+            where: { phone, pickupCode: code, createdAt: { gte: since } },
+            select: { trackingToken: true }
+        });
+        if (!order) return res.status(404).json({ error: "No order found. Check your mobile number and the code shown at checkout." });
+        res.json({ trackingToken: order.trackingToken });
+    } catch (err) {
+        logRouteError("GET /order/find", err);
+        res.status(500).json({ error: "Could not find order" });
     }
 });
 
@@ -1323,7 +1424,8 @@ function optionalAuth(req, res, next) {
             audience: JWT_AUDIENCE
         });
     } catch {
-        return res.status(401).json({ error: "Please sign in again." });
+        // Expired or invalid token — treat as anonymous so guest flows still work.
+        req.user = null;
     }
 
     next();
@@ -1824,6 +1926,31 @@ app.post("/category", authMiddleware, async (req, res) => {
     }
 });
 
+app.patch("/admin/categories/:restaurantId/reorder", authMiddleware, async (req, res) => {
+    try {
+        const { restaurantId } = req.params;
+        const access = await getRestaurantAccess(restaurantId, req.user.userId);
+        if (!access.canManage) return res.status(403).json({ error: "Only owners can reorder categories" });
+
+        const order = req.body.order;
+        if (!Array.isArray(order) || order.length === 0) {
+            return res.status(400).json({ error: "order array of { id, sortOrder } required" });
+        }
+        await prisma.$transaction(
+            order.map(({ id, sortOrder }) =>
+                prisma.category.updateMany({
+                    where: { id, restaurantId },
+                    data: { sortOrder: Number(sortOrder) }
+                })
+            )
+        );
+        res.json({ ok: true });
+    } catch (err) {
+        logRouteError("PATCH /admin/categories/:restaurantId/reorder", err);
+        res.status(500).json({ error: "Could not reorder categories" });
+    }
+});
+
 app.post("/menu", authMiddleware, async (req, res) => {
     try {
         const { name, price, categoryId, restaurantId, description, imageUrl, foodType } = req.body;
@@ -1946,6 +2073,29 @@ const pricePaise = typeof price !== "undefined" ? rupeesToPaise(price) : undefin
     } catch (err) {
         logRouteError("PUT /menu/:id", err);
         res.status(500).json({ error: "Error updating menu item" });
+    }
+});
+
+app.delete("/menu/:id", authMiddleware, async (req, res) => {
+    try {
+        const item = await prisma.menu.findUnique({
+            where: { id: req.params.id },
+            select: { restaurantId: true, name: true }
+        });
+        if (!item) return res.status(404).json({ error: "Not found" });
+        const access = await getRestaurantAccess(item.restaurantId, req.user.userId);
+        if (!access.canManage) return res.status(403).json({ error: "Only owners can delete menu items" });
+        if (!ensureWorkspaceService(access, res)) return;
+        await prisma.menu.delete({ where: { id: req.params.id } });
+        await auditLog("MENU_ITEM_DELETED", {
+            restaurantId: item.restaurantId,
+            actorUserId: req.user.userId,
+            metadata: { itemName: item.name }
+        });
+        res.json({ ok: true });
+    } catch (err) {
+        logRouteError("DELETE /menu/:id", err);
+        res.status(500).json({ error: "Could not delete menu item" });
     }
 });
 
@@ -2527,6 +2677,7 @@ app.post("/admin/payment-methods/:restaurantId", authMiddleware, async (req, res
         const validTypes = ["RAZORPAY", "UPI_QR"];
         if (!validTypes.includes(type)) return res.status(400).json({ error: "type must be RAZORPAY or UPI_QR" });
         if (!cleanString(displayName, 80)) return res.status(400).json({ error: "displayName required" });
+        if (qrImageUrl && !isValidHttpsUrl(qrImageUrl)) return res.status(400).json({ error: "qrImageUrl must be a valid https:// URL" });
 
         // Only one default at a time per restaurant.
         if (isDefault) {
@@ -2566,6 +2717,7 @@ app.put("/admin/payment-methods/:restaurantId/:id", authMiddleware, async (req, 
         if (!existing) return res.status(404).json({ error: "Payment method not found" });
 
         const { displayName, isEnabled, isDefault, sortOrder, qrImageUrl, upiId } = req.body;
+        if (qrImageUrl && !isValidHttpsUrl(qrImageUrl)) return res.status(400).json({ error: "qrImageUrl must be a valid https:// URL" });
 
         if (isDefault) {
             await prisma.paymentMethod.updateMany({
@@ -2773,8 +2925,8 @@ app.post("/webhooks/razorpay", async (req, res) => {
         return res.json({ ok: true });
     } catch (err) {
         logRouteError("POST /webhooks/razorpay", err);
-        // Always return 200 to Razorpay — a non-200 causes retries.
-        return res.json({ ok: true });
+        // Return 500 so Razorpay retries on DB failures — idempotency guard above prevents double-processing.
+        return res.status(500).json({ ok: false });
     }
 });
 
