@@ -3,49 +3,51 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Avenzo — Bengaluru's Smartest Dine-In Ordering</title>
-<meta name="description" content="Scan the QR at your table, browse the menu and order in 30 seconds. Real-time kitchen tracking. No app. Made for Bengaluru.">
+<title>Avenzo — Smarter Dining, Everywhere</title>
+<meta name="description" content="Scan the QR at your table or counter, browse the full menu with photos, and order in 30 seconds. No install required. Live across India.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400&display=swap" rel="stylesheet">
 <style>
 /* ═══════════════════════════════════════════════════════
    AVENZO DESIGN SYSTEM — v1
-   Move the :root block to assets/app.css to apply these
-   tokens across all pages.
+   Copy the :root block into assets/app.css to apply
+   across all pages.
 ═══════════════════════════════════════════════════════ */
 :root{
-  /* Brand */
-  --brand:      #E8401C;
-  --brand-2:    #F5781C;
-  --gold:       #E8A428;
-  --mint:       #28C97E;
+  /* Brand colours */
+  --brand:    #E8401C;
+  --brand-2:  #F5781C;
+  --gold:     #E8A428;
+  --mint:     #28C97E;
+  --violet:   #7C5CFC;
 
-  /* Dark surfaces */
-  --bg:         #09080A;
-  --bg-2:       #131118;
-  --bg-3:       #1C1A22;
+  /* Dark backgrounds */
+  --bg:   #09080A;
+  --bg-2: #131118;
+  --bg-3: #1C1A22;
 
-  /* Light surfaces */
-  --cream:      #F5EEE3;
-  --cream-2:    #ECE4D1;
+  /* Light backgrounds */
+  --cream:   #F5EEE3;
+  --cream-2: #ECE4D1;
 
   /* Text on dark */
-  --tx:         #F2ECE5;
-  --tx-2:       rgba(242,236,229,.5);
-  --tx-3:       rgba(242,236,229,.22);
+  --tx:   #F2ECE5;
+  --tx-2: rgba(242,236,229,.5);
+  --tx-3: rgba(242,236,229,.22);
 
   /* Text on light */
-  --ink:        #1A1008;
-  --ink-2:      rgba(26,16,8,.5);
+  --ink:   #1A1008;
+  --ink-2: rgba(26,16,8,.5);
 
   /* Borders */
-  --bdr:        rgba(255,255,255,.08);
-  --bdr-2:      rgba(255,255,255,.05);
-  --bdr-light:  rgba(26,16,8,.1);
+  --bdr:       rgba(255,255,255,.08);
+  --bdr-2:     rgba(255,255,255,.05);
+  --bdr-light: rgba(26,16,8,.1);
 
   /* Radius */
-  --rs: 8px; --rm: 12px; --rl: 18px; --rxl: 24px; --rp: 100px;
+  --rs:  8px;  --rm: 12px; --rl: 18px;
+  --rxl: 24px; --rp: 100px;
 
   /* Shadows */
   --sh-s: 0 2px 10px rgba(0,0,0,.18);
@@ -53,24 +55,18 @@
   --sh-l: 0 12px 52px rgba(0,0,0,.5);
 }
 
-/* ── Reset ─────────────────────────────── */
+/* ── Reset ── */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{overflow-x:clip;scroll-behavior:smooth}
 body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(--tx);overflow-x:clip;-webkit-font-smoothing:antialiased}
 img{display:block;max-width:100%}
 a{color:inherit;text-decoration:none}
-button{font:inherit;cursor:pointer;border:none}
-
-/* ── Type helpers ── */
-.eyebrow{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--brand-2)}
-.grad{background:linear-gradient(110deg,var(--brand) 0%,var(--gold) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
 
 /* ── Buttons ── */
 .btn{
   display:inline-flex;align-items:center;justify-content:center;gap:7px;
   font-family:inherit;font-weight:700;border:none;cursor:pointer;
-  transition:transform .14s,box-shadow .14s,opacity .14s;
-  white-space:nowrap;
+  transition:transform .14s,box-shadow .14s;white-space:nowrap;
 }
 .btn:hover{transform:translateY(-2px)}
 .btn:active{transform:translateY(0)}
@@ -81,7 +77,7 @@ button{font:inherit;cursor:pointer;border:none}
 .btn-fire:hover{box-shadow:0 8px 36px rgba(232,64,28,.48)}
 .btn-ghost{background:rgba(255,255,255,.07);color:var(--tx-2);border:1px solid var(--bdr)}
 .btn-ghost:hover{background:rgba(255,255,255,.12);color:var(--tx)}
-.btn-light{background:var(--cream);color:var(--ink);box-shadow:var(--sh-s)}
+.btn-light{background:var(--cream);color:var(--ink)}
 .btn-light:hover{background:var(--cream-2)}
 .btn-outline-w{background:transparent;color:#fff;border:1.5px solid rgba(255,255,255,.28)}
 .btn-outline-w:hover{border-color:rgba(255,255,255,.55)}
@@ -90,26 +86,33 @@ button{font:inherit;cursor:pointer;border:none}
 .badge{display:inline-flex;align-items:center;gap:7px;border-radius:var(--rp);padding:6px 14px;font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase}
 .badge-fire{background:rgba(232,64,28,.14);border:1px solid rgba(232,64,28,.28);color:var(--brand-2)}
 .badge-green{background:rgba(40,201,126,.12);border:1px solid rgba(40,201,126,.26);color:var(--mint)}
+.badge-violet{background:rgba(124,92,252,.14);border:1px solid rgba(124,92,252,.28);color:#a885ff}
 
-/* ══════════════════════════════════════
-   ANIMATIONS (always outside @media)
-══════════════════════════════════════ */
+/* ── Eyebrow ── */
+.eyebrow{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--brand-2)}
+
+/* ── Gradient text ── */
+.grad{background:linear-gradient(110deg,var(--brand) 0%,var(--gold) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+
+/* ═══════════════════════════════════════════════════
+   ANIMATIONS
+═══════════════════════════════════════════════════ */
 @keyframes fa{0%,100%{transform:translateY(0) rotate(0deg)}50%{transform:translateY(-22px) rotate(12deg)}}
 @keyframes fb{0%,100%{transform:translateY(0) rotate(5deg)}50%{transform:translateY(-16px) rotate(-8deg)}}
 @keyframes fc{0%,100%{transform:translateY(5px) rotate(-5deg)}50%{transform:translateY(-20px) rotate(6deg)}}
 @keyframes fd{0%,100%{transform:translateY(0) rotate(3deg)}50%{transform:translateY(-18px) rotate(-4deg)}}
-
 @keyframes fc1{0%,100%{transform:translateY(0) rotate(-1.2deg)}50%{transform:translateY(-14px) rotate(-1.2deg)}}
 @keyframes fc2{0%,100%{transform:translateY(0) rotate(1.5deg)}50%{transform:translateY(-10px) rotate(1.5deg)}}
 @keyframes fc3{0%,100%{transform:translateY(0) rotate(-.6deg)}50%{transform:translateY(-18px) rotate(-.6deg)}}
 @keyframes fc4{0%,100%{transform:translateY(-5px) rotate(1.8deg)}50%{transform:translateY(9px) rotate(1.8deg)}}
-
 @keyframes pulse-dot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(1.5)}}
-@keyframes ticker-move{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+@keyframes ticker-roll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+@keyframes phone-glow{0%,100%{box-shadow:0 0 0 1px rgba(124,92,252,.15),0 20px 60px rgba(0,0,0,.5),0 0 40px rgba(124,92,252,.08)}50%{box-shadow:0 0 0 1px rgba(124,92,252,.3),0 20px 60px rgba(0,0,0,.5),0 0 70px rgba(124,92,252,.16)}}
+@keyframes pp{0%,100%{transform:translateX(0);opacity:.75}50%{transform:translateX(5px);opacity:1}}
 
-/* ══════════════════════════════════════
+/* ═══════════════════════════════════════════════════
    NAV
-══════════════════════════════════════ */
+═══════════════════════════════════════════════════ */
 .nav{
   position:fixed;top:0;left:0;right:0;z-index:300;
   display:flex;align-items:center;justify-content:space-between;
@@ -128,7 +131,7 @@ button{font:inherit;cursor:pointer;border:none}
   filter:drop-shadow(0 0 10px rgba(232,64,28,.4));
   transition:filter .3s;
 }
-.nav-brand:hover img{filter:drop-shadow(0 0 14px rgba(232,64,28,.6))}
+.nav-brand:hover img{filter:drop-shadow(0 0 16px rgba(232,64,28,.65))}
 .nav-wordmark{font-size:20px;font-weight:900;letter-spacing:.08em}
 .nav-links{display:none;align-items:center;gap:4px}
 .nav-links a{
@@ -137,30 +140,18 @@ button{font:inherit;cursor:pointer;border:none}
   transition:color .2s,background .2s;
 }
 .nav-links a:hover{color:var(--tx);background:rgba(255,255,255,.06)}
-.nav-cta{display:flex;align-items:center;gap:8px}
 
-/* ══════════════════════════════════════
+/* ═══════════════════════════════════════════════════
    HERO
-══════════════════════════════════════ */
+═══════════════════════════════════════════════════ */
 .hero{
   min-height:100svh;padding:104px 20px 64px;
   display:flex;align-items:center;
   position:relative;overflow:hidden;
 }
-.hero-glow{
-  position:absolute;top:-8%;right:-10%;
-  width:68%;height:85%;
-  background:radial-gradient(ellipse,rgba(232,64,28,.11) 0%,transparent 66%);
-  pointer-events:none;
-}
-.hero-glow-2{
-  position:absolute;bottom:-12%;left:-8%;
-  width:52%;height:64%;
-  background:radial-gradient(ellipse,rgba(232,164,40,.06) 0%,transparent 68%);
-  pointer-events:none;
-}
+.hero-glow{position:absolute;top:-8%;right:-10%;width:68%;height:85%;background:radial-gradient(ellipse,rgba(232,64,28,.11) 0%,transparent 66%);pointer-events:none}
+.hero-glow-2{position:absolute;bottom:-12%;left:-8%;width:52%;height:64%;background:radial-gradient(ellipse,rgba(232,164,40,.06) 0%,transparent 68%);pointer-events:none}
 
-/* Floating food emoji */
 .ff{position:absolute;pointer-events:none;z-index:0;user-select:none;opacity:.09;will-change:transform;font-size:clamp(24px,5vw,52px)}
 .ff1{top:13%;left:7%;animation:fa 8s ease-in-out infinite}
 .ff2{top:67%;left:5%;animation:fb 10s ease-in-out infinite;animation-delay:-3s}
@@ -175,48 +166,29 @@ button{font:inherit;cursor:pointer;border:none}
   display:flex;flex-direction:column;gap:48px;
 }
 
-/* ── Logo block in hero ── */
+/* Big logo block */
 .hero-logo-block{display:flex;align-items:center;gap:14px}
 .hero-logo-img{
-  width:clamp(52px,9vw,80px);height:clamp(52px,9vw,80px);
-  object-fit:contain;
-  filter:drop-shadow(0 0 20px rgba(232,64,28,.4)) drop-shadow(0 2px 10px rgba(0,0,0,.5));
+  width:clamp(52px,9vw,80px);height:clamp(52px,9vw,80px);object-fit:contain;
+  filter:drop-shadow(0 0 20px rgba(232,64,28,.42)) drop-shadow(0 2px 10px rgba(0,0,0,.5));
 }
 .hero-logo-name{
-  font-size:clamp(34px,8vw,68px);
-  font-weight:900;letter-spacing:.06em;
+  font-size:clamp(34px,8vw,68px);font-weight:900;letter-spacing:.06em;
   background:linear-gradient(120deg,#fff 30%,rgba(242,236,229,.6) 100%);
   -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
 }
-
-.hero-badge{margin-top:18px;display:inline-block}
-
+.hero-badge{margin-top:18px}
 .hero-h1{
   font-size:clamp(36px,8.5vw,80px);
-  font-weight:900;letter-spacing:-.03em;line-height:1.0;
-  margin-top:18px;
+  font-weight:900;letter-spacing:-.03em;line-height:1.0;margin-top:18px;
 }
-.hero-sub{
-  margin-top:20px;
-  font-size:clamp(15px,2.5vw,18px);color:var(--tx-2);line-height:1.72;
-  max-width:500px;
-}
+.hero-sub{margin-top:20px;font-size:clamp(15px,2.5vw,18px);color:var(--tx-2);line-height:1.72;max-width:510px}
 .hero-actions{margin-top:30px;display:flex;flex-wrap:wrap;gap:12px}
+.hero-proofs{margin-top:28px;display:flex;flex-wrap:wrap;gap:20px;align-items:center}
+.proof-item{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:var(--tx-2)}
+.live-dot{width:7px;height:7px;border-radius:50%;background:var(--mint);flex-shrink:0;animation:pulse-dot 2s ease-in-out infinite}
 
-.hero-proofs{
-  margin-top:28px;display:flex;flex-wrap:wrap;gap:20px;align-items:center;
-}
-.proof-item{
-  display:flex;align-items:center;gap:8px;
-  font-size:13px;font-weight:600;color:var(--tx-2);
-}
-.live-dot{
-  width:7px;height:7px;border-radius:50%;
-  background:var(--mint);flex-shrink:0;
-  animation:pulse-dot 2s ease-in-out infinite;
-}
-
-/* ── Hero food cards ── */
+/* Food cards */
 .food-cards{
   display:flex;gap:12px;
   overflow-x:auto;scroll-snap-type:x mandatory;
@@ -224,13 +196,10 @@ button{font:inherit;cursor:pointer;border:none}
   scrollbar-width:none;padding-bottom:4px;
 }
 .food-cards::-webkit-scrollbar{display:none}
-
 .food-card{
-  scroll-snap-align:start;
-  flex:0 0 170px;flex-shrink:0;
+  scroll-snap-align:start;flex:0 0 170px;flex-shrink:0;
   border-radius:var(--rxl);overflow:hidden;
-  position:relative;
-  box-shadow:var(--sh-l);background:var(--bg-3);
+  position:relative;box-shadow:var(--sh-l);background:var(--bg-3);
   transition:transform .3s ease,box-shadow .3s ease;
 }
 .food-card:hover{transform:rotate(2.5deg) scale(1.04);box-shadow:0 16px 56px rgba(232,64,28,.22)}
@@ -239,55 +208,42 @@ button{font:inherit;cursor:pointer;border:none}
 .food-card-name{
   position:absolute;bottom:0;left:0;right:0;
   padding:32px 13px 13px;
-  background:linear-gradient(transparent,rgba(0,0,0,.76));
-  font-size:12px;font-weight:700;color:#fff;letter-spacing:.01em;
+  background:linear-gradient(transparent,rgba(0,0,0,.78));
+  font-size:12px;font-weight:700;color:#fff;
 }
 
-/* ══════════════════════════════════════
+/* ═══════════════════════════════════════════════════
    TICKER
-══════════════════════════════════════ */
-.ticker{background:var(--brand);padding:15px 0;overflow:hidden;white-space:nowrap;flex-shrink:0}
-.ticker-track{display:inline-flex;animation:ticker-move 26s linear infinite}
+═══════════════════════════════════════════════════ */
+.ticker{background:var(--brand);padding:15px 0;overflow:hidden;white-space:nowrap}
+.ticker-track{display:inline-flex;animation:ticker-roll 26s linear infinite}
 .ticker-track:hover{animation-play-state:paused}
-.ticker-i{font-size:14px;font-weight:700;letter-spacing:.05em;color:rgba(255,255,255,.92);padding:0 18px}
-.ticker-dot{color:rgba(255,255,255,.32)}
+.ti{font-size:14px;font-weight:700;letter-spacing:.05em;color:rgba(255,255,255,.92);padding:0 18px}
+.td{color:rgba(255,255,255,.32)}
 
-/* ══════════════════════════════════════
+/* ═══════════════════════════════════════════════════
    STATS
-══════════════════════════════════════ */
+═══════════════════════════════════════════════════ */
 .stats{background:var(--bg-2);padding:clamp(64px,9vw,112px) 20px}
 .stats-grid{
   max-width:1000px;margin:0 auto;
   display:grid;grid-template-columns:repeat(2,1fr);
   border:1px solid var(--bdr);border-radius:var(--rxl);overflow:hidden;
 }
-.stat{
-  padding:36px 28px;
-  border-right:1px solid var(--bdr-2);
-  border-bottom:1px solid var(--bdr-2);
-}
+.stat{padding:36px 28px;border-right:1px solid var(--bdr-2);border-bottom:1px solid var(--bdr-2)}
 .stat:nth-child(2n){border-right:none}
 .stat:nth-last-child(-n+2){border-bottom:none}
-.stat-num{
-  font-size:clamp(38px,7vw,64px);font-weight:900;
-  letter-spacing:-.03em;line-height:1;color:var(--tx);
-}
+.stat-num{font-size:clamp(38px,7vw,64px);font-weight:900;letter-spacing:-.03em;line-height:1;color:var(--tx)}
 .stat-num em{font-style:normal;color:var(--brand)}
 .stat-label{font-size:13px;color:var(--tx-2);margin-top:7px;line-height:1.5}
 
-/* ══════════════════════════════════════
-   USP / WHY AVENZO
-══════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════
+   USP
+═══════════════════════════════════════════════════ */
 .usp{background:var(--cream);padding:clamp(72px,10vw,120px) 20px;color:var(--ink)}
-.usp-head{max-width:600px;margin-bottom:48px}
-.usp-head .eyebrow{color:var(--brand)}
-.usp-h2{
-  font-size:clamp(28px,5.5vw,48px);font-weight:800;
-  letter-spacing:-.022em;line-height:1.15;color:var(--ink);
-  margin-top:10px;
-}
+.usp-head{max-width:620px;margin-bottom:48px}
+.usp-h2{font-size:clamp(28px,5.5vw,48px);font-weight:800;letter-spacing:-.022em;line-height:1.15;color:var(--ink);margin-top:10px}
 .usp-sub{font-size:clamp(15px,2vw,17px);color:var(--ink-2);line-height:1.72;margin-top:14px;max-width:500px}
-
 .usp-grid{display:grid;grid-template-columns:1fr;gap:14px;max-width:1100px}
 .usp-card{
   background:#fff;border-radius:var(--rxl);padding:30px 26px;
@@ -295,28 +251,17 @@ button{font:inherit;cursor:pointer;border:none}
   transition:transform .25s,box-shadow .25s;
 }
 .usp-card:hover{transform:translateY(-3px);box-shadow:0 8px 28px rgba(0,0,0,.1)}
-.usp-icon{
-  width:52px;height:52px;border-radius:16px;
-  background:linear-gradient(135deg,rgba(232,64,28,.1),rgba(232,164,40,.1));
-  border:1px solid rgba(232,64,28,.12);
-  display:flex;align-items:center;justify-content:center;
-  font-size:24px;margin-bottom:18px;
-}
+.usp-icon{width:52px;height:52px;border-radius:16px;background:linear-gradient(135deg,rgba(232,64,28,.1),rgba(232,164,40,.1));border:1px solid rgba(232,64,28,.12);display:flex;align-items:center;justify-content:center;font-size:24px;margin-bottom:18px}
 .usp-card h3{font-size:17px;font-weight:700;color:var(--ink);margin-bottom:8px}
 .usp-card p{font-size:13px;color:var(--ink-2);line-height:1.65}
 
-/* ══════════════════════════════════════
+/* ═══════════════════════════════════════════════════
    HOW IT WORKS
-══════════════════════════════════════ */
+═══════════════════════════════════════════════════ */
 .how{background:var(--bg);padding:clamp(72px,10vw,120px) 20px}
 .how-head{text-align:center;max-width:540px;margin:0 auto 56px}
-.how-head .eyebrow{color:var(--brand-2)}
-.how-h2{
-  font-size:clamp(28px,5.5vw,48px);font-weight:800;
-  letter-spacing:-.022em;line-height:1.15;color:var(--tx);margin-top:10px;
-}
+.how-h2{font-size:clamp(28px,5.5vw,48px);font-weight:800;letter-spacing:-.022em;line-height:1.15;color:var(--tx);margin-top:10px}
 .how-sub{font-size:clamp(15px,2vw,17px);color:var(--tx-2);line-height:1.72;margin-top:14px}
-
 .steps{display:grid;grid-template-columns:1fr;gap:14px;max-width:960px;margin:0 auto}
 .step{
   display:flex;align-items:flex-start;gap:20px;
@@ -324,40 +269,20 @@ button{font:inherit;cursor:pointer;border:none}
   border-radius:var(--rxl);padding:28px 24px;
   position:relative;overflow:hidden;
 }
-.step::before{
-  content:'';
-  position:absolute;left:0;top:0;bottom:0;width:3px;
-  background:linear-gradient(180deg,var(--brand),var(--gold));
-  border-radius:3px 0 0 3px;
-}
-.step-ico{
-  flex-shrink:0;width:50px;height:50px;border-radius:14px;
-  background:linear-gradient(135deg,var(--brand),var(--brand-2));
-  display:flex;align-items:center;justify-content:center;font-size:22px;
-}
+.step::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:linear-gradient(180deg,var(--brand),var(--gold));border-radius:3px 0 0 3px}
+.step-ico{flex-shrink:0;width:50px;height:50px;border-radius:14px;background:linear-gradient(135deg,var(--brand),var(--brand-2));display:flex;align-items:center;justify-content:center;font-size:22px}
 .step h3{font-size:16px;font-weight:700;color:var(--tx);margin-bottom:6px}
 .step p{font-size:13px;color:var(--tx-2);line-height:1.65}
 
-/* ══════════════════════════════════════
+/* ═══════════════════════════════════════════════════
    FOOD SHOWCASE
-══════════════════════════════════════ */
+═══════════════════════════════════════════════════ */
 .showcase{background:var(--bg-2);padding:clamp(72px,10vw,120px) 0}
 .showcase-head{padding:0 20px;margin-bottom:36px}
-.showcase-head .eyebrow{color:var(--brand-2)}
-.showcase-h2{
-  font-size:clamp(28px,5.5vw,48px);font-weight:800;
-  letter-spacing:-.022em;line-height:1.15;color:var(--tx);margin-top:10px;
-}
+.showcase-h2{font-size:clamp(28px,5.5vw,48px);font-weight:800;letter-spacing:-.022em;line-height:1.15;color:var(--tx);margin-top:10px}
 .showcase-sub{font-size:clamp(15px,2vw,17px);color:var(--tx-2);line-height:1.72;margin-top:14px;max-width:480px}
-
-.reel{
-  display:flex;gap:14px;
-  overflow-x:auto;scroll-snap-type:x mandatory;
-  -webkit-overflow-scrolling:touch;
-  scrollbar-width:none;padding:0 20px 12px;
-}
+.reel{display:flex;gap:14px;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding:0 20px 12px}
 .reel::-webkit-scrollbar{display:none}
-
 .reel-card{
   scroll-snap-align:start;flex:0 0 240px;flex-shrink:0;
   border-radius:var(--rxl);overflow:hidden;
@@ -366,76 +291,112 @@ button{font:inherit;cursor:pointer;border:none}
 }
 .reel-card:hover{transform:translateY(-6px);box-shadow:0 20px 64px rgba(0,0,0,.55)}
 .reel-card img{width:100%;height:310px;object-fit:cover;display:block;transition:transform .5s ease}
-.reel-card:hover img{transform:scale(1.04)}
-.reel-cap{
-  position:absolute;bottom:0;left:0;right:0;
-  padding:44px 16px 18px;
-  background:linear-gradient(transparent,rgba(0,0,0,.82));
-}
+.reel-card:hover img{transform:scale(1.05)}
+.reel-cap{position:absolute;bottom:0;left:0;right:0;padding:44px 16px 18px;background:linear-gradient(transparent,rgba(0,0,0,.82))}
 .reel-cap strong{display:block;font-size:15px;font-weight:700;color:#fff}
 .reel-cap small{font-size:12px;color:rgba(255,255,255,.5)}
 
-/* ══════════════════════════════════════
-   BENGALURU SECTION
-══════════════════════════════════════ */
-.blr{
-  background:var(--bg);padding:clamp(72px,10vw,120px) 20px;
-  position:relative;overflow:hidden;
-}
-.blr::before{
-  content:'';position:absolute;inset:0;
-  background:radial-gradient(ellipse at 65% 50%,rgba(232,64,28,.07) 0%,transparent 58%);
-  pointer-events:none;
-}
+/* ═══════════════════════════════════════════════════
+   BENGALURU / INDIA
+═══════════════════════════════════════════════════ */
+.blr{background:var(--bg);padding:clamp(72px,10vw,120px) 20px;position:relative;overflow:hidden}
+.blr::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 65% 50%,rgba(232,64,28,.07) 0%,transparent 58%);pointer-events:none}
 .blr-inner{max-width:1100px;margin:0 auto;display:flex;flex-direction:column;gap:48px}
-.blr-text .eyebrow{color:var(--brand-2)}
-.blr-h2{
-  font-size:clamp(28px,5.5vw,48px);font-weight:800;
-  letter-spacing:-.022em;line-height:1.15;color:var(--tx);margin-top:10px;
-}
+.blr-h2{font-size:clamp(28px,5.5vw,48px);font-weight:800;letter-spacing:-.022em;line-height:1.15;color:var(--tx);margin-top:10px}
 .blr-sub{font-size:clamp(15px,2vw,17px);color:var(--tx-2);line-height:1.72;margin-top:16px;max-width:520px}
-
 .area-chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:28px}
-.chip{
-  background:var(--bg-2);border:1px solid var(--bdr);
-  border-radius:var(--rp);padding:7px 16px;
-  font-size:13px;font-weight:600;color:var(--tx-2);
-  transition:border-color .2s,color .2s;
-}
+.chip{background:var(--bg-2);border:1px solid var(--bdr);border-radius:var(--rp);padding:7px 16px;font-size:13px;font-weight:600;color:var(--tx-2);transition:border-color .2s,color .2s}
 .chip:hover{border-color:rgba(232,64,28,.4);color:var(--tx)}
-
-.blr-card{
-  background:var(--bg-2);border:1px solid var(--bdr);
-  border-radius:var(--rxl);padding:32px 28px;
-  display:flex;flex-direction:column;gap:20px;
-}
+.chip-more{background:rgba(232,64,28,.1);border-color:rgba(232,64,28,.25);color:var(--brand-2)}
+.blr-card{background:var(--bg-2);border:1px solid var(--bdr);border-radius:var(--rxl);padding:32px 28px;display:flex;flex-direction:column;gap:20px}
 .blr-item{display:flex;gap:14px;align-items:flex-start}
-.blr-item-ico{font-size:24px;flex-shrink:0;margin-top:2px}
+.blr-ico{font-size:24px;flex-shrink:0;margin-top:2px}
 .blr-item h4{font-size:14px;font-weight:700;color:var(--tx);margin-bottom:5px}
 .blr-item p{font-size:13px;color:var(--tx-2);line-height:1.65}
 
-/* ══════════════════════════════════════
+/* ═══════════════════════════════════════════════════
+   APP TEASER
+═══════════════════════════════════════════════════ */
+.appt{background:var(--bg-3);padding:clamp(72px,10vw,120px) 20px;position:relative;overflow:hidden}
+.appt::before{
+  content:'';position:absolute;top:-20%;right:-10%;
+  width:70%;height:80%;
+  background:radial-gradient(ellipse,rgba(124,92,252,.1) 0%,transparent 64%);
+  pointer-events:none;
+}
+.appt::after{
+  content:'';position:absolute;bottom:-15%;left:-5%;
+  width:50%;height:60%;
+  background:radial-gradient(ellipse,rgba(40,201,126,.05) 0%,transparent 65%);
+  pointer-events:none;
+}
+.appt-inner{max-width:1100px;margin:0 auto;position:relative;z-index:1;display:flex;flex-direction:column;gap:56px}
+.appt-h2{font-size:clamp(28px,5.5vw,48px);font-weight:800;letter-spacing:-.022em;line-height:1.15;color:var(--tx);margin-top:14px}
+.appt-sub{font-size:clamp(15px,2vw,17px);color:var(--tx-2);line-height:1.72;margin-top:16px;max-width:520px}
+.app-hints{display:flex;flex-direction:column;gap:12px;margin-top:28px}
+.app-hint{display:flex;align-items:center;gap:12px;font-size:14px;font-weight:600;color:var(--tx-2)}
+.app-hint-ico{font-size:18px;flex-shrink:0}
+.hint-mystery{color:var(--mint) !important}
+
+.store-row{display:flex;flex-wrap:wrap;gap:12px;margin-top:32px}
+.store-btn{
+  display:flex;align-items:center;gap:12px;
+  background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);
+  border-radius:var(--rl);padding:13px 20px;
+  position:relative;opacity:.72;cursor:default;
+}
+.store-ico{font-size:22px}
+.store-dl{font-size:10px;color:var(--tx-2);letter-spacing:.04em;text-transform:uppercase}
+.store-name{font-size:15px;font-weight:700;color:var(--tx);margin-top:1px}
+.store-soon{
+  position:absolute;top:-8px;right:-8px;
+  background:var(--mint);color:var(--bg);
+  font-size:9px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;
+  padding:3px 8px;border-radius:var(--rp);
+}
+
+/* Phone mock */
+.phone-wrap{display:flex;justify-content:center;align-items:center}
+.phone-mock{
+  width:220px;height:420px;
+  border:1.5px solid rgba(124,92,252,.32);
+  border-radius:36px;
+  background:rgba(255,255,255,.02);
+  position:relative;overflow:hidden;
+  animation:phone-glow 4s ease-in-out infinite;
+}
+.phone-notch-bar{display:flex;justify-content:center;padding-top:14px}
+.phone-notch{width:64px;height:18px;background:var(--bg);border-radius:0 0 12px 12px}
+.phone-pills{padding:18px 14px;display:flex;flex-direction:column;gap:8px}
+.pp{
+  background:rgba(255,255,255,.06);
+  border:1px solid rgba(255,255,255,.09);
+  border-radius:var(--rp);padding:9px 14px;
+  font-size:12px;font-weight:600;color:var(--tx-2);
+  display:flex;align-items:center;gap:7px;
+}
+.pp1{animation:pp 3.2s ease-in-out infinite;animation-delay:0s}
+.pp2{animation:pp 3.2s ease-in-out infinite;animation-delay:.5s}
+.pp3{animation:pp 3.2s ease-in-out infinite;animation-delay:1s}
+.pp4{animation:pp 3.2s ease-in-out infinite;animation-delay:1.5s}
+.pp5{animation:pp 3.2s ease-in-out infinite;animation-delay:2s}
+.pp6{animation:pp 3.2s ease-in-out infinite;animation-delay:2.5s}
+.phone-blur-strip{
+  position:absolute;bottom:0;left:0;right:0;
+  height:80px;
+  background:linear-gradient(transparent,rgba(28,26,34,.95));
+}
+
+/* ═══════════════════════════════════════════════════
    TESTIMONIALS
-══════════════════════════════════════ */
+═══════════════════════════════════════════════════ */
 .testi{background:var(--cream);padding:clamp(72px,10vw,120px) 20px;color:var(--ink)}
 .testi-head{max-width:560px;margin-bottom:48px}
-.testi-head .eyebrow{color:var(--brand)}
-.testi-h2{
-  font-size:clamp(28px,5.5vw,48px);font-weight:800;
-  letter-spacing:-.022em;line-height:1.15;color:var(--ink);margin-top:10px;
-}
-
-.reviews{
-  display:flex;gap:16px;
-  overflow-x:auto;scroll-snap-type:x mandatory;
-  -webkit-overflow-scrolling:touch;
-  scrollbar-width:none;padding-bottom:8px;
-}
+.testi-h2{font-size:clamp(28px,5.5vw,48px);font-weight:800;letter-spacing:-.022em;line-height:1.15;color:var(--ink);margin-top:10px}
+.reviews{display:flex;gap:16px;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding-bottom:8px}
 .reviews::-webkit-scrollbar{display:none}
-
 .review{
-  scroll-snap-align:start;
-  flex:0 0 min(300px,82vw);flex-shrink:0;
+  scroll-snap-align:start;flex:0 0 min(300px,82vw);flex-shrink:0;
   background:#fff;border-radius:var(--rxl);padding:28px 24px;
   box-shadow:0 2px 16px rgba(0,0,0,.07);
   display:flex;flex-direction:column;gap:16px;
@@ -443,105 +404,53 @@ button{font:inherit;cursor:pointer;border:none}
 .stars{color:#E8A428;font-size:15px;letter-spacing:2px}
 .review-text{font-size:14px;color:var(--ink-2);line-height:1.7;flex:1}
 .reviewer{display:flex;align-items:center;gap:12px}
-.avatar{
-  width:40px;height:40px;border-radius:50%;flex-shrink:0;
-  background:linear-gradient(135deg,var(--brand),var(--gold));
-  display:flex;align-items:center;justify-content:center;
-  font-size:15px;font-weight:800;color:#fff;
-}
-.reviewer-name{font-size:14px;font-weight:700;color:var(--ink)}
-.reviewer-loc{font-size:12px;color:var(--ink-2)}
+.avatar{width:40px;height:40px;border-radius:50%;flex-shrink:0;background:linear-gradient(135deg,var(--brand),var(--gold));display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;color:#fff}
+.rname{font-size:14px;font-weight:700;color:var(--ink)}
+.rloc{font-size:12px;color:var(--ink-2)}
 
-/* ══════════════════════════════════════
+/* ═══════════════════════════════════════════════════
    RESTAURANT CTA
-══════════════════════════════════════ */
-.join{
-  background:var(--brand);padding:clamp(72px,10vw,120px) 20px;
-  text-align:center;position:relative;overflow:hidden;
-}
-.join::before{
-  content:'';position:absolute;inset:0;
-  background:radial-gradient(ellipse at 50% 0%,rgba(255,255,255,.14) 0%,transparent 62%);
-  pointer-events:none;
-}
+═══════════════════════════════════════════════════ */
+.join{background:var(--brand);padding:clamp(72px,10vw,120px) 20px;text-align:center;position:relative;overflow:hidden}
+.join::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 0%,rgba(255,255,255,.14) 0%,transparent 62%);pointer-events:none}
 .join-inner{max-width:660px;margin:0 auto;position:relative;z-index:1}
-.join-inner .eyebrow{color:rgba(255,255,255,.62)}
-.join-h2{
-  font-size:clamp(28px,6vw,52px);font-weight:800;
-  letter-spacing:-.022em;line-height:1.15;color:#fff;margin-top:12px;
-}
+.join-h2{font-size:clamp(28px,6vw,52px);font-weight:800;letter-spacing:-.022em;line-height:1.15;color:#fff;margin-top:12px}
 .join-sub{font-size:clamp(15px,2vw,17px);color:rgba(255,255,255,.72);line-height:1.72;margin-top:16px}
 .join-btns{margin-top:36px;display:flex;flex-wrap:wrap;gap:12px;justify-content:center}
 
-/* ══════════════════════════════════════
+/* ═══════════════════════════════════════════════════
    FAQ
-══════════════════════════════════════ */
+═══════════════════════════════════════════════════ */
 .faq{background:var(--bg-2);padding:clamp(72px,10vw,120px) 20px}
 .faq-head{max-width:540px;margin-bottom:48px}
-.faq-head .eyebrow{color:var(--brand-2)}
-.faq-h2{
-  font-size:clamp(28px,5.5vw,48px);font-weight:800;
-  letter-spacing:-.022em;line-height:1.15;color:var(--tx);margin-top:10px;
-}
-
+.faq-h2{font-size:clamp(28px,5.5vw,48px);font-weight:800;letter-spacing:-.022em;line-height:1.15;color:var(--tx);margin-top:10px}
 .faq-list{max-width:720px;display:flex;flex-direction:column;gap:10px}
-.faq-item{
-  background:var(--bg-3);border:1px solid var(--bdr);
-  border-radius:var(--rl);overflow:hidden;
-}
-.faq-item summary{
-  list-style:none;cursor:pointer;
-  display:flex;align-items:center;justify-content:space-between;gap:16px;
-  padding:20px 22px;
-  font-size:15px;font-weight:600;color:var(--tx);
-  transition:color .2s;
-}
+.faq-item{background:var(--bg-3);border:1px solid var(--bdr);border-radius:var(--rl);overflow:hidden}
+.faq-item summary{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:20px 22px;font-size:15px;font-weight:600;color:var(--tx);transition:color .2s}
 .faq-item summary::-webkit-details-marker{display:none}
 .faq-item summary:hover{color:#fff}
-.faq-arrow{
-  flex-shrink:0;width:22px;height:22px;border-radius:50%;
-  background:rgba(255,255,255,.07);
-  display:flex;align-items:center;justify-content:center;
-  font-size:12px;transition:transform .25s,background .2s;
-}
+.faq-arrow{flex-shrink:0;width:22px;height:22px;border-radius:50%;background:rgba(255,255,255,.07);display:flex;align-items:center;justify-content:center;font-size:12px;transition:transform .25s,background .2s}
 .faq-item[open] .faq-arrow{transform:rotate(180deg);background:var(--brand)}
 .faq-body{padding:0 22px 20px;font-size:14px;color:var(--tx-2);line-height:1.72}
 
-/* ══════════════════════════════════════
+/* ═══════════════════════════════════════════════════
    FOOTER
-══════════════════════════════════════ */
-.footer{
-  background:var(--bg);border-top:1px solid var(--bdr);
-  padding:clamp(56px,8vw,88px) 20px clamp(32px,5vw,48px);
-}
-.footer-top{
-  max-width:1100px;margin:0 auto;
-  display:flex;flex-direction:column;gap:40px;
-  padding-bottom:40px;border-bottom:1px solid var(--bdr);
-}
+═══════════════════════════════════════════════════ */
+.footer{background:var(--bg);border-top:1px solid var(--bdr);padding:clamp(56px,8vw,88px) 20px clamp(32px,5vw,48px)}
+.footer-top{max-width:1100px;margin:0 auto;display:flex;flex-direction:column;gap:40px;padding-bottom:40px;border-bottom:1px solid var(--bdr)}
 .footer-brand{display:flex;flex-direction:column;gap:12px}
 .footer-logo{display:flex;align-items:center;gap:10px}
-.footer-logo img{
-  width:34px;height:34px;object-fit:contain;
-  filter:drop-shadow(0 0 7px rgba(232,64,28,.35));
-}
+.footer-logo img{width:34px;height:34px;object-fit:contain;filter:drop-shadow(0 0 7px rgba(232,64,28,.35))}
 .footer-logo span{font-size:15px;font-weight:900;letter-spacing:.08em}
-.footer-tagline{font-size:13px;color:var(--tx-2);line-height:1.65;max-width:230px}
+.footer-tagline{font-size:13px;color:var(--tx-2);line-height:1.65;max-width:240px}
 .footer-cols{display:flex;flex-direction:column;gap:28px}
-.footer-col h4{
-  font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
-  color:var(--tx-2);margin-bottom:14px;
-}
+.footer-col h4{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--tx-2);margin-bottom:14px}
 .footer-col ul{list-style:none;display:flex;flex-direction:column;gap:10px}
 .footer-col a{font-size:13px;color:var(--tx-2);transition:color .2s}
 .footer-col a:hover{color:var(--tx)}
-.footer-bottom{
-  max-width:1100px;margin:32px auto 0;
-  display:flex;flex-direction:column;align-items:center;gap:8px;
-  font-size:12px;color:var(--tx-3);
-}
+.footer-bottom{max-width:1100px;margin:32px auto 0;display:flex;flex-direction:column;align-items:center;gap:8px;font-size:12px;color:var(--tx-3)}
 
-/* ── Scroll reveals ── */
+/* ── Reveals ── */
 .r{opacity:0;transform:translateY(20px);transition:opacity .6s ease,transform .6s ease}
 .r.in{opacity:1;transform:none}
 .rl{opacity:0;transform:translateX(-16px);transition:opacity .65s ease,transform .65s ease}
@@ -549,9 +458,9 @@ button{font:inherit;cursor:pointer;border:none}
 .rs{opacity:0;transform:translateY(12px);transition:opacity .45s ease,transform .45s ease}
 .rs.in{opacity:1;transform:none}
 
-/* ══════════════════════════════════════
+/* ═══════════════════════════════════════════════════
    DESKTOP ≥ 900px
-══════════════════════════════════════ */
+═══════════════════════════════════════════════════ */
 @media(min-width:900px){
   .nav{padding:22px 48px}
   .nav.on{padding:14px 48px}
@@ -562,7 +471,7 @@ button{font:inherit;cursor:pointer;border:none}
   .hero-text{flex:1;min-width:0}
 
   .food-cards{
-    flex:0 0 480px;
+    flex:0 0 490px;
     display:grid;grid-template-columns:1fr 1fr;gap:14px;
     overflow:visible;scroll-snap-type:none;padding-bottom:0;
   }
@@ -596,11 +505,16 @@ button{font:inherit;cursor:pointer;border:none}
   .blr-text{flex:1}
   .blr-card{flex:0 0 380px}
 
+  .appt{padding:clamp(80px,10vw,120px) 48px}
+  .appt-inner{flex-direction:row;gap:80px;align-items:center}
+  .appt-text{flex:1}
+  .phone-wrap{flex:0 0 300px}
+  .phone-mock{width:260px;height:480px}
+
   .testi{padding:clamp(80px,10vw,120px) 48px}
   .review{flex:0 0 340px}
 
   .join{padding:clamp(80px,10vw,120px) 48px}
-
   .faq{padding:clamp(80px,10vw,120px) 48px}
 
   .footer{padding:clamp(64px,8vw,96px) 48px clamp(36px,5vw,56px)}
@@ -608,7 +522,6 @@ button{font:inherit;cursor:pointer;border:none}
   .footer-cols{flex-direction:row;gap:64px}
   .footer-bottom{flex-direction:row;justify-content:space-between}
 }
-
 @media(min-width:1100px){
   .food-cards{flex:0 0 520px}
   .food-card img{height:234px}
@@ -617,7 +530,7 @@ button{font:inherit;cursor:pointer;border:none}
 </head>
 <body>
 
-<!-- ── NAV ── -->
+<!-- NAV -->
 <nav class="nav" id="mainNav">
   <a class="nav-brand" href="/">
     <img src="/logo.png" alt="Avenzo">
@@ -627,9 +540,7 @@ button{font:inherit;cursor:pointer;border:none}
     <a href="/customer-restaurants.html">Browse Restaurants</a>
     <a href="/restaurant-login.html">Restaurant Login</a>
   </div>
-  <div class="nav-cta">
-    <a class="btn btn-fire btn-sm" href="/customer-restaurants.html">Order now →</a>
-  </div>
+  <a class="btn btn-fire btn-sm" href="/customer-restaurants.html">Order now →</a>
 </nav>
 
 <!-- ══ HERO ══ -->
@@ -645,91 +556,88 @@ button{font:inherit;cursor:pointer;border:none}
 
   <div class="hero-inner">
     <div class="hero-text">
-      <!-- Big logo highlight -->
       <div class="hero-logo-block">
         <img class="hero-logo-img" src="/logo.png" alt="Avenzo logo">
         <span class="hero-logo-name">AVENZO</span>
       </div>
-
       <div class="hero-badge">
-        <span class="badge badge-fire">🌆 &nbsp;Made for Namma Bengaluru</span>
+        <span class="badge badge-fire">🌆 Born in Bengaluru · Spreading across India</span>
       </div>
-
       <h1 class="hero-h1">
         Your table.<br>Your phone.<br>
         <span class="grad">Your food, now.</span>
       </h1>
-
       <p class="hero-sub">
-        Scan the QR at your table, browse the full menu with photos, and place your order in 30 seconds. No app. No waiter hunt. No wrong orders. Just food.
+        Scan the QR at your table or counter, browse the full menu with photos, and order in 30 seconds. Works for dine-in restaurants, self-service counters, cafés and more — no installation required to order.
       </p>
-
       <div class="hero-actions">
         <a class="btn btn-fire btn-lg" href="/customer-restaurants.html">Browse restaurants →</a>
         <a class="btn btn-ghost btn-lg" href="/signup.html">For restaurants</a>
       </div>
-
       <div class="hero-proofs">
-        <div class="proof-item"><span class="live-dot"></span> Live in Bengaluru</div>
-        <div class="proof-item"><span>⚡</span> 30-second ordering</div>
-        <div class="proof-item"><span>📲</span> No app, ever</div>
+        <div class="proof-item"><span class="live-dot"></span>Live across India</div>
+        <div class="proof-item"><span>⚡</span>Order in 30 seconds</div>
+        <div class="proof-item"><span>📲</span>No install to order</div>
+        <div class="proof-item"><span>📱</span>iOS &amp; Android app coming</div>
       </div>
     </div>
 
-    <!-- Food photos — horizontal scroll on mobile, animated grid on desktop -->
     <div class="food-cards">
       <div class="food-card">
-        <img src="https://images.unsplash.com/photo-1585937421612-70a008356fbe?w=460&h=460&q=85&auto=format&fit=crop"
-             alt="Indian curry" loading="eager" width="460" height="460">
-        <div class="food-card-name">North Indian Curry</div>
+        <img src="https://images.unsplash.com/photo-1603360946369-dc9bb6258143?w=460&h=480&q=90&auto=format&fit=crop&crop=entropy"
+             alt="Rich Indian curry" loading="eager" width="460" height="480">
+        <div class="food-card-name">Creamy Makhani</div>
       </div>
       <div class="food-card">
-        <img src="https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=460&h=460&q=85&auto=format&fit=crop"
-             alt="Biryani" loading="eager" width="460" height="460">
+        <img src="https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=460&h=480&q=90&auto=format&fit=crop&crop=entropy"
+             alt="Dum Biryani" loading="eager" width="460" height="480">
         <div class="food-card-name">Dum Biryani</div>
       </div>
       <div class="food-card">
-        <img src="https://images.unsplash.com/photo-1567188040759-fb8a883dc6d8?w=460&h=460&q=85&auto=format&fit=crop"
-             alt="South Indian" loading="eager" width="460" height="460">
+        <img src="https://images.unsplash.com/photo-1567188040759-fb8a883dc6d8?w=460&h=480&q=90&auto=format&fit=crop&crop=entropy"
+             alt="South Indian" loading="eager" width="460" height="480">
         <div class="food-card-name">South Indian</div>
       </div>
       <div class="food-card">
-        <img src="https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=460&h=460&q=85&auto=format&fit=crop"
-             alt="Dal rice" loading="eager" width="460" height="460">
-        <div class="food-card-name">Dal &amp; Rice</div>
+        <img src="https://images.unsplash.com/photo-1631452180539-96aca7d48617?w=460&h=480&q=90&auto=format&fit=crop&crop=entropy"
+             alt="Tandoori" loading="eager" width="460" height="480">
+        <div class="food-card-name">Tandoori Grill</div>
       </div>
     </div>
   </div>
 </section>
 
-<!-- ── TICKER ── -->
+<!-- TICKER -->
 <div class="ticker" aria-hidden="true">
   <div class="ticker-track">
-    <span class="ticker-i">Masala Dosa</span><span class="ticker-dot">·</span>
-    <span class="ticker-i">Filter Coffee</span><span class="ticker-dot">·</span>
-    <span class="ticker-i">Dum Biryani</span><span class="ticker-dot">·</span>
-    <span class="ticker-i">Bisi Bele Bath</span><span class="ticker-dot">·</span>
-    <span class="ticker-i">Butter Chicken</span><span class="ticker-dot">·</span>
-    <span class="ticker-i">Paneer Tikka</span><span class="ticker-dot">·</span>
-    <span class="ticker-i">Craft Beer</span><span class="ticker-dot">·</span>
-    <span class="ticker-i">Rava Idli</span><span class="ticker-dot">·</span>
-    <span class="ticker-i">Vada Sambar</span><span class="ticker-dot">·</span>
-    <span class="ticker-i">Chole Bhature</span><span class="ticker-dot">·</span>
-    <!-- duplicate -->
-    <span class="ticker-i">Masala Dosa</span><span class="ticker-dot">·</span>
-    <span class="ticker-i">Filter Coffee</span><span class="ticker-dot">·</span>
-    <span class="ticker-i">Dum Biryani</span><span class="ticker-dot">·</span>
-    <span class="ticker-i">Bisi Bele Bath</span><span class="ticker-dot">·</span>
-    <span class="ticker-i">Butter Chicken</span><span class="ticker-dot">·</span>
-    <span class="ticker-i">Paneer Tikka</span><span class="ticker-dot">·</span>
-    <span class="ticker-i">Craft Beer</span><span class="ticker-dot">·</span>
-    <span class="ticker-i">Rava Idli</span><span class="ticker-dot">·</span>
-    <span class="ticker-i">Vada Sambar</span><span class="ticker-dot">·</span>
-    <span class="ticker-i">Chole Bhature</span><span class="ticker-dot">·</span>
+    <span class="ti">Masala Dosa</span><span class="td">·</span>
+    <span class="ti">Filter Coffee</span><span class="td">·</span>
+    <span class="ti">Dum Biryani</span><span class="td">·</span>
+    <span class="ti">Bisi Bele Bath</span><span class="td">·</span>
+    <span class="ti">Butter Chicken</span><span class="td">·</span>
+    <span class="ti">Paneer Tikka</span><span class="td">·</span>
+    <span class="ti">Craft Beer</span><span class="td">·</span>
+    <span class="ti">Rava Idli</span><span class="td">·</span>
+    <span class="ti">Vada Sambar</span><span class="td">·</span>
+    <span class="ti">Chole Bhature</span><span class="td">·</span>
+    <span class="ti">Pav Bhaji</span><span class="td">·</span>
+    <span class="ti">Hyderabadi Biryani</span><span class="td">·</span>
+    <span class="ti">Masala Dosa</span><span class="td">·</span>
+    <span class="ti">Filter Coffee</span><span class="td">·</span>
+    <span class="ti">Dum Biryani</span><span class="td">·</span>
+    <span class="ti">Bisi Bele Bath</span><span class="td">·</span>
+    <span class="ti">Butter Chicken</span><span class="td">·</span>
+    <span class="ti">Paneer Tikka</span><span class="td">·</span>
+    <span class="ti">Craft Beer</span><span class="td">·</span>
+    <span class="ti">Rava Idli</span><span class="td">·</span>
+    <span class="ti">Vada Sambar</span><span class="td">·</span>
+    <span class="ti">Chole Bhature</span><span class="td">·</span>
+    <span class="ti">Pav Bhaji</span><span class="td">·</span>
+    <span class="ti">Hyderabadi Biryani</span><span class="td">·</span>
   </div>
 </div>
 
-<!-- ══ STATS ══ -->
+<!-- STATS -->
 <section class="stats">
   <div class="stats-grid">
     <div class="stat rs">
@@ -751,67 +659,67 @@ button{font:inherit;cursor:pointer;border:none}
   </div>
 </section>
 
-<!-- ══ WHY AVENZO ══ -->
+<!-- WHY AVENZO -->
 <section class="usp">
   <div class="usp-head rl">
     <div class="eyebrow">Why Avenzo</div>
     <h2 class="usp-h2">Your waiter is busy.<br>Your phone isn't.</h2>
-    <p class="usp-sub">Avenzo fixes the three things that frustrate every dine-in customer — waiting to order, wrong dishes, and zero idea when your food is coming.</p>
+    <p class="usp-sub">Avenzo solves the three things that frustrate every dine-in experience — waiting to order, wrong dishes, and zero visibility on when your food is coming.</p>
   </div>
   <div class="usp-grid">
     <div class="usp-card r">
       <div class="usp-icon">⚡</div>
       <h3>Order in 30 seconds</h3>
-      <p>Scan, browse, confirm. Your order goes straight to the kitchen — no waiting for someone to come take it.</p>
+      <p>Scan, browse, confirm. Your order lands in the kitchen the moment you tap — no waiting for someone to take it.</p>
     </div>
     <div class="usp-card r">
       <div class="usp-icon">📍</div>
       <h3>Track your food live</h3>
-      <p>Watch your order move from "kitchen received" to "ready at your table" in real time. No more mystery waits.</p>
+      <p>Watch your order move from "preparing" to "ready" in real time. Know exactly when to look up from your conversation.</p>
     </div>
     <div class="usp-card r">
       <div class="usp-icon">✅</div>
       <h3>Zero order mistakes</h3>
-      <p>You pick directly from the digital menu. No verbal miscommunication, no wrong dishes. What you tap is what arrives.</p>
+      <p>You pick directly from the digital menu. No verbal miscommunication, no wrong dishes. What you tap is exactly what arrives.</p>
     </div>
     <div class="usp-card r">
       <div class="usp-icon">📲</div>
-      <h3>No app, ever</h3>
-      <p>Scan the QR at your table. The menu opens instantly in your browser. Nothing to install. Works on every phone.</p>
+      <h3>No install to order</h3>
+      <p>Scan the QR and the menu opens in your browser — instantly. No app required just to place an order. Our iOS &amp; Android app unlocks much more.</p>
     </div>
     <div class="usp-card r">
       <div class="usp-icon">🍽️</div>
-      <h3>Menu with photos</h3>
-      <p>Every dish has a photo, price and description. Browse like Zomato, but you're already at the restaurant.</p>
+      <h3>Visual menus that sell</h3>
+      <p>Every dish has a photo, price and description. Customers browse like they're on Zomato — except they're already at your table.</p>
     </div>
     <div class="usp-card r">
-      <div class="usp-icon">💳</div>
-      <h3>UPI, card &amp; more</h3>
-      <p>Pay your way — UPI, credit or debit card, all at your fingertips. Quick checkout, no change required.</p>
+      <div class="usp-icon">🏪</div>
+      <h3>Table, counter &amp; more</h3>
+      <p>Works for dine-in restaurants, self-service counters, cafés, food courts and cloud kitchens. One platform, every format.</p>
     </div>
   </div>
 </section>
 
-<!-- ══ HOW IT WORKS ══ -->
+<!-- HOW IT WORKS -->
 <section class="how">
   <div class="how-head r">
     <div class="eyebrow">How it works</div>
     <h2 class="how-h2">Three steps.<br>Zero friction.</h2>
-    <p class="how-sub">No app, no account, no waiting. Every great meal starts with one scan.</p>
+    <p class="how-sub">Works at any table, any counter, any format. Every great meal starts with a single scan.</p>
   </div>
   <div class="steps">
     <div class="step r">
       <div class="step-ico">📱</div>
       <div>
-        <h3>Scan the table QR</h3>
-        <p>Every table has its own QR code. Point your camera and tap — your menu opens instantly. Nothing to install.</p>
+        <h3>Scan the QR</h3>
+        <p>Every table or counter has its own QR. Point your camera and tap — your menu opens instantly. Nothing to install.</p>
       </div>
     </div>
     <div class="step r">
       <div class="step-ico">🍛</div>
       <div>
         <h3>Browse &amp; order</h3>
-        <p>See every dish with photos, prices and descriptions. Pick what you want, customise, and confirm in seconds.</p>
+        <p>See every dish with photos, prices and descriptions. Pick, customise if needed, and confirm your order in seconds.</p>
       </div>
     </div>
     <div class="step r">
@@ -824,7 +732,7 @@ button{font:inherit;cursor:pointer;border:none}
   </div>
 </section>
 
-<!-- ══ FOOD SHOWCASE ══ -->
+<!-- FOOD SHOWCASE -->
 <section class="showcase">
   <div class="showcase-head r">
     <div class="eyebrow">On the menu</div>
@@ -833,40 +741,45 @@ button{font:inherit;cursor:pointer;border:none}
   </div>
   <div class="reel">
     <div class="reel-card">
-      <img src="https://images.unsplash.com/photo-1585937421612-70a008356fbe?w=600&h=740&q=85&auto=format&fit=crop"
-           alt="North Indian curry" loading="lazy" width="600" height="740">
-      <div class="reel-cap"><strong>North Indian Curry</strong><small>Rich, creamy gravy</small></div>
+      <img src="https://images.unsplash.com/photo-1603360946369-dc9bb6258143?w=600&h=740&q=90&auto=format&fit=crop&crop=entropy"
+           alt="Creamy curry" loading="lazy" width="600" height="740">
+      <div class="reel-cap"><strong>Creamy Makhani</strong><small>Rich &amp; indulgent</small></div>
     </div>
     <div class="reel-card">
-      <img src="https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=600&h=740&q=85&auto=format&fit=crop"
+      <img src="https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=600&h=740&q=90&auto=format&fit=crop&crop=entropy"
            alt="Biryani" loading="lazy" width="600" height="740">
       <div class="reel-cap"><strong>Dum Biryani</strong><small>Slow-cooked fragrant rice</small></div>
     </div>
     <div class="reel-card">
-      <img src="https://images.unsplash.com/photo-1567188040759-fb8a883dc6d8?w=600&h=740&q=85&auto=format&fit=crop"
+      <img src="https://images.unsplash.com/photo-1567188040759-fb8a883dc6d8?w=600&h=740&q=90&auto=format&fit=crop&crop=entropy"
            alt="South Indian" loading="lazy" width="600" height="740">
       <div class="reel-cap"><strong>South Indian Platter</strong><small>Crispy, light &amp; fresh</small></div>
     </div>
     <div class="reel-card">
-      <img src="https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&h=740&q=85&auto=format&fit=crop"
-           alt="Dal rice" loading="lazy" width="600" height="740">
-      <div class="reel-cap"><strong>Dal &amp; Rice Bowl</strong><small>Comforting, wholesome</small></div>
+      <img src="https://images.unsplash.com/photo-1585937421612-70a008356fbe?w=600&h=740&q=90&auto=format&fit=crop&crop=entropy"
+           alt="North Indian" loading="lazy" width="600" height="740">
+      <div class="reel-cap"><strong>North Indian Special</strong><small>Hearty &amp; aromatic</small></div>
     </div>
     <div class="reel-card">
-      <img src="https://images.unsplash.com/photo-1565557623262-b51c2513a641?w=600&h=740&q=85&auto=format&fit=crop"
-           alt="Grilled platter" loading="lazy" width="600" height="740">
-      <div class="reel-cap"><strong>Grilled Platter</strong><small>Char-grilled perfection</small></div>
+      <img src="https://images.unsplash.com/photo-1631452180539-96aca7d48617?w=600&h=740&q=90&auto=format&fit=crop&crop=entropy"
+           alt="Tandoori" loading="lazy" width="600" height="740">
+      <div class="reel-cap"><strong>Tandoori Grill</strong><small>Clay oven perfection</small></div>
+    </div>
+    <div class="reel-card">
+      <img src="https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&h=740&q=90&auto=format&fit=crop&crop=entropy"
+           alt="Wholesome bowl" loading="lazy" width="600" height="740">
+      <div class="reel-cap"><strong>Wholesome Bowl</strong><small>Comforting &amp; nourishing</small></div>
     </div>
   </div>
 </section>
 
-<!-- ══ BENGALURU ══ -->
+<!-- BENGALURU / INDIA -->
 <section class="blr">
   <div class="blr-inner">
     <div class="blr-text rl">
-      <div class="eyebrow">Namma Bengaluru 🌆</div>
-      <h2 class="blr-h2">Built for the city<br>that never stops eating</h2>
-      <p class="blr-sub">From MTR on a Sunday morning to craft beer at Toit — Bengaluru's food scene runs 24/7. Avenzo is built to match that energy. Every restaurant, every table, every neighbourhood.</p>
+      <div class="eyebrow">Namma Bengaluru &amp; Beyond 🌆</div>
+      <h2 class="blr-h2">Born here.<br>Spreading everywhere.</h2>
+      <p class="blr-sub">From MTR on Sunday mornings to craft beer at Toit on Friday nights — Bengaluru's food culture lives and breathes 24/7. Avenzo was built here, for this energy. And now we're taking that same spirit to every city, every state, across India.</p>
       <div class="area-chips">
         <span class="chip">Koramangala</span>
         <span class="chip">Indiranagar</span>
@@ -876,36 +789,93 @@ button{font:inherit;cursor:pointer;border:none}
         <span class="chip">JP Nagar</span>
         <span class="chip">Malleshwaram</span>
         <span class="chip">MG Road</span>
+        <span class="chip chip-more">+ Every city, coming soon 🇮🇳</span>
       </div>
     </div>
     <div class="blr-card r">
-      <div class="eyebrow" style="color:var(--brand-2)">Why Bengaluru loves Avenzo</div>
+      <div class="eyebrow" style="color:var(--brand-2)">Why this city loves Avenzo</div>
       <div class="blr-item">
-        <span class="blr-item-ico">☕</span>
+        <span class="blr-ico">☕</span>
         <div>
           <h4>Iyer hotels to rooftop bars</h4>
-          <p>Works for your favourite Jayanagar tiffin spot and the fanciest rooftop in Indiranagar equally well.</p>
+          <p>Works for your favourite Jayanagar tiffin spot and the fanciest Indiranagar rooftop equally well.</p>
         </div>
       </div>
       <div class="blr-item">
-        <span class="blr-item-ico">💻</span>
+        <span class="blr-ico">💻</span>
         <div>
-          <h4>Tech city expects digital</h4>
-          <p>Bengalureans scan QR codes in their sleep. Avenzo feels native — no learning curve, instant adoption.</p>
+          <h4>A tech city that expects digital</h4>
+          <p>Bengalureans scan QR codes in their sleep. Zero learning curve, instant adoption, maximum impact.</p>
         </div>
       </div>
       <div class="blr-item">
-        <span class="blr-item-ico">⏱️</span>
+        <span class="blr-ico">⏱️</span>
         <div>
           <h4>45-minute lunches, full-speed orders</h4>
-          <p>Back-to-back meetings? Avenzo gets your order in before you've found a seat. No waiter wait, ever.</p>
+          <p>Back-to-back meetings? Avenzo gets your order in before you've even sat down. No waiter wait, ever.</p>
         </div>
       </div>
     </div>
   </div>
 </section>
 
-<!-- ══ TESTIMONIALS ══ -->
+<!-- APP TEASER -->
+<section class="appt">
+  <div class="appt-inner">
+    <div class="appt-text rl">
+      <span class="badge badge-violet">📱 iOS &amp; Android · Coming Soon</span>
+      <h2 class="appt-h2">
+        The Avenzo app.<br>
+        <span class="grad">An ocean of features.</span>
+      </h2>
+      <p class="appt-sub">
+        Scanning a QR to order doesn't need an app — and it never will. But for those who want to go deeper, the Avenzo app is a completely different world. Intelligent, personalized, and built around how you actually eat. Curated differently for every person based on what we know about you.
+      </p>
+      <div class="app-hints">
+        <div class="app-hint"><span class="app-hint-ico">🎯</span> Curated just for you — nothing generic, ever</div>
+        <div class="app-hint"><span class="app-hint-ico">🔥</span> Discover what's trending at restaurants near you</div>
+        <div class="app-hint"><span class="app-hint-ico">⭐</span> Your complete dining story, beautifully tracked</div>
+        <div class="app-hint"><span class="app-hint-ico">🎁</span> Rewards and experiences that actually feel rewarding</div>
+        <div class="app-hint hint-mystery"><span class="app-hint-ico">👀</span> And a lot more we can't tell you just yet...</div>
+      </div>
+      <div class="store-row">
+        <div class="store-btn">
+          <span class="store-ico">🍎</span>
+          <div>
+            <div class="store-dl">Download on the</div>
+            <div class="store-name">App Store</div>
+          </div>
+          <span class="store-soon">Soon</span>
+        </div>
+        <div class="store-btn">
+          <span class="store-ico">▶</span>
+          <div>
+            <div class="store-dl">Get it on</div>
+            <div class="store-name">Google Play</div>
+          </div>
+          <span class="store-soon">Soon</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="phone-wrap r">
+      <div class="phone-mock">
+        <div class="phone-notch-bar"><div class="phone-notch"></div></div>
+        <div class="phone-pills">
+          <div class="pp pp1">🎯 Just for you</div>
+          <div class="pp pp2">🔥 Trending near you</div>
+          <div class="pp pp3">⭐ Your favourites</div>
+          <div class="pp pp4">🎁 Unlock rewards</div>
+          <div class="pp pp5">📍 Near me now</div>
+          <div class="pp pp6">🍴 Order again</div>
+        </div>
+        <div class="phone-blur-strip"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TESTIMONIALS -->
 <section class="testi">
   <div class="testi-head r">
     <div class="eyebrow">What people say</div>
@@ -914,46 +884,37 @@ button{font:inherit;cursor:pointer;border:none}
   <div class="reviews">
     <div class="review rs">
       <div class="stars">★★★★★</div>
-      <p class="review-text">"Ordered three rounds at Toit without once flagging down the waiter. My friends didn't even know I'd reordered. Pure, uninterrupted magic."</p>
+      <p class="review-text">"Ordered three rounds at Toit without once hunting for the waiter. My friends didn't even notice I'd reordered. That's magic."</p>
       <div class="reviewer">
         <div class="avatar">R</div>
-        <div>
-          <div class="reviewer-name">Rohan K.</div>
-          <div class="reviewer-loc">Indiranagar, Bengaluru</div>
-        </div>
+        <div><div class="rname">Rohan K.</div><div class="rloc">Indiranagar, Bengaluru</div></div>
       </div>
     </div>
     <div class="review rs">
       <div class="stars">★★★★★</div>
-      <p class="review-text">"Sunday morning MTR vibes — scanned the code, ordered idli vada and filter coffee, and it was on the table before I finished my first sip."</p>
+      <p class="review-text">"Sunday MTR vibes — scanned, ordered idli vada and filter coffee, and it arrived before I finished reading the news. Unreal."</p>
       <div class="reviewer">
         <div class="avatar">P</div>
-        <div>
-          <div class="reviewer-name">Priya M.</div>
-          <div class="reviewer-loc">Jayanagar, Bengaluru</div>
-        </div>
+        <div><div class="rname">Priya M.</div><div class="rloc">Jayanagar, Bengaluru</div></div>
       </div>
     </div>
     <div class="review rs">
       <div class="stars">★★★★★</div>
-      <p class="review-text">"Our whole table of eight ordered from their own phones. No confusion, no repeated orders. The kitchen was shocked at how precise everything was."</p>
+      <p class="review-text">"Eight of us ordered from our own phones. Zero confusion, zero wrong orders. The kitchen was shocked at how precise everything came out."</p>
       <div class="reviewer">
         <div class="avatar">D</div>
-        <div>
-          <div class="reviewer-name">Divya S.</div>
-          <div class="reviewer-loc">Koramangala, Bengaluru</div>
-        </div>
+        <div><div class="rname">Divya S.</div><div class="rloc">Koramangala, Bengaluru</div></div>
       </div>
     </div>
   </div>
 </section>
 
-<!-- ══ RESTAURANT CTA ══ -->
+<!-- RESTAURANT CTA -->
 <section class="join">
   <div class="join-inner">
-    <div class="eyebrow">For restaurant owners</div>
+    <div class="eyebrow" style="color:rgba(255,255,255,.62)">For restaurant owners</div>
     <h2 class="join-h2">Your tables are waiting<br>to go digital.</h2>
-    <p class="join-sub">Add your menu with photos, print QR codes for every table, and start taking digital orders today. No hardware investment. No monthly minimums. Free to start.</p>
+    <p class="join-sub">Add your menu with photos, configure your restaurant type, print QR codes, and start taking digital orders today. Highly customisable for every format — dine-in, self-service, café or cloud kitchen.</p>
     <div class="join-btns">
       <a class="btn btn-light btn-lg" href="/signup.html">Get started free →</a>
       <a class="btn btn-outline-w btn-lg" href="/restaurant-login.html">Partner login</a>
@@ -961,7 +922,7 @@ button{font:inherit;cursor:pointer;border:none}
   </div>
 </section>
 
-<!-- ══ FAQ ══ -->
+<!-- FAQ -->
 <section class="faq">
   <div class="faq-head r">
     <div class="eyebrow">FAQ</div>
@@ -969,29 +930,33 @@ button{font:inherit;cursor:pointer;border:none}
   </div>
   <div class="faq-list">
     <details class="faq-item">
-      <summary>Do I need to download an app?<span class="faq-arrow">▾</span></summary>
-      <div class="faq-body">No app, ever. Scan the QR code with your phone camera and the menu opens in your browser instantly. Works on iPhone and Android — any phone, any browser.</div>
+      <summary>Do I need to download an app to order?<span class="faq-arrow">▾</span></summary>
+      <div class="faq-body">No install needed to scan and order. The QR menu opens in your browser — works on any phone, any browser, instantly. The Avenzo iOS and Android app is coming soon and will unlock a whole lot more for frequent diners.</div>
     </details>
     <details class="faq-item">
-      <summary>Which restaurants are on Avenzo?<span class="faq-arrow">▾</span></summary>
-      <div class="faq-body">We're live with restaurants across Bengaluru — from neighbourhood tiffin spots to multi-cuisine lounges. Browse the full list on our restaurants page.</div>
+      <summary>Is Avenzo only for Bengaluru?<span class="faq-arrow">▾</span></summary>
+      <div class="faq-body">We're born in Bengaluru but definitely not limited to it. We're expanding across all cities and states in India. If you're a restaurant owner anywhere in the country, reach out — we'd love to have you on board.</div>
+    </details>
+    <details class="faq-item">
+      <summary>Which restaurant types does Avenzo support?<span class="faq-arrow">▾</span></summary>
+      <div class="faq-body">Avenzo supports dine-in restaurants, self-service counters, cafés, food courts and more. The platform is highly customisable — restaurants can configure it to match exactly how they operate.</div>
     </details>
     <details class="faq-item">
       <summary>Can the whole table order together?<span class="faq-arrow">▾</span></summary>
-      <div class="faq-body">Yes — everyone at the table can scan their own QR and order from their phone. All orders for the same table are grouped together so the kitchen gets a clear picture.</div>
+      <div class="faq-body">Yes — everyone at the table can scan the same QR and order from their own phones. All orders for a table are grouped together so the kitchen gets one clear view.</div>
     </details>
     <details class="faq-item">
       <summary>How do I pay?<span class="faq-arrow">▾</span></summary>
-      <div class="faq-body">UPI, debit card, credit card — all supported through Razorpay's secure gateway. You can also choose to pay cash at the table if the restaurant allows it.</div>
+      <div class="faq-body">UPI, debit card, credit card — all supported securely. You can also pay cash at the table if the restaurant allows it.</div>
     </details>
     <details class="faq-item">
       <summary>I run a restaurant. How do I join?<span class="faq-arrow">▾</span></summary>
-      <div class="faq-body">Sign up on our partner page, build your menu with photos and prices, and we'll generate QR codes for every table. Most restaurants are live within an hour.</div>
+      <div class="faq-body">Sign up on our partner page, build your menu with photos, configure your restaurant type, and we generate QR codes for every table or counter. Most restaurants are live within the hour.</div>
     </details>
   </div>
 </section>
 
-<!-- ══ FOOTER ══ -->
+<!-- FOOTER -->
 <footer class="footer">
   <div class="footer-top">
     <div class="footer-brand">
@@ -999,7 +964,7 @@ button{font:inherit;cursor:pointer;border:none}
         <img src="/logo.png" alt="Avenzo">
         <span>AVENZO</span>
       </div>
-      <p class="footer-tagline">The smartest way to dine in. Built in Bengaluru, for Bengaluru.</p>
+      <p class="footer-tagline">Smarter dining for every table, everywhere in India.</p>
     </div>
     <div class="footer-cols">
       <div class="footer-col">
@@ -1037,42 +1002,48 @@ button{font:inherit;cursor:pointer;border:none}
 </footer>
 
 <script>
-/* ── Nav scroll ── */
+/* Nav scroll */
 const nav = document.getElementById('mainNav');
 window.addEventListener('scroll', () => nav.classList.toggle('on', scrollY > 44), {passive:true});
 
-/* ── Scroll reveal ── */
+/* Scroll reveal */
 const io = new IntersectionObserver(entries => {
   entries.forEach(e => { if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } });
 }, {threshold:.08, rootMargin:'0px 0px -16px 0px'});
 document.querySelectorAll('.r,.rl,.rs').forEach(el => io.observe(el));
 
-/* ── Stats count-up ── */
-function countUp(el, target, decimals, ms) {
+/* Stats count-up with easing */
+function countUp(el, target, dec, ms) {
   let t0 = null;
-  function step(ts) {
+  (function step(ts) {
     if(!t0) t0 = ts;
     const p = Math.min((ts-t0)/ms, 1);
-    const e = p < .5 ? 2*p*p : -1+(4-2*p)*p; // ease in-out
-    const v = e * target;
-    el.textContent = decimals ? v.toFixed(decimals) : Math.round(v);
+    const e = p < .5 ? 2*p*p : -1+(4-2*p)*p;
+    el.textContent = dec ? (e*target).toFixed(dec) : Math.round(e*target);
     if(p < 1) requestAnimationFrame(step);
-    else el.textContent = decimals ? target.toFixed(decimals) : target;
-  }
-  requestAnimationFrame(step);
+    else el.textContent = dec ? target.toFixed(dec) : target;
+  })(0);
+
+  /* restart via rAF */
+  requestAnimationFrame(function loop(ts){
+    if(!t0) t0 = ts;
+    const p = Math.min((ts-t0)/ms, 1);
+    const e = p < .5 ? 2*p*p : -1+(4-2*p)*p;
+    el.textContent = dec ? (e*target).toFixed(dec) : Math.round(e*target);
+    if(p < 1) requestAnimationFrame(loop);
+    else el.textContent = dec ? target.toFixed(dec) : target;
+  });
 }
 
-const statsEl = document.querySelector('.stats-grid');
-if(statsEl) {
-  new IntersectionObserver(entries => {
-    if(!entries[0].isIntersecting) return;
-    countUp(document.getElementById('s1'), 50, 0, 1800);
-    countUp(document.getElementById('s2'), 10, 0, 2000);
-    countUp(document.getElementById('s3'), 30, 0, 1400);
-    countUp(document.getElementById('s4'), 4.8, 1, 1600);
-    entries[0].target._statsRan = true;
-  }, {threshold:.35}).observe(statsEl);
-}
+const sg = document.querySelector('.stats-grid');
+if(sg) new IntersectionObserver(entries => {
+  if(!entries[0].isIntersecting) return;
+  countUp(document.getElementById('s1'), 50, 0, 1800);
+  countUp(document.getElementById('s2'), 10, 0, 2000);
+  countUp(document.getElementById('s3'), 30, 0, 1400);
+  countUp(document.getElementById('s4'), 4.8, 1, 1600);
+  entries[0].target._ran = true;
+}, {threshold:.35}).observe(sg);
 </script>
 </body>
 </html>
