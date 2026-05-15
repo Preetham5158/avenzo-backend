@@ -1509,6 +1509,13 @@ app.get("/customer/restaurants", authMiddleware, async (req, res) => {
         const [restaurants, ratingAgg] = await Promise.all([
             prisma.restaurant.findMany({
                 where: { isActive: true },
+                include: {
+                    menus: {
+                        where: { isActive: true, isAvailable: true, imageUrl: { not: null } },
+                        select: { imageUrl: true },
+                        take: 4
+                    }
+                },
                 orderBy: [{ locality: "asc" }, { name: "asc" }]
             }),
             prisma.orderRating.groupBy({
@@ -1658,7 +1665,8 @@ function customerRestaurantResponse(restaurant) {
         locality: restaurant.locality,
         foodType: restaurant.foodType,
         serviceAvailable: isRestaurantServiceAvailable(restaurant),
-        serviceMessage: restaurantServiceMessage(restaurant)
+        serviceMessage: restaurantServiceMessage(restaurant),
+        previewImages: (restaurant.menus || []).map(m => m.imageUrl).filter(Boolean).slice(0, 4)
     };
 }
 
