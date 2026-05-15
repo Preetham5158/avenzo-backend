@@ -1,592 +1,384 @@
 <!DOCTYPE html>
 <html>
-
 <head>
   <meta charset="UTF-8">
-  <title>Avenzo Menu Admin</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="theme-color" content="#ff6b16">
+  <title>Menu — Avenzo</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#E8401C">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/assets/app.css">
+  <link rel="stylesheet" href="/assets/admin.css">
   <style>
-    .menu-item {
+    .menu-row {
       display: grid;
-      grid-template-columns: 88px 1fr auto;
-      gap: 16px;
-      align-items: center;
+      grid-template-columns: 68px 1fr auto;
+      gap: 14px;
+      align-items: start;
     }
-
     .menu-img {
-      width: 88px;
-      height: 88px;
-      border-radius: var(--radius);
+      width: 68px;
+      height: 68px;
+      border-radius: var(--r-sm);
       object-fit: cover;
-      background: var(--surface-2);
+      background: var(--bg-3);
+      flex-shrink: 0;
     }
-
+    .menu-name { font-size: 15px; font-weight: 700; color: var(--tx); margin-bottom: 3px; }
+    .menu-meta { font-size: 12px; color: var(--tx-2); margin-bottom: 4px; }
+    .menu-price { font-size: 15px; font-weight: 800; color: var(--tx); margin-bottom: 4px; }
+    .menu-desc {
+      font-size: 13px;
+      color: var(--tx-2);
+      line-height: 1.45;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
     .menu-actions {
       display: flex;
-      flex-wrap: wrap;
+      flex-direction: column;
       gap: 8px;
-      justify-content: flex-end;
+      align-items: flex-end;
+      flex-shrink: 0;
     }
-
-    .menu-admin-tools {
-      position: sticky;
-      top: calc(var(--topbar-height) + 110px);
-      z-index: 13;
-      display: grid;
+    .admin-subhead {
+      display: flex;
+      flex-direction: column;
       gap: 10px;
-      margin-bottom: 12px;
-      padding: 12px;
     }
-
-    .menu-copy {
-      min-width: 0;
-    }
-
-    .food-toggle {
-      width: min(320px, 100%);
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 4px;
-      padding: 4px;
-      border-radius: 999px;
-      background: var(--surface);
-      border: 1px solid var(--line);
-    }
-
-    .toggle-option {
-      min-height: 36px;
-      border-radius: 999px;
-      background: transparent;
-      color: var(--muted);
-      font-weight: 800;
-      cursor: pointer;
-    }
-
-    .toggle-option.active {
-      background: var(--cocoa);
-      color: white;
-    }
-
-    .menu-desc {
-      display: -webkit-box;
-      -webkit-box-orient: vertical;
-      -webkit-line-clamp: 2;
-      overflow: hidden;
-      color: var(--muted);
-      font-size: 13px;
-      line-height: 1.4;
-    }
-
-    .btn-danger-outline {
-      background: rgba(229, 72, 77, 0.08);
-      color: var(--danger);
-      border: 1px solid rgba(229, 72, 77, 0.25);
-    }
-
-    .btn-danger-outline:hover { background: rgba(229, 72, 77, 0.15); }
-
-    @media (max-width: 760px) {
-      .menu-item {
-        grid-template-columns: 72px minmax(0, 1fr);
+    @media (max-width: 600px) {
+      .menu-row {
+        grid-template-columns: 60px 1fr;
       }
-
       .menu-actions {
         grid-column: 1 / -1;
-        display: grid;
-        grid-template-columns: 1fr 1fr;
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: flex-end;
       }
-
-      .menu-img {
-        width: 72px;
-        height: 72px;
-      }
-
-      .menu-admin-tools {
-        top: calc(var(--topbar-height) + 130px);
-        padding: 10px;
-      }
-    }
-
-    @media (max-width: 480px) {
-      .menu-item {
-        grid-template-columns: 72px 1fr;
-        gap: 10px;
-      }
-
-      .menu-img { width: 72px !important; height: 72px !important; }
-
-      .menu-actions {
-        grid-column: 1 / -1;
-        grid-template-columns: repeat(2, 1fr);
-        margin-top: 6px;
-      }
-
-      .menu-desc { -webkit-line-clamp: 1; }
+      .menu-img { width: 60px; height: 60px; }
     }
   </style>
 </head>
-
 <body>
-  <div class="shell">
-    <header class="topbar">
-      <div class="topbar-inner">
-        <div class="brand">
-          <img src="/logo.png" alt="Avenzo">
-          <span>AVENZO</span>
-        </div>
-        <div id="accountMenu"></div>
-      </div>
-    </header>
+<div class="admin-shell">
+  <header class="admin-topbar">
+    <a href="/admin/dashboard.html" class="admin-brand"><img src="/logo.png" alt="Avenzo"><span class="admin-brand-name">AVENZO</span></a>
+    <span class="admin-brand-sep"></span>
+    <span class="admin-context" id="adminContext">Loading...</span>
+    <div class="admin-topbar-right"><div id="accountMenu"></div></div>
+  </header>
+  <nav class="admin-sidebar" id="adminSidebar"></nav>
+  <main class="admin-main">
+    <div class="admin-page">
 
-    <main class="page">
-      <section class="page-head restaurant-sticky">
+      <div class="admin-ph">
         <div>
-          <div class="eyebrow">Menu care</div>
-          <h1 id="restaurantName">Getting menu...</h1>
-          <p class="muted" id="restaurantAddress">Keep dishes, prices, and availability easy for guests to choose.</p>
+          <div class="admin-eyebrow">Menu care</div>
+          <h1 class="admin-ph-title" id="restaurantName">Loading...</h1>
+          <p class="admin-ph-sub">Keep dishes, prices and availability up to date.</p>
         </div>
-        <button id="addItemBtn" class="btn btn-primary" onclick="openItemModal()" hidden style="display:none">Add item</button>
-      </section>
-
-      <section class="menu-admin-tools app-panel">
-        <div class="field">
-          <label for="adminMenuSearch">Find an item quickly</label>
-          <input id="adminMenuSearch" class="input" placeholder="Dish, category, available, hidden..." oninput="setMenuSearch(this.value)">
-        </div>
-        <section class="food-toggle" id="foodTypeTabs" aria-label="Food type filter"></section>
-        <section class="tabbar surface-strip" id="categoryTabs"></section>
-      </section>
-      <section class="stack mt-12" id="menu"></section>
-    </main>
-  </div>
-  <nav class="admin-dock">
-    <a href="/admin/dashboard.html">Home</a>
-    <a class="active" href="#">Menu</a>
-    <a href="#" onclick="goOrders(event)">Orders</a>
-    <a href="#" onclick="goStaff(event)">Staff</a>
-    <a href="#" onclick="goPayments(event)">Payments</a>
-  </nav>
-
-  <div class="modal-backdrop" id="itemModal">
-    <form class="modal" onsubmit="saveItem(event)">
-      <div class="modal-head row-between">
-        <div>
-          <h3 id="modalTitle" class="section-title">Add item</h3>
-          <div class="muted">Saved changes appear for guests right away.</div>
-        </div>
-        <button type="button" class="btn btn-ghost icon-btn" onclick="closeItemModal()">X</button>
-      </div>
-
-      <div class="modal-body stack">
-        <input id="itemId" type="hidden">
-        <div class="grid grid-2">
-          <div class="field">
-            <label for="itemName">Name</label>
-            <input id="itemName" class="input" required placeholder="Masala dosa">
-          </div>
-          <div class="field">
-            <label for="itemPrice">Price</label>
-            <input id="itemPrice" class="input" type="number" min="0" step="0.01" required placeholder="120">
-          </div>
-        </div>
-
-        <div class="grid grid-2">
-          <div class="field">
-            <label for="itemCategory">Category</label>
-            <select id="itemCategory" class="select" required></select>
-          </div>
-          <div class="field">
-            <label for="itemFoodType">Food type</label>
-            <select id="itemFoodType" class="select" required>
-              <option value="VEG">Veg</option>
-              <option value="NON_VEG">Non-veg</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="grid grid-2">
-          <div class="field">
-            <label for="newCategory">New category</label>
-            <input id="newCategory" class="input" placeholder="Type to create one">
-          </div>
-        </div>
-
-        <div class="field">
-          <label for="itemDescription">Description</label>
-          <textarea id="itemDescription" class="textarea" placeholder="Short customer-facing description"></textarea>
-        </div>
-
-        <div class="field">
-          <label for="itemImageUrl">Image URL</label>
-          <input id="itemImageUrl" class="input" placeholder="https://...">
-        </div>
-
-        <div class="grid grid-2">
-          <label class="row card card-pad cursor-pointer">
-            <input id="itemAvailable" type="checkbox" checked>
-            <span>Available to order</span>
-          </label>
-          <label class="row card card-pad cursor-pointer">
-            <input id="itemActive" type="checkbox" checked>
-            <span>Visible on customer menu</span>
-          </label>
+        <div class="admin-ph-actions">
+          <button id="addItemBtn" class="btn btn-primary hidden" onclick="openItemModal()">Add item</button>
         </div>
       </div>
 
-      <div class="modal-actions">
-        <button type="button" class="btn btn-ghost" onclick="closeItemModal()">Cancel</button>
-        <button id="saveItemBtn" class="btn btn-primary" type="submit">Save item</button>
+      <div class="stat-grid" id="menuStats"></div>
+
+      <div class="admin-subhead" style="position:sticky;top:var(--topbar-h);z-index:20;background:var(--bg);padding:14px 0 12px;margin-bottom:4px">
+        <input class="input" id="menuSearch" placeholder="Search items..." oninput="setMenuSearch(this.value)">
+        <div class="tab-bar" id="foodTypeTabs"></div>
+        <div class="tab-bar" id="categoryTabs" style="overflow-x:auto"></div>
       </div>
-    </form>
-  </div>
 
-  <script src="/assets/app.js"></script>
-  <script>
-    const restaurantId = new URLSearchParams(location.search).get("restaurantId");
-    let currentUser = null;
-    let categories = [];
-    let menuItems = [];
-    let activeCategory = "ALL";
-    let activeFoodType = "ALL";
-    let menuSearch = "";
-    let restaurantFoodType = "BOTH";
+      <div class="stack" id="menuList"></div>
 
-    async function init() {
-      try {
-        currentUser = await initPartnerPage();
-        if (!currentUser) return;
-        const restaurant = await request(`/restaurant/${restaurantId}`, { headers: {} });
-        restaurantFoodType = restaurant.foodType || "BOTH";
-        activeFoodType = restaurantFoodType === "NON_VEG" ? "NON_VEG" : "VEG";
-        document.getElementById("restaurantName").textContent = restaurant.name;
-        document.getElementById("restaurantAddress").textContent = `${restaurant.address || "Keep dishes, prices, and availability easy for guests to choose."} - ${restaurantFoodTypeLabel(restaurantFoodType)}`;
-        const canManage = canManageMenuDetails();
-        document.getElementById("addItemBtn").hidden = !canManage;
-        document.getElementById("addItemBtn").style.display = canManage ? "inline-flex" : "none";
-        await loadMenu();
-      } catch (err) {
-        if (err.status === 423) {
-          showWorkspaceBlocked(err.message);
-        } else {
-          document.getElementById("menu").innerHTML = `<div class="empty">${escapeHtml(err.message)}</div>`;
-        }
-      }
+    </div>
+  </main>
+</div>
+<nav class="admin-bnav" id="adminBnav"></nav>
+
+<!-- Item modal -->
+<div class="modal-backdrop" id="itemModal">
+  <form class="modal" onsubmit="saveItem(event)">
+    <div class="modal-head">
+      <div>
+        <div class="modal-head-title" id="itemModalTitle">Add item</div>
+        <div class="modal-head-sub">Changes appear for guests right away.</div>
+      </div>
+      <button type="button" class="modal-close" onclick="closeItemModal()">&#x2715;</button>
+    </div>
+    <div class="modal-body">
+      <input id="itemId" type="hidden">
+      <div class="g2">
+        <div class="field"><label>Name</label><input id="itemName" class="input" required placeholder="Masala dosa"></div>
+        <div class="field"><label>Price (&#8377;)</label><input id="itemPrice" class="input" type="number" required min="0" step="1" placeholder="199"></div>
+      </div>
+      <div class="g2">
+        <div class="field"><label>Category</label><select id="itemCategory" class="select"></select></div>
+        <div class="field"><label>Food type</label><select id="itemFoodType" class="select"><option value="VEG">Veg</option><option value="NON_VEG">Non-veg</option></select></div>
+      </div>
+      <div class="field"><label>Description</label><textarea id="itemDescription" class="textarea" placeholder="Short description..." rows="2"></textarea></div>
+      <div class="field"><label>Image URL</label><input id="itemImageUrl" class="input" type="url" placeholder="https://..."></div>
+      <label class="toggle-row">
+        <span>In stock</span>
+        <label class="toggle" style="margin-left:auto"><input id="itemAvailable" type="checkbox" checked><span class="toggle-track"></span></label>
+      </label>
+      <label class="toggle-row">
+        <span>Visible on menu</span>
+        <label class="toggle" style="margin-left:auto"><input id="itemActive" type="checkbox" checked><span class="toggle-track"></span></label>
+      </label>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-ghost" onclick="closeItemModal()">Cancel</button>
+      <button id="saveItemBtn" class="btn btn-primary" type="submit">Save item</button>
+    </div>
+  </form>
+</div>
+
+<!-- Category modal -->
+<div class="modal-backdrop" id="catModal">
+  <form class="modal" onsubmit="saveCat(event)" style="max-width:380px">
+    <div class="modal-head">
+      <div><div class="modal-head-title">Add category</div></div>
+      <button type="button" class="modal-close" onclick="closeCatModal()">&#x2715;</button>
+    </div>
+    <div class="modal-body">
+      <div class="field"><label>Category name</label><input id="catName" class="input" required placeholder="e.g. Starters"></div>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-ghost" onclick="closeCatModal()">Cancel</button>
+      <button id="saveCatBtn" class="btn btn-primary" type="submit">Add</button>
+    </div>
+  </form>
+</div>
+
+<script src="/assets/app.js"></script>
+<script>
+const restaurantId = new URLSearchParams(location.search).get("restaurantId");
+let currentUser = null, menuItems = [], categories = [], activeFood = "ALL", activeCat = "ALL", menuSearch = "";
+
+async function loadMenu() {
+  try {
+    document.getElementById("menuList").innerHTML = skeletonCards(4);
+    const data = await request(`/admin/menu/${restaurantId}`);
+    menuItems = data.items || data.menu || [];
+    categories = data.categories || [];
+    const restaurantName = data.restaurant?.name || "Menu";
+    document.getElementById("restaurantName").textContent = restaurantName;
+    document.getElementById("adminContext").textContent = restaurantName;
+    renderMenuStats();
+    renderFoodTabs(data.restaurant?.foodType);
+    renderCategoryTabs();
+    renderMenu();
+  } catch(err) {
+    if (err.status === 423) {
+      document.getElementById("menuList").innerHTML = `<div class="card card-p"><div class="admin-ph-title">Workspace paused</div><p class="muted mt-8">${escapeHtml(err.message)}</p></div>`;
+    } else {
+      document.getElementById("menuList").innerHTML = `<div class="empty-state"><div class="empty-state-icon">&#127869;</div><div class="empty-state-title">Could not load menu</div><div class="empty-state-sub">${escapeHtml(err.message)}</div></div>`;
     }
+    toast(err.message);
+  }
+}
 
-    function showWorkspaceBlocked(message) {
-      document.getElementById("addItemBtn").hidden = true;
-      document.getElementById("addItemBtn").style.display = "none";
-      document.querySelector(".menu-admin-tools").hidden = true;
-      document.getElementById("menu").innerHTML = `
-        <div class="card card-pad">
-          <h3>This restaurant workspace is currently paused.</h3>
-          <p class="muted mb-0">Please contact the Avenzo team to activate or renew the subscription.</p>
-          ${message ? `<p class="muted mt-12 mb-0">${escapeHtml(message)}</p>` : ""}
-        </div>
-      `;
-    }
+function renderMenuStats() {
+  const avail = menuItems.filter(i => i.isAvailable).length;
+  const hidden = menuItems.filter(i => !i.isActive).length;
+  document.getElementById("menuStats").innerHTML = `
+    <div class="stat-card stat-top-brand"><div class="stat-card-label">Total items</div><div class="stat-card-value">${menuItems.length}</div></div>
+    <div class="stat-card stat-top-ready"><div class="stat-card-label">In stock</div><div class="stat-card-value">${avail}</div></div>
+    <div class="stat-card stat-top-warn"><div class="stat-card-label">Hidden</div><div class="stat-card-value">${hidden}</div></div>
+    <div class="stat-card stat-top-brand"><div class="stat-card-label">Categories</div><div class="stat-card-value">${categories.length}</div></div>
+  `;
+}
 
-    function canManageMenuDetails() {
-      return currentUser?.role === "ADMIN" || currentUser?.role === "RESTAURANT_OWNER";
-    }
+function renderFoodTabs(restaurantFoodType) {
+  const opts = restaurantFoodType === "PURE_VEG"
+    ? [["ALL","All"],["VEG","Veg"]]
+    : restaurantFoodType === "NON_VEG"
+      ? [["ALL","All"],["NON_VEG","Non-veg"]]
+      : [["ALL","All"],["VEG","Veg"],["NON_VEG","Non-veg"]];
+  document.getElementById("foodTypeTabs").innerHTML = opts.map(([k,l]) =>
+    `<button class="tab-btn ${activeFood===k?"active":""}" onclick="setFoodFilter('${k}')">${l}</button>`
+  ).join("");
+}
 
-    async function loadCategories() {
-      categories = await request(`/categories/${restaurantId}`);
-      renderCategoryOptions();
-    }
+function renderCategoryTabs() {
+  document.getElementById("categoryTabs").innerHTML =
+    `<button class="tab-btn ${activeCat==="ALL"?"active":""}" onclick="setCatFilter('ALL')">All</button>` +
+    categories.map(c =>
+      `<button class="tab-btn ${activeCat===c.id?"active":""}" onclick="setCatFilter('${c.id}')">${escapeHtml(c.name)}</button>`
+    ).join("");
+}
 
-    function renderCategoryOptions(selectedId = "") {
-      const select = document.getElementById("itemCategory");
-      select.innerHTML = categories.map(c => `
-        <option value="${c.id}" ${c.id === selectedId ? "selected" : ""}>${escapeHtml(c.name)}</option>
-      `).join("");
-    }
-
-    async function loadMenu() {
-      document.getElementById("menu").innerHTML = skeletonCards(6, "food");
-      await loadCategories();
-      menuItems = await request(`/admin/menu/${restaurantId}`);
-      renderFoodTypeTabs();
-      renderTabs();
-      renderMenu();
-    }
-
-    function renderFoodTypeTabs() {
-      const counts = menuItems.reduce((acc, item) => {
-        const key = item.foodType || "VEG";
-        acc[key] = (acc[key] || 0) + 1;
-        return acc;
-      }, {});
-
-      document.getElementById("foodTypeTabs").innerHTML = `
-        <button class="toggle-option ${activeFoodType === "VEG" ? "active" : ""}" onclick="setFoodType('VEG')">Veg (${counts.VEG || 0})</button>
-        <button class="toggle-option ${activeFoodType === "NON_VEG" ? "active" : ""}" onclick="setFoodType('NON_VEG')">Non-veg (${counts.NON_VEG || 0})</button>
-      `;
-    }
-
-    function setFoodType(value) {
-      activeFoodType = value;
-      renderFoodTypeTabs();
-      renderTabs();
-      renderMenu();
-    }
-
-    function renderTabs() {
-      const filteredByType = menuItems.filter(item => (item.foodType || "VEG") === activeFoodType);
-      const counts = filteredByType.reduce((acc, item) => {
-        const key = item.category?.name || "Uncategorized";
-        acc[key] = (acc[key] || 0) + 1;
-        return acc;
-      }, {});
-      if (activeCategory !== "ALL" && !counts[activeCategory]) {
-        activeCategory = "ALL";
-      }
-
-      const catNames = categories.map(c => c.name).filter(n => counts[n]);
-      document.getElementById("categoryTabs").innerHTML = `
-        <button class="btn tab ${activeCategory === "ALL" ? "active" : ""}" onclick="setCategory('ALL')">All (${filteredByType.length})</button>
-        ${catNames.map((name, idx) => `
-          <span style="display:inline-flex;align-items:center;gap:2px">
-            <button class="btn tab ${activeCategory === name ? "active" : ""}" onclick='setCategory(${JSON.stringify(name)})'>${escapeHtml(name)} (${counts[name]})</button>
-            ${canManageMenuDetails() ? `
-              <button class="btn btn-ghost" style="padding:6px 10px;font-size:12px;min-height:32px" title="Move up" onclick='moveCategoryUp(${JSON.stringify(name)})' ${idx === 0 ? "disabled" : ""}>↑</button>
-              <button class="btn btn-ghost" style="padding:6px 10px;font-size:12px;min-height:32px" title="Move down" onclick='moveCategoryDown(${JSON.stringify(name)})' ${idx === catNames.length - 1 ? "disabled" : ""}>↓</button>
-            ` : ""}
-          </span>
-        `).join("")}
-      `;
-    }
-
-    function setCategory(name) {
-      activeCategory = name;
-      renderTabs();
-      renderMenu();
-    }
-
-    function renderMenu() {
-      const container = document.getElementById("menu");
-      const visible = activeCategory === "ALL"
-        ? menuItems
-        : menuItems.filter(item => (item.category?.name || "Uncategorized") === activeCategory);
-      const typeFiltered = visible.filter(item => (item.foodType || "VEG") === activeFoodType);
-      const filtered = menuSearch
-        ? typeFiltered.filter(item => [
-          item.name,
-          item.description,
-          item.category?.name,
-          foodTypeLabel(item.foodType),
-          item.isAvailable ? "available" : "out of stock",
-          item.isActive ? "visible" : "hidden"
-        ].join(" ").toLowerCase().includes(menuSearch))
-        : typeFiltered;
-
-      if (!filtered.length) {
-        container.innerHTML = `<div class="empty">No items in this view yet.</div>`;
-        return;
-      }
-
-      container.innerHTML = filtered.map(item => `
-        <article class="card card-pad menu-item">
-          <img class="menu-img" loading="lazy" decoding="async" src="${escapeHtml(item.imageUrl || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=300")}" alt="" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1631452180519-c014fe946bc7?auto=format&fit=crop&w=900&q=80';">
-          <div class="menu-copy">
-            <div class="row row-wrap mb-6">
-              <h3 class="section-title">${escapeHtml(item.name)}</h3>
-              <span class="pill">${escapeHtml(item.category?.name || "Uncategorized")}</span>
-              <span class="pill ${foodTypePillClass(item.foodType)}">${foodTypeLabel(item.foodType)}</span>
-              <span class="pill ${item.isAvailable ? "pill-success" : "pill-danger"}">${item.isAvailable ? "Available" : "Out of stock"}</span>
-              ${item.isActive ? "" : `<span class="pill pill-warning">Hidden</span>`}
-            </div>
-            <div class="menu-desc">${escapeHtml(item.description || "No description")}</div>
-            <strong>${money(item.price)}</strong>
+function renderMenu() {
+  let items = menuItems.slice();
+  if (activeFood !== "ALL") items = items.filter(i => i.foodType === activeFood);
+  if (activeCat !== "ALL") items = items.filter(i => i.categoryId === activeCat);
+  if (menuSearch) items = items.filter(i =>
+    (i.name||"").toLowerCase().includes(menuSearch) || (i.description||"").toLowerCase().includes(menuSearch)
+  );
+  const container = document.getElementById("menuList");
+  if (!items.length) {
+    container.innerHTML = `<div class="empty-state"><div class="empty-state-icon">&#127869;</div><div class="empty-state-title">No items found</div><div class="empty-state-sub">Try a different search or filter.</div></div>`;
+    return;
+  }
+  const canManage = currentUser && currentUser.role !== "EMPLOYEE";
+  container.innerHTML = items.map(item => {
+    const catName = categories.find(c => c.id === item.categoryId)?.name || "Uncategorised";
+    const foodLabel = item.foodType === "VEG" ? "Veg" : "Non-veg";
+    return `
+      <div class="card card-p">
+        <div class="menu-row">
+          <img class="menu-img" src="${escapeHtml(item.imageUrl||"/logo.png")}" alt="${escapeHtml(item.name)}" onerror="this.src='/logo.png'">
+          <div>
+            <div class="menu-name">${escapeHtml(item.name)}${!item.isActive?` <span class="pill pill-danger" style="font-size:10px;vertical-align:middle">Hidden</span>`:""}</div>
+            <div class="menu-meta">${escapeHtml(catName)} &middot; ${foodLabel}</div>
+            <div class="menu-price">${money(item.pricePaise)}</div>
+            ${item.description ? `<div class="menu-desc">${escapeHtml(item.description)}</div>` : ""}
           </div>
           <div class="menu-actions">
-            <button class="btn btn-ghost" onclick="toggleStock('${item.id}', ${item.isAvailable})">${item.isAvailable ? "Mark out" : "Mark available"}</button>
-            ${canManageMenuDetails() ? `<button class="btn btn-ghost" onclick="toggleVisibility('${item.id}', ${item.isActive})">${item.isActive ? "Hide" : "Show"}</button>` : ""}
-            ${canManageMenuDetails() ? `<button class="btn btn-dark" onclick='openItemModal(${JSON.stringify(item)})'>Edit</button>` : ""}
-            ${canManageMenuDetails() ? `<button class="btn btn-danger-outline" onclick="deleteItem('${item.id}', ${JSON.stringify(item.name)})">Delete</button>` : ""}
+            <label class="toggle" title="${item.isAvailable?"In stock — tap to mark out":"Out of stock — tap to mark in"}">
+              <input type="checkbox" ${item.isAvailable?"checked":""} onchange="toggleStock(this,'${item.id}')">
+              <span class="toggle-track"></span>
+            </label>
+            ${canManage ? `<button class="btn btn-ghost btn-sm" onclick='openItemModal(${JSON.stringify(item.id)})'>Edit</button>` : ""}
+            ${canManage ? `<button class="btn btn-danger-soft btn-sm" onclick="deleteItem('${item.id}',${JSON.stringify(item.name)})">Delete</button>` : ""}
           </div>
-        </article>
-      `).join("");
+        </div>
+      </div>
+    `;
+  }).join("");
+
+  // Add category button for owners/admins
+  if (canManage) {
+    const addCatBtn = document.createElement("div");
+    addCatBtn.style.marginTop = "12px";
+    addCatBtn.innerHTML = `<button class="btn btn-ghost btn-sm" onclick="openCatModal()">+ Add category</button>`;
+    container.appendChild(addCatBtn);
+  }
+}
+
+function setFoodFilter(v) { activeFood = v; renderFoodTabs(); renderMenu(); }
+function setCatFilter(v)  { activeCat = v; renderCategoryTabs(); renderMenu(); }
+function setMenuSearch(v) { menuSearch = v.trim().toLowerCase(); renderMenu(); }
+
+async function toggleStock(checkbox, itemId) {
+  const available = checkbox.checked;
+  checkbox.disabled = true;
+  try {
+    await request(`/menu/${itemId}`, { method: "PUT", body: JSON.stringify({ isAvailable: available }) });
+    const item = menuItems.find(i => i.id === itemId);
+    if (item) item.isAvailable = available;
+    toast(available ? "Marked in stock" : "Marked out of stock");
+  } catch(err) {
+    checkbox.checked = !available;
+    toast(err.message);
+  } finally {
+    checkbox.disabled = false;
+  }
+}
+
+// Item modal
+let editingItemId = null;
+function openItemModal(id) {
+  id = id || "";
+  editingItemId = id;
+  const item = menuItems.find(i => i.id === id);
+  document.getElementById("itemModalTitle").textContent = item ? "Edit item" : "Add item";
+  document.getElementById("itemId").value = id;
+  document.getElementById("itemName").value = item?.name || "";
+  document.getElementById("itemPrice").value = item ? (item.pricePaise / 100).toFixed(0) : "";
+  document.getElementById("itemFoodType").value = item?.foodType || "VEG";
+  document.getElementById("itemDescription").value = item?.description || "";
+  document.getElementById("itemImageUrl").value = item?.imageUrl || "";
+  document.getElementById("itemAvailable").checked = item ? item.isAvailable : true;
+  document.getElementById("itemActive").checked = item ? item.isActive : true;
+  document.getElementById("itemCategory").innerHTML =
+    `<option value="">No category</option>` +
+    categories.map(c =>
+      `<option value="${c.id}" ${item?.categoryId === c.id ? "selected" : ""}>${escapeHtml(c.name)}</option>`
+    ).join("");
+  document.getElementById("itemModal").classList.add("open");
+}
+function closeItemModal() { document.getElementById("itemModal").classList.remove("open"); }
+
+async function saveItem(event) {
+  event.preventDefault();
+  const btn = document.getElementById("saveItemBtn");
+  setLoading(btn, true, "Saving...");
+  try {
+    const id = document.getElementById("itemId").value;
+    const body = {
+      name: document.getElementById("itemName").value.trim(),
+      pricePaise: Math.round(parseFloat(document.getElementById("itemPrice").value) * 100),
+      categoryId: document.getElementById("itemCategory").value || undefined,
+      foodType: document.getElementById("itemFoodType").value,
+      description: document.getElementById("itemDescription").value.trim() || undefined,
+      imageUrl: document.getElementById("itemImageUrl").value.trim() || undefined,
+      isAvailable: document.getElementById("itemAvailable").checked,
+      isActive: document.getElementById("itemActive").checked,
+      restaurantId
+    };
+    if (id) {
+      await request(`/menu/${id}`, { method: "PUT", body: JSON.stringify(body) });
+      toast("Item updated");
+    } else {
+      await request("/menu", { method: "POST", body: JSON.stringify(body) });
+      toast("Item added");
     }
+    closeItemModal();
+    loadMenu();
+  } catch(err) {
+    toast(err.message);
+  } finally {
+    setLoading(btn, false);
+  }
+}
 
-    function setMenuSearch(value) {
-      menuSearch = value.trim().toLowerCase();
-      renderMenu();
-    }
+async function deleteItem(id, name) {
+  if (!confirm(`Delete "${name}"? This cannot be undone.`)) return;
+  try {
+    await request(`/menu/${id}`, { method: "DELETE" });
+    toast("Item deleted");
+    loadMenu();
+  } catch(err) {
+    toast(err.message);
+  }
+}
 
-    function openItemModal(item = null) {
-      if (!canManageMenuDetails()) {
-        toast("You can update stock availability from this page.");
-        return;
-      }
-      document.getElementById("modalTitle").textContent = item ? "Edit item" : "Add item";
-      document.getElementById("itemId").value = item?.id || "";
-      document.getElementById("itemName").value = item?.name || "";
-      document.getElementById("itemPrice").value = item?.price || "";
-      document.getElementById("itemDescription").value = item?.description || "";
-      document.getElementById("itemImageUrl").value = item?.imageUrl || "";
-      document.getElementById("itemFoodType").value = item?.foodType || "VEG";
-      document.getElementById("itemFoodType").querySelector('option[value="VEG"]').disabled = restaurantFoodType === "NON_VEG";
-      document.getElementById("itemFoodType").querySelector('option[value="NON_VEG"]').disabled = restaurantFoodType === "PURE_VEG";
-      if (restaurantFoodType === "NON_VEG") document.getElementById("itemFoodType").value = "NON_VEG";
-      if (restaurantFoodType === "PURE_VEG") document.getElementById("itemFoodType").value = "VEG";
-      document.getElementById("itemAvailable").checked = item ? item.isAvailable : true;
-      document.getElementById("itemActive").checked = item ? item.isActive : true;
-      document.getElementById("newCategory").value = "";
-      renderCategoryOptions(item?.categoryId || categories[0]?.id || "");
-      document.getElementById("itemModal").classList.add("open");
-      document.getElementById("itemName").focus();
-    }
+// Category modal
+function openCatModal() { document.getElementById("catName").value = ""; document.getElementById("catModal").classList.add("open"); }
+function closeCatModal() { document.getElementById("catModal").classList.remove("open"); }
 
-    function closeItemModal() {
-      document.getElementById("itemModal").classList.remove("open");
-    }
+async function saveCat(event) {
+  event.preventDefault();
+  const btn = document.getElementById("saveCatBtn");
+  setLoading(btn, true, "Saving...");
+  try {
+    await request("/category", { method: "POST", body: JSON.stringify({ name: document.getElementById("catName").value.trim(), restaurantId }) });
+    toast("Category added");
+    closeCatModal();
+    loadMenu();
+  } catch(err) {
+    toast(err.message);
+  } finally {
+    setLoading(btn, false);
+  }
+}
 
-    async function ensureCategory() {
-      const newName = document.getElementById("newCategory").value.trim();
-      if (!newName) return document.getElementById("itemCategory").value;
+document.getElementById("itemModal").addEventListener("click", e => { if (e.target === e.currentTarget) closeItemModal(); });
+document.getElementById("catModal").addEventListener("click", e => { if (e.target === e.currentTarget) closeCatModal(); });
 
-      const existing = categories.find(c => c.name.toLowerCase() === newName.toLowerCase());
-      if (existing) return existing.id;
-
-      const created = await request("/category", {
-        method: "POST",
-        body: JSON.stringify({ name: newName, restaurantId })
-      });
-      categories.push(created);
-      return created.id;
-    }
-
-    async function saveItem(event) {
-      event.preventDefault();
-      if (!canManageMenuDetails()) {
-        toast("Only restaurant owners and the Avenzo admin team can change menu details.");
-        return;
-      }
-      const btn = document.getElementById("saveItemBtn");
-      setLoading(btn, true, "Saving...");
-
-      try {
-        const id = document.getElementById("itemId").value;
-        const categoryId = await ensureCategory();
-        const payload = {
-          name: document.getElementById("itemName").value.trim(),
-          price: Number(document.getElementById("itemPrice").value),
-          categoryId,
-          foodType: document.getElementById("itemFoodType").value,
-          description: document.getElementById("itemDescription").value.trim() || null,
-          imageUrl: document.getElementById("itemImageUrl").value.trim() || null,
-          isAvailable: document.getElementById("itemAvailable").checked,
-          isActive: document.getElementById("itemActive").checked,
-          restaurantId
-        };
-
-        if (id) {
-          await request(`/menu/${id}`, { method: "PUT", body: JSON.stringify(payload) });
-        } else {
-          await request("/menu", { method: "POST", body: JSON.stringify(payload) });
-        }
-
-        closeItemModal();
-        toast("Menu saved");
-        await loadMenu();
-      } catch (err) {
-        toast(err.message);
-      } finally {
-        setLoading(btn, false);
-      }
-    }
-
-    async function toggleStock(id, current) {
-      try {
-        await request(`/menu/${id}`, { method: "PUT", body: JSON.stringify({ isAvailable: !current }) });
-        toast(current ? "Marked out of stock" : "Marked available");
-        await loadMenu();
-      } catch (err) {
-        toast(err.message);
-      }
-    }
-
-    async function toggleVisibility(id, current) {
-      if (!canManageMenuDetails()) {
-        toast("Only restaurant owners and the Avenzo admin team can hide or show menu items.");
-        return;
-      }
-      try {
-        await request(`/menu/${id}`, { method: "PUT", body: JSON.stringify({ isActive: !current }) });
-        toast(current ? "Hidden from menu" : "Visible on menu");
-        await loadMenu();
-      } catch (err) {
-        toast(err.message);
-      }
-    }
-
-    async function deleteItem(id, name) {
-      if (!canManageMenuDetails()) return;
-      if (!confirm(`Delete "${name}"? This cannot be undone.`)) return;
-      try {
-        await request(`/menu/${id}`, { method: "DELETE" });
-        toast("Item deleted");
-        await loadMenu();
-      } catch (err) {
-        toast(err.message || "Could not delete item");
-      }
-    }
-
-    async function moveCategoryUp(categoryName) {
-      const idx = categories.findIndex(c => c.name === categoryName);
-      if (idx <= 0) return;
-      const reordered = [...categories];
-      [reordered[idx - 1], reordered[idx]] = [reordered[idx], reordered[idx - 1]];
-      await saveCategoryOrder(reordered);
-    }
-
-    async function moveCategoryDown(categoryName) {
-      const idx = categories.findIndex(c => c.name === categoryName);
-      if (idx < 0 || idx >= categories.length - 1) return;
-      const reordered = [...categories];
-      [reordered[idx], reordered[idx + 1]] = [reordered[idx + 1], reordered[idx]];
-      await saveCategoryOrder(reordered);
-    }
-
-    async function saveCategoryOrder(reordered) {
-      try {
-        await request(`/admin/categories/${restaurantId}/reorder`, {
-          method: "PATCH",
-          body: JSON.stringify({ order: reordered.map((c, i) => ({ id: c.id, sortOrder: i })) })
-        });
-        categories = reordered;
-        renderTabs();
-      } catch (err) {
-        toast(err.message || "Could not reorder categories");
-      }
-    }
-
-    function goBack() {
-      window.location.href = "/admin/dashboard.html";
-    }
-
-    function goOrders(event) {
-      event.preventDefault();
-      window.location.href = `/admin/orders.html?restaurantId=${restaurantId}`;
-    }
-
-    function goStaff(event) {
-      event.preventDefault();
-      window.location.href = `/admin/staff.html?restaurantId=${restaurantId}`;
-    }
-
-    function goPayments(event) {
-      event.preventDefault();
-      window.location.href = `/admin/payments.html?restaurantId=${restaurantId}`;
-    }
-
-    init();
-  </script>
-  <noscript>JavaScript is required to use Avenzo Menu Admin.</noscript>
+initAdminLayout("menu", restaurantId).then(user => {
+  if (!user) return;
+  currentUser = user;
+  if (user.role !== "EMPLOYEE") {
+    document.getElementById("addItemBtn").classList.remove("hidden");
+  }
+  loadMenu();
+});
+</script>
+<noscript>Please enable JavaScript to use Avenzo.</noscript>
 </body>
-
 </html>

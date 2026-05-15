@@ -212,6 +212,86 @@ function customerBottomNavHtml(active = "home") {
   }</nav>`;
 }
 
+// ── Admin layout helpers ──
+
+function adminSidebarHtml(active, restaurantId, role) {
+  const q = restaurantId ? `?restaurantId=${restaurantId}` : "";
+  const links = [
+    { key: "home",     href: "/admin/dashboard.html",       label: "Home",     icon: `<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>` },
+    { key: "orders",   href: `/admin/orders.html${q}`,      label: "Orders",   icon: `<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>` },
+    { key: "menu",     href: `/admin/menu.html${q}`,        label: "Menu",     icon: `<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M3 11l19-9-9 19-2-8-8-2z"/></svg>` },
+    ...(role !== "EMPLOYEE" ? [
+      { key: "staff",    href: `/admin/staff.html${q}`,       label: "Staff",    icon: `<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>` },
+      { key: "payments", href: `/admin/payments.html${q}`,    label: "Payments", icon: `<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>` },
+    ] : []),
+    ...(role === "ADMIN" ? [
+      { key: "leads",    href: "/admin/leads.html",            label: "Leads",    icon: `<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>`, badge: true },
+    ] : []),
+  ];
+  return links.map(l => `
+    <a href="${l.href}" class="sidebar-link ${active === l.key ? "active" : ""}" ${l.badge ? 'id="sidebarLeadsLink"' : ""}>
+      ${l.icon}
+      <span>${l.label}</span>
+      ${l.badge ? '<span class="sidebar-badge hidden" id="sidebarLeadsBadge"></span>' : ""}
+    </a>
+  `).join("");
+}
+
+function adminBottomNavHtml(active, restaurantId, role) {
+  const q = restaurantId ? `?restaurantId=${restaurantId}` : "";
+  const items = [
+    { key: "home",     href: "/admin/dashboard.html",    label: "Home",     icon: "🏠" },
+    { key: "orders",   href: `/admin/orders.html${q}`,   label: "Orders",   icon: "📋" },
+    { key: "menu",     href: `/admin/menu.html${q}`,     label: "Menu",     icon: "🍽️" },
+    ...(role !== "EMPLOYEE" ? [
+      { key: "staff",    href: `/admin/staff.html${q}`,   label: "Staff",    icon: "👥" },
+      { key: "payments", href: `/admin/payments.html${q}`,label: "Payments", icon: "💳" },
+    ] : []),
+    ...(role === "ADMIN" ? [
+      { key: "leads",    href: "/admin/leads.html",        label: "Leads",    icon: "📊", badge: true },
+    ] : []),
+  ];
+  return items.map(item => `
+    <a href="${item.href}" class="admin-bnav-item ${active === item.key ? "active" : ""}">
+      ${item.badge ? '<span class="admin-bnav-badge hidden" id="bnavLeadsBadge"></span>' : ""}
+      <span class="admin-bnav-icon">${item.icon}</span>
+      <span>${item.label}</span>
+    </a>
+  `).join("");
+}
+
+async function initAdminLayout(activePage = "home", restaurantId = "") {
+  requireAuth("/restaurant-login.html");
+  try {
+    const user = await initAccountMenu("accountMenu", "/restaurant-login.html");
+    if (!user) return null;
+    if (user.role === "USER") {
+      window.location.href = "/customer.html";
+      return null;
+    }
+    const sidebar = document.getElementById("adminSidebar");
+    const bnav = document.getElementById("adminBnav");
+    if (sidebar) sidebar.innerHTML = adminSidebarHtml(activePage, restaurantId, user.role);
+    if (bnav)    bnav.innerHTML    = adminBottomNavHtml(activePage, restaurantId, user.role);
+    // Load leads badge for ADMIN
+    if (user.role === "ADMIN") {
+      request("/admin/restaurant-leads/summary").then(data => {
+        const count = data.unseenNewCount || 0;
+        ["sidebarLeadsBadge", "bnavLeadsBadge"].forEach(id => {
+          const el = document.getElementById(id);
+          if (!el) return;
+          el.textContent = count;
+          el.classList.toggle("hidden", count === 0);
+        });
+      }).catch(() => {});
+    }
+    return user;
+  } catch {
+    window.location.href = "/restaurant-login.html";
+    return null;
+  }
+}
+
 async function initCustomerPage(active = "home") {
   requireAuth();
   const navTarget = document.getElementById("customerNav");
