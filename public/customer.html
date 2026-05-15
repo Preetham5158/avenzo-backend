@@ -49,6 +49,11 @@
     .c-chips{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}.c-chips::-webkit-scrollbar{display:none}
     .c-chip{flex:0 0 auto;display:inline-flex;align-items:center;gap:5px;padding:7px 14px;background:var(--bg-3);border:1.5px solid var(--line);border-radius:99px;font-size:13px;font-weight:600;color:var(--tx-2);white-space:nowrap;cursor:pointer;transition:all .15s}
     .c-chip:hover{border-color:rgba(255,255,255,.18);color:var(--tx)}.c-chip.on{background:var(--brand-soft);border-color:rgba(232,64,28,.5);color:var(--brand)}
+    .c-chip-veg{display:inline-flex;align-items:center;gap:5px}
+    .c-chip-veg-dot{width:8px;height:8px;border-radius:50%;background:var(--success);flex-shrink:0}
+    .c-chip.veg-on{background:rgba(39,201,107,0.15);border-color:rgba(39,201,107,0.45);color:var(--success)}
+    .c-veg-banner{background:rgba(39,201,107,0.08);border-bottom:1px solid rgba(39,201,107,0.15);padding:8px 0}
+    .c-veg-banner-inner{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--tx-2);font-weight:600}
 
     /* ── BODY SECTIONS ── */
     .c-body{padding:24px 0 52px}
@@ -253,6 +258,19 @@
       <button class="c-chip" onclick="setChip(this,'BOTH')">🍱 Veg &amp; Non-Veg</button>
       <button class="c-chip" onclick="setChip(this,'NON_VEG')">🍖 Non-Veg</button>
       <button class="c-chip" id="chipOpen" onclick="setOpenChip(this)">⚡ Open now</button>
+      <button class="c-chip" id="vegChip" onclick="toggleVegFilter()">
+        <span class="c-chip-veg-dot"></span> Veg only
+      </button>
+    </div>
+  </div>
+</div>
+
+<div id="vegFilterBanner" class="c-veg-banner" hidden>
+  <div class="c-wrap">
+    <div class="c-veg-banner-inner">
+      <span style="color:var(--success);font-size:14px">🥦</span>
+      <span>Veg only mode is on — menu pages will show vegetarian items only</span>
+      <button onclick="toggleVegFilter()" style="margin-left:auto;font-size:12px;font-weight:700;color:var(--success);flex-shrink:0">Turn off</button>
     </div>
   </div>
 </div>
@@ -364,6 +382,35 @@ const EMOJIS = {PURE_VEG:"🌿", BOTH:"🍱", NON_VEG:"🍖"};
 function hash(s){return[...s].reduce((a,c)=>(a*31+c.charCodeAt(0))&0xffff,0)}
 
 let allRests=[], activeChip="", openOnly=false, searchQ="", liveTimer=null, currentUser=null;
+let _vegOnly = false;
+
+/* ── VEG FILTER ── */
+// menu.html reads localStorage('avenzo-veg-only') on load to pre-filter
+function initVegFilter() {
+  _vegOnly = localStorage.getItem('avenzo-veg-only') === '1';
+  const chip = document.getElementById('vegChip');
+  if (chip) chip.classList.toggle('veg-on', _vegOnly);
+  if (_vegOnly) applyVegFilter();
+}
+
+function toggleVegFilter() {
+  _vegOnly = !_vegOnly;
+  localStorage.setItem('avenzo-veg-only', _vegOnly ? '1' : '0');
+  const chip = document.getElementById('vegChip');
+  if (chip) chip.classList.toggle('veg-on', _vegOnly);
+  applyVegFilter();
+}
+
+function applyVegFilter() {
+  // On home page: filter restaurant cards and "tonight's pick" section
+  // Restaurant cards may have a data-has-nonveg attribute or we filter based on known restaurant metadata
+  // Since we don't have per-restaurant veg metadata readily, we store the filter preference
+  // and let the menu page use it. On this page, show a banner if veg filter is on.
+  const banner = document.getElementById('vegFilterBanner');
+  if (banner) {
+    banner.hidden = !_vegOnly;
+  }
+}
 
 (async()=>{
   try {
@@ -379,6 +426,7 @@ let allRests=[], activeChip="", openOnly=false, searchQ="", liveTimer=null, curr
     document.getElementById("uFull").textContent = u.name || u.email || "—";
     document.getElementById("uEmail").textContent = u.email || "";
     setGreeting(u.name);
+    initVegFilter();
     allRests = rd.restaurants || [];
     const orders = od.orders || [];
     hydrateStats(orders);
@@ -684,7 +732,15 @@ function clearFilters() {
   searchQ = ""; activeChip = ""; openOnly = false;
   document.getElementById("searchIn").value = "";
   document.getElementById("sbarEl").classList.remove("hv");
-  document.querySelectorAll(".c-chip").forEach((c,i) => c.classList.toggle("on", i === 0));
+  // Reset chip active state; vegChip keeps its own veg-on class independently
+  document.querySelectorAll(".c-chip").forEach(c => { c.classList.remove("on"); c.classList.remove("veg-on"); });
+  document.getElementById("chipAll")?.classList.add("on");
+  // Also clear the veg filter since the user explicitly cleared all filters
+  _vegOnly = false;
+  localStorage.setItem('avenzo-veg-only', '0');
+  const vegChip = document.getElementById('vegChip');
+  if (vegChip) vegChip.classList.remove('veg-on');
+  applyVegFilter();
   setDiscoverVis(true);
   renderGrid();
 }
