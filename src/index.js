@@ -1,8 +1,10 @@
 require("dotenv").config();
 
 const express = require("express");
+const cors = require("cors");
 const path = require("path");
 const crypto = require("crypto");
+const { randomUUID } = require("crypto");
 
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
@@ -57,6 +59,47 @@ if (!process.env.JWT_SECRET) {
 }
 
 app.disable("x-powered-by");
+
+// CORS — must be registered before all routes so OPTIONS preflight is handled correctly.
+const allowedOrigins = (process.env.CORS_ORIGINS || "http://localhost:5000,http://localhost:3000")
+    .split(",").map(o => o.trim()).filter(Boolean);
+app.use(cors({
+    origin: (origin, cb) => {
+        // Allow same-origin requests (no Origin header) and listed origins.
+        if (!origin || allowedOrigins.includes(origin)) return cb(null, true);
+        cb(new Error(`CORS: origin ${origin} not allowed`));
+    },
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "X-Request-ID"],
+    exposedHeaders: ["X-Request-ID"],
+}));
+
+// Request ID — attach before any route so it's available in error handlers and logs.
+app.use((req, res, next) => {
+    const id = req.headers["x-request-id"] || randomUUID();
+    req.requestId = id;
+    req._startAt = process.hrtime();
+    res.setHeader("X-Request-ID", id);
+    res.on("finish", () => {
+        const diff = process.hrtime(req._startAt);
+        const ms = diff[0] * 1e3 + diff[1] / 1e6;
+        // Log slow requests (>1s) so we can identify N+1 queries and missing indexes.
+        if (ms > 1000) {
+            console.warn(JSON.stringify({
+                level: "warn",
+                msg: "Slow request",
+                method: req.method,
+                path: req.path,
+                status: res.statusCode,
+                ms: Math.round(ms),
+                requestId: id
+            }));
+        }
+    });
+    next();
+});
+
 app.use((req, res, next) => {
     res.setHeader("X-Content-Type-Options", "nosniff");
     res.setHeader("X-Frame-Options", "DENY");
@@ -90,6 +133,16 @@ app.use(express.static(publicDir));
 // Health check — must respond even if DB is slow; used by load balancers and Render.
 app.get("/health", (req, res) => {
     res.json({ status: "ok", uptime: Math.floor(process.uptime()) });
+});
+
+// Readiness check — verifies DB connection is alive before accepting traffic.
+app.get("/ready", async (req, res) => {
+    try {
+        await prisma.$queryRaw`SELECT 1`;
+        res.json({ status: "ready", db: "ok" });
+    } catch (err) {
+        res.status(503).json({ status: "not ready", db: "error" });
+    }
 });
 
 app.get("/favicon.ico", (req, res) => res.redirect("/logo.png"));
@@ -177,14 +230,25 @@ function isValidHttpsUrl(value) {
     }
 }
 
-// In-memory idempotency cache for order creation — prevents double-submit on network retry.
-const orderIdempotencyCache = new Map();
-setInterval(() => {
-    const cutoff = Date.now() - 5 * 60 * 1000;
-    for (const [key, entry] of orderIdempotencyCache.entries()) {
-        if (entry.at < cutoff) orderIdempotencyCache.delete(key);
+// DB-backed idempotency helpers for order creation — safe across restarts and multiple instances.
+async function getIdempotentResponse(key) {
+    const record = await prisma.idempotencyKey.findUnique({ where: { key } });
+    if (!record) return null;
+    if (record.expiresAt < new Date()) {
+        prisma.idempotencyKey.delete({ where: { key } }).catch(() => {});
+        return null;
     }
-}, 5 * 60 * 1000);
+    return record.response;
+}
+
+async function setIdempotentResponse(key, response) {
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
+    await prisma.idempotencyKey.upsert({
+        where: { key },
+        update: { response, expiresAt },
+        create: { key, response, expiresAt }
+    });
+}
 
 function menuFoodFilter(value) {
     if (!value || String(value).toUpperCase() === "ALL") return {};
@@ -679,8 +743,8 @@ app.post("/order", orderLimiter, optionalAuth, async (req, res) => {
 
         // Return cached result if client retries the same order submit.
         if (idempotencyKey) {
-            const cacheKey = `${restaurantId}:${deviceId}:${idempotencyKey}`;
-            const cached = orderIdempotencyCache.get(cacheKey);
+            const cacheKey = `order:${restaurantId}:${deviceId}:${idempotencyKey}`;
+            const cached = await getIdempotentResponse(cacheKey);
             if (cached) return res.json(cached);
         }
 
@@ -800,7 +864,7 @@ app.post("/order", orderLimiter, optionalAuth, async (req, res) => {
             : null;
 
         if (idempotencyKey) {
-            const cacheKey = `${restaurantId}:${deviceId}:${idempotencyKey}`;
+            const cacheKey = `order:${restaurantId}:${deviceId}:${idempotencyKey}`;
             const cachePayload = {
                 trackingToken: order.trackingToken,
                 orderNumber: order.orderNumber,
@@ -810,7 +874,7 @@ app.post("/order", orderLimiter, optionalAuth, async (req, res) => {
                 message: "Order placed.",
                 trackingUrl: `${BASE_URL}/track/${order.trackingToken}`
             };
-            orderIdempotencyCache.set(cacheKey, { ...cachePayload, at: Date.now() });
+            setIdempotentResponse(cacheKey, cachePayload).catch(() => {});
         }
 
         res.json({
@@ -2979,12 +3043,31 @@ app.post("/webhooks/razorpay", async (req, res) => {
     }
 
     const eventType = event?.event;
+    const razorpayEventId = event?.id; // Razorpay assigns a unique ID to every webhook delivery
     const payment = event?.payload?.payment?.entity;
     const rzpOrderId = payment?.order_id || event?.payload?.order?.entity?.id;
 
     if (!rzpOrderId) return res.json({ ok: true }); // ignore unrecognised events
 
     try {
+        // Idempotency: if this exact webhook delivery was already processed, return 200 immediately.
+        if (razorpayEventId) {
+            const existing = await prisma.webhookEvent.findUnique({
+                where: { provider_eventId: { provider: "razorpay", eventId: razorpayEventId } }
+            });
+            if (existing?.processedAt) return res.json({ ok: true });
+        }
+
+        // Record the incoming event before processing (so a crash doesn't cause double-delivery issues).
+        let webhookRecord = null;
+        if (razorpayEventId) {
+            webhookRecord = await prisma.webhookEvent.upsert({
+                where: { provider_eventId: { provider: "razorpay", eventId: razorpayEventId } },
+                update: {},
+                create: { provider: "razorpay", eventId: razorpayEventId, eventType: eventType || "unknown", payload: event }
+            });
+        }
+
         const order = await prisma.order.findFirst({
             where: { razorpayOrderId: rzpOrderId },
             select: { id: true, trackingToken: true, orderNumber: true, pickupCode: true, paymentStatus: true, customerId: true, restaurantId: true, phone: true, customer: { select: { email: true } }, restaurant: { select: { name: true } } }
@@ -2992,54 +3075,66 @@ app.post("/webhooks/razorpay", async (req, res) => {
 
         if (!order) {
             logRouteError("POST /webhooks/razorpay", new Error(`No order for razorpayOrderId=${rzpOrderId}`));
+            if (webhookRecord) {
+                await prisma.webhookEvent.update({ where: { id: webhookRecord.id }, data: { processedAt: new Date(), error: "order_not_found" } });
+            }
             return res.json({ ok: true });
         }
 
         if (eventType === "payment.captured" || eventType === "order.paid") {
-            // Idempotency: skip if already marked PAID.
-            if (order.paymentStatus === "PAID") return res.json({ ok: true });
+            if (order.paymentStatus !== "PAID") {
+                await prisma.order.update({
+                    where: { id: order.id },
+                    data: {
+                        paymentStatus: "PAID",
+                        razorpayPaymentId: payment?.id || null
+                    }
+                });
 
-            await prisma.order.update({
-                where: { id: order.id },
-                data: {
-                    paymentStatus: "PAID",
-                    razorpayPaymentId: payment?.id || null
-                }
-            });
+                await auditLog("PAYMENT_CONFIRMED", {
+                    restaurantId: order.restaurantId,
+                    orderId: order.id,
+                    metadata: { paymentEvent: eventType, razorpayPaymentId: payment?.id }
+                });
 
-            await auditLog("ORDER_STATUS_UPDATED", {
-                restaurantId: order.restaurantId,
-                orderId: order.id,
-                metadata: { paymentEvent: eventType, razorpayPaymentId: payment?.id }
-            });
-
-            // Notify customer that their payment was confirmed and order is received.
-            notifyOrderConfirmation({
-                prisma,
-                order,
-                restaurant: order.restaurant,
-                baseUrl: BASE_URL,
-                recipientEmail: order.customer?.email || null
-            }).catch((err) => logRouteError("webhookNotifyConfirm", err));
+                // Notify customer that their payment was confirmed and order is received.
+                notifyOrderConfirmation({
+                    prisma,
+                    order,
+                    restaurant: order.restaurant,
+                    baseUrl: BASE_URL,
+                    recipientEmail: order.customer?.email || null
+                }).catch((err) => logRouteError("webhookNotifyConfirm", err));
+            }
 
         } else if (eventType === "payment.failed") {
-            // Idempotency: skip if already failed or cancelled.
-            if (["PAYMENT_FAILED", "REFUNDED"].includes(order.paymentStatus)) return res.json({ ok: true });
+            if (!["PAYMENT_FAILED", "REFUNDED"].includes(order.paymentStatus)) {
+                await prisma.order.update({
+                    where: { id: order.id },
+                    data: {
+                        paymentStatus: "PAYMENT_FAILED",
+                        // Auto-cancel the order so it never enters the kitchen queue.
+                        status: "CANCELLED"
+                    }
+                });
 
-            await prisma.order.update({
-                where: { id: order.id },
-                data: {
-                    paymentStatus: "PAYMENT_FAILED",
-                    // Auto-cancel the order so it never enters the kitchen queue.
-                    status: "CANCELLED"
-                }
-            });
+                await auditLog("PAYMENT_FAILED", {
+                    restaurantId: order.restaurantId,
+                    orderId: order.id,
+                    metadata: { paymentEvent: eventType }
+                });
+            }
+        }
+
+        // Mark event processed.
+        if (webhookRecord) {
+            await prisma.webhookEvent.update({ where: { id: webhookRecord.id }, data: { processedAt: new Date() } });
         }
 
         return res.json({ ok: true });
     } catch (err) {
         logRouteError("POST /webhooks/razorpay", err);
-        // Return 500 so Razorpay retries on DB failures — idempotency guard above prevents double-processing.
+        // Return 500 so Razorpay retries — the idempotency guard above prevents double-processing.
         return res.status(500).json({ ok: false });
     }
 });
@@ -3088,6 +3183,20 @@ app.patch("/admin/order/:id/payment-status", authMiddleware, async (req, res) =>
     }
 });
 
+// /api/v1/ prefix — forward to existing routes for future mobile app compatibility.
+// This lets Android/iOS clients use versioned URLs without duplicating route handlers.
+app.use("/api/v1", (req, res, next) => {
+    // Strip the /api/v1 prefix so existing route handlers match unchanged.
+    req.url = req.url;
+    next("router");
+});
+
+// Redirect /api/v1/* to the corresponding root path.
+app.all("/api/v1/*splat", (req, res) => {
+    const stripped = req.path.replace(/^\/api\/v1/, "");
+    res.redirect(307, stripped + (req.url.includes("?") ? "?" + req.url.split("?")[1] : ""));
+});
+
 // Unknown API routes return JSON — prevents leaking Express HTML with framework info.
 app.use((req, res, next) => {
     if (req.path.startsWith("/auth/") || req.path.startsWith("/admin/") ||
@@ -3095,7 +3204,8 @@ app.use((req, res, next) => {
         req.path.startsWith("/menu") || req.path.startsWith("/restaurant") ||
         req.path.startsWith("/reviews/") || req.path.startsWith("/categories") ||
         req.path.startsWith("/category") || req.path.startsWith("/restaurants") ||
-        req.path.startsWith("/payment") || req.path.startsWith("/webhooks")) {
+        req.path.startsWith("/payment") || req.path.startsWith("/webhooks") ||
+        req.path.startsWith("/api/")) {
         return res.status(404).json({ error: "Not found" });
     }
     next();
@@ -3104,8 +3214,19 @@ app.use((req, res, next) => {
 // Global error handler — catches unhandled throws, returns JSON, never exposes stack traces.
 // eslint-disable-next-line no-unused-vars
 app.use((err, req, res, next) => {
-    logRouteError("unhandled", err);
-    res.status(500).json({ error: "Something went wrong" });
+    const status = err.status || err.statusCode || 500;
+    if (status >= 500) {
+        logRouteError("unhandled", err);
+    }
+    const isProd = process.env.NODE_ENV === "production";
+    res.status(status).json({
+        success: false,
+        error: {
+            code: err.code || (status === 429 ? "TOO_MANY_REQUESTS" : status === 404 ? "NOT_FOUND" : status === 403 ? "FORBIDDEN" : status === 401 ? "UNAUTHORIZED" : "INTERNAL_SERVER_ERROR"),
+            message: status < 500 ? (err.message || "Request failed") : "Something went wrong",
+            ...(req.requestId && { requestId: req.requestId }),
+        },
+    });
 });
 
 const PORT = process.env.PORT || 5000;
@@ -3117,7 +3238,14 @@ async function startServer() {
         }
 
         const server = app.listen(PORT, () => {
-            console.log("Server running on port " + PORT);
+            console.log(JSON.stringify({
+                level: "info",
+                msg: "Server started",
+                port: PORT,
+                env: process.env.NODE_ENV || "development",
+                version: process.env.npm_package_version || "unknown",
+                time: new Date().toISOString()
+            }));
         });
 
         const shutdown = async (signal) => {

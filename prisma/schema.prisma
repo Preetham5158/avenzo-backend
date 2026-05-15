@@ -103,6 +103,12 @@ enum AuditAction {
   STAFF_REMOVED
   ORDER_STATUS_UPDATED
   ORDER_ATTEMPT_REJECTED
+  MENU_ITEM_CREATED
+  MENU_ITEM_UPDATED
+  MENU_ITEM_DELETED
+  PAYMENT_CONFIRMED
+  PAYMENT_FAILED
+  WEBHOOK_PROCESSED
 }
 
 enum PaymentMethodType {
@@ -466,4 +472,38 @@ model PaymentMethod {
   updatedAt DateTime @updatedAt
 
   @@index([restaurantId])
+}
+
+//////////////////////////////////////////////////////
+// IDEMPOTENCY (order dedup)
+//////////////////////////////////////////////////////
+
+model IdempotencyKey {
+  id        String   @id @default(uuid())
+  key       String   @unique
+  response  Json?
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+
+  @@index([key])
+  @@index([expiresAt])
+}
+
+//////////////////////////////////////////////////////
+// WEBHOOK EVENTS (dedup + replay protection)
+//////////////////////////////////////////////////////
+
+model WebhookEvent {
+  id          String   @id @default(uuid())
+  provider    String
+  eventId     String
+  eventType   String
+  payload     Json
+  processedAt DateTime?
+  error       String?
+  createdAt   DateTime @default(now())
+
+  @@unique([provider, eventId])
+  @@index([provider, eventType])
+  @@index([createdAt])
 }
