@@ -1,15 +1,4 @@
 User-agent: *
-Disallow: /admin/
-Disallow: /customer-orders.html
-Disallow: /customer-profile.html
-Disallow: /customer-signup.html
-Disallow: /customer-login.html
-Disallow: /forgot-password.html
-Disallow: /track/
-Disallow: /order
-
 Allow: /
-Allow: /r/
-Allow: /menu.html
-Allow: /customer.html
-Allow: /customer-restaurants.html
+
+Sitemap: https://avenzo.app/sitemap.xml
