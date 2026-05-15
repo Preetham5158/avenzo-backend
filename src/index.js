@@ -987,6 +987,14 @@ app.get("/forgot-password", (req, res) => {
     res.sendFile(path.join(publicDir, "forgot-password.html"));
 });
 
+app.get("/privacy", (req, res) => {
+    res.sendFile(path.join(publicDir, "privacy.html"));
+});
+
+app.get("/terms", (req, res) => {
+    res.sendFile(path.join(publicDir, "terms.html"));
+});
+
 app.post("/restaurant-interest", restaurantInterestLimiter, async (req, res) => {
     try {
         const restaurantName = cleanString(req.body.restaurantName, 140);
