@@ -461,6 +461,8 @@ h3 {
 .icon-btn {
   width: 38px;
   height: 38px;
+  min-width: 44px;
+  min-height: 44px;
   padding: 0;
   border-radius: var(--radius);
 }
@@ -935,7 +937,7 @@ h3 {
   }
 
   .status-actions {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
   }
 
   .modal-backdrop {
@@ -958,6 +960,7 @@ h3 {
   .modal-actions {
     display: grid;
     grid-template-columns: 1fr 1fr;
+    padding-bottom: max(14px, env(safe-area-inset-bottom, 14px));
   }
 
   .tabbar {
@@ -1062,4 +1065,18 @@ h3 {
 
   .c-bottom-nav a.active { color: var(--brand); }
   .c-bottom-nav a.active svg { stroke: var(--brand); }
+}
+
+@media (max-width: 760px) {
+  .toast { bottom: 82px; }
+}
+
+/* Focus accessibility */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
 }

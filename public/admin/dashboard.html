@@ -3,7 +3,9 @@
 
 <head>
   <title>Avenzo Admin</title>
+  <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#ff6b16">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/assets/app.css">
   <style>
@@ -49,6 +51,21 @@
         grid-template-columns: 1fr 1fr;
       }
     }
+
+    @media (max-width: 400px) {
+      .restaurant-actions {
+        grid-template-columns: 1fr;
+      }
+
+      .restaurant-actions .btn {
+        min-height: 40px;
+        font-size: 13px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .metric-card h3 { font-size: 24px; }
+    }
   </style>
 </head>
 
@@ -73,8 +90,8 @@
             <p id="roleText" class="muted">Getting your restaurants ready...</p>
           </div>
           <div class="row row-wrap">
-            <button id="leadsBtn" class="btn btn-ghost" onclick="openLeads()" hidden style="display:none">Restaurant leads <span id="leadsBadge" class="pill pill-danger" hidden>0</span></button>
-            <button id="createBtn" class="btn btn-primary" onclick="openRestaurantModal()" hidden style="display:none">Add restaurant</button>
+            <button id="leadsBtn" class="btn btn-ghost" onclick="openLeads()" hidden>Restaurant leads <span id="leadsBadge" class="pill pill-danger" hidden>0</span></button>
+            <button id="createBtn" class="btn btn-primary" onclick="openRestaurantModal()" hidden>Add restaurant</button>
           </div>
         </div>
       </section>
@@ -398,6 +415,7 @@
       loadRestaurants();
     });
   </script>
+  <noscript><div style="padding:20px;text-align:center;font-family:sans-serif">Please enable JavaScript to use Avenzo.</div></noscript>
 </body>
 
 </html>
