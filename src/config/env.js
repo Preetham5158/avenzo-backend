@@ -1,12 +1,11 @@
-import { z } from "zod";
-import dotenv from "dotenv";
-
-dotenv.config();
+"use strict";
+const { z } = require("zod");
+require("dotenv").config();
 
 const envSchema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
   PORT: z.coerce.number().int().min(1).max(65535).default(5000),
-  APP_BASE_URL: z.string().url().default("http://localhost:5000"),
+  APP_BASE_URL: z.string().default("http://localhost:5000"),
 
   DATABASE_URL: z.string().min(1, "DATABASE_URL is required"),
   DIRECT_URL: z.string().min(1, "DIRECT_URL is required"),
@@ -33,47 +32,34 @@ const envSchema = z.object({
 
   EMAIL_PROVIDER: z.string().optional(),
   RESEND_API_KEY: z.string().optional(),
-  FROM_EMAIL: z.string().email().optional(),
-  SUPPORT_EMAIL: z.string().email().optional(),
+  FROM_EMAIL: z.string().optional(),
+  SUPPORT_EMAIL: z.string().optional(),
 
   CORS_ORIGINS: z.string().default("http://localhost:5000,http://localhost:3000"),
 
-  SENTRY_DSN: z.string().url().optional().or(z.literal("")),
+  SENTRY_DSN: z.string().optional(),
 
   ENABLE_BOOTSTRAP_SCHEMA: z.string().transform(v => v === "true").default("false"),
 });
 
-// In production, enforce that secrets are real values (not placeholders)
-const productionChecks = (parsed) => {
+function productionChecks(parsed) {
   if (parsed.NODE_ENV !== "production") return;
-
   const errors = [];
-
   if (!parsed.RAZORPAY_KEY_ID || parsed.RAZORPAY_KEY_ID.startsWith("rzp_test_")) {
     errors.push("RAZORPAY_KEY_ID must be a live key in production");
   }
-  if (!parsed.RAZORPAY_KEY_SECRET) {
-    errors.push("RAZORPAY_KEY_SECRET is required in production");
-  }
-  if (!parsed.RAZORPAY_WEBHOOK_SECRET) {
-    errors.push("RAZORPAY_WEBHOOK_SECRET is required in production");
-  }
-  if (parsed.OTP_MODE === "log") {
-    errors.push("OTP_MODE=log is not allowed in production");
-  }
-  if (parsed.JWT_SECRET.includes("replace-with")) {
-    errors.push("JWT_SECRET must not be the placeholder value in production");
-  }
-
+  if (!parsed.RAZORPAY_KEY_SECRET) errors.push("RAZORPAY_KEY_SECRET is required in production");
+  if (!parsed.RAZORPAY_WEBHOOK_SECRET) errors.push("RAZORPAY_WEBHOOK_SECRET is required in production");
+  if (parsed.OTP_MODE === "log") errors.push("OTP_MODE=log is not allowed in production");
+  if (parsed.JWT_SECRET.includes("replace-with")) errors.push("JWT_SECRET must not be the placeholder value in production");
   if (errors.length > 0) {
     console.error("[env] Production config errors:");
     errors.forEach(e => console.error("  -", e));
     process.exit(1);
   }
-};
+}
 
 const result = envSchema.safeParse(process.env);
-
 if (!result.success) {
   console.error("[env] Invalid environment variables:");
   result.error.issues.forEach(issue => {
@@ -84,4 +70,4 @@ if (!result.success) {
 
 productionChecks(result.data);
 
-export const env = result.data;
+module.exports = { env: result.data };

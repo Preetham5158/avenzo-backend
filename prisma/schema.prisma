@@ -134,6 +134,7 @@ model User {
   ownedRestaurants Restaurant[] @relation("RestaurantOwner")
   orders Order[] @relation("CustomerOrders")
   otpChallenges OtpChallenge[]
+  deviceTokens DeviceToken[]
 
   staffRestaurantId String?
   staffRestaurant   Restaurant? @relation("RestaurantStaff", fields: [staffRestaurantId], references: [id], onDelete: SetNull)
@@ -189,6 +190,7 @@ model Restaurant {
   categories     Category[]
   ratings        OrderRating[]
   paymentMethods PaymentMethod[]
+  deviceTokens   DeviceToken[]
 
   isActive  Boolean  @default(true)
   subscriptionStatus SubscriptionStatus @default(ACTIVE)
@@ -506,4 +508,31 @@ model WebhookEvent {
   @@unique([provider, eventId])
   @@index([provider, eventType])
   @@index([createdAt])
+}
+
+//////////////////////////////////////////////////////
+// DEVICE TOKENS (push notification foundation)
+//////////////////////////////////////////////////////
+
+model DeviceToken {
+  id           String   @id @default(uuid())
+
+  userId       String?
+  user         User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  restaurantId String?
+  restaurant   Restaurant? @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  platform     String   // "ios" | "android" | "web"
+  token        String   @unique
+  appType      String   // "customer" | "restaurant"
+  isActive     Boolean  @default(true)
+  lastSeenAt   DateTime @default(now())
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([userId])
+  @@index([restaurantId])
+  @@index([appType])
 }

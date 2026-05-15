@@ -1,8 +1,11 @@
-import { randomUUID } from "crypto";
+"use strict";
+const { randomUUID } = require("crypto");
 
-export function requestIdMiddleware(req, res, next) {
+function requestIdMiddleware(req, res, next) {
   const id = req.headers["x-request-id"] || randomUUID();
   req.requestId = id;
   res.setHeader("X-Request-ID", id);
   next();
 }
+
+module.exports = { requestIdMiddleware };

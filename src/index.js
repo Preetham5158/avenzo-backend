@@ -8,6 +8,8 @@ const { randomUUID } = require("crypto");
 
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const { connectRedis, disconnectRedis, getRedisClient, isRedisConnected } = require("./lib/redis");
+const { createRateLimiter } = require("./middlewares/rateLimit.middleware");
 const { notifyOrderConfirmation, notifyOrderStatus, sendOtp, maskEmail } = require("./services/notification.service");
 const { checkOrderAbuse, hashIp, logOrderAttempt } = require("./services/abuse.service");
 const { publicMenuItem, adminMenuItem } = require("./serializers/menu.serializer");
@@ -149,47 +151,34 @@ app.get("/favicon.ico", (req, res) => res.redirect("/logo.png"));
 
 const BASE_URL = process.env.BASE_URL || "http://localhost:5000";
 
-function rateLimit({ windowMs, max }) {
-    const hits = new Map();
-    let sweepCounter = 0;
-    return (req, res, next) => {
-        const key = `${req.ip}:${req.path}`;
-        const now = Date.now();
-        const entry = hits.get(key) || { count: 0, resetAt: now + windowMs };
-
-        if (entry.resetAt < now) {
-            entry.count = 0;
-            entry.resetAt = now + windowMs;
-        }
-
-        entry.count += 1;
-        hits.set(key, entry);
-        sweepCounter += 1;
-
-        if (sweepCounter % 200 === 0) {
-            for (const [mapKey, mapEntry] of hits.entries()) {
-                if (mapEntry.resetAt < now) {
-                    hits.delete(mapKey);
-                }
-            }
-        }
-
-        if (entry.count > max) {
-            return res.status(429).json({ error: "Please wait a moment and try again" });
-        }
-
-        next();
-    };
-}
-
-const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 30 });
-const orderLimiter = rateLimit({ windowMs: 60 * 1000, max: 20 });
-const orderLookupLimiter = rateLimit({ windowMs: 60 * 1000, max: 12 });
-const trackingLimiter = rateLimit({ windowMs: 60 * 1000, max: 60 });
-const restaurantInterestLimiter = rateLimit({ windowMs: 60 * 60 * 1000, max: 8 });
-const otpLimiter = rateLimit({ windowMs: 10 * 60 * 1000, max: 12 });
-const passwordResetLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 5 });
-const paymentLimiter = rateLimit({ windowMs: 60 * 1000, max: 15 });
+// Redis-backed rate limiters — fall back to in-memory Map in dev if Redis is unavailable.
+const authLimiter = createRateLimiter({
+    windowMs: 15 * 60 * 1000, max: 30, namespace: "auth",
+    keyFn: (req) => {
+        // Key by IP + email/phone when available for tighter per-credential limiting.
+        const cred = cleanString(req.body?.email || req.body?.phone, 60) || "";
+        return `${req.ip}:${cred}`;
+    }
+});
+const orderLimiter = createRateLimiter({
+    windowMs: 60 * 1000, max: 20, namespace: "order",
+    keyFn: (req) => `${req.ip}:${cleanString(req.body?.sessionId, 80) || ""}`
+});
+const orderLookupLimiter = createRateLimiter({ windowMs: 60 * 1000, max: 12, namespace: "olookup" });
+const trackingLimiter = createRateLimiter({ windowMs: 60 * 1000, max: 60, namespace: "track" });
+const restaurantInterestLimiter = createRateLimiter({ windowMs: 60 * 60 * 1000, max: 8, namespace: "rint" });
+const otpLimiter = createRateLimiter({
+    windowMs: 10 * 60 * 1000, max: 12, namespace: "otp",
+    keyFn: (req) => {
+        const cred = cleanString(req.body?.email || req.body?.phone, 60) || "";
+        return `${req.ip}:${cred}`;
+    }
+});
+const passwordResetLimiter = createRateLimiter({ windowMs: 15 * 60 * 1000, max: 5, namespace: "pwreset" });
+const paymentLimiter = createRateLimiter({
+    windowMs: 60 * 1000, max: 15, namespace: "payment",
+    keyFn: (req) => `${req.ip}:${cleanString(req.body?.trackingToken, 80) || ""}`
+});
 const OTP_PURPOSES = ["CUSTOMER_LOGIN", "RESTAURANT_LOGIN", "SIGNUP_VERIFY", "ORDER_CONFIRMATION", "PASSWORD_RESET"];
 
 function normalizeSlug(value) {
@@ -2420,9 +2409,18 @@ app.get("/admin/orders/:restaurantId", authMiddleware, async (req, res) => {
         const limit = Math.min(Math.max(parseInt(req.query.limit || "50", 10), 1), 100);
         const skip = (page - 1) * limit;
 
+        // Kitchen-mode: when caller only wants active/actionable orders, suppress orders
+        // still awaiting payment. PAYMENT_CLAIMED is included — restaurant must verify it
+        // before the order can be prepared.
+        const isKitchenView = req.query.kitchen === "true" ||
+            (requestedStatus && ["PENDING", "PREPARING", "READY"].includes(requestedStatus));
+
         const where = {
             restaurantId,
-            ...(requestedStatus && { status: requestedStatus })
+            ...(requestedStatus && { status: requestedStatus }),
+            ...(isKitchenView && {
+                paymentStatus: { notIn: ["PAYMENT_PENDING"] }
+            })
         };
 
         const [orders, total] = await Promise.all([
@@ -2804,10 +2802,10 @@ app.post("/admin/order/:id/confirm-payment", authMiddleware, async (req, res) =>
         await prisma.auditLog.create({
             data: {
                 actorUserId: req.user.userId,
-                action: "ORDER_STATUS_UPDATED",
+                action: "PAYMENT_CONFIRMED",
                 restaurantId: order.restaurantId,
                 orderId: order.id,
-                metadata: { paymentStatusChange: "PAID", confirmedFrom: "PAYMENT_CLAIMED" }
+                metadata: { method: "UPI_MANUAL", confirmedFrom: "PAYMENT_CLAIMED" }
             }
         });
 
@@ -2953,6 +2951,7 @@ app.post("/payment/create", paymentLimiter, optionalAuth, async (req, res) => {
                 totalPricePaise: true,
                 paymentStatus: true,
                 razorpayOrderId: true,
+                restaurantId: true,
                 paymentMethod: { select: { type: true } }
             }
         });
@@ -2967,6 +2966,15 @@ app.post("/payment/create", paymentLimiter, optionalAuth, async (req, res) => {
         // Only create Razorpay orders for RAZORPAY-type payment methods.
         if (order.paymentMethod?.type !== "RAZORPAY") {
             return res.status(400).json({ error: "This order uses a different payment method" });
+        }
+
+        // Ensure the restaurant is still active before initiating payment.
+        const restaurantForPayment = await prisma.restaurant.findUnique({
+            where: { id: order.restaurantId },
+            select: { isActive: true, subscriptionStatus: true, subscriptionEndsAt: true }
+        });
+        if (!restaurantForPayment || !isRestaurantServiceAvailable(restaurantForPayment)) {
+            return res.status(423).json({ error: "This restaurant is not currently accepting payments." });
         }
 
         // Validate credentials up-front so the error is user-friendly, not a 500.
@@ -3183,19 +3191,749 @@ app.patch("/admin/order/:id/payment-status", authMiddleware, async (req, res) =>
     }
 });
 
-// /api/v1/ prefix — forward to existing routes for future mobile app compatibility.
-// This lets Android/iOS clients use versioned URLs without duplicating route handlers.
-app.use("/api/v1", (req, res, next) => {
-    // Strip the /api/v1 prefix so existing route handlers match unchanged.
-    req.url = req.url;
-    next("router");
+// ─── /api/v1 — Mobile-first API (Expo React Native customer + restaurant apps) ──
+//
+// All responses use consistent {success, data} / {success, error{code,message}} format.
+// Old routes continue to work unchanged — this is an additive, parallel surface.
+//
+// Auth: same JWT tokens work on both web and mobile.
+// ────────────────────────────────────────────────────────────────────────────────
+
+const v1 = express.Router();
+
+// Set API version header on every /api/v1 response.
+v1.use((req, res, next) => {
+    res.setHeader("X-API-Version", "v1");
+    next();
 });
 
-// Redirect /api/v1/* to the corresponding root path.
-app.all("/api/v1/*splat", (req, res) => {
-    const stripped = req.path.replace(/^\/api\/v1/, "");
-    res.redirect(307, stripped + (req.url.includes("?") ? "?" + req.url.split("?")[1] : ""));
+function v1ok(res, data, status = 200) {
+    return res.status(status).json({ success: true, data });
+}
+
+function v1err(res, code, message, status = 400) {
+    return res.status(status).json({ success: false, error: { code, message } });
+}
+
+function v1list(res, data, pagination = null) {
+    return res.json({ success: true, data, ...(pagination && { pagination }) });
+}
+
+// Auth middleware variant that returns v1 error format.
+function v1Auth(req, res, next) {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) return v1err(res, "UNAUTHORIZED", "Authentication required", 401);
+    const token = authHeader.startsWith("Bearer ") ? authHeader.split(" ")[1] : authHeader;
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET, {
+            algorithms: ["HS256"], issuer: JWT_ISSUER, audience: JWT_AUDIENCE
+        });
+        req.user = decoded;
+        next();
+    } catch {
+        return v1err(res, "UNAUTHORIZED", "Session expired. Please sign in again.", 401);
+    }
+}
+
+function v1OptionalAuth(req, res, next) {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) return next();
+    const token = authHeader.startsWith("Bearer ") ? authHeader.split(" ")[1] : authHeader;
+    try {
+        req.user = jwt.verify(token, process.env.JWT_SECRET, {
+            algorithms: ["HS256"], issuer: JWT_ISSUER, audience: JWT_AUDIENCE
+        });
+    } catch { /* guest */ }
+    next();
+}
+
+// ── Public ─────────────────────────────────────────────────────────────────────
+
+v1.get("/public/restaurants/:slug", trackingLimiter, async (req, res) => {
+    try {
+        const restaurant = await prisma.restaurant.findUnique({ where: { slug: req.params.slug } });
+        if (!restaurant) return v1err(res, "NOT_FOUND", "Restaurant not found", 404);
+        const ratingData = await prisma.orderRating.aggregate({
+            where: { restaurantId: restaurant.id },
+            _avg: { rating: true }, _count: { rating: true }
+        });
+        return v1ok(res, {
+            ...publicRestaurantResponse(restaurant),
+            avgRating: ratingData._avg.rating ? Math.round(ratingData._avg.rating * 10) / 10 : null,
+            ratingCount: ratingData._count.rating
+        });
+    } catch (err) {
+        logRouteError("GET /api/v1/public/restaurants/:slug", err);
+        return v1err(res, "SERVER_ERROR", "Could not load restaurant", 500);
+    }
 });
+
+v1.get("/public/restaurants/:slug/menu", trackingLimiter, async (req, res) => {
+    try {
+        const restaurant = await prisma.restaurant.findUnique({ where: { slug: req.params.slug } });
+        if (!restaurant) return v1err(res, "NOT_FOUND", "Restaurant not found", 404);
+        if (!isRestaurantServiceAvailable(restaurant)) {
+            return v1err(res, "SERVICE_UNAVAILABLE", restaurantServiceMessage(restaurant), 423);
+        }
+        const foodFilter = menuFoodFilter(req.query.foodType);
+        const [menu, categories, popularIds] = await Promise.all([
+            prisma.menu.findMany({
+                where: { restaurantId: restaurant.id, isActive: true, ...foodFilter },
+                orderBy: [{ category: { sortOrder: "asc" } }, { category: { name: "asc" } }]
+            }),
+            prisma.category.findMany({
+                where: { restaurantId: restaurant.id },
+                orderBy: [{ sortOrder: "asc" }, { name: "asc" }]
+            }),
+            getPopularMenuIds(restaurant.id)
+        ]);
+        const paymentMethods = await getEnabledPaymentMethods(restaurant.id);
+        return v1ok(res, {
+            restaurant: publicRestaurantResponse(restaurant),
+            categories,
+            items: menu.map(item => ({
+                ...publicMenuItem(item),
+                isPopular: popularIds.has(item.id)
+            })),
+            paymentMethods: paymentMethods.map(m => ({
+                id: m.id, type: m.type, displayName: m.displayName, isDefault: m.isDefault,
+                ...(m.type === "UPI_QR" && { qrImageUrl: m.qrImageUrl || null, upiId: m.upiId || null })
+            }))
+        });
+    } catch (err) {
+        logRouteError("GET /api/v1/public/restaurants/:slug/menu", err);
+        return v1err(res, "SERVER_ERROR", "Could not load menu", 500);
+    }
+});
+
+v1.get("/public/payment-methods", trackingLimiter, async (req, res) => {
+    try {
+        const { slug, restaurantId: rId } = req.query;
+        if (!slug && !rId) return v1err(res, "BAD_REQUEST", "slug or restaurantId required");
+        let restaurantId = rId;
+        if (slug && !restaurantId) {
+            const r = await prisma.restaurant.findUnique({ where: { slug: String(slug) }, select: { id: true } });
+            if (!r) return v1err(res, "NOT_FOUND", "Restaurant not found", 404);
+            restaurantId = r.id;
+        }
+        const methods = await getEnabledPaymentMethods(restaurantId);
+        return v1ok(res, methods.map(m => ({
+            id: m.id, type: m.type, displayName: m.displayName, isDefault: m.isDefault,
+            ...(m.type === "UPI_QR" && { qrImageUrl: m.qrImageUrl || null, upiId: m.upiId || null })
+        })));
+    } catch (err) {
+        logRouteError("GET /api/v1/public/payment-methods", err);
+        return v1err(res, "SERVER_ERROR", "Could not load payment methods", 500);
+    }
+});
+
+// ── Customer Auth ──────────────────────────────────────────────────────────────
+
+v1.post("/customer/auth/signup", authLimiter, async (req, res) => {
+    try {
+        const { email, password, name, phone } = req.body;
+        if (!isValidEmail(email)) return v1err(res, "VALIDATION_ERROR", "Valid email required");
+        if (!password || String(password).length < 8) return v1err(res, "VALIDATION_ERROR", "Password must be at least 8 characters");
+        const existing = await prisma.user.findUnique({ where: { email: String(email).toLowerCase().trim() } });
+        if (existing) return v1err(res, "CONFLICT", "An account with this email already exists", 409);
+        const normalizedPhone = phone ? normalizePhone(String(phone)) : null;
+        if (phone && !normalizedPhone) return v1err(res, "VALIDATION_ERROR", "Invalid phone number");
+        const hashed = await bcrypt.hash(String(password), 12);
+        const user = await prisma.user.create({
+            data: {
+                email: String(email).toLowerCase().trim(),
+                password: hashed,
+                name: cleanString(name, 120) || null,
+                phone: normalizedPhone,
+                role: "USER"
+            },
+            select: { id: true, email: true, name: true, phone: true, role: true }
+        });
+        return v1ok(res, {
+            accessToken: signAuthToken(user),
+            expiresIn: 7 * 24 * 3600,
+            user: { id: user.id, email: user.email, name: user.name, phone: user.phone, role: user.role }
+        }, 201);
+    } catch (err) {
+        logRouteError("POST /api/v1/customer/auth/signup", err);
+        return v1err(res, "SERVER_ERROR", "Could not create account", 500);
+    }
+});
+
+v1.post("/customer/auth/login", authLimiter, async (req, res) => {
+    try {
+        const { email, password } = req.body;
+        if (!email || !password) return v1err(res, "VALIDATION_ERROR", "Email and password required");
+        const user = await findPasswordUser(email, password);
+        if (!user) return v1err(res, "INVALID_CREDENTIALS", "Incorrect email or password", 401);
+        if (user.role !== "USER") return v1err(res, "FORBIDDEN", "Use the restaurant partner login for this account", 403);
+        return v1ok(res, {
+            accessToken: signAuthToken(user),
+            expiresIn: 7 * 24 * 3600,
+            user: { id: user.id, email: user.email, name: user.name, phone: user.phone, role: user.role }
+        });
+    } catch (err) {
+        logRouteError("POST /api/v1/customer/auth/login", err);
+        return v1err(res, "SERVER_ERROR", "Login failed", 500);
+    }
+});
+
+v1.get("/customer/auth/me", v1Auth, async (req, res) => {
+    try {
+        const user = await prisma.user.findUnique({
+            where: { id: req.user.userId },
+            select: { id: true, email: true, name: true, phone: true, role: true }
+        });
+        if (!user) return v1err(res, "NOT_FOUND", "Account not found", 404);
+        return v1ok(res, { user });
+    } catch (err) {
+        logRouteError("GET /api/v1/customer/auth/me", err);
+        return v1err(res, "SERVER_ERROR", "Could not fetch profile", 500);
+    }
+});
+
+// ── Customer Orders ────────────────────────────────────────────────────────────
+
+v1.post("/customer/orders", orderLimiter, v1OptionalAuth, async (req, res) => {
+    // Delegate to the same POST /order handler by mutating req/res.
+    // We wrap the response after the fact using a thin adapter.
+    try {
+        const { items, sessionId, phone, restaurantSlug, restaurantId: rId,
+            paymentMethodId, tableNumber, idempotencyKey, guest } = req.body;
+
+        const deviceId = cleanString(sessionId, 120);
+        const restaurantSlug_ = cleanString(restaurantSlug, 140);
+        let restaurantId = cleanString(rId, 80);
+        const ipHash = hashIp(req.ip);
+
+        if (!Array.isArray(items) || items.length === 0 || items.length > 40)
+            return v1err(res, "VALIDATION_ERROR", "Items required (max 40)");
+        if (!deviceId || deviceId.length < 8) return v1err(res, "VALIDATION_ERROR", "Valid sessionId required");
+        if (!restaurantId && !restaurantSlug_) return v1err(res, "VALIDATION_ERROR", "restaurantId or restaurantSlug required");
+
+        const normalizedItems = items.map(i => ({
+            menuId: String(i.menuId || ""), menuKey: String(i.menuKey || ""),
+            quantity: Number(i.quantity)
+        }));
+        if (normalizedItems.some(i => (!i.menuId && !i.menuKey) || !Number.isInteger(i.quantity) || i.quantity < 1 || i.quantity > 20))
+            return v1err(res, "VALIDATION_ERROR", "Check item quantities (1–20 per item)");
+
+        const normalizedPhone = normalizePhone(String(phone || ""));
+        if (!normalizedPhone) return v1err(res, "VALIDATION_ERROR", "Valid phone number required");
+
+        const restaurant = restaurantSlug_
+            ? await prisma.restaurant.findUnique({ where: { slug: restaurantSlug_ }, select: { id: true, name: true, isActive: true, subscriptionStatus: true, subscriptionEndsAt: true } })
+            : await prisma.restaurant.findUnique({ where: { id: restaurantId }, select: { id: true, name: true, isActive: true, subscriptionStatus: true, subscriptionEndsAt: true } });
+
+        if (!restaurant) return v1err(res, "NOT_FOUND", "Restaurant not found", 404);
+        restaurantId = restaurant.id;
+
+        if (!isRestaurantServiceAvailable(restaurant)) {
+            await logOrderAttempt(prisma, { restaurantId, phone: normalizedPhone, deviceId, ipHash, status: "REJECTED", reason: "restaurant_unavailable" });
+            return v1err(res, "SERVICE_UNAVAILABLE", restaurantServiceMessage(restaurant), 423);
+        }
+
+        const guestOrder = guest === true;
+        let customer = null;
+        let shouldSaveCustomerPhone = false;
+        if (req.user?.userId && !guestOrder) {
+            customer = await prisma.user.findUnique({ where: { id: req.user.userId }, select: { id: true, role: true, phone: true } });
+            if (!customer || customer.role !== "USER") customer = null;
+            if (customer && !customer.phone && normalizedPhone) shouldSaveCustomerPhone = true;
+        }
+
+        const abuse = await checkOrderAbuse(prisma, { restaurantId, phone: normalizedPhone, deviceId, ipHash });
+        if (!abuse.allowed) {
+            await auditLog("ORDER_ATTEMPT_REJECTED", { restaurantId, metadata: { reason: abuse.reason } });
+            return v1err(res, "RATE_LIMITED", abuse.reason, 429);
+        }
+
+        if (idempotencyKey) {
+            const cacheKey = `order:${restaurantId}:${deviceId}:${idempotencyKey}`;
+            const cached = await getIdempotentResponse(cacheKey);
+            if (cached) return v1ok(res, cached);
+        }
+
+        const pickupCode = crypto.randomInt(1000, 10000).toString();
+        const trackingToken = crypto.randomUUID();
+        const enabledMethods = await getEnabledPaymentMethods(restaurantId);
+        let resolvedPaymentMethodId = null;
+        if (enabledMethods.length > 0) {
+            if (paymentMethodId) {
+                const match = enabledMethods.find(m => m.id === paymentMethodId);
+                if (!match) return v1err(res, "VALIDATION_ERROR", "Invalid payment method");
+                resolvedPaymentMethodId = match.id;
+            } else {
+                resolvedPaymentMethodId = enabledMethods[0].id;
+            }
+        }
+        const requiresPayment = resolvedPaymentMethodId !== null;
+
+        const hasPublicMenuKeys = normalizedItems.some(i => i.menuKey);
+        const menuItems = await prisma.menu.findMany({
+            where: hasPublicMenuKeys
+                ? { restaurantId, isActive: true }
+                : { id: { in: normalizedItems.map(i => i.menuId) }, restaurantId, isActive: true }
+        });
+
+        let totalPricePaise = 0;
+        for (const i of normalizedItems) {
+            const menu = menuItems.find(m => i.menuId ? m.id === i.menuId : publicMenuKey(m.id) === i.menuKey);
+            if (!menu) return v1err(res, "VALIDATION_ERROR", "One or more items are invalid");
+            if (!menu.isAvailable) return v1err(res, "ITEM_UNAVAILABLE", `${menu.name} is not available`);
+            totalPricePaise += menu.pricePaise * i.quantity;
+        }
+
+        const order = await prisma.$transaction(async (tx) => {
+            const counter = await tx.restaurant.update({
+                where: { id: restaurantId }, data: { orderCounter: { increment: 1 } }, select: { orderCounter: true }
+            });
+            return tx.order.create({
+                data: {
+                    orderNumber: counter.orderCounter - 1, totalPricePaise,
+                    paymentStatus: requiresPayment ? "PAYMENT_PENDING" : "PAYMENT_NOT_REQUIRED",
+                    pickupCode, trackingToken, sessionId: deviceId, phone: normalizedPhone,
+                    tableNumber: tableNumber || null,
+                    ...(resolvedPaymentMethodId && { paymentMethodId: resolvedPaymentMethodId }),
+                    ...(customer && { customerId: customer.id }),
+                    restaurantId,
+                    items: {
+                        create: normalizedItems.map(i => {
+                            const menu = menuItems.find(m => i.menuId ? m.id === i.menuId : publicMenuKey(m.id) === i.menuKey);
+                            return { menuId: menu.id, quantity: i.quantity, priceAtOrderPaise: menu.pricePaise, nameAtOrder: menu.name };
+                        })
+                    }
+                }
+            });
+        });
+
+        await logOrderAttempt(prisma, { restaurantId, phone: normalizedPhone, deviceId, ipHash, status: "ACCEPTED", reason: "order_created" });
+        if (shouldSaveCustomerPhone) {
+            prisma.user.update({ where: { id: customer.id }, data: { phone: normalizedPhone } }).catch(() => {});
+        }
+
+        const selectedMethod = resolvedPaymentMethodId ? enabledMethods.find(m => m.id === resolvedPaymentMethodId) || null : null;
+        const responseData = {
+            trackingToken: order.trackingToken,
+            orderNumber: order.orderNumber,
+            pickupCode,
+            paymentStatus: order.paymentStatus,
+            paymentMethod: selectedMethod ? {
+                id: selectedMethod.id, type: selectedMethod.type, displayName: selectedMethod.displayName,
+                ...(selectedMethod.type === "UPI_QR" && { qrImageUrl: selectedMethod.qrImageUrl || null, upiId: selectedMethod.upiId || null })
+            } : null,
+            trackingUrl: `${BASE_URL}/track/${order.trackingToken}`
+        };
+
+        if (idempotencyKey) {
+            const cacheKey = `order:${restaurantId}:${deviceId}:${idempotencyKey}`;
+            setIdempotentResponse(cacheKey, responseData).catch(() => {});
+        }
+
+        notifyOrderConfirmation({ prisma, order, restaurant, baseUrl: BASE_URL, recipientEmail: customer ? null : null })
+            .catch((err) => logRouteError("v1:notifyOrderConfirmation", err));
+
+        return v1ok(res, responseData, 201);
+    } catch (err) {
+        logRouteError("POST /api/v1/customer/orders", err);
+        return v1err(res, "SERVER_ERROR", "Could not place order", 500);
+    }
+});
+
+v1.get("/customer/orders", v1Auth, async (req, res) => {
+    try {
+        if (req.user.role !== "USER") return v1err(res, "FORBIDDEN", "Customer accounts only", 403);
+        const page = Math.max(parseInt(req.query.page || "1", 10), 1);
+        const limit = Math.min(Math.max(parseInt(req.query.limit || "20", 10), 1), 50);
+        const skip = (page - 1) * limit;
+        const [orders, total] = await Promise.all([
+            prisma.order.findMany({
+                where: { customerId: req.user.userId },
+                include: { items: true, restaurant: { select: { name: true, slug: true } } },
+                orderBy: { createdAt: "desc" }, skip, take: limit
+            }),
+            prisma.order.count({ where: { customerId: req.user.userId } })
+        ]);
+        return v1list(res,
+            orders.map(o => customerOrderSummary(o)),
+            { page, limit, total, hasMore: skip + orders.length < total }
+        );
+    } catch (err) {
+        logRouteError("GET /api/v1/customer/orders", err);
+        return v1err(res, "SERVER_ERROR", "Could not fetch orders", 500);
+    }
+});
+
+v1.get("/customer/orders/:trackingToken", v1OptionalAuth, trackingLimiter, async (req, res) => {
+    try {
+        const order = await prisma.order.findUnique({
+            where: { trackingToken: req.params.trackingToken },
+            include: {
+                items: { include: { menu: { select: { name: true, imageUrl: true } } } },
+                restaurant: { select: { name: true, slug: true, address: true, pickupNote: true } },
+                paymentMethod: { select: { id: true, type: true, displayName: true, qrImageUrl: true, upiId: true } },
+                rating: { select: { rating: true, comment: true } }
+            }
+        });
+        if (!order) return v1err(res, "NOT_FOUND", "Order not found", 404);
+        return v1ok(res, publicOrderResponse(order, { includeInternalId: false }));
+    } catch (err) {
+        logRouteError("GET /api/v1/customer/orders/:trackingToken", err);
+        return v1err(res, "SERVER_ERROR", "Could not fetch order", 500);
+    }
+});
+
+v1.get("/customer/orders/:trackingToken/payment-status", trackingLimiter, async (req, res) => {
+    try {
+        const order = await prisma.order.findUnique({
+            where: { trackingToken: req.params.trackingToken },
+            select: { paymentStatus: true, status: true, trackingToken: true }
+        });
+        if (!order) return v1err(res, "NOT_FOUND", "Order not found", 404);
+        return v1ok(res, { paymentStatus: order.paymentStatus, orderStatus: order.status });
+    } catch (err) {
+        logRouteError("GET /api/v1/customer/orders/:trackingToken/payment-status", err);
+        return v1err(res, "SERVER_ERROR", "Could not fetch payment status", 500);
+    }
+});
+
+// ── Customer Payments ──────────────────────────────────────────────────────────
+
+v1.post("/customer/payments/razorpay/create", paymentLimiter, v1OptionalAuth, async (req, res) => {
+    try {
+        const trackingToken = cleanString(req.body.trackingToken, 80);
+        if (!trackingToken) return v1err(res, "VALIDATION_ERROR", "trackingToken required");
+        const order = await prisma.order.findUnique({
+            where: { trackingToken },
+            select: { id: true, totalPricePaise: true, paymentStatus: true, razorpayOrderId: true, restaurantId: true, paymentMethod: { select: { type: true } } }
+        });
+        if (!order) return v1err(res, "NOT_FOUND", "Order not found", 404);
+        if (order.paymentStatus === "PAID") return v1ok(res, { alreadyPaid: true });
+        if (order.paymentStatus !== "PAYMENT_PENDING") return v1err(res, "BAD_REQUEST", "This order does not require payment");
+        if (order.paymentMethod?.type !== "RAZORPAY") return v1err(res, "BAD_REQUEST", "This order uses a different payment method");
+        const restaurantForPay = await prisma.restaurant.findUnique({ where: { id: order.restaurantId }, select: { isActive: true, subscriptionStatus: true, subscriptionEndsAt: true } });
+        if (!restaurantForPay || !isRestaurantServiceAvailable(restaurantForPay)) return v1err(res, "SERVICE_UNAVAILABLE", "Restaurant not currently accepting payments", 423);
+        const keyId = process.env.RAZORPAY_KEY_ID;
+        const keySecret = process.env.RAZORPAY_KEY_SECRET;
+        if (!keyId || !keySecret) return v1err(res, "SERVICE_UNAVAILABLE", "Online payment temporarily unavailable", 503);
+        const currency = process.env.RAZORPAY_CURRENCY || "INR";
+        if (order.razorpayOrderId) {
+            return v1ok(res, { razorpayOrderId: order.razorpayOrderId, amount: order.totalPricePaise, currency, keyId });
+        }
+        const rzp = getRazorpayInstance();
+        const rzpOrder = await rzp.orders.create({ amount: order.totalPricePaise, currency, receipt: trackingToken, payment_capture: 1 });
+        await prisma.order.update({ where: { id: order.id }, data: { razorpayOrderId: rzpOrder.id } });
+        return v1ok(res, { razorpayOrderId: rzpOrder.id, amount: order.totalPricePaise, currency, keyId });
+    } catch (err) {
+        logRouteError("POST /api/v1/customer/payments/razorpay/create", err);
+        return v1err(res, "SERVER_ERROR", "Could not initiate payment", 500);
+    }
+});
+
+v1.post("/customer/payments/upi/claim", paymentLimiter, v1OptionalAuth, async (req, res) => {
+    try {
+        const trackingToken = cleanString(req.body.trackingToken, 80);
+        const paymentReference = cleanString(req.body.paymentReference, 120) || null;
+        if (!trackingToken) return v1err(res, "VALIDATION_ERROR", "trackingToken required");
+        const order = await prisma.order.findUnique({
+            where: { trackingToken },
+            select: { id: true, paymentStatus: true, paymentMethod: { select: { type: true } } }
+        });
+        if (!order) return v1err(res, "NOT_FOUND", "Order not found", 404);
+        if (order.paymentStatus === "PAID") return v1ok(res, { alreadyPaid: true });
+        if (order.paymentStatus === "PAYMENT_CLAIMED") return v1ok(res, { claimed: true });
+        if (order.paymentStatus !== "PAYMENT_PENDING") return v1err(res, "BAD_REQUEST", "This order does not require payment");
+        if (order.paymentMethod?.type !== "UPI_QR") return v1err(res, "BAD_REQUEST", "This order is not a UPI payment");
+        await prisma.order.update({ where: { id: order.id }, data: { paymentStatus: "PAYMENT_CLAIMED", ...(paymentReference && { paymentReference }) } });
+        return v1ok(res, { claimed: true });
+    } catch (err) {
+        logRouteError("POST /api/v1/customer/payments/upi/claim", err);
+        return v1err(res, "SERVER_ERROR", "Could not submit payment claim", 500);
+    }
+});
+
+// ── Restaurant Auth ────────────────────────────────────────────────────────────
+
+v1.post("/restaurant/auth/login", authLimiter, async (req, res) => {
+    try {
+        const { email, password } = req.body;
+        if (!email || !password) return v1err(res, "VALIDATION_ERROR", "Email and password required");
+        const user = await findPasswordUser(email, password);
+        if (!user) return v1err(res, "INVALID_CREDENTIALS", "Incorrect email or password", 401);
+        if (user.role === "USER") return v1err(res, "FORBIDDEN", "Use the customer login for this account", 403);
+
+        // Include the restaurant context in the response so the mobile app can store it.
+        let restaurant = null;
+        if (user.role === "RESTAURANT_OWNER") {
+            restaurant = await prisma.restaurant.findFirst({
+                where: { ownerId: user.id },
+                select: { id: true, name: true, slug: true, isActive: true, subscriptionStatus: true }
+            });
+        } else if (user.role === "EMPLOYEE" && user.staffRestaurantId) {
+            restaurant = await prisma.restaurant.findUnique({
+                where: { id: user.staffRestaurantId },
+                select: { id: true, name: true, slug: true, isActive: true, subscriptionStatus: true }
+            });
+        }
+
+        return v1ok(res, {
+            accessToken: signAuthToken(user),
+            expiresIn: 7 * 24 * 3600,
+            user: { id: user.id, email: user.email, name: user.name, phone: user.phone, role: user.role },
+            restaurant
+        });
+    } catch (err) {
+        logRouteError("POST /api/v1/restaurant/auth/login", err);
+        return v1err(res, "SERVER_ERROR", "Login failed", 500);
+    }
+});
+
+v1.get("/restaurant/me", v1Auth, async (req, res) => {
+    try {
+        const user = await getAuthUser(req.user.userId);
+        if (!user || user.role === "USER") return v1err(res, "FORBIDDEN", "Restaurant/admin access only", 403);
+        let restaurant = null;
+        if (user.role === "RESTAURANT_OWNER") {
+            restaurant = await prisma.restaurant.findFirst({
+                where: { ownerId: user.id },
+                select: { id: true, name: true, slug: true, isActive: true, subscriptionStatus: true, subscriptionEndsAt: true }
+            });
+        } else if (user.role === "EMPLOYEE" && user.staffRestaurantId) {
+            restaurant = await prisma.restaurant.findUnique({
+                where: { id: user.staffRestaurantId },
+                select: { id: true, name: true, slug: true, isActive: true, subscriptionStatus: true, subscriptionEndsAt: true }
+            });
+        }
+        return v1ok(res, {
+            user: { id: user.id, email: user.email, name: user.name, phone: user.phone, role: user.role },
+            restaurant
+        });
+    } catch (err) {
+        logRouteError("GET /api/v1/restaurant/me", err);
+        return v1err(res, "SERVER_ERROR", "Could not fetch profile", 500);
+    }
+});
+
+// ── Restaurant Orders ──────────────────────────────────────────────────────────
+
+v1.get("/restaurant/orders", v1Auth, async (req, res) => {
+    try {
+        const user = await getAuthUser(req.user.userId);
+        if (!user || user.role === "USER") return v1err(res, "FORBIDDEN", "Restaurant access only", 403);
+
+        // Determine which restaurant to show — ADMIN can pass restaurantId param.
+        let restaurantId = cleanString(req.query.restaurantId, 80);
+        if (!restaurantId) {
+            if (user.role === "RESTAURANT_OWNER") {
+                const r = await prisma.restaurant.findFirst({ where: { ownerId: user.id }, select: { id: true } });
+                restaurantId = r?.id;
+            } else if (user.role === "EMPLOYEE") {
+                restaurantId = user.staffRestaurantId;
+            }
+        }
+        if (!restaurantId) return v1err(res, "BAD_REQUEST", "restaurantId required");
+
+        const access = await getRestaurantAccess(restaurantId, user.id);
+        if (!access.canAccess) return v1err(res, "FORBIDDEN", "Not allowed", 403);
+
+        const validStatuses = ["PENDING", "PREPARING", "READY", "COMPLETED", "CANCELLED"];
+        const requestedStatus = req.query.status ? String(req.query.status).toUpperCase() : "";
+        if (requestedStatus && !validStatuses.includes(requestedStatus)) {
+            return v1err(res, "VALIDATION_ERROR", "Invalid status filter");
+        }
+
+        const isKitchenView = req.query.kitchen === "true" ||
+            (requestedStatus && ["PENDING", "PREPARING", "READY"].includes(requestedStatus));
+        const page = Math.max(parseInt(req.query.page || "1", 10), 1);
+        const limit = Math.min(Math.max(parseInt(req.query.limit || "50", 10), 1), 100);
+        const skip = (page - 1) * limit;
+
+        const where = {
+            restaurantId,
+            ...(requestedStatus && { status: requestedStatus }),
+            ...(isKitchenView && { paymentStatus: { notIn: ["PAYMENT_PENDING"] } })
+        };
+
+        const [orders, total] = await Promise.all([
+            prisma.order.findMany({ where, include: { items: true, paymentMethod: true }, orderBy: { createdAt: "desc" }, skip, take: limit }),
+            prisma.order.count({ where })
+        ]);
+
+        return v1list(res,
+            orders.map(o => publicOrderResponse(o, { includeInternalId: true })),
+            { page, limit, total, hasMore: skip + orders.length < total }
+        );
+    } catch (err) {
+        logRouteError("GET /api/v1/restaurant/orders", err);
+        return v1err(res, "SERVER_ERROR", "Could not fetch orders", 500);
+    }
+});
+
+v1.get("/restaurant/orders/:id", v1Auth, async (req, res) => {
+    try {
+        const order = await prisma.order.findUnique({
+            where: { id: req.params.id },
+            include: { items: true, paymentMethod: true, restaurant: { select: { id: true, name: true } } }
+        });
+        if (!order) return v1err(res, "NOT_FOUND", "Order not found", 404);
+        const access = await getRestaurantAccess(order.restaurantId, req.user.userId);
+        if (!access.canAccess) return v1err(res, "FORBIDDEN", "Not allowed", 403);
+        return v1ok(res, publicOrderResponse(order, { includeInternalId: true }));
+    } catch (err) {
+        logRouteError("GET /api/v1/restaurant/orders/:id", err);
+        return v1err(res, "SERVER_ERROR", "Could not fetch order", 500);
+    }
+});
+
+v1.patch("/restaurant/orders/:id/status", v1Auth, async (req, res) => {
+    try {
+        const order = await prisma.order.findUnique({
+            where: { id: req.params.id },
+            select: { id: true, status: true, restaurantId: true, paymentStatus: true }
+        });
+        if (!order) return v1err(res, "NOT_FOUND", "Order not found", 404);
+        const access = await getRestaurantAccess(order.restaurantId, req.user.userId);
+        if (!access.canOperate) return v1err(res, "FORBIDDEN", "Not allowed", 403);
+
+        const newStatus = String(req.body.status || "").toUpperCase();
+        const allowed = ORDER_STATUS_TRANSITIONS[order.status] || [];
+        if (!allowed.includes(newStatus)) {
+            return v1err(res, "VALIDATION_ERROR", `Cannot move order from ${order.status} to ${newStatus}`);
+        }
+        // Block kitchen from acting on unpaid orders.
+        if (["PREPARING"].includes(newStatus) && order.paymentStatus === "PAYMENT_PENDING") {
+            return v1err(res, "PAYMENT_REQUIRED", "Order payment has not been confirmed", 402);
+        }
+        const updated = await prisma.order.update({
+            where: { id: order.id },
+            data: { status: newStatus, ...(newStatus === "READY" && { readyAt: new Date() }) }
+        });
+        await auditLog("ORDER_STATUS_UPDATED", { actorUserId: req.user.userId, restaurantId: order.restaurantId, orderId: order.id, metadata: { from: order.status, to: newStatus } });
+        notifyOrderStatus({ prisma, order: updated, baseUrl: BASE_URL }).catch(() => {});
+        return v1ok(res, { id: updated.id, status: updated.status, orderNumber: updated.orderNumber });
+    } catch (err) {
+        logRouteError("PATCH /api/v1/restaurant/orders/:id/status", err);
+        return v1err(res, "SERVER_ERROR", "Could not update order status", 500);
+    }
+});
+
+// ── Restaurant Menu ────────────────────────────────────────────────────────────
+
+v1.patch("/restaurant/menu/items/:id/availability", v1Auth, async (req, res) => {
+    try {
+        const item = await prisma.menu.findUnique({ where: { id: req.params.id }, select: { id: true, restaurantId: true, isAvailable: true, name: true } });
+        if (!item) return v1err(res, "NOT_FOUND", "Menu item not found", 404);
+        const access = await getRestaurantAccess(item.restaurantId, req.user.userId);
+        if (!access.canOperate) return v1err(res, "FORBIDDEN", "Not allowed", 403);
+        const isAvailable = typeof req.body.isAvailable === "boolean" ? req.body.isAvailable : !item.isAvailable;
+        const updated = await prisma.menu.update({ where: { id: item.id }, data: { isAvailable } });
+        await auditLog("MENU_ITEM_UPDATED", { actorUserId: req.user.userId, restaurantId: item.restaurantId, metadata: { itemId: item.id, itemName: item.name, isAvailable } });
+        return v1ok(res, { id: updated.id, name: updated.name, isAvailable: updated.isAvailable });
+    } catch (err) {
+        logRouteError("PATCH /api/v1/restaurant/menu/items/:id/availability", err);
+        return v1err(res, "SERVER_ERROR", "Could not update availability", 500);
+    }
+});
+
+// ── Restaurant Payments ────────────────────────────────────────────────────────
+
+v1.post("/restaurant/payments/manual-confirm", v1Auth, async (req, res) => {
+    try {
+        const orderId = cleanString(req.body.orderId, 80);
+        if (!orderId) return v1err(res, "VALIDATION_ERROR", "orderId required");
+        const order = await prisma.order.findUnique({
+            where: { id: orderId },
+            select: { id: true, paymentStatus: true, restaurantId: true, trackingToken: true, orderNumber: true, pickupCode: true, customer: { select: { email: true } }, restaurant: { select: { name: true } } }
+        });
+        if (!order) return v1err(res, "NOT_FOUND", "Order not found", 404);
+        const access = await getRestaurantAccess(order.restaurantId, req.user.userId);
+        if (!access.canOperate) return v1err(res, "FORBIDDEN", "Not allowed", 403);
+        if (order.paymentStatus === "PAID") return v1ok(res, { alreadyPaid: true });
+        if (order.paymentStatus !== "PAYMENT_CLAIMED") return v1err(res, "BAD_REQUEST", "Order is not in a payment claimed state");
+        await prisma.order.update({ where: { id: order.id }, data: { paymentStatus: "PAID" } });
+        await auditLog("PAYMENT_CONFIRMED", { actorUserId: req.user.userId, restaurantId: order.restaurantId, orderId: order.id, metadata: { method: "UPI_MANUAL", via: "v1" } });
+        notifyOrderConfirmation({ prisma, order, restaurant: order.restaurant, baseUrl: BASE_URL, recipientEmail: order.customer?.email || null }).catch(() => {});
+        return v1ok(res, { confirmed: true });
+    } catch (err) {
+        logRouteError("POST /api/v1/restaurant/payments/manual-confirm", err);
+        return v1err(res, "SERVER_ERROR", "Could not confirm payment", 500);
+    }
+});
+
+v1.get("/restaurant/subscription", v1Auth, async (req, res) => {
+    try {
+        const user = await getAuthUser(req.user.userId);
+        if (!user || user.role === "USER") return v1err(res, "FORBIDDEN", "Restaurant access only", 403);
+        let restaurantId = cleanString(req.query.restaurantId, 80);
+        if (!restaurantId && user.role === "RESTAURANT_OWNER") {
+            const r = await prisma.restaurant.findFirst({ where: { ownerId: user.id }, select: { id: true } });
+            restaurantId = r?.id;
+        } else if (!restaurantId && user.role === "EMPLOYEE") {
+            restaurantId = user.staffRestaurantId;
+        }
+        if (!restaurantId) return v1err(res, "BAD_REQUEST", "restaurantId required");
+        const access = await getRestaurantAccess(restaurantId, user.id);
+        if (!access.canAccess) return v1err(res, "FORBIDDEN", "Not allowed", 403);
+        return v1ok(res, {
+            subscriptionStatus: access.restaurant.subscriptionStatus,
+            subscriptionEndsAt: access.restaurant.subscriptionEndsAt,
+            isActive: access.restaurant.isActive,
+            serviceAvailable: isRestaurantServiceAvailable(access.restaurant)
+        });
+    } catch (err) {
+        logRouteError("GET /api/v1/restaurant/subscription", err);
+        return v1err(res, "SERVER_ERROR", "Could not fetch subscription", 500);
+    }
+});
+
+// ── Device Token (placeholder — push notifications not yet active) ─────────────
+
+v1.post("/customer/device-token", v1Auth, async (req, res) => {
+    try {
+        if (req.user.role !== "USER") return v1err(res, "FORBIDDEN", "Customer accounts only", 403);
+        const { token, platform, appType } = req.body;
+        if (!token || !platform) return v1err(res, "VALIDATION_ERROR", "token and platform required");
+        const validPlatforms = ["ios", "android", "web"];
+        if (!validPlatforms.includes(String(platform).toLowerCase())) return v1err(res, "VALIDATION_ERROR", "platform must be ios, android, or web");
+        await prisma.deviceToken.upsert({
+            where: { token: String(token) },
+            update: { isActive: true, lastSeenAt: new Date(), platform: String(platform).toLowerCase(), appType: appType || "customer" },
+            create: { userId: req.user.userId, token: String(token), platform: String(platform).toLowerCase(), appType: appType || "customer" }
+        });
+        return v1ok(res, { registered: true });
+    } catch (err) {
+        logRouteError("POST /api/v1/customer/device-token", err);
+        return v1err(res, "SERVER_ERROR", "Could not register device token", 500);
+    }
+});
+
+v1.post("/restaurant/device-token", v1Auth, async (req, res) => {
+    try {
+        if (req.user.role === "USER") return v1err(res, "FORBIDDEN", "Restaurant/admin accounts only", 403);
+        const { token, platform, appType } = req.body;
+        if (!token || !platform) return v1err(res, "VALIDATION_ERROR", "token and platform required");
+        const validPlatforms = ["ios", "android", "web"];
+        if (!validPlatforms.includes(String(platform).toLowerCase())) return v1err(res, "VALIDATION_ERROR", "platform must be ios, android, or web");
+        const user = await getAuthUser(req.user.userId);
+        const restaurantId = user?.staffRestaurantId || null;
+        await prisma.deviceToken.upsert({
+            where: { token: String(token) },
+            update: { isActive: true, lastSeenAt: new Date(), platform: String(platform).toLowerCase(), appType: appType || "restaurant" },
+            create: { userId: req.user.userId, restaurantId, token: String(token), platform: String(platform).toLowerCase(), appType: appType || "restaurant" }
+        });
+        return v1ok(res, { registered: true });
+    } catch (err) {
+        logRouteError("POST /api/v1/restaurant/device-token", err);
+        return v1err(res, "SERVER_ERROR", "Could not register device token", 500);
+    }
+});
+
+// Catch-all for unknown /api/v1 routes — return JSON, not HTML.
+v1.use((req, res) => {
+    return v1err(res, "NOT_FOUND", `${req.method} ${req.path} is not a valid API endpoint`, 404);
+});
+
+app.use("/api/v1", v1);
 
 // Unknown API routes return JSON — prevents leaking Express HTML with framework info.
 app.use((req, res, next) => {
@@ -3237,6 +3975,10 @@ async function startServer() {
             await ensureFoodTypeSchema();
         }
 
+        // Connect Redis — non-fatal; rate limiting falls back to in-memory if unavailable.
+        const redisUrl = process.env.REDIS_URL || "redis://localhost:6379";
+        await connectRedis(redisUrl);
+
         const server = app.listen(PORT, () => {
             console.log(JSON.stringify({
                 level: "info",
@@ -3244,6 +3986,7 @@ async function startServer() {
                 port: PORT,
                 env: process.env.NODE_ENV || "development",
                 version: process.env.npm_package_version || "unknown",
+                redis: isRedisConnected() ? "connected" : "unavailable",
                 time: new Date().toISOString()
             }));
         });
@@ -3251,7 +3994,10 @@ async function startServer() {
         const shutdown = async (signal) => {
             console.log(`[server] ${signal} — shutting down`);
             server.close(async () => {
-                await prisma.$disconnect().catch(() => {});
+                await Promise.all([
+                    prisma.$disconnect().catch(() => {}),
+                    disconnectRedis().catch(() => {})
+                ]);
                 process.exit(0);
             });
             // Force-exit after 10 s if connections are not drained.

@@ -1,4 +1,5 @@
-import pino from "pino";
+"use strict";
+const pino = require("pino");
 
 const isDev = process.env.NODE_ENV !== "production";
 
@@ -18,4 +19,4 @@ const logger = pino({
   },
 });
 
-export default logger;
+module.exports = logger;

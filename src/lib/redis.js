@@ -1,62 +1,43 @@
-import Redis from "ioredis";
-import logger from "./logger.js";
+"use strict";
+const Redis = require("ioredis");
 
 let client = null;
-let isConnected = false;
+let connected = false;
 
-export function createRedisClient(url) {
+function createRedisClient(url) {
   if (client) return client;
-
   client = new Redis(url, {
     maxRetriesPerRequest: 3,
     enableOfflineQueue: false,
     lazyConnect: true,
     retryStrategy: (times) => {
-      if (times > 5) return null; // stop retrying
+      if (times > 5) return null;
       return Math.min(times * 200, 2000);
     },
   });
-
-  client.on("connect", () => {
-    isConnected = true;
-    logger.info("Redis connected");
-  });
-
-  client.on("error", (err) => {
-    isConnected = false;
-    logger.warn({ err: err.message }, "Redis error — rate limiting falls back to in-memory");
-  });
-
-  client.on("close", () => {
-    isConnected = false;
-  });
-
+  client.on("connect", () => { connected = true; console.log("[redis] connected"); });
+  client.on("error", (err) => { connected = false; console.warn("[redis] error —", err.message); });
+  client.on("close", () => { connected = false; });
   return client;
 }
 
-export function getRedisClient() {
-  return client;
-}
+function getRedisClient() { return client; }
+function isRedisConnected() { return connected; }
 
-export function isRedisConnected() {
-  return isConnected;
-}
-
-export async function connectRedis(url) {
+async function connectRedis(url) {
   const c = createRedisClient(url);
-  try {
-    await c.connect();
-  } catch (err) {
-    // Non-fatal — app runs without Redis in dev
-    logger.warn({ err: err.message }, "Redis unavailable at startup");
+  try { await c.connect(); } catch (err) {
+    console.warn("[redis] unavailable at startup:", err.message);
   }
   return c;
 }
 
-export async function disconnectRedis() {
+async function disconnectRedis() {
   if (client) {
     await client.quit().catch(() => client.disconnect());
     client = null;
-    isConnected = false;
+    connected = false;
   }
 }
+
+module.exports = { createRedisClient, getRedisClient, isRedisConnected, connectRedis, disconnectRedis };
