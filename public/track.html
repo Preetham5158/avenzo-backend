@@ -156,7 +156,7 @@
     </div>
   </header>
 
-  <!-- Minimal nav for guests -->
+  <!-- Minimal nav for guests (hidden immediately if logged in to avoid flash) -->
   <nav class="t-nav" id="guestNav">
     <div class="t-nav-in">
       <a class="t-logo" href="/">
@@ -167,6 +167,7 @@
       </div>
     </div>
   </nav>
+  <script>if(sessionStorage.getItem("token")){document.getElementById("guestNav").hidden=true;}</script>
 
   <div class="t-wrap">
     <!-- Hero: status + step tracker -->
@@ -458,7 +459,7 @@
       failedPanel.hidden = order.paymentStatus !== "PAYMENT_FAILED";
 
       if (order.paymentStatus === "PAYMENT_CLAIMED") {
-        pendingPanel.hidden = false;
+        pendingPanel.removeAttribute("hidden");
         pendingPanel.className = "t-pay-panel t-pay-claimed";
         pendingPanel.innerHTML = `
           <div class="t-pay-title" style="color:var(--success)">Payment claim submitted</div>
@@ -471,7 +472,7 @@
         return;
       }
 
-      pendingPanel.hidden = false;
+      pendingPanel.removeAttribute("hidden");
       pendingPanel.className = "t-pay-panel t-pay-pending";
 
       if (order.paymentStatus === "PAYMENT_PENDING" && order.paymentInfo?.type === "UPI_QR") {
