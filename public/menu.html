@@ -954,101 +954,64 @@
 
     /* ── RESPONSIVE ── */
     @media (max-width: 859px) {
-      :root {
-        --dine-h: 64px;
-        --search-h: 60px;
-      }
+      :root { --dine-h: 64px; --search-h: 60px; }
 
-      /* On mobile the category rail becomes a horizontal chip scroll above the feed */
       .m-layout {
-        display: block;
+        display: grid;
+        grid-template-columns: 82px minmax(0, 1fr);
+        gap: 10px;
+        align-items: start;
       }
 
       .m-cat-rail {
         position: sticky;
-        top: var(--rail-top);
-        z-index: 30;
-        max-height: none;
-        width: 100%;
-        padding: 8px 6px;
-        border-radius: var(--r-sm);
-        overflow-x: auto;
-        overflow-y: hidden;
+        top: calc(var(--cust-bar-h) + var(--dine-h) + var(--search-h));
+        max-height: calc(100dvh - var(--cust-bar-h) - var(--dine-h) - var(--search-h) - 80px);
+        overflow-y: auto;
+        overflow-x: hidden;
+        padding: 4px;
+        border-radius: 12px;
         scrollbar-width: none;
-        margin-bottom: 12px;
       }
       .m-cat-rail::-webkit-scrollbar { display: none; }
 
-      /* Turn the rail items into a flex row of chips */
-      #categoryRail {
-        display: flex;
-        gap: 6px;
-        white-space: nowrap;
-      }
+      #categoryRail { display: flex; flex-direction: column; gap: 4px; }
 
-      .m-cat-label { display: none; }
+      .m-cat-label { padding: 4px 6px 2px; font-size: 9px; }
 
       .m-cat-btn {
-        flex: 0 0 auto;
-        min-height: 36px;
-        width: auto;
-        min-width: 0;
-        padding: 6px 14px;
-        border-radius: 99px;
-        font-size: 12px;
+        width: 100%;
+        min-height: 52px;
+        padding: 6px 4px;
+        border-radius: 10px;
+        flex-direction: column;
+        align-items: center;
         justify-content: center;
+        text-align: center;
+        font-size: 10px;
+        font-weight: 700;
+        gap: 2px;
       }
-      .m-cat-btn-ct { display: none; }
+      .m-cat-btn-name { font-size: 10px; white-space: normal; word-break: break-word; line-height: 1.2; }
+      .m-cat-btn-ct { font-size: 9px; margin-top: 2px; }
 
-      .m-section-head {
-        top: calc(var(--rail-top) + 58px);
-      }
+      .m-section-head { top: calc(var(--cust-bar-h) + var(--dine-h) + var(--search-h)); }
 
       .m-card {
-        grid-template-columns: 72px minmax(0, 1fr);
+        grid-template-columns: 68px minmax(0, 1fr);
         gap: 10px;
         align-items: start;
-        padding: 12px;
+        padding: 10px;
       }
-
-      .m-img-wrap {
-        width: 72px;
-        height: 72px;
-      }
-
+      .m-img-wrap { width: 68px; height: 68px; }
       .m-item-desc { display: none; }
-
-      .m-add-btn,
-      .m-stepper {
-        grid-column: 2;
-        justify-self: start;
-        margin-top: 6px;
-      }
-
-      .m-add-btn {
-        min-width: 70px;
-        min-height: 32px;
-        font-size: 12px;
-        padding: 0 12px;
-      }
-
-      .m-stepper-btn {
-        width: 26px;
-        height: 26px;
-        font-size: 14px;
-      }
-
+      .m-add-btn, .m-stepper { grid-column: 2; justify-self: start; margin-top: 6px; }
+      .m-add-btn { min-width: 66px; min-height: 30px; font-size: 12px; padding: 0 10px; }
+      .m-stepper-btn { width: 26px; height: 26px; font-size: 14px; }
       .m-cart-inner { padding: 0 14px; }
-
       .m-order-btn { flex: 1; min-width: 0; }
-
-      .m-dine-badge { display: none; }
       .m-dine-name { font-size: 16px; }
-
-      .m-search-inner { gap: 8px; }
-      .m-ft-btn { padding: 0 10px; font-size: 11px; }
-
-      .m-theme-btn { right: 14px; bottom: 88px; padding: 7px 12px 7px 9px; font-size: 12px; }
+      .m-theme-btn { right: 14px; bottom: 88px; }
     }
 
     @media (min-width: 860px) {
@@ -1059,6 +1022,108 @@
     @media (prefers-reduced-motion: reduce) {
       .m-card, .m-img, .m-cat-btn { animation: none; transition: none; }
     }
+
+    /* ── SCROLL SPY HIGHLIGHT ── */
+    .m-cat-btn { transition: background 0.2s, color 0.2s, border-color 0.2s, transform 0.15s; }
+    .m-cat-btn:hover:not(.active) { transform: translateX(2px); }
+
+    /* ── QUICK-VIEW DRAWER ── */
+    .m-qv-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 70;
+      background: rgba(9,8,10,0.75);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+    }
+    .m-qv-backdrop.open { display: block; }
+
+    .m-qv-drawer {
+      position: fixed;
+      left: 0; right: 0; bottom: 0;
+      z-index: 71;
+      max-height: 82dvh;
+      background: var(--bg-2);
+      border-radius: 22px 22px 0 0;
+      border-top: 1px solid var(--line);
+      box-shadow: 0 -24px 64px rgba(0,0,0,0.6);
+      transform: translateY(100%);
+      transition: transform 0.32s cubic-bezier(0.22,0.61,0.36,1);
+      overflow-y: auto;
+      overscroll-behavior: contain;
+    }
+    .m-qv-drawer.open { transform: translateY(0); }
+
+    .m-qv-img {
+      width: 100%;
+      height: 220px;
+      object-fit: cover;
+      display: block;
+    }
+    .m-qv-body { padding: 18px 20px 100px; }
+    .m-qv-name { font-size: 21px; font-weight: 800; line-height: 1.2; margin-bottom: 6px; }
+    .m-qv-meta { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+    .m-qv-price { font-size: 18px; font-weight: 800; color: var(--tx); }
+    .m-qv-desc { font-size: 14px; color: var(--tx-2); line-height: 1.6; margin-bottom: 20px; }
+    .m-qv-handle {
+      width: 36px; height: 4px; background: var(--bg-4); border-radius: 99px;
+      margin: 12px auto 0;
+    }
+    .m-qv-actions {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      padding: 14px 20px 22px;
+      background: var(--bg-2);
+      border-top: 1px solid var(--line);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+    }
+    .m-qv-close {
+      position: absolute; top: 14px; right: 14px;
+      width: 32px; height: 32px; border-radius: 50%;
+      background: rgba(255,255,255,0.1); backdrop-filter: blur(8px);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; color: #fff; z-index: 2;
+    }
+    @media(min-width:860px) {
+      .m-qv-drawer {
+        left: 50%; right: auto; bottom: 40px;
+        width: 480px; transform: translateX(-50%) translateY(calc(100% + 40px));
+        border-radius: 22px;
+        max-height: 78dvh;
+      }
+      .m-qv-drawer.open { transform: translateX(-50%) translateY(0); }
+    }
+
+    /* ── CART COUNT BADGE ── */
+    .m-cart-count-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 22px;
+      height: 22px;
+      border-radius: 99px;
+      background: var(--warn);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 800;
+      padding: 0 5px;
+      margin-right: 4px;
+      animation: badge-pop 0.25s cubic-bezier(0.34,1.56,0.64,1);
+    }
+    @keyframes badge-pop { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    .m-cart-total-price { font-size: 16px; font-weight: 800; color: var(--tx); }
+
+    /* ── ADD-TO-CART PULSE ── */
+    @keyframes cart-pulse {
+      0% { box-shadow: 0 0 0 0 rgba(232,64,28,0.5); }
+      70% { box-shadow: 0 0 0 12px rgba(232,64,28,0); }
+      100% { box-shadow: 0 0 0 0 rgba(232,64,28,0); }
+    }
+    .m-cart-bar.pulse { animation: cart-pulse 0.5s ease; }
   </style>
 </head>
 <body>
@@ -1133,7 +1198,10 @@
       </aside>
 
       <!-- Menu feed -->
-      <section class="m-feed" id="menu"></section>
+      <div>
+        <div id="menuResultCount" hidden style="font-size:12px;font-weight:700;color:var(--tx-3);padding:4px 0 8px"></div>
+        <section class="m-feed" id="menu"></section>
+      </div>
 
     </div>
 
@@ -1145,7 +1213,10 @@
   <div class="m-cart-bar">
     <div class="m-cart-inner">
       <div>
-        <div class="m-cart-info-count"><span id="count">0</span> items</div>
+        <div class="m-cart-info-count">
+          <span class="m-cart-count-badge" id="cartBadge" hidden></span>
+          <span id="count">0</span> items
+        </div>
         <div class="m-cart-info-total" id="total">₹0</div>
       </div>
       <button id="orderBtn" class="m-order-btn" onclick="openCheckout()" disabled>View order</button>
@@ -1228,6 +1299,25 @@
     <svg class="t-moon" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
     <span class="t-light">Light</span><span class="t-dark">Dark</span>
   </button>
+
+  <!-- Quick-view item drawer -->
+  <div class="m-qv-backdrop" id="qvBackdrop" onclick="closeQuickView()"></div>
+  <div class="m-qv-drawer" id="qvDrawer">
+    <button class="m-qv-close" onclick="closeQuickView()" aria-label="Close">×</button>
+    <div class="m-qv-handle"></div>
+    <img class="m-qv-img" id="qvImg" src="" alt="">
+    <div class="m-qv-body">
+      <div class="m-qv-name" id="qvName"></div>
+      <div class="m-qv-meta" id="qvMeta"></div>
+      <div class="m-qv-desc" id="qvDesc"></div>
+    </div>
+    <div class="m-qv-actions">
+      <div>
+        <div style="font-size:18px;font-weight:800" id="qvPrice"></div>
+      </div>
+      <div id="qvControl"></div>
+    </div>
+  </div>
 
   <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
   <script src="/assets/app.js"></script>
@@ -1402,12 +1492,12 @@
         countMap[n] = (countMap[n] || 0) + 1;
       });
       document.getElementById("categoryRail").innerHTML = `
-        <button class="m-cat-btn ${activeCategory === "ALL" ? "active" : ""}" onclick="setCategory('ALL')">
+        <button class="m-cat-btn ${activeCategory === "ALL" ? "active" : ""}" data-cat="ALL" onclick="setCategory('ALL')">
           <span class="m-cat-btn-name">All</span>
           <span class="m-cat-btn-ct">${filteredByType.length}</span>
         </button>
         ${categories.map(name => `
-          <button class="m-cat-btn ${activeCategory === name ? "active" : ""}" onclick='setCategory(${JSON.stringify(name)})'>
+          <button class="m-cat-btn ${activeCategory === name ? "active" : ""}" data-cat="${slugifyLocal(name)}" onclick='setCategory(${JSON.stringify(name)})'>
             <span class="m-cat-btn-name">${escapeHtml(name)}</span>
             <span class="m-cat-btn-ct">${countMap[name] || 0}</span>
           </button>
@@ -1438,6 +1528,18 @@
 
     function renderMenu() {
       const visible = visibleItems();
+
+      // Show result count if searching or filtered
+      const countLabel = document.getElementById("menuResultCount");
+      if (countLabel) {
+        if (searchTerm || activeFoodType !== "ALL") {
+          countLabel.textContent = `${visible.length} result${visible.length !== 1 ? "s" : ""}`;
+          countLabel.hidden = false;
+        } else {
+          countLabel.hidden = true;
+        }
+      }
+
       const grouped = visible.reduce((acc, item) => {
         const name = categoryName(item);
         acc[name] = acc[name] || [];
@@ -1462,6 +1564,7 @@
         </section>
       `).join("");
       updateUI();
+      initScrollSpy();
     }
 
     function maybeInitCustomerBar() {
@@ -1517,14 +1620,14 @@
       const dotClass = (item.foodType === "NON_VEG") ? "m-nv-dot" : "m-veg-dot";
       return `
         <article class="m-card${disabled ? " m-oos" : ""}">
-          <div class="m-img-wrap">
+          <div class="m-img-wrap" style="cursor:pointer" onclick="openQuickView('${key}')">
             <img class="m-img" loading="lazy" decoding="async"
               src="${escapeHtml(item.imageUrl || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=300")}"
               alt=""
               onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1631452180519-c014fe946bc7?auto=format&fit=crop&w=900&q=80';">
           </div>
           <div class="m-item-copy">
-            <div class="m-item-name">${escapeHtml(item.name)}</div>
+            <div class="m-item-name" style="cursor:pointer" onclick="openQuickView('${key}')">${escapeHtml(item.name)}</div>
             <div class="m-item-desc">${escapeHtml(item.description || "Freshly prepared by the restaurant.")}</div>
             <div class="m-price-row">
               <span class="m-price">${money(item.price)}</span>
@@ -1564,6 +1667,13 @@
 
       updateUI();
       saveCart();
+
+      if (delta > 0) {
+        const bar = document.querySelector(".m-cart-bar");
+        bar?.classList.remove("pulse");
+        requestAnimationFrame(() => bar?.classList.add("pulse"));
+        setTimeout(() => bar?.classList.remove("pulse"), 600);
+      }
     }
 
     function updateUI() {
@@ -1591,6 +1701,14 @@
       document.getElementById("total").textContent = money(totalPrice);
       document.getElementById("orderBtn").disabled = totalItems === 0;
       document.querySelector(".m-cart-bar")?.classList.toggle("has-items", totalItems > 0);
+
+      const badgeEl = document.getElementById("cartBadge");
+      if (totalItems > 0 && badgeEl) {
+        badgeEl.textContent = totalItems;
+        badgeEl.hidden = false;
+      } else if (badgeEl) {
+        badgeEl.hidden = true;
+      }
     }
 
     function openCheckout() {
@@ -1915,6 +2033,65 @@
     function toggleTheme() {
       const on = document.documentElement.classList.toggle("light");
       localStorage.setItem("avenzo-theme", on ? "light" : "dark");
+    }
+
+    // ── SCROLL SPY ──
+    function initScrollSpy() {
+      if (!('IntersectionObserver' in window)) return;
+      const observer = new IntersectionObserver(entries => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            const catId = entry.target.id.replace('section-', '');
+            document.querySelectorAll('.m-cat-btn').forEach(btn => {
+              btn.classList.toggle('active', btn.dataset.cat === catId);
+            });
+          }
+        });
+      }, { rootMargin: '-15% 0px -70% 0px', threshold: 0 });
+      document.querySelectorAll('.m-section[id]').forEach(s => observer.observe(s));
+    }
+
+    // ── QUICK-VIEW DRAWER ──
+    let _qvKey = null;
+
+    function openQuickView(key) {
+      const item = menuData.find(m => itemKey(m) === key);
+      if (!item) return;
+      _qvKey = key;
+      document.getElementById("qvImg").src = item.imageUrl || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600";
+      document.getElementById("qvName").textContent = item.name;
+      document.getElementById("qvPrice").textContent = money(item.price);
+      document.getElementById("qvDesc").textContent = item.description || "Freshly prepared by the restaurant.";
+      const dot = item.foodType === "NON_VEG" ? `<span class="m-nv-dot"></span>` : `<span class="m-veg-dot"></span>`;
+      document.getElementById("qvMeta").innerHTML = `${dot}${item.isPopular ? `<span class="m-badge m-badge-pop">Popular</span>` : ""}${!item.isAvailable ? `<span class="m-badge m-badge-oos">Out of stock</span>` : ""}`;
+      renderQvControl(key, item.isAvailable);
+      document.getElementById("qvBackdrop").classList.add("open");
+      document.getElementById("qvDrawer").classList.add("open");
+      document.body.style.overflow = "hidden";
+    }
+
+    function renderQvControl(key, available) {
+      const qty = cart.find(i => i.menuKey === key)?.quantity || 0;
+      const ctrl = document.getElementById("qvControl");
+      if (qty === 0) {
+        ctrl.innerHTML = `<button class="m-add-btn" style="min-width:100px" ${!available ? "disabled" : ""} onclick="qvChangeQty(1)">Add to order</button>`;
+      } else {
+        ctrl.innerHTML = `<div class="m-stepper"><button class="m-stepper-btn" onclick="qvChangeQty(-1)">−</button><span class="m-stepper-qty">${qty}</span><button class="m-stepper-btn brand-btn" onclick="qvChangeQty(1)">+</button></div>`;
+      }
+    }
+
+    function qvChangeQty(delta) {
+      if (!_qvKey) return;
+      changeQty(_qvKey, delta);
+      const item = menuData.find(m => itemKey(m) === _qvKey);
+      if (item) renderQvControl(_qvKey, item.isAvailable);
+    }
+
+    function closeQuickView() {
+      document.getElementById("qvBackdrop").classList.remove("open");
+      document.getElementById("qvDrawer").classList.remove("open");
+      document.body.style.overflow = "";
+      _qvKey = null;
     }
 
     init();
