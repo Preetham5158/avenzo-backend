@@ -52,6 +52,9 @@
       }
     }
 
+    /* Dock clearance so last card isn't hidden behind the nav pill */
+    .page { padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px)); }
+
     @media (max-width: 400px) {
       .restaurant-actions {
         grid-template-columns: 1fr;
@@ -171,6 +174,11 @@
       </div>
     </form>
   </div>
+
+  <nav class="admin-dock">
+    <a class="active" href="#">Home</a>
+    <a href="/admin/leads.html" id="dockLeadsLink" hidden>Leads <span id="dockLeadsBadge" class="pill pill-danger" hidden></span></a>
+  </nav>
 
   <script src="/assets/app.js"></script>
   <script>
@@ -405,11 +413,17 @@
       try {
         const data = await request("/admin/restaurant-leads/summary");
         const count = data.unseenNewCount || 0;
+        // Page-head badge
         const badge = document.getElementById("leadsBadge");
-        badge.textContent = count;
-        badge.hidden = count === 0;
+        if (badge) { badge.textContent = count; badge.hidden = count === 0; }
+        // Dock badge
+        const dockLink = document.getElementById("dockLeadsLink");
+        const dockBadge = document.getElementById("dockLeadsBadge");
+        if (dockLink) dockLink.hidden = false;
+        if (dockBadge) { dockBadge.textContent = count; dockBadge.hidden = count === 0; }
       } catch {
-        document.getElementById("leadsBadge").hidden = true;
+        const b = document.getElementById("leadsBadge");
+        if (b) b.hidden = true;
       }
     }
 
