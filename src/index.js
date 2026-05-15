@@ -2209,13 +2209,13 @@ app.get("/admin/menu/:restaurantId", authMiddleware, async (req, res) => {
                     { createdAt: "desc" }
                 ]
             }),
-            prisma.menuCategory.findMany({
+            prisma.category.findMany({
                 where: { restaurantId },
                 orderBy: { sortOrder: "asc" }
             }),
             prisma.restaurant.findUnique({
                 where: { id: restaurantId },
-                select: { id: true, name: true, foodType: true, isActive: true, subscriptionStatus: true }
+                select: { id: true, name: true, foodType: true, isActive: true, subscriptionStatus: true, address: true, locality: true }
             })
         ]);
 

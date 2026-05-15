@@ -217,53 +217,68 @@ function customerBottomNavHtml(active = "home") {
 function toggleTheme() {
   const isLight = document.body.classList.toggle("light");
   localStorage.setItem("avenzo-theme", isLight ? "light" : "dark");
-  const btn = document.getElementById("themeToggleBtn");
-  if (btn) btn.textContent = isLight ? "🌙" : "☀️";
+  // Update all theme toggle buttons on the page
+  document.querySelectorAll(".theme-toggle").forEach(btn => {
+    btn.textContent = isLight ? "🌙" : "☀️";
+    btn.title = isLight ? "Switch to dark mode" : "Switch to light mode";
+  });
 }
 
 function adminSidebarHtml(active, restaurantId, role) {
-  const q = restaurantId ? `?restaurantId=${restaurantId}` : "";
-  const links = [
-    { key: "home",     href: "/admin/dashboard.html",       label: "Home",     icon: `<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>` },
-    { key: "orders",   href: `/admin/orders.html${q}`,      label: "Orders",   icon: `<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>` },
-    { key: "menu",     href: `/admin/menu.html${q}`,        label: "Menu",     icon: `<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M3 11l19-9-9 19-2-8-8-2z"/></svg>` },
-    ...(role !== "EMPLOYEE" ? [
-      { key: "staff",    href: `/admin/staff.html${q}`,       label: "Staff",    icon: `<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>` },
-      { key: "payments", href: `/admin/payments.html${q}`,    label: "Payments", icon: `<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>` },
-    ] : []),
-    ...(restaurantId ? [
-      { key: "qr", href: `/qr.html${q}`, label: "QR Cards", icon: `<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="5" y="5" width="3" height="3"/><rect x="16" y="5" width="3" height="3"/><rect x="5" y="16" width="3" height="3"/><path d="M14 14h3v3h-3zM17 17h3v3h-3zM14 20h3"/></svg>` },
-    ] : []),
+  // Sidebar is GLOBAL navigation only — no restaurant-specific links.
+  // Restaurant-specific navigation (Orders, Menu, Staff, Payments, QR)
+  // is provided by the restaurant context strip on each inner page.
+  const isLight = typeof document !== "undefined" && document.body.classList.contains("light");
+  const globalLinks = [
+    { key: "home", href: "/admin/dashboard.html", label: "Restaurants",
+      icon: `<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>` },
     ...(role === "ADMIN" ? [
-      { key: "leads",    href: "/admin/leads.html",            label: "Leads",    icon: `<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>`, badge: true },
+      { key: "leads", href: "/admin/leads.html", label: "Partner Leads",
+        icon: `<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>`, badge: true }
     ] : []),
   ];
-  return links.map(l => `
+
+  const linksHtml = globalLinks.map(l => `
     <a href="${l.href}" class="sidebar-link ${active === l.key ? "active" : ""}" ${l.badge ? 'id="sidebarLeadsLink"' : ""}>
       ${l.icon}
       <span>${l.label}</span>
       ${l.badge ? '<span class="sidebar-badge hidden" id="sidebarLeadsBadge"></span>' : ""}
     </a>
   `).join("");
+
+  return `
+    ${linksHtml}
+    <div class="sidebar-footer">
+      <button class="theme-toggle" onclick="toggleTheme()" title="${isLight ? "Switch to dark mode" : "Switch to light mode"}">
+        ${isLight ? "🌙" : "☀️"}
+      </button>
+      <span class="sidebar-footer-label">${isLight ? "Dark mode" : "Light mode"}</span>
+    </div>
+  `;
 }
 
 function adminBottomNavHtml(active, restaurantId, role) {
-  const q = restaurantId ? `?restaurantId=${restaurantId}` : "";
+  // Bottom nav is also global-only on mobile.
   const items = [
-    { key: "home",     href: "/admin/dashboard.html",    label: "Home",     icon: "🏠" },
-    { key: "orders",   href: `/admin/orders.html${q}`,   label: "Orders",   icon: "📋" },
-    { key: "menu",     href: `/admin/menu.html${q}`,     label: "Menu",     icon: "🍽️" },
-    ...(role !== "EMPLOYEE" ? [
-      { key: "staff",    href: `/admin/staff.html${q}`,   label: "Staff",    icon: "👥" },
-      { key: "payments", href: `/admin/payments.html${q}`,label: "Payments", icon: "💳" },
-    ] : []),
-    ...(restaurantId ? [
-      { key: "qr", href: `/qr.html${q}`, label: "QR", icon: "📱" },
-    ] : []),
+    { key: "home",  href: "/admin/dashboard.html", label: "Home",  icon: "🏠" },
     ...(role === "ADMIN" ? [
-      { key: "leads",    href: "/admin/leads.html",        label: "Leads",    icon: "📊", badge: true },
+      { key: "leads", href: "/admin/leads.html",   label: "Leads", icon: "📊", badge: true },
     ] : []),
   ];
+  // When inside a restaurant context, add the restaurant-specific items to mobile nav
+  if (restaurantId) {
+    const q = `?restaurantId=${restaurantId}`;
+    items.splice(1, 0,
+      { key: "orders",   href: `/admin/orders.html${q}`,   label: "Orders",   icon: "📋" },
+      { key: "menu",     href: `/admin/menu.html${q}`,     label: "Menu",     icon: "🍽️" },
+    );
+    if (role !== "EMPLOYEE") {
+      items.splice(3, 0,
+        { key: "staff",    href: `/admin/staff.html${q}`,    label: "Staff",    icon: "👥" },
+        { key: "payments", href: `/admin/payments.html${q}`, label: "Payments", icon: "💳" },
+      );
+    }
+  }
   return items.map(item => `
     <a href="${item.href}" class="admin-bnav-item ${active === item.key ? "active" : ""}">
       ${item.badge ? '<span class="admin-bnav-badge hidden" id="bnavLeadsBadge"></span>' : ""}
@@ -321,18 +336,6 @@ async function initAdminLayout(activePage = "home", restaurantId = "") {
     const bnav = document.getElementById("adminBnav");
     if (sidebar) sidebar.innerHTML = adminSidebarHtml(activePage, restaurantId, user.role);
     if (bnav)    bnav.innerHTML    = adminBottomNavHtml(activePage, restaurantId, user.role);
-    // Inject theme toggle button into topbar
-    const topbarRight = document.querySelector(".admin-topbar-right");
-    if (topbarRight && !document.getElementById("themeToggleBtn")) {
-      const isLight = document.body.classList.contains("light");
-      const btn = document.createElement("button");
-      btn.id = "themeToggleBtn";
-      btn.className = "theme-toggle";
-      btn.title = isLight ? "Switch to dark mode" : "Switch to light mode";
-      btn.textContent = isLight ? "🌙" : "☀️";
-      btn.setAttribute("onclick", "toggleTheme()");
-      topbarRight.insertBefore(btn, topbarRight.firstChild);
-    }
     // Load leads badge for ADMIN
     if (user.role === "ADMIN") {
       request("/admin/restaurant-leads/summary").then(data => {

@@ -182,7 +182,7 @@ h1,h2,h3,h4 { line-height: 1.2; }
   scrollbar-width: none;
   background: var(--bg-2);
   border-right: 1px solid var(--line);
-  padding: 10px 8px 40px;
+  padding: 10px 8px 0;
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -235,6 +235,21 @@ h1,h2,h3,h4 { line-height: 1.2; }
   background: var(--danger);
   color: #fff;
   line-height: 1.4;
+}
+
+/* Sidebar footer — theme toggle lives here */
+.sidebar-footer {
+  margin-top: auto;
+  padding: 12px 8px 8px;
+  border-top: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.sidebar-footer-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--tx-3);
 }
 
 /* ── Main content ── */

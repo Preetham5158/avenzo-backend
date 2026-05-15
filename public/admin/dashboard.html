@@ -91,13 +91,13 @@ async function loadDashboard() {
 }
 
 function renderGreeting(user, roleLabel) {
-  const name = user?.name || user?.email?.split("@")[0] || "there";
+  const displayName = user?.name || user?.email || "there";
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
   document.getElementById("greetingCard").innerHTML = `
     <div class="greeting-card">
-      <div class="greeting-name">${greeting}, ${escapeHtml(name)} 👋</div>
-      <div class="greeting-sub">Here's what's happening across your restaurants today.</div>
+      <div class="greeting-name">${escapeHtml(greeting)}, ${escapeHtml(displayName)}</div>
+      <div class="greeting-sub">Here's an overview of all your restaurants.</div>
       <span class="greeting-role">${escapeHtml(roleLabel)}</span>
     </div>
   `;
