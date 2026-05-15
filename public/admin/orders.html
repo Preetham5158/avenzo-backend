@@ -82,7 +82,6 @@ let orderSearch = "";
 let ordersLoaded = false;
 let isLoading = false;
 let pollingTimer = null;
-let timerInterval = null;
 let orderPage = 1;
 const orderLimit = 50;
 let orderPagination = { page:1, totalPages:1, total:0 };
@@ -230,15 +229,20 @@ function toggleHistory() {
 
 function renderHistoryList() {
   if (!historyOrders.length) { document.getElementById("historyList").innerHTML = `<div class="muted text-sm mt-8">No history in this view.</div>`; return; }
-  document.getElementById("historyList").innerHTML = `<div class="card card-p mt-12">` + historyOrders.map(order => `
+  document.getElementById("historyList").innerHTML = `<div class="card card-p mt-12">` + historyOrders.map(order => {
+    const itemSummary = (order.items || []).map(i => `${escapeHtml(i.nameAtOrder)} ×${i.quantity}`).join(", ");
+    return `
     <div class="order-list-item">
       <div>
-        <span class="font-bold">${escapeHtml(order.pickupCode)}</span>
-        <span class="muted text-sm ml-2">#${order.orderNumber || ""} · ${formatDate(order.createdAt)}</span>
+        <div><span class="font-bold">${escapeHtml(order.pickupCode)}</span><span class="muted text-sm ml-2">#${order.orderNumber || ""} · ${formatDate(order.createdAt)}</span></div>
+        ${itemSummary ? `<div class="muted text-sm" style="margin-top:2px">${itemSummary}</div>` : ""}
       </div>
-      <span class="pill ${STATUS_META[order.status]?.pill || "pill-default"}">${STATUS_META[order.status]?.label || order.status}</span>
+      <div style="text-align:right;flex-shrink:0">
+        <span class="pill ${STATUS_META[order.status]?.pill || "pill-default"}">${STATUS_META[order.status]?.label || order.status}</span>
+        ${order.totalPrice ? `<div class="font-bold text-sm" style="margin-top:4px">${money(order.totalPrice)}</div>` : ""}
+      </div>
     </div>
-  `).join("") + `</div>`;
+  `}).join("") + `</div>`;
   renderPagination();
 }
 
@@ -277,13 +281,8 @@ async function confirmPayment(btn, id) {
 function startPolling() {
   if (pollingTimer) return;
   pollingTimer = setInterval(() => { if (!document.hidden) loadOrders(); }, 5000);
-  timerInterval = setInterval(() => {
-    document.querySelectorAll(".kds-timer[data-ts]").forEach(el => {
-      // timers re-render with loadOrders; this is just a visual refresh if needed
-    });
-  }, 30000);
 }
-function stopPolling() { clearInterval(pollingTimer); pollingTimer=null; clearInterval(timerInterval); timerInterval=null; }
+function stopPolling() { clearInterval(pollingTimer); pollingTimer=null; }
 
 document.addEventListener("visibilitychange", () => { if (!document.hidden && restaurantId) loadOrders(); });
 window.addEventListener("pagehide", stopPolling);

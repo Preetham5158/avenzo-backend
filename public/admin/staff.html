@@ -29,6 +29,8 @@
         </div>
       </div>
 
+      <div class="stat-grid" id="staffStats" style="margin-bottom:16px"></div>
+
       <form id="addStaffForm" class="card card-p mb-16" onsubmit="addStaff(event)" style="margin-bottom:16px">
         <div class="g2" style="align-items:end">
           <div class="field mb-0"><label for="staffEmail">Employee email</label><input id="staffEmail" class="input" type="email" required placeholder="employee@example.com"></div>
@@ -55,8 +57,20 @@ async function loadStaff() {
     const staff = data.staff || [];
     const rName = data.restaurant?.name || "Staff";
     document.getElementById("adminContext").textContent = rName;
-    document.getElementById("pageTitle").textContent = rName;
+    document.getElementById("pageTitle").textContent = "Staff";
     document.getElementById("pageSub").textContent = `Team members at ${rName}`;
+    document.getElementById("staffStats").innerHTML = `
+      <div class="stat-card stat-top-brand">
+        <div class="stat-card-label">Team members</div>
+        <div class="stat-card-value">${staff.length}</div>
+        <span class="pill pill-default">${staff.length === 1 ? "Employee" : "Employees"}</span>
+      </div>
+      <div class="stat-card stat-top-ready">
+        <div class="stat-card-label">Restaurant</div>
+        <div class="stat-card-value" style="font-size:18px;line-height:1.2">${escapeHtml(rName)}</div>
+        <span class="pill ${data.restaurant?.isActive ? "pill-success" : "pill-danger"}">${data.restaurant?.isActive ? "Active" : "Paused"}</span>
+      </div>
+    `;
     if (data.restaurant) {
       document.getElementById("restCtxBar").style.display = "";
       renderRestaurantContext(data.restaurant, "staff", restaurantId);

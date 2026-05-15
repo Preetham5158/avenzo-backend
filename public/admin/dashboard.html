@@ -211,7 +211,7 @@ async function loadOpsStats() {
       <div class="ops-card ops-card-orders">
         <div class="ops-card-label">Orders today</div>
         <div class="ops-card-value">${data.ordersToday}</div>
-        <div class="ops-card-sub">Across all restaurants</div>
+        <div class="ops-card-sub">${restaurantCache.length === 1 ? "At your restaurant" : "Across all restaurants"}</div>
       </div>
       <div class="ops-card ops-card-revenue">
         <div class="ops-card-label">Revenue today</div>
@@ -237,13 +237,16 @@ async function loadOpsStats() {
 }
 
 function renderGreeting(user, roleLabel) {
-  const displayName = user?.name || user?.email || "there";
+  const displayName = user?.name || (user?.email ? user.email.split("@")[0] : "there");
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
+  const sub = restaurantCache.length === 1
+    ? `Here's today's activity at ${escapeHtml(restaurantCache[0].name)}.`
+    : `Here's what's happening across your ${restaurantCache.length} restaurants today.`;
   document.getElementById("greetingCard").innerHTML = `
     <div class="greeting-card">
       <div class="greeting-name">${escapeHtml(greeting)}, ${escapeHtml(displayName)}</div>
-      <div class="greeting-sub">Here's what's happening across your restaurants today.</div>
+      <div class="greeting-sub">${sub}</div>
       <span class="greeting-role">${escapeHtml(roleLabel)}</span>
     </div>
   `;

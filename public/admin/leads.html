@@ -61,7 +61,7 @@
   <header class="admin-topbar">
     <a href="/admin/dashboard.html" class="admin-brand"><img src="/logo.png" alt="Avenzo"><span class="admin-brand-name">AVENZO</span></a>
     <span class="admin-brand-sep"></span>
-    <span class="admin-context" id="adminContext">Loading...</span>
+    <span class="admin-context" id="adminContext">Partner Leads</span>
     <div class="admin-topbar-right"><div id="accountMenu"></div></div>
   </header>
   <nav class="admin-sidebar" id="adminSidebar"></nav>
@@ -232,7 +232,8 @@ function renderLeads(leads) {
           <div>
             <div class="lead-detail-label">Phone</div>
             <div class="lead-detail-value">
-              ${lead.phone ? `<a href="tel:${escapeHtml(lead.phone)}">${escapeHtml(lead.phone)}</a>` : "—"}
+              ${lead.phone ? `<a href="tel:${escapeHtml(lead.phone)}">${escapeHtml(lead.phone)}</a>
+              <a href="https://wa.me/${encodeURIComponent((lead.phone||"").replace(/[^0-9]/g,""))}" target="_blank" rel="noopener" style="margin-left:6px;font-size:12px;color:var(--success)">WhatsApp</a>` : "—"}
             </div>
           </div>
           <div>
