@@ -7,6 +7,16 @@ if (process.env.NODE_ENV === "production") {
   throw new Error("Refusing to run seed in production");
 }
 
+const seedPasswords = {
+  admin: process.env.SEED_ADMIN_PASSWORD || "Admin@123",
+  owner: process.env.SEED_OWNER_PASSWORD || "Owner@123",
+  staff: process.env.SEED_STAFF_PASSWORD || "Staff@123"
+};
+
+if (!process.env.SEED_ADMIN_PASSWORD || !process.env.SEED_OWNER_PASSWORD || !process.env.SEED_STAFF_PASSWORD) {
+  console.warn("[seed] Using default local demo passwords. Set SEED_*_PASSWORD env vars for shared environments.");
+}
+
 function slugify(value) {
   return value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 }
@@ -346,7 +356,7 @@ async function main() {
   const admin = await prisma.user.create({
     data: {
       email: "admin@avenzo.com",
-      password: await bcrypt.hash("Admin@123", 10),
+      password: await bcrypt.hash(seedPasswords.admin, 10),
       name: "Avenzo Admin",
       role: "ADMIN"
     }
@@ -356,7 +366,7 @@ async function main() {
     const owner = await prisma.user.create({
       data: {
         email: hotel.ownerEmail,
-        password: await bcrypt.hash("Owner@123", 10),
+        password: await bcrypt.hash(seedPasswords.owner, 10),
         name: `${hotel.name} Owner`,
         role: "RESTAURANT_OWNER"
       }
@@ -380,7 +390,7 @@ async function main() {
     await prisma.user.create({
       data: {
         email: hotel.ownerEmail.replace("owner.", "staff."),
-        password: await bcrypt.hash("Staff@123", 10),
+        password: await bcrypt.hash(seedPasswords.staff, 10),
         name: `${hotel.name} Service Team`,
         role: "EMPLOYEE",
         staffRestaurantId: restaurant.id

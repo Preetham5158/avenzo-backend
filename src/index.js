@@ -22,6 +22,8 @@ const { OAuth2Client } = require("google-auth-library");
 const app = express();
 const prisma = createPrismaClient();
 
+app.set("trust proxy", 1);
+
 function getRazorpayInstance() {
     const keyId = process.env.RAZORPAY_KEY_ID;
     const keySecret = process.env.RAZORPAY_KEY_SECRET;
@@ -925,15 +927,19 @@ app.post("/order/:trackingToken/cancel", orderLimiter, optionalAuth, async (req,
         if (order.paymentStatus === "PAID") {
             return res.status(400).json({ error: "A paid order cannot be self-cancelled. Please contact the restaurant." });
         }
-        // For logged-in customers, verify ownership. Guest orders are protected by tracking token alone.
-        if (order.customerId && req.user?.userId && order.customerId !== req.user.userId) {
+        // Account-owned orders require the signed-in customer; guest orders remain token-protected.
+        if (order.customerId && !req.user?.userId) {
+            return res.status(401).json({ error: "Please sign in again." });
+        }
+        if (order.customerId && order.customerId !== req.user.userId) {
             return res.status(403).json({ error: "You cannot cancel this order." });
         }
         await prisma.order.update({ where: { id: order.id }, data: { status: "CANCELLED" } });
-        await auditLog("ORDER_CANCELLED_BY_CUSTOMER", {
+        await auditLog("ORDER_STATUS_UPDATED", {
             restaurantId: order.restaurantId,
             orderId: order.id,
-            actorUserId: req.user?.userId || null
+            actorUserId: req.user?.userId || null,
+            metadata: { to: "CANCELLED", source: "customer_self_cancel" }
         });
         res.json({ ok: true });
     } catch (err) {
@@ -1284,11 +1290,16 @@ app.post("/auth/password-reset/request", passwordResetLimiter, async (req, res) 
             return res.status(400).json({ error: "Enter a valid email address" });
         }
 
-        const user = await prisma.user.findUnique({ where: { email } });
-
         // Always respond the same way to prevent email enumeration.
         const safeResponse = { message: "If this email is registered to a customer account, a verification code was sent." };
-        if (!user || user.role !== "USER") return res.json(safeResponse);
+        const genericResponse = () => ({
+            challengeId: crypto.randomUUID(),
+            maskedEmail: maskEmail(email),
+            ...safeResponse
+        });
+
+        const user = await prisma.user.findUnique({ where: { email } });
+        if (!user || user.role !== "USER") return res.json(genericResponse());
 
         const otp = generateOtp();
         const channel = process.env.OTP_MODE === "email" ? "EMAIL" : "LOG";
@@ -1375,6 +1386,19 @@ app.post("/auth/login", authLimiter, async (req, res) => {
         const user = await findPasswordUser(email, password);
         if (!user) {
             return res.status(400).json({ error: "Invalid credentials" });
+        }
+
+        const requiresOtp = user.role === "USER" ? customer2faRequired() : restaurant2faRequired();
+        if (requiresOtp) {
+            const purpose = user.role === "USER" ? "CUSTOMER_LOGIN" : "RESTAURANT_LOGIN";
+            const challenge = await createOtpChallenge(user, purpose);
+            return res.json({
+                otpRequired: true,
+                challengeId: challenge.id,
+                channel: challenge.channel,
+                maskedEmail: challenge.maskedEmail,
+                expiresAt: challenge.expiresAt
+            });
         }
 
         res.json(loginSuccessResponse(user));
@@ -2932,7 +2956,9 @@ app.post("/webhooks/razorpay", async (req, res) => {
     }
 
     const expected = crypto.createHmac("sha256", secret).update(req.rawBody).digest("hex");
-    if (!crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(signature))) {
+    const expectedBuffer = Buffer.from(expected, "hex");
+    const signatureBuffer = Buffer.from(String(signature), "hex");
+    if (signatureBuffer.length !== expectedBuffer.length || !crypto.timingSafeEqual(expectedBuffer, signatureBuffer)) {
         return res.status(400).json({ error: "Invalid signature" });
     }
 
