@@ -2,8 +2,10 @@
 <html>
 
 <head>
+  <meta charset="UTF-8">
   <title>Avenzo Menu Admin</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#ff6b16">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/assets/app.css">
   <style>
@@ -19,7 +21,7 @@
       height: 88px;
       border-radius: var(--radius);
       object-fit: cover;
-      background: #eef0f4;
+      background: var(--surface-2);
     }
 
     .menu-actions {
@@ -50,7 +52,7 @@
       gap: 4px;
       padding: 4px;
       border-radius: 999px;
-      background: #fffdf8;
+      background: var(--surface);
       border: 1px solid var(--line);
     }
 
@@ -58,7 +60,7 @@
       min-height: 36px;
       border-radius: 999px;
       background: transparent;
-      color: #614231;
+      color: var(--muted);
       font-weight: 800;
       cursor: pointer;
     }
@@ -67,6 +69,24 @@
       background: var(--cocoa);
       color: white;
     }
+
+    .menu-desc {
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
+      overflow: hidden;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    .btn-danger-outline {
+      background: rgba(229, 72, 77, 0.08);
+      color: var(--danger);
+      border: 1px solid rgba(229, 72, 77, 0.25);
+    }
+
+    .btn-danger-outline:hover { background: rgba(229, 72, 77, 0.15); }
 
     @media (max-width: 760px) {
       .menu-item {
@@ -88,6 +108,23 @@
         top: calc(var(--topbar-height) + 130px);
         padding: 10px;
       }
+    }
+
+    @media (max-width: 480px) {
+      .menu-item {
+        grid-template-columns: 72px 1fr;
+        gap: 10px;
+      }
+
+      .menu-img { width: 72px !important; height: 72px !important; }
+
+      .menu-actions {
+        grid-column: 1 / -1;
+        grid-template-columns: repeat(2, 1fr);
+        margin-top: 6px;
+      }
+
+      .menu-desc { -webkit-line-clamp: 1; }
     }
   </style>
 </head>
@@ -313,8 +350,8 @@
           <span style="display:inline-flex;align-items:center;gap:2px">
             <button class="btn tab ${activeCategory === name ? "active" : ""}" onclick='setCategory(${JSON.stringify(name)})'>${escapeHtml(name)} (${counts[name]})</button>
             ${canManageMenuDetails() ? `
-              <button class="btn btn-ghost" style="padding:2px 5px;font-size:12px" title="Move up" onclick='moveCategoryUp(${JSON.stringify(name)})' ${idx === 0 ? "disabled" : ""}>↑</button>
-              <button class="btn btn-ghost" style="padding:2px 5px;font-size:12px" title="Move down" onclick='moveCategoryDown(${JSON.stringify(name)})' ${idx === catNames.length - 1 ? "disabled" : ""}>↓</button>
+              <button class="btn btn-ghost" style="padding:6px 10px;font-size:12px;min-height:32px" title="Move up" onclick='moveCategoryUp(${JSON.stringify(name)})' ${idx === 0 ? "disabled" : ""}>↑</button>
+              <button class="btn btn-ghost" style="padding:6px 10px;font-size:12px;min-height:32px" title="Move down" onclick='moveCategoryDown(${JSON.stringify(name)})' ${idx === catNames.length - 1 ? "disabled" : ""}>↓</button>
             ` : ""}
           </span>
         `).join("")}
@@ -360,14 +397,14 @@
               <span class="pill ${item.isAvailable ? "pill-success" : "pill-danger"}">${item.isAvailable ? "Available" : "Out of stock"}</span>
               ${item.isActive ? "" : `<span class="pill pill-warning">Hidden</span>`}
             </div>
-            <div class="muted">${escapeHtml(item.description || "No description")}</div>
+            <div class="menu-desc">${escapeHtml(item.description || "No description")}</div>
             <strong>${money(item.price)}</strong>
           </div>
           <div class="menu-actions">
             <button class="btn btn-ghost" onclick="toggleStock('${item.id}', ${item.isAvailable})">${item.isAvailable ? "Mark out" : "Mark available"}</button>
             ${canManageMenuDetails() ? `<button class="btn btn-ghost" onclick="toggleVisibility('${item.id}', ${item.isActive})">${item.isActive ? "Hide" : "Show"}</button>` : ""}
             ${canManageMenuDetails() ? `<button class="btn btn-dark" onclick='openItemModal(${JSON.stringify(item)})'>Edit</button>` : ""}
-            ${canManageMenuDetails() ? `<button class="btn btn-ghost" style="color:var(--danger,#c62828)" onclick="deleteItem('${item.id}', ${JSON.stringify(item.name)})">Delete</button>` : ""}
+            ${canManageMenuDetails() ? `<button class="btn btn-danger-outline" onclick="deleteItem('${item.id}', ${JSON.stringify(item.name)})">Delete</button>` : ""}
           </div>
         </article>
       `).join("");
@@ -537,6 +574,7 @@
 
     init();
   </script>
+  <noscript>JavaScript is required to use Avenzo Menu Admin.</noscript>
 </body>
 
 </html>

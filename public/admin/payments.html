@@ -2,8 +2,10 @@
 <html>
 
 <head>
+  <meta charset="UTF-8">
   <title>Avenzo — Payment Methods</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#ff6b16">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/assets/app.css">
   <style>
@@ -30,8 +32,23 @@
     .qr-preview {
       max-width: 140px;
       border-radius: 12px;
-      border: 1px solid #e0e0e0;
+      border: 1px solid var(--line);
       margin-top: 8px;
+    }
+
+    @media (max-width: 480px) {
+      .method-card {
+        grid-template-columns: 1fr;
+      }
+
+      .qr-preview {
+        max-width: 100%;
+        width: 140px;
+        margin: 10px auto 0;
+        display: block;
+      }
+
+      .method-order-badge { display: none; }
     }
   </style>
 </head>
@@ -171,7 +188,7 @@
             <div class="method-badges">
               <span class="pill ${m.isEnabled ? "pill-success" : "pill-danger"}">${m.isEnabled ? "Enabled" : "Disabled"}</span>
               ${m.isDefault ? `<span class="pill pill-warning">Default</span>` : ""}
-              ${m.sortOrder > 0 ? `<span class="pill">Order: ${m.sortOrder}</span>` : ""}
+              ${m.sortOrder > 0 ? `<span class="pill method-order-badge">Order: ${m.sortOrder}</span>` : ""}
             </div>
             ${m.type === "UPI_QR" && m.qrImageUrl ? `<img class="qr-preview" src="${escapeHtml(m.qrImageUrl)}" alt="QR">` : ""}
             ${m.type === "UPI_QR" && m.upiId ? `<div class="muted" style="font-size:12px;margin-top:4px">UPI ID: ${escapeHtml(m.upiId)}</div>` : ""}
@@ -259,6 +276,7 @@
       loadMethods();
     });
   </script>
+  <noscript>JavaScript is required to use Avenzo Payment Methods.</noscript>
 </body>
 
 </html>

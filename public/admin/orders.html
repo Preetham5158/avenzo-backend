@@ -2,8 +2,10 @@
 <html>
 
 <head>
+  <meta charset="UTF-8">
   <title>Avenzo Orders</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#ff6b16">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/assets/app.css">
   <style>
@@ -48,6 +50,16 @@
       .order-tools {
         top: calc(var(--topbar-height) + 130px);
         padding: 10px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .order-num-label { display: none; }
+    }
+
+    @media (max-width: 480px) {
+      #statusStats.grid-3 {
+        grid-template-columns: repeat(2, 1fr);
       }
     }
   </style>
@@ -141,7 +153,7 @@
 
         document.getElementById("restaurantName").textContent = data.restaurant?.name || "Restaurant Orders";
         document.getElementById("restaurantAddress").textContent = data.restaurant?.address || "New orders appear here automatically.";
-        document.getElementById("orderCount").textContent = `${orderPagination.total || 0} order${orderPagination.total === 1 ? "" : "s"}`;
+        document.getElementById("orderCount").textContent = `${orderPagination.total || 0} order${orderPagination.total === 1 ? "" : "s"}${orderPagination.total > 10 && activeOrderStatus === "PENDING" ? ' <span style="color:var(--danger);font-weight:800">&#9888;</span>' : ""}`;
         renderStats(allOrders);
         renderOrderFilters();
         renderPagination();
@@ -264,7 +276,7 @@
           <article class="card card-pad order-card">
             <div class="row-between">
               <div>
-                <div class="eyebrow">Order #${Number.isInteger(order.orderNumber) ? order.orderNumber : order.pickupCode}</div>
+                <div class="eyebrow"><span class="order-num-label">Order #${Number.isInteger(order.orderNumber) ? order.orderNumber : order.pickupCode}</span></div>
                 <h3 class="h3-tight">Code ${escapeHtml(order.pickupCode)}</h3>
                 <div class="muted">Placed ${formatDate(order.createdAt)}</div>
               </div>
@@ -295,8 +307,8 @@
             <div class="items">${items}</div>
 
             ${order.paymentStatus === "PAYMENT_CLAIMED" ? `
-              <div style="padding:12px 14px;border-radius:12px;background:#fff8e1;border:1px solid #ffe082;font-size:14px">
-                <strong style="color:#e65100">Customer says paid — verify before preparing</strong>
+              <div style="padding:12px 14px;border-radius:12px;background:var(--brand-soft);border:1px solid var(--brand-2);font-size:14px">
+                <strong style="color:var(--cocoa)">Customer says paid — verify before preparing</strong>
                 <p class="muted" style="margin:4px 0 6px">Check your UPI app to confirm payment was received, then tap the button below.</p>
                 ${order.paymentReference ? `<p class="muted" style="margin:0 0 8px;font-size:12px">Customer reference: <strong>${escapeHtml(order.paymentReference)}</strong></p>` : ""}
                 <button class="btn btn-primary" onclick="confirmPayment(this, '${order.id}')">Mark payment received</button>
@@ -304,8 +316,8 @@
             ` : ""}
 
             ${order.paymentStatus === "PAYMENT_PENDING" ? `
-              <div style="padding:12px 14px;border-radius:12px;background:#fff0f0;border:1px solid #ffcdd2;font-size:14px">
-                <strong style="color:#c62828">Awaiting payment</strong>
+              <div style="padding:12px 14px;border-radius:12px;background:rgba(229,72,77,0.1);border:1px solid rgba(229,72,77,0.3);font-size:14px">
+                <strong style="color:var(--danger)">Awaiting payment</strong>
                 <p class="muted" style="margin:4px 0 0">Customer has not yet submitted payment for this order.</p>
               </div>
             ` : ""}
@@ -409,6 +421,7 @@
 
     window.addEventListener("pagehide", stopOrdersPolling);
   </script>
+  <noscript><div style="padding:20px;text-align:center;font-family:sans-serif">Please enable JavaScript to use Avenzo.</div></noscript>
 </body>
 
 </html>

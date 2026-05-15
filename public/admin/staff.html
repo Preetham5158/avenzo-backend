@@ -2,10 +2,32 @@
 <html>
 
 <head>
+  <meta charset="UTF-8">
   <title>Avenzo Staff</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#ff6b16">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/assets/app.css">
+  <style>
+    @media (max-width: 480px) {
+      .page-head {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+      }
+      .page-head .btn, .page-head .row { width: 100%; justify-content: center; }
+    }
+
+    @media (max-width: 480px) {
+      .invite-form.grid-2, form.grid-2 {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .staff-remove-btn { width: 100%; margin-top: 8px; }
+    }
+  </style>
 </head>
 
 <body>
@@ -31,7 +53,7 @@
       </section>
 
       <section class="card card-pad mb-20">
-        <form class="grid grid-2" onsubmit="addStaff(event)">
+        <form class="invite-form grid grid-2" onsubmit="addStaff(event)">
           <div class="field">
             <label for="staffEmail">Employee email</label>
             <input id="staffEmail" class="input" type="email" required placeholder="employee@example.com">
@@ -61,7 +83,7 @@
         const data = await request(`/admin/staff/${restaurantId}`);
         const staff = data.staff || [];
         if (!staff.length) {
-          document.getElementById("staffList").innerHTML = `<div class="empty">No employees assigned yet.</div>`;
+          document.getElementById("staffList").innerHTML = `<div class="empty">No staff members added yet.</div>`;
           return;
         }
 
@@ -71,11 +93,16 @@
               <h3 class="h3-tight">${escapeHtml(member.name || member.email)}</h3>
               <div class="muted">${escapeHtml(member.email)}</div>
             </div>
-            <button class="btn btn-danger" onclick="removeStaff('${member.id}')">Remove</button>
+            <button class="btn btn-danger staff-remove-btn" onclick="removeStaff('${member.id}', ${JSON.stringify(member.email || member.name || '')})">Remove</button>
           </article>
         `).join("");
       } catch (err) {
-        document.getElementById("staffList").innerHTML = `<div class="empty">${escapeHtml(err.message)}</div>`;
+        // Distinguish 403 access denied from other errors
+        if (err.status === 403 || (err.message && err.message.includes("403"))) {
+          document.getElementById("staffList").innerHTML = `<div class="empty">You don't have access to view staff for this restaurant.</div>`;
+        } else {
+          document.getElementById("staffList").innerHTML = `<div class="empty">${escapeHtml(err.message)}</div>`;
+        }
       }
     }
 
@@ -98,7 +125,11 @@
       }
     }
 
-    async function removeStaff(userId) {
+    async function removeStaff(userId, memberName) {
+      // Confirm before removing — cannot be undone
+      const displayName = memberName || 'this staff member';
+      if (!confirm(`Remove ${displayName}? This cannot be undone.`)) return;
+
       try {
         await request(`/admin/staff/${restaurantId}/${userId}`, { method: "DELETE" });
         toast("Employee removed");
@@ -110,6 +141,7 @@
 
     init();
   </script>
+  <noscript>Please enable JavaScript.</noscript>
 </body>
 
 </html>
