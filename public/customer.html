@@ -3,308 +3,398 @@
 <head>
   <title>Avenzo — Home</title>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover">
   <script>try{if(localStorage.getItem('avenzo-theme')==='light')document.documentElement.classList.add('light')}catch(e){}</script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
-    /* ── DESIGN TOKENS ───────────────────────────────────────────
-       Key contrast fix: --tx-3 was #6E6258 (3:1 fail on dark).
-       Now #9A8C7A (4.6:1 pass). All muted text is now legible.
-       Banner colours: opaque dark tints instead of alpha overlays
-       so restaurant cards have clear visual identity.
-    ────────────────────────────────────────────────────────────── */
-    :root {
-      --bg:         #0C0B0F;
-      --bg-2:       #151318;
-      --bg-3:       #1E1C24;
-      --bg-4:       #272530;
-      --bg-5:       #302E3C;
-      --tx:         #F2E8D4;   /* warm cream, primary */
-      --tx-2:       #C8BA9C;   /* warm beige, secondary */
-      --tx-3:       #9A8C7A;   /* warm muted — was #6E6258 (too dark) */
-      --brand:      #E8401C;
-      --brand-d:    #C43318;
-      --brand-soft: rgba(232,64,28,0.14);
-      --brand-glow: rgba(232,64,28,0.22);
-      --line:       rgba(255,255,255,0.09);
-      --line-2:     rgba(255,255,255,0.05);
-      --glass:      rgba(12,11,15,0.86);
-      --success:    #27C96B;
-      --warn:       #E8A53A;
-      --info:       #5B8EF0;
-      --r:          16px;
-      --r-sm:       12px;
-      --nav-h:      62px;
-      --bn-h:       66px;
+    :root{
+      --bg:#0C0B0F; --bg-2:#151318; --bg-3:#1E1C24; --bg-4:#272530; --bg-5:#302E3C;
+      --tx:#F2E8D4; --tx-2:#C8BA9C; --tx-3:#9A8C7A;
+      --brand:#E8401C; --brand-d:#C43318;
+      --brand-soft:rgba(232,64,28,0.14); --brand-glow:rgba(232,64,28,0.22);
+      --line:rgba(255,255,255,0.09); --line-2:rgba(255,255,255,0.05);
+      --glass:rgba(12,11,15,0.88);
+      --success:#27C96B; --warn:#E8A53A; --info:#5B8EF0;
+      --r:16px; --r-sm:12px; --nav-h:62px; --bn-h:66px;
     }
-    html.light {
-      --bg:#F8F5EF; --bg-2:#EDEAD F; --bg-3:#E4DFD5; --bg-4:#D9D2C6; --bg-5:#CECA BB;
+    html.light{
+      --bg:#F8F5EF; --bg-2:#EDE8DF; --bg-3:#E4DFD5; --bg-4:#D9D2C6; --bg-5:#CFC8BB;
       --tx:#1A1008; --tx-2:#5A4E3C; --tx-3:#7E6E5C;
       --line:rgba(0,0,0,0.09); --line-2:rgba(0,0,0,0.05);
       --glass:rgba(248,245,239,0.92);
     }
-
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
     html{-webkit-font-smoothing:antialiased}
-    body{
-      font-family:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,sans-serif;
-      background:var(--bg); color:var(--tx);
-      padding-bottom:var(--bn-h); min-height:100dvh;
-    }
+    body{font-family:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg);color:var(--tx);padding-bottom:var(--bn-h);min-height:100dvh}
     a{color:inherit;text-decoration:none}
     button,input,select{font:inherit;border:0;outline:none;background:none;color:inherit;cursor:pointer}
     img{display:block}
 
-    /* ── TOAST ── */
+    /* TOAST */
     .toast{position:fixed;left:50%;bottom:calc(var(--bn-h)+14px);z-index:999;transform:translateX(-50%) translateY(10px);background:var(--bg-4);color:var(--tx);padding:10px 22px;border-radius:99px;font-size:13px;font-weight:600;border:1px solid var(--line);box-shadow:0 8px 36px rgba(0,0,0,0.55);opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;white-space:nowrap}
     .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
-    /* ── NAV ── */
+    /* NAV */
     .c-nav{position:sticky;top:0;z-index:50;height:var(--nav-h);background:var(--glass);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border-bottom:1px solid var(--line)}
-    .c-nav-inner{height:100%;max-width:1160px;margin:0 auto;padding:0 22px;display:flex;align-items:center;gap:16px}
+    .c-nav-inner{height:100%;max-width:1480px;margin:0 auto;padding:0 24px;display:flex;align-items:center;gap:16px}
     .c-logo{display:flex;align-items:center;gap:9px}
     .c-logo img{width:28px;height:28px;border-radius:7px}
-    .c-logo-text{font-size:16px;font-weight:800;letter-spacing:1.6px;color:var(--tx)}
+    .c-logo-text{font-size:16px;font-weight:800;letter-spacing:1.6px}
     .c-dlinks{display:none;align-items:center;gap:2px;margin-left:8px}
     .c-dlinks a{padding:7px 13px;border-radius:8px;font-size:14px;font-weight:600;color:var(--tx-2);transition:color .12s,background .12s}
-    .c-dlinks a:hover{color:var(--tx);background:var(--bg-3)}
-    .c-dlinks a.on{color:var(--tx)}
+    .c-dlinks a:hover,.c-dlinks a.on{color:var(--tx);background:var(--bg-3)}
     .c-spacer{flex:1}
     .c-umenu-wrap{position:relative}
     .c-ubtn{display:flex;align-items:center;gap:8px;padding:5px 13px 5px 8px;background:var(--bg-3);border:1px solid var(--line);border-radius:99px;cursor:pointer;transition:border-color .12s}
     .c-ubtn:hover{border-color:rgba(255,255,255,0.17)}
     .c-uav{width:30px;height:30px;border-radius:50%;background:var(--brand);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;flex-shrink:0}
-    .c-uname{font-size:13px;font-weight:600;color:var(--tx);max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .c-uname{font-size:13px;font-weight:600;max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
     .c-ucaret{color:var(--tx-3)}
     .c-udropdown{display:none;position:absolute;right:0;top:calc(100% + 8px);min-width:190px;background:var(--bg-3);border:1px solid var(--line);border-radius:var(--r-sm);box-shadow:0 18px 55px rgba(0,0,0,0.6);overflow:hidden;z-index:80}
     .c-udropdown.open{display:block}
     .c-uinfo{padding:12px 16px;border-bottom:1px solid var(--line)}
-    .c-uinfo strong{display:block;font-size:13px;font-weight:700;color:var(--tx);margin-bottom:2px}
+    .c-uinfo strong{display:block;font-size:13px;font-weight:700;margin-bottom:2px}
     .c-uinfo small{font-size:12px;color:var(--tx-3)}
     .c-umitem{display:block;width:100%;padding:11px 16px;text-align:left;font-size:13px;font-weight:600;color:var(--tx-2);cursor:pointer;transition:background .1s,color .1s}
     .c-umitem:hover{background:var(--bg-4);color:var(--tx)}
     .c-umitem.red{color:var(--brand)}
 
-    /* ── LAYOUT ── */
-    .c-wrap{max-width:1160px;margin:0 auto;padding:0 22px}
-
-    /* ── HERO ── */
-    .c-hero{
-      padding:28px 0 24px;
-      background:
-        radial-gradient(ellipse 55% 70% at 5% 110%,rgba(232,64,28,0.14) 0%,transparent 55%),
-        radial-gradient(ellipse 40% 50% at 95% 0%,rgba(88,118,255,0.08) 0%,transparent 50%),
-        var(--bg);
-      border-bottom:1px solid var(--line);
-    }
+    /* HERO */
+    .c-hero{padding:28px 0 26px;background:radial-gradient(ellipse 55% 80% at 5% 110%,rgba(232,64,28,0.16) 0%,transparent 55%),radial-gradient(ellipse 35% 45% at 95% 0%,rgba(88,118,255,0.09) 0%,transparent 50%),var(--bg);border-bottom:1px solid var(--line)}
+    .c-hero-inner{max-width:1480px;margin:0 auto;padding:0 24px}
     .c-hero-tag{font-size:13px;font-weight:600;color:var(--tx-2);margin-bottom:8px}
-    .c-hero-h1{font-size:clamp(26px,4vw,40px);font-weight:800;line-height:1.10;color:var(--tx);margin-bottom:22px}
-    .c-hero-h1 b{font-weight:800;color:var(--brand)}
-    .c-sbar{display:flex;align-items:center;gap:10px;height:52px;max-width:580px;background:var(--bg-3);border:1.5px solid var(--line);border-radius:14px;padding:0 16px;transition:border-color .15s,box-shadow .15s}
+    .c-hero-h1{font-size:clamp(24px,3.5vw,38px);font-weight:800;line-height:1.12;margin-bottom:22px}
+    .c-hero-h1 b{color:var(--brand)}
+    .c-sbar{display:flex;align-items:center;gap:10px;height:52px;max-width:540px;background:var(--bg-3);border:1.5px solid var(--line);border-radius:14px;padding:0 16px;transition:border-color .15s,box-shadow .15s}
     .c-sbar:focus-within{border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-soft)}
     .c-sbar svg{color:var(--tx-3);flex-shrink:0}
-    .c-sbar input{flex:1;font-size:15px;color:var(--tx);background:transparent}
+    .c-sbar input{flex:1;font-size:15px;background:transparent}
     .c-sbar input::placeholder{color:var(--tx-3)}
-    .c-sbar-clear{width:24px;height:24px;border-radius:50%;background:var(--bg-4);display:none;align-items:center;justify-content:center;font-size:14px;color:var(--tx-3);flex-shrink:0;transition:background .12s}
-    .c-sbar-clear:hover{background:var(--bg-5);color:var(--tx)}
+    .c-sbar-clear{width:24px;height:24px;border-radius:50%;background:var(--bg-4);display:none;align-items:center;justify-content:center;font-size:14px;color:var(--tx-3);flex-shrink:0}
     .c-sbar-clear.vis{display:flex}
+    .c-sbar-clear:hover{background:var(--bg-5);color:var(--tx)}
 
-    /* ── LIVE ORDER ── */
-    .c-live{
-      margin-top:18px;
-      background:var(--bg-3);
-      border:1.5px solid rgba(232,64,28,0.30);
-      border-radius:var(--r);
-      padding:16px 18px; display:grid; gap:14px;
-      box-shadow:0 0 38px rgba(232,64,28,0.10);
-    }
+    /* PAGE GRID — single col default (mobile) */
+    .c-page{max-width:1480px;margin:0 auto;padding:0 16px}
+    .c-main{min-width:0;padding-top:20px}
+    .c-sidebar-l,.c-sidebar-r{display:none}
+
+    /* WIDGET */
+    .c-widget{background:var(--bg-2);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;margin-bottom:16px}
+    .c-widget-hd{padding:14px 16px 0;display:flex;align-items:center;justify-content:space-between}
+    .c-widget-title{font-size:13px;font-weight:700;letter-spacing:0.2px}
+    .c-widget-action{font-size:12px;font-weight:600;color:var(--brand)}
+
+    /* LEFT SIDEBAR — profile card */
+    .c-pcard .c-widget-body{padding:18px 16px 20px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:5px}
+    .c-pav{width:56px;height:56px;border-radius:50%;background:var(--brand);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800;color:#fff;margin-bottom:4px;border:3px solid var(--brand-glow)}
+    .c-pname{font-size:15px;font-weight:700}
+    .c-pemail{font-size:12px;color:var(--tx-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:210px}
+    .c-ptier{font-size:10px;font-weight:700;letter-spacing:0.6px;background:var(--brand-soft);color:var(--brand);padding:3px 10px;border-radius:99px;margin-top:4px;display:inline-block}
+    .c-pedit{font-size:12px;font-weight:600;color:var(--brand);padding:6px 14px;border:1px solid rgba(232,64,28,0.28);border-radius:8px;margin-top:8px;display:inline-block;transition:background .15s}
+    .c-pedit:hover{background:var(--brand-soft)}
+
+    /* LEFT SIDEBAR — quick links */
+    .c-qlinks{list-style:none}
+    .c-qlinks li a,.c-qlinks li button{display:flex;align-items:center;gap:10px;width:100%;padding:10px 16px;font-size:13px;font-weight:600;color:var(--tx-2);transition:background .1s,color .1s;text-align:left}
+    .c-qlinks li a:hover,.c-qlinks li button:hover{background:var(--bg-3);color:var(--tx)}
+    .c-qlinks li+li{border-top:1px solid var(--line-2)}
+    .c-qlink-icon{width:22px;height:22px;border-radius:7px;background:var(--bg-4);display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0}
+
+    /* LEFT SIDEBAR — diet preference */
+    .c-diet{display:flex;gap:6px;padding:12px 16px 14px}
+    .c-diet-btn{flex:1;padding:8px 0;border-radius:8px;font-size:12px;font-weight:700;color:var(--tx-3);background:var(--bg-3);border:1.5px solid var(--line);transition:all .15s;text-align:center}
+    .c-diet-btn:hover{color:var(--tx);border-color:rgba(255,255,255,0.15)}
+    .c-diet-btn.on{color:var(--brand);background:var(--brand-soft);border-color:rgba(232,64,28,0.4)}
+
+    /* SIDEBAR STATS CARD */
+    .c-scards{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line)}
+    .c-scard{background:var(--bg-2);padding:14px 14px 16px;text-align:center}
+    .c-scard-num{display:block;font-size:22px;font-weight:800;line-height:1;margin-bottom:4px}
+    .c-scard-lbl{font-size:10px;font-weight:600;color:var(--tx-3);letter-spacing:0.4px}
+
+    /* MOBILE STATS STRIP */
+    .c-mstats{display:flex;background:var(--bg-2);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;margin-top:18px}
+    .c-mstat{flex:1;padding:13px 8px;text-align:center}
+    .c-mstat-num{display:block;font-size:20px;font-weight:800;line-height:1;margin-bottom:3px}
+    .c-mstat-lbl{font-size:10px;font-weight:600;color:var(--tx-3);letter-spacing:0.3px}
+    .c-mstat-sep{width:1px;background:var(--line);flex-shrink:0}
+
+    /* LIVE ORDER */
+    .c-live{background:var(--bg-3);border:1.5px solid rgba(232,64,28,0.30);border-radius:var(--r);padding:16px 18px;display:grid;gap:14px;box-shadow:0 0 38px rgba(232,64,28,0.10);margin-top:18px}
     .c-live-top{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
     .c-live-dot{width:8px;height:8px;border-radius:50%;background:var(--brand);flex-shrink:0;animation:lpulse 1.8s ease-in-out infinite}
     @keyframes lpulse{0%,100%{box-shadow:0 0 0 0 rgba(232,64,28,0.5)}50%{box-shadow:0 0 0 8px rgba(232,64,28,0)}}
     .c-live-badge{font-size:10px;font-weight:700;letter-spacing:0.9px;text-transform:uppercase;color:var(--brand);background:var(--brand-soft);padding:3px 9px;border-radius:99px;flex-shrink:0}
-    .c-live-rname{font-size:15px;font-weight:700;color:var(--tx);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-    .c-live-num{font-size:12px;font-weight:600;color:var(--tx-3);flex-shrink:0}
-
-    /* progress steps */
-    .c-steps{display:flex;align-items:center;gap:0}
+    .c-live-rname{font-size:14px;font-weight:700;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .c-live-num{font-size:11px;font-weight:600;color:var(--tx-3);flex-shrink:0}
+    .c-steps{display:flex;align-items:center}
     .c-step{display:flex;flex-direction:column;align-items:center;gap:5px;flex-shrink:0}
     .c-step-circle{width:32px;height:32px;border-radius:50%;border:2px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:14px;background:var(--bg-4);color:var(--tx-3);transition:all .3s}
     .c-step.done .c-step-circle{background:var(--brand);border-color:var(--brand);color:#fff}
     .c-step.cur  .c-step-circle{border-color:var(--brand);color:var(--brand);background:var(--brand-soft);animation:lpulse 1.8s ease-in-out infinite}
     .c-step-lbl{font-size:10px;font-weight:700;color:var(--tx-3);letter-spacing:0.3px;white-space:nowrap}
-    .c-step.done .c-step-lbl{color:var(--tx-2)}
-    .c-step.cur  .c-step-lbl{color:var(--brand)}
-    .c-step-line{flex:1;height:2px;background:var(--line);margin-bottom:18px;min-width:24px;transition:background .3s}
+    .c-step.done .c-step-lbl,.c-step.cur .c-step-lbl{color:var(--brand)}
+    .c-step-line{flex:1;height:2px;background:var(--line);margin-bottom:18px;min-width:20px;transition:background .3s}
     .c-step-line.done{background:var(--brand)}
+    .c-live-foot{display:flex;align-items:center;justify-content:space-between;gap:10px}
+    .c-live-msg{font-size:12px;color:var(--tx-2);line-height:1.45}
 
-    .c-live-foot{display:flex;align-items:center;justify-content:space-between;gap:12px}
-    .c-live-msg{font-size:13px;color:var(--tx-2);line-height:1.45}
-
-    /* ── HINT ── */
-    .c-hint{margin-top:14px;display:flex;align-items:center;gap:14px;background:var(--bg-3);border:1.5px dashed rgba(232,64,28,0.28);border-radius:var(--r);padding:14px 16px;transition:border-color .15s}
+    /* HINT */
+    .c-hint{display:flex;align-items:center;gap:12px;background:var(--bg-3);border:1.5px dashed rgba(232,64,28,0.28);border-radius:var(--r);padding:13px 15px;margin-top:16px;transition:border-color .15s}
     .c-hint:hover{border-color:var(--brand)}
-    .c-hint-icon{width:40px;height:40px;border-radius:11px;background:var(--brand-soft);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+    .c-hint-icon{width:38px;height:38px;border-radius:10px;background:var(--brand-soft);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
     .c-hint-txt{flex:1}
-    .c-hint-txt strong{display:block;font-size:13px;font-weight:700;color:var(--tx);margin-bottom:2px}
+    .c-hint-txt strong{display:block;font-size:13px;font-weight:700;margin-bottom:2px}
     .c-hint-txt span{font-size:12px;color:var(--tx-3)}
 
-    /* ── QUICK STATS ── */
-    .c-stats{
-      display:flex;align-items:center;
-      background:var(--bg-2); border:1px solid var(--line);
-      border-radius:var(--r); overflow:hidden;
-      margin-top:18px;
-    }
-    .c-stat{flex:1;padding:14px 10px;text-align:center}
-    .c-stat-num{display:block;font-size:22px;font-weight:800;color:var(--tx);line-height:1;margin-bottom:4px}
-    .c-stat-lbl{font-size:11px;font-weight:600;color:var(--tx-3);letter-spacing:0.3px}
-    .c-stat-sep{width:1px;height:40px;background:var(--line);flex-shrink:0}
+    /* RATING PROMPT */
+    .c-rp{display:flex;align-items:center;gap:12px;background:var(--bg-3);border:1.5px solid rgba(232,165,58,0.28);border-radius:var(--r);padding:13px 15px;margin-top:16px}
+    .c-rp-icon{width:38px;height:38px;border-radius:10px;background:rgba(232,165,58,0.14);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+    .c-rp-body{flex:1;min-width:0}
+    .c-rp-title{font-size:13px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .c-rp-sub{font-size:11px;color:var(--tx-3);margin-top:2px}
+    .c-rp-btn{flex-shrink:0;background:rgba(232,165,58,0.14);color:var(--warn);font-size:12px;font-weight:700;padding:7px 13px;border-radius:8px;border:1px solid rgba(232,165,58,0.28);transition:background .15s;white-space:nowrap}
+    .c-rp-btn:hover{background:rgba(232,165,58,0.24)}
 
-    /* ── SECTION ── */
-    .c-sec{margin-top:32px}
-    .c-sec-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;gap:12px}
-    .c-sec-title{font-size:18px;font-weight:800;color:var(--tx)}
+    /* PROMO BANNERS */
+    .c-promos{display:flex;gap:12px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+    .c-promos::-webkit-scrollbar{display:none}
+    .c-promo{flex:0 0 auto;width:192px;padding:18px 16px;border-radius:var(--r);display:flex;flex-direction:column;gap:8px;cursor:pointer;transition:transform .15s;position:relative;overflow:hidden}
+    .c-promo:hover{transform:translateY(-2px)}
+    .c-promo::after{content:"";position:absolute;inset:0;border-radius:var(--r);border:1px solid rgba(255,255,255,0.09);pointer-events:none}
+    .c-promo-icon{font-size:26px;line-height:1}
+    .c-promo-title{font-size:13px;font-weight:800;color:#fff;line-height:1.2}
+    .c-promo-sub{font-size:11px;color:rgba(255,255,255,0.68);line-height:1.4}
+    .c-promo-cta{font-size:12px;font-weight:700;color:rgba(255,255,255,0.9);margin-top:4px}
+    .cp1{background:linear-gradient(135deg,#1A2E6E,#0D1A42)}
+    .cp2{background:linear-gradient(135deg,#2A1A08,#180E04)}
+    .cp3{background:linear-gradient(135deg,#0D2E1A,#071A0F)}
+    .cp4{background:linear-gradient(135deg,#2E0D1A,#1A0710)}
+
+    /* SECTION */
+    .c-sec{margin-top:26px}
+    .c-sec-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;gap:12px}
+    .c-sec-title{font-size:17px;font-weight:800}
     .c-sec-action{font-size:13px;font-weight:600;color:var(--brand);flex-shrink:0}
     .c-sec-count{font-size:13px;font-weight:600;color:var(--tx-3)}
 
-    /* ── COLLECTIONS ── */
+    /* COLLECTIONS */
     .c-colls{display:flex;gap:10px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
     .c-colls::-webkit-scrollbar{display:none}
-    .c-coll{flex:0 0 auto;min-width:130px;padding:14px 16px;background:var(--bg-3);border:1.5px solid var(--line);border-radius:var(--r);cursor:pointer;display:flex;align-items:center;gap:10px;transition:border-color .15s,transform .15s}
+    .c-coll{flex:0 0 auto;min-width:126px;padding:13px 15px;background:var(--bg-3);border:1.5px solid var(--line);border-radius:var(--r);cursor:pointer;display:flex;align-items:center;gap:9px;transition:border-color .15s,transform .15s}
     .c-coll:hover{border-color:rgba(255,255,255,0.18);transform:translateY(-1px)}
     .c-coll.on{border-color:rgba(232,64,28,0.45);background:var(--brand-soft)}
-    .c-coll-icon{font-size:22px;line-height:1;flex-shrink:0}
-    .c-coll-body{}
-    .c-coll-label{font-size:13px;font-weight:700;color:var(--tx);line-height:1.2}
+    .c-coll-icon{font-size:20px;line-height:1;flex-shrink:0}
+    .c-coll-label{font-size:13px;font-weight:700;line-height:1.2}
     .c-coll-sub{font-size:11px;color:var(--tx-3);margin-top:2px}
     .c-coll.on .c-coll-label{color:var(--brand)}
-    .c-coll.on .c-coll-sub{color:rgba(232,64,28,0.7)}
 
-    /* ── CATEGORY CHIPS ── */
-    .c-cats{display:flex;gap:9px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+    /* CATEGORY CHIPS */
+    .c-cats{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
     .c-cats::-webkit-scrollbar{display:none}
-    .c-cat{flex:0 0 auto;display:flex;flex-direction:column;align-items:center;gap:8px;padding:12px 15px;min-width:76px;background:var(--bg-3);border:1.5px solid var(--line);border-radius:var(--r);cursor:pointer;transition:border-color .15s,background .15s}
+    .c-cat{flex:0 0 auto;display:flex;flex-direction:column;align-items:center;gap:7px;padding:11px 14px;min-width:72px;background:var(--bg-3);border:1.5px solid var(--line);border-radius:var(--r);cursor:pointer;transition:border-color .15s,background .15s}
     .c-cat:hover{border-color:rgba(255,255,255,0.18)}
     .c-cat.on{background:var(--brand-soft);border-color:rgba(232,64,28,0.48)}
-    .c-cat-icon{font-size:26px;line-height:1}
+    .c-cat-icon{font-size:24px;line-height:1}
     .c-cat-label{font-size:11px;font-weight:700;color:var(--tx-2);white-space:nowrap}
     .c-cat.on .c-cat-label{color:var(--brand)}
 
-    /* sort select */
-    .c-sort{
-      padding:7px 32px 7px 12px;
-      background:var(--bg-3); border:1.5px solid var(--line);
-      border-radius:8px; font-size:13px; font-weight:600; color:var(--tx-2);
-      appearance:none;
-      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none' stroke='%239A8C7A' stroke-width='2.5' viewBox='0 0 24 24'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
-      background-repeat:no-repeat; background-position:right 10px center;
-      cursor:pointer; transition:border-color .15s;
-    }
-    .c-sort:focus{border-color:var(--brand);outline:none}
+    /* SORT */
+    .c-sort{padding:7px 30px 7px 11px;background:var(--bg-3);border:1.5px solid var(--line);border-radius:8px;font-size:13px;font-weight:600;color:var(--tx-2);appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none' stroke='%239A8C7A' stroke-width='2.5' viewBox='0 0 24 24'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 9px center;cursor:pointer;transition:border-color .15s}
+    .c-sort:focus{border-color:var(--brand)}
 
-    /* ── RESTAURANT GRID ── */
-    .c-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+    /* FEATURED RESTAURANT */
+    .c-featured{display:block;background:var(--bg-2);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;transition:transform .18s,border-color .18s,box-shadow .18s;margin-bottom:14px}
+    .c-featured:hover{transform:translateY(-3px);border-color:rgba(255,255,255,0.14);box-shadow:0 18px 52px rgba(0,0,0,0.5)}
+    .c-feat-banner{height:148px;display:flex;align-items:center;justify-content:center;font-size:60px;position:relative;overflow:hidden}
+    .c-feat-banner::after{content:"";position:absolute;bottom:0;left:0;right:0;height:64px;background:linear-gradient(to top,rgba(0,0,0,0.48),transparent)}
+    .c-feat-badge{position:absolute;top:12px;left:12px;font-size:11px;font-weight:700;letter-spacing:0.5px;background:rgba(232,165,58,0.22);color:#E8A53A;border:1px solid rgba(232,165,58,0.32);padding:4px 10px;border-radius:99px;z-index:1}
+    .c-feat-body{padding:14px 16px 16px;display:flex;align-items:center;gap:14px}
+    .c-feat-info{flex:1;min-width:0}
+    .c-feat-name{font-size:15px;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .c-feat-meta{font-size:12px;color:var(--tx-3);margin-top:3px}
+    .c-feat-cta{flex-shrink:0;background:var(--brand);color:#fff;font-size:13px;font-weight:700;padding:9px 18px;border-radius:10px;box-shadow:0 4px 16px rgba(232,64,28,0.3);white-space:nowrap}
 
-    .c-rcard{
-      background:var(--bg-2); border:1px solid var(--line);
-      border-radius:var(--r); overflow:hidden;
-      display:flex; flex-direction:column;
-      transition:transform .18s,border-color .18s,box-shadow .18s;
-    }
+    /* RESTAURANT GRID */
+    .c-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+    .c-rcard{background:var(--bg-2);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;display:flex;flex-direction:column;transition:transform .18s,border-color .18s,box-shadow .18s}
     .c-rcard:hover:not(.c-rcard--paused){transform:translateY(-3px);border-color:rgba(255,255,255,0.14);box-shadow:0 16px 48px rgba(0,0,0,0.45)}
-    .c-rcard-banner{height:116px;display:flex;align-items:center;justify-content:center;font-size:48px;position:relative;overflow:hidden}
-    /* subtle bottom vignette for readability */
-    .c-rcard-banner::after{content:"";position:absolute;bottom:0;left:0;right:0;height:40px;background:linear-gradient(to top,rgba(0,0,0,0.35),transparent);pointer-events:none}
+    .c-rcard-banner{height:108px;display:flex;align-items:center;justify-content:center;font-size:44px;position:relative;overflow:hidden}
+    .c-rcard-banner::after{content:"";position:absolute;bottom:0;left:0;right:0;height:32px;background:linear-gradient(to top,rgba(0,0,0,0.28),transparent);pointer-events:none}
     .c-rcard--paused .c-rcard-banner{filter:saturate(0.12) brightness(0.6)}
-    .c-rcard-badge{position:absolute;top:8px;right:8px;font-size:10px;font-weight:700;letter-spacing:0.5px;padding:3px 8px;border-radius:99px;z-index:1}
-    .c-badge-toprated{background:rgba(232,165,58,0.22);color:#E8A53A;border:1px solid rgba(232,165,58,0.3)}
-    .c-badge-popular{background:rgba(88,118,255,0.22);color:#7EA4F4;border:1px solid rgba(88,118,255,0.3)}
-    .c-rcard-paused-overlay{position:absolute;inset:0;background:rgba(12,11,15,0.55);display:flex;align-items:center;justify-content:center}
-    .c-rcard-paused-overlay span{font-size:11px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;color:rgba(255,255,255,0.65);background:rgba(0,0,0,0.5);padding:4px 12px;border-radius:99px;border:1px solid rgba(255,255,255,0.08)}
-    .c-rcard-body{padding:12px 14px 14px;flex:1;display:flex;flex-direction:column;gap:5px}
-    .c-rcard-name{font-size:14px;font-weight:700;color:var(--tx);line-height:1.25;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-    .c-rcard-loc{font-size:12px;color:var(--tx-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-    .c-rcard-foot{display:flex;align-items:center;justify-content:space-between;margin-top:8px;gap:4px}
+    .c-rcard-badge{position:absolute;top:7px;right:7px;font-size:10px;font-weight:700;letter-spacing:0.4px;padding:3px 8px;border-radius:99px;z-index:1}
+    .c-badge-top{background:rgba(232,165,58,0.22);color:#E8A53A;border:1px solid rgba(232,165,58,0.3)}
+    .c-badge-pop{background:rgba(88,118,255,0.22);color:#7EA4F4;border:1px solid rgba(88,118,255,0.3)}
+    .c-badge-new{background:rgba(39,201,107,0.18);color:var(--success);border:1px solid rgba(39,201,107,0.28)}
+    .c-rcard-paused-ov{position:absolute;inset:0;background:rgba(12,11,15,0.55);display:flex;align-items:center;justify-content:center}
+    .c-rcard-paused-ov span{font-size:11px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;color:rgba(255,255,255,0.65);background:rgba(0,0,0,0.5);padding:4px 12px;border-radius:99px;border:1px solid rgba(255,255,255,0.08)}
+    .c-rcard-body{padding:11px 13px 13px;flex:1;display:flex;flex-direction:column;gap:4px}
+    .c-rcard-name{font-size:13px;font-weight:700;line-height:1.25;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .c-rcard-loc{font-size:11px;color:var(--tx-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .c-rcard-foot{display:flex;align-items:center;justify-content:space-between;margin-top:7px;gap:4px}
     .c-rcard-rating{font-size:12px;font-weight:600;color:var(--tx-2);display:flex;align-items:center;gap:3px;flex:1;min-width:0;overflow:hidden}
     .c-star{color:#E8A53A}
-    .c-rcard-right{display:flex;align-items:center;gap:6px;flex-shrink:0}
+    .c-rcard-right{display:flex;align-items:center;gap:5px;flex-shrink:0}
     .c-food-dot{width:10px;height:10px;border-radius:2px;border:1.5px solid;flex-shrink:0}
     .c-food-dot.veg{border-color:#27C96B;background:rgba(39,201,107,0.15)}
     .c-food-dot.nonveg{border-color:#E8401C;background:rgba(232,64,28,0.15)}
-    .c-pill{font-size:10px;font-weight:700;padding:3px 9px;border-radius:99px}
+    .c-pill{font-size:10px;font-weight:700;padding:3px 8px;border-radius:99px}
     .c-pill-open{background:rgba(39,201,107,0.14);color:var(--success)}
     .c-pill-paused{background:rgba(232,165,58,0.14);color:var(--warn)}
 
-    /* ── SKELETON ── */
+    /* SKELETON */
     .c-skel{background:linear-gradient(90deg,var(--bg-3) 25%,var(--bg-4) 50%,var(--bg-3) 75%);background-size:200% 100%;border-radius:var(--r);animation:cskel 1.5s linear infinite}
     @keyframes cskel{0%{background-position:200% 0}100%{background-position:-200% 0}}
 
-    /* ── EMPTY ── */
+    /* EMPTY */
     .c-empty{grid-column:1/-1;padding:52px 20px;text-align:center}
-    .c-empty-icon{font-size:52px;margin-bottom:14px}
-    .c-empty-title{font-size:16px;font-weight:700;color:var(--tx);margin-bottom:6px}
+    .c-empty-icon{font-size:48px;margin-bottom:14px}
+    .c-empty-title{font-size:15px;font-weight:700;margin-bottom:6px}
     .c-empty-sub{font-size:13px;color:var(--tx-3);margin-bottom:18px}
 
-    /* ── RECENT SCROLL ── */
-    .c-hscroll{display:flex;gap:12px;overflow-x:auto;scrollbar-width:none;padding-bottom:4px}
+    /* ORDER AGAIN */
+    .c-hscroll{display:flex;gap:11px;overflow-x:auto;scrollbar-width:none;padding-bottom:4px}
     .c-hscroll::-webkit-scrollbar{display:none}
-    .c-rrecent{flex:0 0 160px;background:var(--bg-2);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;transition:transform .18s,border-color .18s}
+    .c-rrecent{flex:0 0 148px;background:var(--bg-2);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;transition:transform .18s,border-color .18s}
     .c-rrecent:hover{transform:translateY(-2px);border-color:rgba(255,255,255,0.14)}
-    .c-rrecent-banner{height:74px;display:flex;align-items:center;justify-content:center;font-size:32px}
-    .c-rrecent-body{padding:10px 12px 13px}
-    .c-rrecent-name{font-size:13px;font-weight:700;color:var(--tx);line-height:1.25;margin-bottom:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .c-rrecent-banner{height:68px;display:flex;align-items:center;justify-content:center;font-size:28px}
+    .c-rrecent-body{padding:9px 12px 12px}
+    .c-rrecent-name{font-size:12px;font-weight:700;line-height:1.25;margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
     .c-rrecent-loc{font-size:11px;color:var(--tx-3)}
 
-    /* ── BUTTONS ── */
-    .c-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:10px 20px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;transition:all .15s;font-family:inherit}
-    .c-btn-primary{background:var(--brand);color:#fff;box-shadow:0 4px 20px rgba(232,64,28,0.32)}
+    /* TRENDING TAGS (right sidebar) */
+    .c-ttags{display:flex;flex-wrap:wrap;gap:7px;padding:10px 14px 14px}
+    .c-ttag{padding:6px 12px;background:var(--bg-3);border:1px solid var(--line);border-radius:99px;font-size:12px;font-weight:600;color:var(--tx-2);cursor:pointer;transition:background .12s,border-color .12s,color .12s;white-space:nowrap}
+    .c-ttag:hover{background:var(--bg-4);color:var(--tx);border-color:rgba(255,255,255,0.14)}
+    .c-ttag.on{background:var(--brand-soft);border-color:rgba(232,64,28,0.4);color:var(--brand)}
+
+    /* NEW RESTAURANTS (right sidebar) */
+    .c-nr-list{list-style:none}
+    .c-nr-item{display:flex;align-items:center;gap:10px;padding:10px 14px;transition:background .1s}
+    .c-nr-item+.c-nr-item{border-top:1px solid var(--line-2)}
+    .c-nr-item:hover{background:var(--bg-3)}
+    .c-nr-icon{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+    .c-nr-name{flex:1;min-width:0;font-size:12px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .c-nr-meta{font-size:11px;color:var(--tx-3);margin-top:1px}
+
+    /* BUTTONS */
+    .c-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;transition:all .15s;font-family:inherit}
+    .c-btn-primary{background:var(--brand);color:#fff;padding:10px 20px;box-shadow:0 4px 18px rgba(232,64,28,0.3)}
     .c-btn-primary:hover{background:var(--brand-d)}
-    .c-btn-ghost{background:var(--bg-4);color:var(--tx-2);border:1px solid var(--line)}
+    .c-btn-sm{padding:8px 15px;font-size:13px}
+    .c-btn-ghost{background:var(--bg-4);color:var(--tx-2);padding:10px 20px;border:1px solid var(--line)}
     .c-btn-ghost:hover{color:var(--tx);border-color:rgba(255,255,255,0.16)}
 
-    /* ── BOTTOM NAV ── */
+    /* BOTTOM NAV */
     .c-bnav{position:fixed;bottom:0;left:0;right:0;z-index:60;height:var(--bn-h);background:var(--glass);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border-top:1px solid var(--line);display:flex;padding-bottom:env(safe-area-inset-bottom,0)}
     .c-bnav a{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:var(--tx-3);font-size:10px;font-weight:600;letter-spacing:0.3px;transition:color .15s}
     .c-bnav a svg{transition:stroke .15s}
     .c-bnav a.on{color:var(--brand)}
     .c-bnav a.on svg{stroke:var(--brand)}
 
-    /* ── THEME TOGGLE ── */
+    /* THEME TOGGLE */
     .c-theme{position:fixed;right:20px;bottom:calc(var(--bn-h)+14px);z-index:55;display:flex;align-items:center;gap:7px;background:var(--bg-3);border:1px solid var(--line);border-radius:99px;padding:8px 14px 8px 10px;font-size:13px;font-weight:600;color:var(--tx-2);cursor:pointer;box-shadow:0 4px 22px rgba(0,0,0,0.38);transition:color .15s,border-color .15s}
     .c-theme:hover{color:var(--tx);border-color:rgba(255,255,255,0.2)}
-    html.light     .c-theme .t-sun  {display:none}
+    html.light .c-theme .t-sun{display:none}
     html:not(.light) .c-theme .t-moon{display:none}
-    html.light     .c-theme .t-dark {display:none}
+    html.light .c-theme .t-dark{display:none}
     html:not(.light) .c-theme .t-light{display:none}
 
-    /* ── RESPONSIVE ── */
+    /* ── RESPONSIVE ─────────────────────────────────────────── */
+
+    /* tablet 768px: 3-col restaurant grid, wider featured */
+    @media(min-width:768px){
+      .c-grid{grid-template-columns:repeat(3,1fr)}
+      .c-feat-banner{height:170px}
+    }
+
+    /* desktop 901px: right sidebar appears, bottom nav hidden */
     @media(min-width:901px){
       :root{--bn-h:0px}
       body{padding-bottom:0}
       .c-bnav{display:none}
       .c-dlinks{display:flex}
       .c-theme{bottom:20px}
-    }
-    @media(max-width:900px){
+      .c-page{
+        padding:0 24px;
+        display:grid;
+        grid-template-columns:1fr 265px;
+        grid-template-areas:"main sidebar-r";
+        column-gap:24px;
+        align-items:start;
+      }
+      .c-main{grid-area:main;padding-top:24px}
+      .c-sidebar-r{
+        grid-area:sidebar-r;
+        display:block;
+        padding-top:24px;
+        position:sticky;
+        top:calc(var(--nav-h) + 16px);
+        max-height:calc(100dvh - var(--nav-h) - 32px);
+        overflow-y:auto;
+        scrollbar-width:none;
+      }
+      .c-sidebar-r::-webkit-scrollbar{display:none}
+      /* hide mobile-only elements */
+      #liveMount,#statsMount{display:none}
+      /* 2-col grid when right sidebar is showing */
       .c-grid{grid-template-columns:repeat(2,1fr)}
-      .c-wrap{padding:0 16px}
     }
+
+    /* large desktop 1200px: left sidebar also appears */
+    @media(min-width:1200px){
+      .c-page{
+        grid-template-columns:248px 1fr 265px;
+        grid-template-areas:"sidebar-l main sidebar-r";
+      }
+      .c-sidebar-l{
+        grid-area:sidebar-l;
+        display:block;
+        padding-top:24px;
+        position:sticky;
+        top:calc(var(--nav-h) + 16px);
+        max-height:calc(100dvh - var(--nav-h) - 32px);
+        overflow-y:auto;
+        scrollbar-width:none;
+      }
+      .c-sidebar-l::-webkit-scrollbar{display:none}
+    }
+
+    /* extra wide 1440px: 3-col restaurant grid with both sidebars */
+    @media(min-width:1440px){
+      .c-grid{grid-template-columns:repeat(3,1fr)}
+    }
+
+    /* small mobile ≤480px */
     @media(max-width:480px){
       .c-hero{padding:20px 0 18px}
-      .c-sec{margin-top:26px}
-      .c-cat{min-width:70px;padding:11px 12px}
+      .c-page{padding:0 14px}
+      .c-hero-inner{padding:0 14px}
+      .c-sec{margin-top:22px}
+      .c-cat{min-width:68px;padding:10px 12px}
       .c-cat-icon{font-size:22px}
-      .c-rcard-banner{height:94px;font-size:38px}
-      .c-coll{min-width:120px;padding:12px 14px}
+      .c-rcard-banner{height:88px;font-size:36px}
+      .c-feat-banner{height:120px;font-size:48px}
+      .c-coll{min-width:116px;padding:12px 13px}
       .c-step-circle{width:28px;height:28px;font-size:12px}
       .c-step-lbl{font-size:9px}
+      .c-promo{width:170px;padding:14px 13px}
+      .c-grid{gap:8px}
+    }
+
+    /* very small 360px */
+    @media(max-width:380px){
+      .c-hero-inner,.c-page{padding-left:12px;padding-right:12px}
+      .c-rcard-name{font-size:12px}
+      .c-rcard-banner{height:80px}
     }
   </style>
 </head>
 <body>
 
-  <!-- ── NAV ── -->
+  <!-- NAV -->
   <header class="c-nav">
     <div class="c-nav-inner">
       <a class="c-logo" href="/customer.html">
@@ -312,7 +402,7 @@
         <span class="c-logo-text">AVENZO</span>
       </a>
       <nav class="c-dlinks">
-        <a class="on"  href="/customer.html">Home</a>
+        <a class="on" href="/customer.html">Home</a>
         <a href="/customer-restaurants.html">Explore</a>
         <a href="/customer-orders.html">Orders</a>
         <a href="/customer-profile.html">Profile</a>
@@ -320,7 +410,7 @@
       <div class="c-spacer"></div>
       <div class="c-umenu-wrap">
         <button class="c-ubtn" id="uBtn" onclick="toggleUMenu()">
-          <div class="c-uav"   id="uAv">U</div>
+          <div class="c-uav" id="uAv">U</div>
           <span class="c-uname" id="uNm">…</span>
           <svg class="c-ucaret" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
         </button>
@@ -334,91 +424,170 @@
     </div>
   </header>
 
-  <!-- ── HERO ── -->
+  <!-- HERO (full width) -->
   <section class="c-hero">
-    <div class="c-wrap">
+    <div class="c-hero-inner">
       <p class="c-hero-tag" id="heroTag">Good morning 👋</p>
       <h1 class="c-hero-h1" id="heroH1">What are you <b>craving</b><br>this morning?</h1>
-      <div class="c-sbar" id="sbarWrap">
+      <div class="c-sbar">
         <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
         <input id="searchIn" type="search" placeholder="Search restaurants…" oninput="onSearch()">
-        <button class="c-sbar-clear" id="clearBtn" onclick="clearSearch()" aria-label="Clear search">✕</button>
+        <button class="c-sbar-clear" id="clearBtn" onclick="clearSearch()" aria-label="Clear">✕</button>
       </div>
     </div>
   </section>
 
-  <!-- JS-mounted sections -->
-  <div class="c-wrap" id="liveMount"></div>
-  <div class="c-wrap" id="hintMount"></div>
-  <div class="c-wrap" id="statsMount"></div>
+  <!-- 3-COLUMN PAGE GRID -->
+  <div class="c-page">
 
-  <!-- ── COLLECTIONS ── -->
-  <section class="c-sec" id="collSec" style="display:none">
-    <div class="c-wrap">
-      <div class="c-sec-head"><span class="c-sec-title">Browse by mood</span></div>
-      <div class="c-colls" id="collRow"></div>
-    </div>
-  </section>
+    <!-- LEFT SIDEBAR (≥1200px desktop) -->
+    <aside class="c-sidebar-l">
 
-  <!-- ── CATEGORY FILTER ── -->
-  <section class="c-sec">
-    <div class="c-wrap">
-      <div class="c-sec-head"><span class="c-sec-title">What's on your mind?</span></div>
-      <div class="c-cats">
-        <button class="c-cat on" onclick="setF(this,'all')">
-          <span class="c-cat-icon">🍽️</span><span class="c-cat-label">All</span>
-        </button>
-        <button class="c-cat" onclick="setF(this,'open')">
-          <span class="c-cat-icon">⚡</span><span class="c-cat-label">Open Now</span>
-        </button>
-        <button class="c-cat" onclick="setF(this,'PURE_VEG')">
-          <span class="c-cat-icon">🌿</span><span class="c-cat-label">Pure Veg</span>
-        </button>
-        <button class="c-cat" onclick="setF(this,'BOTH')">
-          <span class="c-cat-icon">🍱</span><span class="c-cat-label">Veg &amp; Non-Veg</span>
-        </button>
-        <button class="c-cat" onclick="setF(this,'NON_VEG')">
-          <span class="c-cat-icon">🍖</span><span class="c-cat-label">Non-Veg</span>
-        </button>
-        <button class="c-cat" onclick="setF(this,'toprated')">
-          <span class="c-cat-icon">🏆</span><span class="c-cat-label">Top Rated</span>
-        </button>
-      </div>
-    </div>
-  </section>
-
-  <!-- ── RESTAURANTS ── -->
-  <section class="c-sec">
-    <div class="c-wrap">
-      <div class="c-sec-head">
-        <div style="display:flex;align-items:baseline;gap:10px">
-          <span class="c-sec-title" id="restHd">Restaurants</span>
-          <span class="c-sec-count" id="restCount"></span>
-        </div>
-        <div style="display:flex;align-items:center;gap:10px">
-          <select class="c-sort" id="sortSel" onchange="renderRests()">
-            <option value="">Best match</option>
-            <option value="rating">Top rated</option>
-            <option value="az">A–Z</option>
-            <option value="open">Open first</option>
-          </select>
-          <a class="c-sec-action" href="/customer-restaurants.html" style="white-space:nowrap">All →</a>
+      <div class="c-widget c-pcard">
+        <div class="c-widget-body">
+          <div class="c-pav" id="sideAv">U</div>
+          <div class="c-pname" id="sideName">—</div>
+          <div class="c-pemail" id="sideEmail">—</div>
+          <span class="c-ptier" id="sideTier">Dine-in member</span>
+          <a class="c-pedit" href="/customer-profile.html">Edit profile</a>
         </div>
       </div>
-      <div class="c-grid" id="restGrid">
-        <div class="c-skel" style="height:214px"></div>
-        <div class="c-skel" style="height:214px"></div>
-        <div class="c-skel" style="height:214px"></div>
+
+      <div class="c-widget">
+        <div class="c-widget-hd"><span class="c-widget-title">Quick links</span></div>
+        <ul class="c-qlinks">
+          <li><a href="/customer-orders.html"><span class="c-qlink-icon">📋</span>My orders</a></li>
+          <li><a href="/customer-restaurants.html"><span class="c-qlink-icon">🍽️</span>Explore all</a></li>
+          <li><a href="/customer-profile.html"><span class="c-qlink-icon">👤</span>My profile</a></li>
+          <li><li><button class="c-umitem red" style="padding:10px 16px;font-size:13px;width:100%;border-top:1px solid var(--line-2)" onclick="doSignOut()"><span class="c-qlink-icon" style="color:inherit;font-size:12px">↩</span>Sign out</button></li>
+        </ul>
       </div>
-    </div>
-  </section>
 
-  <!-- JS-mounted: order again -->
-  <div id="recentMount"></div>
+      <div class="c-widget">
+        <div class="c-widget-hd"><span class="c-widget-title">Diet preference</span></div>
+        <div class="c-diet">
+          <button class="c-diet-btn on" id="diet-all"    onclick="setDiet('all')"     >All</button>
+          <button class="c-diet-btn"    id="diet-veg"    onclick="setDiet('PURE_VEG')">Veg</button>
+          <button class="c-diet-btn"    id="diet-nonveg" onclick="setDiet('NON_VEG')" >Non-Veg</button>
+        </div>
+      </div>
 
-  <div style="height:36px"></div>
+    </aside>
 
-  <!-- ── BOTTOM NAV ── -->
+    <!-- CENTER MAIN (always visible) -->
+    <main class="c-main">
+
+      <!-- Live order — mobile only (hidden on desktop via CSS) -->
+      <div id="liveMount"></div>
+
+      <!-- Quick stats — mobile only (hidden on desktop via CSS) -->
+      <div id="statsMount"></div>
+
+      <!-- Profile completion hint -->
+      <div id="hintMount"></div>
+
+      <!-- Rating prompt -->
+      <div id="ratingMount"></div>
+
+      <!-- Context-aware promo banners -->
+      <div class="c-sec" id="promoSec" style="display:none">
+        <div class="c-promos" id="promoRow"></div>
+      </div>
+
+      <!-- Collections / mood filters -->
+      <section class="c-sec" id="collSec" style="display:none">
+        <div class="c-sec-head"><span class="c-sec-title">Browse by mood</span></div>
+        <div class="c-colls" id="collRow"></div>
+      </section>
+
+      <!-- Category chips + Sort -->
+      <section class="c-sec">
+        <div class="c-sec-head"><span class="c-sec-title">What's on your mind?</span></div>
+        <div class="c-cats">
+          <button class="c-cat on" onclick="setF(this,'all')">
+            <span class="c-cat-icon">🍽️</span><span class="c-cat-label">All</span>
+          </button>
+          <button class="c-cat" onclick="setF(this,'open')">
+            <span class="c-cat-icon">⚡</span><span class="c-cat-label">Open Now</span>
+          </button>
+          <button class="c-cat" onclick="setF(this,'PURE_VEG')">
+            <span class="c-cat-icon">🌿</span><span class="c-cat-label">Pure Veg</span>
+          </button>
+          <button class="c-cat" onclick="setF(this,'BOTH')">
+            <span class="c-cat-icon">🍱</span><span class="c-cat-label">Veg &amp; Non-Veg</span>
+          </button>
+          <button class="c-cat" onclick="setF(this,'NON_VEG')">
+            <span class="c-cat-icon">🍖</span><span class="c-cat-label">Non-Veg</span>
+          </button>
+          <button class="c-cat" onclick="setF(this,'toprated')">
+            <span class="c-cat-icon">🏆</span><span class="c-cat-label">Top Rated</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- Editor's pick — top-rated open restaurant spotlight -->
+      <div id="featuredMount"></div>
+
+      <!-- Restaurant grid -->
+      <section class="c-sec">
+        <div class="c-sec-head">
+          <div style="display:flex;align-items:baseline;gap:10px">
+            <span class="c-sec-title" id="restHd">Restaurants</span>
+            <span class="c-sec-count" id="restCount"></span>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <select class="c-sort" id="sortSel" onchange="renderRests()">
+              <option value="">Best match</option>
+              <option value="rating">Top rated</option>
+              <option value="az">A–Z</option>
+              <option value="open">Open first</option>
+            </select>
+            <a class="c-sec-action" href="/customer-restaurants.html" style="white-space:nowrap">All →</a>
+          </div>
+        </div>
+        <div class="c-grid" id="restGrid">
+          <div class="c-skel" style="height:192px"></div>
+          <div class="c-skel" style="height:192px"></div>
+          <div class="c-skel" style="height:192px"></div>
+          <div class="c-skel" style="height:192px"></div>
+        </div>
+      </section>
+
+      <!-- Order again -->
+      <div id="recentMount"></div>
+
+      <div style="height:32px"></div>
+    </main>
+
+    <!-- RIGHT SIDEBAR (≥901px desktop) -->
+    <aside class="c-sidebar-r">
+
+      <!-- Live order (desktop — mobile version is in #liveMount above) -->
+      <div id="liveMountD"></div>
+
+      <!-- Activity stats card -->
+      <div id="statsMountD"></div>
+
+      <!-- Trending filter shortcuts -->
+      <div class="c-widget">
+        <div class="c-widget-hd"><span class="c-widget-title">Trending now</span></div>
+        <div class="c-ttags" id="trendingTags"></div>
+      </div>
+
+      <!-- New on Avenzo -->
+      <div class="c-widget" id="newRestWidget" style="display:none">
+        <div class="c-widget-hd">
+          <span class="c-widget-title">New on Avenzo</span>
+          <a class="c-widget-action" href="/customer-restaurants.html">See all →</a>
+        </div>
+        <ul class="c-nr-list" id="newRestList"></ul>
+      </div>
+
+    </aside>
+
+  </div><!-- /c-page -->
+
+  <!-- BOTTOM NAV (mobile only) -->
   <nav class="c-bnav">
     <a class="on" href="/customer.html" aria-label="Home">
       <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Home
@@ -434,7 +603,7 @@
     </a>
   </nav>
 
-  <!-- ── THEME TOGGLE ── -->
+  <!-- THEME TOGGLE -->
   <button class="c-theme" onclick="toggleTheme()">
     <svg class="t-sun"  width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
     <svg class="t-moon" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
@@ -446,17 +615,26 @@
   <script>
     if (!sessionStorage.getItem("token")) location.href = "/customer-login.html";
 
-    /* ── BANNER PALETTE: opaque dark tints — clearly distinct on dark bg ── */
     const BANNERS = [
-      { grad:"linear-gradient(135deg,#2E1510,#1A0C08)", emoji:"🍖" },  // warm red
-      { grad:"linear-gradient(135deg,#0D2018,#081410)", emoji:"🌿" },  // forest green
-      { grad:"linear-gradient(135deg,#0E1832,#09102A)", emoji:"🍱" },  // midnight blue
-      { grad:"linear-gradient(135deg,#261F08,#181404)", emoji:"🍛" },  // amber spice
-      { grad:"linear-gradient(135deg,#1E0D26,#130919)", emoji:"🫕" },  // deep purple
-      { grad:"linear-gradient(135deg,#081E28,#051318)", emoji:"🥘" },  // ocean teal
+      { grad:"linear-gradient(135deg,#2E1510,#1A0C08)", emoji:"🍖" },
+      { grad:"linear-gradient(135deg,#0D2018,#081410)", emoji:"🌿" },
+      { grad:"linear-gradient(135deg,#0E1832,#09102A)", emoji:"🍱" },
+      { grad:"linear-gradient(135deg,#261F08,#181404)", emoji:"🍛" },
+      { grad:"linear-gradient(135deg,#1E0D26,#130919)", emoji:"🫕" },
+      { grad:"linear-gradient(135deg,#081E28,#051318)", emoji:"🥘" },
     ];
-    const EMOJIS = { PURE_VEG:"🌿", BOTH:"🍱", NON_VEG:"🍖" };
+    const EMOJIS  = { PURE_VEG:"🌿", BOTH:"🍱", NON_VEG:"🍖" };
     const FOODDOT = { PURE_VEG:"veg", BOTH:"veg", NON_VEG:"nonveg" };
+    const TIERS   = [
+      { min:0,  label:"New member"     },
+      { min:1,  label:"Explorer"       },
+      { min:5,  label:"Regular"        },
+      { min:15, label:"Valued member"  },
+    ];
+
+    function hash(name) {
+      return [...name].reduce((s,c) => (s*31+c.charCodeAt(0))&0xffff, 0);
+    }
 
     let allRests = [], curF = "all", curQ = "";
 
@@ -467,22 +645,35 @@
         if (u.role !== "USER") { location.href = "/admin/dashboard.html"; return; }
         hydrateUser(u);
         if (!u.phone) renderHint();
-        await Promise.all([loadRests(), loadOrders()]);
+        renderTrending();
+        await Promise.all([loadRests(), loadOrders(u)]);
       } catch { location.href = "/customer-login.html"; }
     })();
 
+    /* ── USER ── */
     function hydrateUser(u) {
       const name  = u.name || u.email || "You";
       const first = u.name ? u.name.split(" ")[0] : null;
-      const h = new Date().getHours();
-      const gr = h<5?"Good night":h<12?"Good morning":h<17?"Good afternoon":"Good evening";
-      const ph = h<5?"right now?":h<12?"this morning?":h<17?"this afternoon?":"tonight?";
-      document.getElementById("uAv").textContent       = name[0].toUpperCase();
+      const h     = new Date().getHours();
+      const gr    = h<5?"Good night":h<12?"Good morning":h<17?"Good afternoon":"Good evening";
+      const ph    = h<5?"right now?":h<12?"this morning?":h<17?"this afternoon?":"tonight?";
+      const ini   = name[0].toUpperCase();
+
+      document.getElementById("uAv").textContent       = ini;
       document.getElementById("uNm").textContent       = first || u.email.split("@")[0];
       document.getElementById("uFullName").textContent = name;
       document.getElementById("uEmail").textContent    = u.email || "";
       document.getElementById("heroTag").textContent   = `${gr}${first?", "+first:""} 👋`;
-      document.getElementById("heroH1").innerHTML = `What are you <b>craving</b><br>${ph}`;
+      document.getElementById("heroH1").innerHTML      = `What are you <b>craving</b><br>${ph}`;
+
+      document.getElementById("sideAv").textContent    = ini;
+      document.getElementById("sideName").textContent  = name;
+      document.getElementById("sideEmail").textContent = u.email || "";
+    }
+
+    function updateTier(total) {
+      const t = [...TIERS].reverse().find(t => total >= t.min) || TIERS[0];
+      document.getElementById("sideTier").textContent = t.label;
     }
 
     /* ── RESTAURANTS ── */
@@ -491,6 +682,8 @@
         const d = await request("/customer/restaurants");
         allRests = d.restaurants || [];
         buildCollections();
+        renderFeatured();
+        renderNewRests();
         renderRests();
       } catch (e) {
         document.getElementById("restGrid").innerHTML =
@@ -499,50 +692,128 @@
     }
 
     function buildCollections() {
-      const topRated = allRests.filter(r => r.avgRating >= 4.0 && r.ratingCount >= 3);
-      const pureVeg  = allRests.filter(r => r.foodType === "PURE_VEG");
-      const openNow  = allRests.filter(r => r.serviceAvailable !== false);
-
+      const topR  = allRests.filter(r => r.avgRating >= 4.0 && r.ratingCount >= 3);
+      const veg   = allRests.filter(r => r.foodType === "PURE_VEG");
+      const open  = allRests.filter(r => r.serviceAvailable !== false);
       const colls = [
-        { icon:"🏆", label:"Top Rated",  sub:`${topRated.length} spot${topRated.length!==1?"s":""}`, f:"toprated" },
-        { icon:"🌿", label:"Pure Veg",   sub:`${pureVeg.length} spot${pureVeg.length!==1?"s":""}`,  f:"PURE_VEG" },
-        { icon:"⚡", label:"Open Now",   sub:`${openNow.length} open now`,                           f:"open"     },
-      ].filter(c => !c.sub.startsWith("0"));  // hide empty collections
-
+        { icon:"🏆", label:"Top Rated", sub:`${topR.length} place${topR.length!==1?"s":""}`,  f:"toprated" },
+        { icon:"🌿", label:"Pure Veg",  sub:`${veg.length} place${veg.length!==1?"s":""}`,    f:"PURE_VEG" },
+        { icon:"⚡", label:"Open Now",  sub:`${open.length} open right now`,                    f:"open"     },
+      ].filter(c => !c.sub.startsWith("0"));
       if (!colls.length) return;
       document.getElementById("collSec").style.display = "";
-      document.getElementById("collRow").innerHTML = colls.map(c => `
-        <button class="c-coll" data-f="${c.f}" onclick="setColl(this,'${c.f}')">
+      document.getElementById("collRow").innerHTML = colls.map(c =>
+        `<button class="c-coll" data-f="${c.f}" onclick="setColl(this,'${c.f}')">
           <span class="c-coll-icon">${c.icon}</span>
-          <div class="c-coll-body">
+          <div>
             <div class="c-coll-label">${c.label}</div>
             <div class="c-coll-sub">${c.sub}</div>
           </div>
-        </button>`).join("");
+        </button>`
+      ).join("");
     }
 
+    function renderFeatured() {
+      const f = allRests
+        .filter(r => r.serviceAvailable !== false && r.avgRating >= 4.0 && r.ratingCount >= 5)
+        .sort((a,b) => (b.avgRating||0)-(a.avgRating||0))[0];
+      if (!f) return;
+      const bnr  = BANNERS[hash(f.name) % BANNERS.length];
+      const meta = [
+        f.avgRating ? `★ ${f.avgRating}` : null,
+        f.foodType==="PURE_VEG"?"Pure Veg":f.foodType==="NON_VEG"?"Non-Veg":"Veg & Non-Veg",
+        "Open now"
+      ].filter(Boolean).join(" · ");
+      document.getElementById("featuredMount").innerHTML = `
+        <section class="c-sec">
+          <div class="c-sec-head"><span class="c-sec-title">Editor's pick</span></div>
+          <a class="c-featured" href="/r/${encodeURIComponent(f.slug)}">
+            <div class="c-feat-banner" style="background:${bnr.grad}">
+              <span class="c-feat-badge">★ Top Rated</span>
+              ${EMOJIS[f.foodType]||bnr.emoji}
+            </div>
+            <div class="c-feat-body">
+              <div class="c-feat-info">
+                <div class="c-feat-name">${escapeHtml(f.name)}</div>
+                <div class="c-feat-meta">${escapeHtml(meta)}</div>
+              </div>
+              <span class="c-feat-cta">View menu →</span>
+            </div>
+          </a>
+        </section>`;
+    }
+
+    function renderNewRests() {
+      /* proxy: low ratingCount = recently added restaurant */
+      const newOnes = allRests
+        .filter(r => (r.ratingCount||0) < 4 && r.serviceAvailable !== false)
+        .slice(0, 5);
+      if (!newOnes.length) return;
+      document.getElementById("newRestWidget").style.display = "";
+      document.getElementById("newRestList").innerHTML = newOnes.map(r => {
+        const bnr = BANNERS[hash(r.name) % BANNERS.length];
+        return `
+          <li class="c-nr-item" onclick="location.href='/r/${encodeURIComponent(r.slug)}'" style="cursor:pointer">
+            <div class="c-nr-icon" style="background:${bnr.grad}">${EMOJIS[r.foodType]||bnr.emoji}</div>
+            <div style="flex:1;min-width:0">
+              <div class="c-nr-name">${escapeHtml(r.name)}</div>
+              <div class="c-nr-meta">${escapeHtml(r.locality||r.address||"Dine-in")}</div>
+            </div>
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" style="flex-shrink:0;color:var(--tx-3)"><path d="m9 18 6-6-6-6"/></svg>
+          </li>`;
+      }).join("");
+    }
+
+    function renderTrending() {
+      document.getElementById("trendingTags").innerHTML = [
+        { label:"⚡ Open Now",   val:"open"     },
+        { label:"🏆 Top Rated",  val:"toprated" },
+        { label:"🌿 Pure Veg",   val:"PURE_VEG" },
+        { label:"🍖 Non-Veg",    val:"NON_VEG"  },
+        { label:"🍽️ All",        val:"all"       },
+      ].map(t =>
+        `<button class="c-ttag" onclick="setTrend('${t.val}')">${t.label}</button>`
+      ).join("");
+    }
+
+    /* ── FILTERS ── */
     function setColl(btn, val) {
-      setF(null, val);
-      // sync collection highlight
       document.querySelectorAll(".c-coll").forEach(c => c.classList.remove("on"));
       btn.classList.add("on");
+      setF(null, val);
     }
 
     function setF(btn, val) {
       curF = val;
       document.querySelectorAll(".c-cat").forEach(c => c.classList.remove("on"));
       document.querySelectorAll(".c-coll").forEach(c => c.classList.remove("on"));
-      if (btn) btn.classList.add("on");
-      else {
-        // sync category chip when collection is clicked
-        const chip = [...document.querySelectorAll(".c-cat")].find(c => {
-          const onclick = c.getAttribute("onclick")||"";
-          return onclick.includes(`'${val}'`);
-        });
+      if (btn) {
+        btn.classList.add("on");
+      } else {
+        const chip = [...document.querySelectorAll(".c-cat")]
+          .find(c => (c.getAttribute("onclick")||"").includes(`'${val}'`));
         if (chip) chip.classList.add("on");
       }
+      /* sync trending tags */
+      document.querySelectorAll(".c-ttag").forEach(t =>
+        t.classList.toggle("on", (t.getAttribute("onclick")||"").includes(`'${val}'`))
+      );
+      /* sync diet buttons */
+      ["all","PURE_VEG","NON_VEG"].forEach(v => {
+        const id = v==="all"?"diet-all":v==="PURE_VEG"?"diet-veg":"diet-nonveg";
+        document.getElementById(id)?.classList.toggle("on", val===v);
+      });
       renderRests();
     }
+
+    function setTrend(val) {
+      setF(null, val);
+      if (window.innerWidth <= 900) {
+        document.getElementById("restGrid")?.scrollIntoView({ behavior:"smooth", block:"start" });
+      }
+    }
+
+    function setDiet(val) { setF(null, val); }
 
     function onSearch() {
       curQ = document.getElementById("searchIn").value.trim().toLowerCase();
@@ -557,23 +828,21 @@
       renderRests();
     }
 
+    /* ── RENDER RESTAURANTS ── */
     function renderRests() {
       let list = allRests;
-      if (curQ) list = list.filter(r => [r.name,r.locality,r.address].join(" ").toLowerCase().includes(curQ));
-      if (curF === "open")     list = list.filter(r => r.serviceAvailable !== false);
-      else if (curF === "toprated") list = list.filter(r => r.avgRating >= 4.0 && r.ratingCount >= 3);
-      else if (curF !== "all") list = list.filter(r => r.foodType === curF);
+      if (curQ)               list = list.filter(r => [r.name,r.locality,r.address].join(" ").toLowerCase().includes(curQ));
+      if (curF==="open")       list = list.filter(r => r.serviceAvailable !== false);
+      else if (curF==="toprated") list = list.filter(r => r.avgRating >= 4.0 && r.ratingCount >= 3);
+      else if (curF!=="all")   list = list.filter(r => r.foodType === curF);
 
-      /* sort */
       const sort = document.getElementById("sortSel").value;
-      if (sort === "rating")  list = [...list].sort((a,b) => (b.avgRating||0)-(a.avgRating||0));
-      else if (sort === "az") list = [...list].sort((a,b) => a.name.localeCompare(b.name));
-      else if (sort === "open") list = [...list].sort((a,b) => (b.serviceAvailable?1:0)-(a.serviceAvailable?1:0));
+      if (sort==="rating")  list = [...list].sort((a,b) => (b.avgRating||0)-(a.avgRating||0));
+      else if (sort==="az") list = [...list].sort((a,b) => a.name.localeCompare(b.name));
+      else if (sort==="open") list = [...list].sort((a,b) => (b.serviceAvailable?1:0)-(a.serviceAvailable?1:0));
 
-      const hd = document.getElementById("restHd");
-      const ct = document.getElementById("restCount");
-      hd.textContent = curQ || curF !== "all" ? "Results" : "Restaurants";
-      ct.textContent = list.length ? `${list.length} found` : "";
+      document.getElementById("restHd").textContent    = curQ||curF!=="all" ? "Results" : "Restaurants";
+      document.getElementById("restCount").textContent = list.length ? `${list.length} found` : "";
 
       const g = document.getElementById("restGrid");
       if (!list.length) {
@@ -582,30 +851,31 @@
             <div class="c-empty-icon">🔍</div>
             <div class="c-empty-title">No restaurants found</div>
             <div class="c-empty-sub">Try a different filter or search term.</div>
-            <button class="c-btn c-btn-ghost" style="padding:8px 18px;font-size:13px" onclick="resetAll()">Clear filters</button>
+            <button class="c-btn c-btn-ghost" style="padding:8px 16px;font-size:13px" onclick="resetAll()">Clear filters</button>
           </div>`;
         return;
       }
 
       g.innerHTML = list.map(r => {
         const open  = r.serviceAvailable !== false;
-        const hh    = [...r.name].reduce((s,c)=>(s*31+c.charCodeAt(0))&0xffff, 0);
-        const bnr   = BANNERS[hh % BANNERS.length];
+        const bnr   = BANNERS[hash(r.name) % BANNERS.length];
         const emoji = EMOJIS[r.foodType] || bnr.emoji;
         const href  = open ? `/r/${encodeURIComponent(r.slug)}` : "javascript:void(0)";
         const isTop = r.avgRating >= 4.5 && r.ratingCount >= 5;
         const isPop = !isTop && r.ratingCount >= 15;
+        const isNew = !isTop && !isPop && (r.ratingCount||0) < 4;
         const dot   = FOODDOT[r.foodType] || "veg";
         const stars = r.avgRating
           ? `<span class="c-star">★</span>${r.avgRating}<span style="color:var(--tx-3);font-weight:400;font-size:11px"> (${r.ratingCount})</span>`
-          : `<span style="color:var(--tx-3)">No ratings yet</span>`;
+          : `<span style="color:var(--tx-3)">No ratings</span>`;
+        const badge = isTop ? `<span class="c-rcard-badge c-badge-top">★ Top</span>`
+                    : isPop ? `<span class="c-rcard-badge c-badge-pop">🔥 Popular</span>`
+                    : isNew ? `<span class="c-rcard-badge c-badge-new">✦ New</span>` : "";
         return `
-          <a class="c-rcard${open?"":' c-rcard--paused'}" href="${href}">
+          <a class="c-rcard${open?"":" c-rcard--paused"}" href="${href}">
             <div class="c-rcard-banner" style="background:${bnr.grad}">
-              ${isTop ? `<span class="c-rcard-badge c-badge-toprated">★ Top Rated</span>` : ""}
-              ${isPop && !isTop ? `<span class="c-rcard-badge c-badge-popular">🔥 Popular</span>` : ""}
-              ${emoji}
-              ${open?"":` <div class="c-rcard-paused-overlay"><span>Paused</span></div>`}
+              ${badge}${emoji}
+              ${open?"":` <div class="c-rcard-paused-ov"><span>Paused</span></div>`}
             </div>
             <div class="c-rcard-body">
               <div class="c-rcard-name">${escapeHtml(r.name)}</div>
@@ -613,7 +883,7 @@
               <div class="c-rcard-foot">
                 <div class="c-rcard-rating">${stars}</div>
                 <div class="c-rcard-right">
-                  <div class="c-food-dot ${dot}" title="${r.foodType||""}"></div>
+                  <div class="c-food-dot ${dot}"></div>
                   <span class="c-pill ${open?"c-pill-open":"c-pill-paused"}">${open?"Open":"Paused"}</span>
                 </div>
               </div>
@@ -628,123 +898,185 @@
       document.getElementById("clearBtn").classList.remove("vis");
       document.getElementById("sortSel").value = "";
       document.querySelectorAll(".c-cat").forEach((c,i) => c.classList.toggle("on", i===0));
-      document.querySelectorAll(".c-coll").forEach(c => c.classList.remove("on"));
+      document.querySelectorAll(".c-coll,.c-ttag").forEach(c => c.classList.remove("on"));
+      ["diet-all","diet-veg","diet-nonveg"].forEach((id,i) =>
+        document.getElementById(id)?.classList.toggle("on", i===0)
+      );
       renderRests();
     }
 
     /* ── ORDERS ── */
-    async function loadOrders() {
+    async function loadOrders(u) {
       try {
-        const d = await request("/customer/orders?page=1&limit=30");
+        const d      = await request("/customer/orders?page=1&limit=30");
         const orders = d.orders || [];
+        const total  = d.pagination?.total || orders.length;
 
-        /* live order */
-        const active = orders.find(o => ["PENDING","PREPARING","READY"].includes(o.status));
-        if (active) renderLive(active);
-
-        /* stats */
+        const active    = orders.find(o => ["PENDING","PREPARING","READY"].includes(o.status));
         const completed = orders.filter(o => o.status === "COMPLETED");
-        const uniqueRests = new Set(orders.filter(o=>o.restaurant?.slug).map(o=>o.restaurant.slug)).size;
-        renderStats(orders.length, uniqueRests, d.pagination?.total || orders.length);
+        const unrated   = completed.find(o => o.rating === null);
+        const uniqueR   = new Set(orders.filter(o=>o.restaurant?.slug).map(o=>o.restaurant.slug)).size;
 
-        /* recent */
-        const seen = new Set();
+        if (active) {
+          const liveHtml = buildLiveHtml(active);
+          document.getElementById("liveMount").innerHTML  = liveHtml;
+          document.getElementById("liveMountD").innerHTML = liveHtml;
+        }
+
+        renderStats(total, uniqueR, completed.length);
+        updateTier(total);
+        buildPromos(u, unrated);
+
+        if (unrated) renderRatingPrompt(unrated);
+
+        const seen   = new Set();
         const recent = completed
           .filter(o => o.restaurant?.slug)
           .filter(o => { const k=o.restaurant.slug; if(seen.has(k))return false; seen.add(k); return true; })
           .slice(0, 8);
         if (recent.length) renderRecent(recent);
-      } catch { /* orders enhance home page — fail silently */ }
+      } catch { /* orders enrich home page — fail silently */ }
     }
 
-    function renderStats(orderCount, restCount, total) {
-      const shown = total || orderCount;
-      if (!shown) return;
+    function renderStats(total, uniqueR, completedCount) {
+      if (!total) return;
+
+      /* mobile strip */
       document.getElementById("statsMount").innerHTML = `
-        <div class="c-stats">
-          <div class="c-stat">
-            <span class="c-stat-num">${shown}</span>
-            <span class="c-stat-lbl">Total orders</span>
+        <div class="c-mstats">
+          <div class="c-mstat">
+            <span class="c-mstat-num">${total}</span>
+            <span class="c-mstat-lbl">Total orders</span>
           </div>
-          <div class="c-stat-sep"></div>
-          <div class="c-stat">
-            <span class="c-stat-num">${restCount}</span>
-            <span class="c-stat-lbl">Restaurants tried</span>
+          <div class="c-mstat-sep"></div>
+          <div class="c-mstat">
+            <span class="c-mstat-num">${uniqueR}</span>
+            <span class="c-mstat-lbl">Restaurants</span>
           </div>
-          <div class="c-stat-sep"></div>
-          <div class="c-stat">
-            <span class="c-stat-num">${orderCount > 0 ? "Dine-in" : "New"}</span>
-            <span class="c-stat-lbl">Account type</span>
+          <div class="c-mstat-sep"></div>
+          <div class="c-mstat">
+            <span class="c-mstat-num">${completedCount}</span>
+            <span class="c-mstat-lbl">Completed</span>
+          </div>
+        </div>`;
+
+      /* desktop sidebar card */
+      document.getElementById("statsMountD").innerHTML = `
+        <div class="c-widget" style="margin-bottom:16px">
+          <div class="c-widget-hd" style="padding-bottom:0"><span class="c-widget-title">Your activity</span></div>
+          <div class="c-scards" style="margin-top:12px">
+            <div class="c-scard">
+              <span class="c-scard-num">${total}</span>
+              <span class="c-scard-lbl">Total orders</span>
+            </div>
+            <div class="c-scard">
+              <span class="c-scard-num">${uniqueR}</span>
+              <span class="c-scard-lbl">Restaurants</span>
+            </div>
+            <div class="c-scard">
+              <span class="c-scard-num">${completedCount}</span>
+              <span class="c-scard-lbl">Completed</span>
+            </div>
+            <div class="c-scard">
+              <span class="c-scard-num">Dine-in</span>
+              <span class="c-scard-lbl">Account type</span>
+            </div>
           </div>
         </div>`;
     }
 
-    function renderLive(o) {
+    function buildLiveHtml(o) {
       const STEPS = [
-        { status:["PENDING"],             icon:"📋", label:"Received" },
-        { status:["PREPARING"],           icon:"👨‍🍳", label:"Preparing" },
-        { status:["READY","COMPLETED"],   icon:"✓",  label:"Ready!" },
+        { status:["PENDING"],           icon:"📋", label:"Received"  },
+        { status:["PREPARING"],         icon:"👨‍🍳", label:"Preparing" },
+        { status:["READY","COMPLETED"], icon:"✓",  label:"Ready!"    },
       ];
       const curIdx = STEPS.findIndex(s => s.status.includes(o.status));
-
-      const stepsHtml = STEPS.map((s, i) => {
-        const isDone = i < curIdx;
-        const isCur  = i === curIdx;
+      const stepsHtml = STEPS.map((s,i) => {
+        const isDone = i < curIdx, isCur = i === curIdx;
         return `
-          ${i > 0 ? `<div class="c-step-line${isDone||isCur?" done":""}"></div>` : ""}
+          ${i>0?`<div class="c-step-line${isDone||isCur?" done":""}"></div>`:""}
           <div class="c-step${isDone?" done":isCur?" cur":""}">
-            <div class="c-step-circle">${isDone ? "✓" : s.icon}</div>
+            <div class="c-step-circle">${isDone?"✓":s.icon}</div>
             <span class="c-step-lbl">${s.label}</span>
           </div>`;
       }).join("");
-
       const msgs = {
-        PENDING:   "Received! The kitchen is about to start 📋",
-        PREPARING: "Your food is being prepared right now 👨‍🍳",
-        READY:     "Your order is ready — go collect it! 🎉"
+        PENDING:"Received — kitchen is getting started 📋",
+        PREPARING:"Your food is being prepared right now 👨‍🍳",
+        READY:"Ready to collect — go grab it! 🎉"
       };
-
-      document.getElementById("liveMount").innerHTML = `
+      return `
         <div class="c-live">
           <div class="c-live-top">
             <div class="c-live-dot"></div>
             <span class="c-live-badge">Live order</span>
             <span class="c-live-rname">${escapeHtml(o.restaurant?.name||"Your order")}</span>
-            <span class="c-live-num">Order #${o.orderNumber}</span>
+            <span class="c-live-num">#${o.orderNumber}</span>
           </div>
           <div class="c-steps">${stepsHtml}</div>
           <div class="c-live-foot">
             <div class="c-live-msg">${msgs[o.status]||o.status}</div>
-            <a class="c-btn c-btn-primary" style="padding:9px 18px;font-size:13px;flex-shrink:0;white-space:nowrap" href="/track/${o.trackingToken}">Track →</a>
+            <a class="c-btn c-btn-primary c-btn-sm" style="flex-shrink:0;white-space:nowrap" href="/track/${o.trackingToken}">Track →</a>
           </div>
         </div>`;
+    }
+
+    function renderRatingPrompt(o) {
+      const date = o.createdAt ? new Date(o.createdAt).toLocaleDateString("en-IN",{day:"numeric",month:"short"}) : "";
+      document.getElementById("ratingMount").innerHTML = `
+        <div class="c-rp">
+          <div class="c-rp-icon">⭐</div>
+          <div class="c-rp-body">
+            <div class="c-rp-title">How was ${escapeHtml(o.restaurant?.name||"your last visit")}?</div>
+            <div class="c-rp-sub">Your last order${date?" · "+date:""}</div>
+          </div>
+          <a class="c-rp-btn" href="/customer-orders.html">Rate now</a>
+        </div>`;
+    }
+
+    function buildPromos(u, unratedOrder) {
+      const promos = [
+        { cls:"cp1", icon:"🍽️", title:"Discover restaurants", sub:"Browse all dine-in partners available", href:"/customer-restaurants.html", cta:"Explore →" },
+        { cls:"cp3", icon:"📋", title:"Your order history",    sub:"Check status and past visits anytime",  href:"/customer-orders.html",       cta:"View orders →" },
+      ];
+      if (!u?.phone) {
+        promos.unshift({ cls:"cp2", icon:"📱", title:"Save your number", sub:"Faster checkout every time you dine", href:"/customer-profile.html", cta:"Add now →" });
+      }
+      if (unratedOrder) {
+        promos.unshift({ cls:"cp4", icon:"⭐", title:"Share your feedback", sub:"Rate your most recent visit", href:"/customer-orders.html", cta:"Rate now →" });
+      }
+      document.getElementById("promoRow").innerHTML = promos.slice(0,4).map(p => `
+        <a class="c-promo ${p.cls}" href="${p.href}">
+          <div class="c-promo-icon">${p.icon}</div>
+          <div class="c-promo-title">${p.title}</div>
+          <div class="c-promo-sub">${p.sub}</div>
+          <div class="c-promo-cta">${p.cta}</div>
+        </a>`).join("");
+      document.getElementById("promoSec").style.display = "";
     }
 
     function renderRecent(orders) {
       document.getElementById("recentMount").innerHTML = `
         <section class="c-sec">
-          <div class="c-wrap">
-            <div class="c-sec-head">
-              <span class="c-sec-title">Order again</span>
-              <a class="c-sec-action" href="/customer-orders.html">All orders →</a>
-            </div>
-            <div class="c-hscroll">
-              ${orders.map(o => {
-                const r  = o.restaurant || {};
-                const emoji = EMOJIS[r.foodType] || "🍴";
-                const href  = r.slug ? `/r/${encodeURIComponent(r.slug)}` : "/customer-restaurants.html";
-                const hh    = [...(r.name||"X")].reduce((s,c)=>(s*31+c.charCodeAt(0))&0xffff, 0);
-                const bnr   = BANNERS[hh % BANNERS.length];
-                return `
-                  <a class="c-rrecent" href="${href}">
-                    <div class="c-rrecent-banner" style="background:${bnr.grad}">${EMOJIS[r.foodType]||bnr.emoji}</div>
-                    <div class="c-rrecent-body">
-                      <div class="c-rrecent-name">${escapeHtml(r.name||"Restaurant")}</div>
-                      <div class="c-rrecent-loc">${escapeHtml(r.locality||r.address||"Dine-in")}</div>
-                    </div>
-                  </a>`;
-              }).join("")}
-            </div>
+          <div class="c-sec-head">
+            <span class="c-sec-title">Order again</span>
+            <a class="c-sec-action" href="/customer-orders.html">All orders →</a>
+          </div>
+          <div class="c-hscroll">
+            ${orders.map(o => {
+              const r   = o.restaurant || {};
+              const bnr = BANNERS[hash(r.name||"X") % BANNERS.length];
+              const href = r.slug ? `/r/${encodeURIComponent(r.slug)}` : "/customer-restaurants.html";
+              return `
+                <a class="c-rrecent" href="${href}">
+                  <div class="c-rrecent-banner" style="background:${bnr.grad}">${EMOJIS[r.foodType]||bnr.emoji}</div>
+                  <div class="c-rrecent-body">
+                    <div class="c-rrecent-name">${escapeHtml(r.name||"Restaurant")}</div>
+                    <div class="c-rrecent-loc">${escapeHtml(r.locality||r.address||"Dine-in")}</div>
+                  </div>
+                </a>`;
+            }).join("")}
           </div>
         </section>`;
     }
