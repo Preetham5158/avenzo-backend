@@ -17,16 +17,28 @@
     button,input,textarea,select{font:inherit;border:0;outline:none;background:none;color:inherit;cursor:pointer}
 
     /* ── NAV ── */
-    .t-nav{position:sticky;top:0;z-index:50;height:var(--nav-h);background:var(--glass);backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);border-bottom:1px solid var(--line)}
-    .t-nav-in{height:100%;max-width:640px;margin:0 auto;padding:0 22px;display:flex;align-items:center;gap:12px}
-    .t-logo{display:flex;align-items:center;gap:9px;flex:1}.t-logo img{width:26px;height:26px;border-radius:7px}.t-logo span{font-size:16px;font-weight:800;letter-spacing:1.6px}
-    .t-nav-links{display:flex;align-items:center;gap:6px}
-    .t-nav-links a{padding:7px 13px;border-radius:8px;font-size:13px;font-weight:600;color:var(--tx-3);transition:color .12s,background .12s}.t-nav-links a:hover{color:var(--tx);background:var(--bg-3)}
-
-    /* customer topbar (shown when logged in) */
-    .topbar{position:sticky;top:0;z-index:50;background:var(--glass);backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);border-bottom:1px solid var(--line)}
-    .topbar-inner{height:var(--nav-h);max-width:1160px;margin:0 auto;padding:0 22px;display:flex;align-items:center;gap:12px}
-    .brand{display:flex;align-items:center;gap:9px;flex-shrink:0}.brand img{width:26px;height:26px;border-radius:7px}.brand span{font-size:16px;font-weight:800;letter-spacing:1.6px}
+    .c-nav{position:sticky;top:0;z-index:60;height:var(--nav-h);background:var(--glass);backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);border-bottom:1px solid var(--line)}
+    .c-nav-inner{height:100%;max-width:1160px;margin:0 auto;padding:0 22px;display:flex;align-items:center;gap:16px}
+    .c-logo{display:flex;align-items:center;gap:9px}.c-logo img{width:26px;height:26px;border-radius:7px}.c-logo span{font-size:16px;font-weight:800;letter-spacing:1.6px}
+    .c-dlinks{display:none;align-items:center;gap:2px;margin-left:8px}.c-dlinks a{padding:7px 13px;border-radius:8px;font-size:14px;font-weight:600;color:var(--tx-2);transition:color .12s,background .12s}.c-dlinks a:hover{color:var(--tx);background:var(--bg-3)}.c-dlinks a.on{color:var(--tx)}
+    .c-spacer{flex:1}
+    .c-umenu-wrap{position:relative}
+    .c-ubtn{display:flex;align-items:center;gap:8px;padding:5px 12px 5px 8px;background:var(--bg-3);border:1px solid var(--line);border-radius:99px;cursor:pointer;transition:border-color .12s}
+    .c-ubtn:hover{border-color:rgba(255,255,255,0.16)}
+    .c-uav{width:28px;height:28px;border-radius:50%;background:var(--brand);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0}
+    .c-uname{font-size:13px;font-weight:600;max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .c-ucaret{color:var(--tx-3);font-size:11px}
+    .c-udropdown{display:none;position:absolute;right:0;top:calc(100% + 8px);min-width:186px;background:var(--bg-3);border:1px solid var(--line);border-radius:var(--r-sm);box-shadow:0 16px 50px rgba(0,0,0,0.55);overflow:hidden;z-index:80}
+    .c-udropdown.open{display:block}
+    .c-uinfo{padding:12px 14px;border-bottom:1px solid var(--line)}
+    .c-uinfo strong{display:block;font-size:13px;margin-bottom:2px}
+    .c-uinfo small{font-size:12px;color:var(--tx-3)}
+    .c-umitem{display:block;width:100%;padding:11px 14px;text-align:left;font-size:13px;font-weight:600;color:var(--tx-2);cursor:pointer;transition:background .1s,color .1s}
+    .c-umitem:hover{background:var(--bg-4);color:var(--tx)}
+    .c-umitem.red{color:var(--brand)}
+    .c-nav-signin{padding:7px 15px;border-radius:99px;background:var(--brand);color:#fff;font-size:13px;font-weight:700;transition:background .12s}
+    .c-nav-signin:hover{background:var(--brand-d)}
+    @media(min-width:860px){.c-dlinks{display:flex}}
 
     .t-wrap{max-width:640px;margin:0 auto;padding:24px 22px 52px}
 
@@ -145,29 +157,35 @@
 </head>
 <body>
 
-  <!-- Customer topbar (injected by app.js when logged in) -->
-  <header class="topbar" id="customerTopbar" hidden>
-    <div class="topbar-inner">
-      <a class="brand" href="/customer.html" aria-label="Avenzo home">
+  <nav class="c-nav" id="pageNav">
+    <div class="c-nav-inner">
+      <a class="c-logo" href="/customer.html">
         <img src="/logo.png" alt="Avenzo"><span>AVENZO</span>
       </a>
-      <div id="customerNav"></div>
-      <div id="accountMenu"></div>
-    </div>
-  </header>
-
-  <!-- Minimal nav for guests (hidden immediately if logged in to avoid flash) -->
-  <nav class="t-nav" id="guestNav">
-    <div class="t-nav-in">
-      <a class="t-logo" href="/">
-        <img src="/logo.png" alt="Avenzo"><span>AVENZO</span>
-      </a>
-      <div class="t-nav-links">
-        <a href="/customer-login.html">Sign in</a>
+      <div class="c-dlinks" id="navLinks" hidden>
+        <a href="/customer.html">Home</a>
+        <a href="/customer-restaurants.html">Explore</a>
+        <a href="/customer-orders.html" class="on">Orders</a>
+        <a href="/customer-profile.html">Profile</a>
       </div>
+      <div class="c-spacer"></div>
+      <div class="c-umenu-wrap" id="userMenuWrap" hidden>
+        <button class="c-ubtn" onclick="toggleCNav()" type="button">
+          <div class="c-uav" id="navAv">A</div>
+          <span class="c-uname" id="navName"></span>
+          <span class="c-ucaret">▾</span>
+        </button>
+        <div class="c-udropdown" id="userDropdown">
+          <div class="c-uinfo">
+            <strong id="ddName"></strong>
+            <small id="ddEmail"></small>
+          </div>
+          <button class="c-umitem red" onclick="logout('/customer-login.html')">Sign out</button>
+        </div>
+      </div>
+      <a class="c-nav-signin" id="signInLink" href="/customer-login.html" hidden>Sign in</a>
     </div>
   </nav>
-  <script>if(sessionStorage.getItem("token")){document.getElementById("guestNav").hidden=true;}</script>
 
   <div class="t-wrap">
     <!-- Hero: status + step tracker -->
@@ -605,14 +623,47 @@
     }
 
     function maybeInitCustomerBar() {
-      if (guestTracking || !getToken()) return;
-      const bar = document.getElementById("customerTopbar");
-      if (!bar || !bar.hidden) return;
-      bar.hidden = false;
-      document.getElementById("guestNav").hidden = true;
-      document.getElementById("customerNav").innerHTML = customerNavHtml("orders");
-      initAccountMenu("accountMenu", "/customer-login.html");
+      const token = getToken ? getToken() : sessionStorage.getItem("token");
+      if (!token || (typeof guestTracking !== "undefined" && guestTracking)) {
+        const sl = document.getElementById("signInLink");
+        if (sl) sl.hidden = false;
+        return;
+      }
+      request("/auth/me").then(u => {
+        if (!u || u.role !== "USER") {
+          const sl = document.getElementById("signInLink");
+          if (sl) sl.hidden = false;
+          return;
+        }
+        const nl = document.getElementById("navLinks");
+        const uw = document.getElementById("userMenuWrap");
+        if (nl) nl.hidden = false;
+        if (uw) uw.hidden = false;
+        const av = document.getElementById("navAv");
+        const nm = document.getElementById("navName");
+        const dn = document.getElementById("ddName");
+        const de = document.getElementById("ddEmail");
+        if (av) av.textContent = (u.name || u.email || "U")[0].toUpperCase();
+        if (nm) nm.textContent = u.name ? u.name.split(" ")[0] : (u.email || "").split("@")[0];
+        if (dn) dn.textContent = u.name || u.email || "—";
+        if (de) de.textContent = u.email || "";
+        document.body.classList.add("has-customer-bar");
+      }).catch(() => {
+        const sl = document.getElementById("signInLink");
+        if (sl) sl.hidden = false;
+      });
     }
+
+    function toggleCNav() {
+      document.getElementById("userDropdown")?.classList.toggle("open");
+    }
+
+    document.addEventListener("click", e => {
+      const uw = document.getElementById("userMenuWrap");
+      if (uw && !uw.contains(e.target)) {
+        document.getElementById("userDropdown")?.classList.remove("open");
+      }
+    });
 
     function startStatusPolling() {
       if (statusPollingTimer) return;
