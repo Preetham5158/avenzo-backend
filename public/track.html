@@ -8,11 +8,11 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
-    :root{--bg:#0C0B0F;--bg-2:#151318;--bg-3:#1E1C24;--bg-4:#272530;--tx:#F2E8D4;--tx-2:#C8BA9C;--tx-3:#9A8C7A;--brand:#E8401C;--brand-d:#C43318;--brand-soft:rgba(232,64,28,0.12);--success:#27C96B;--success-soft:rgba(39,201,107,0.12);--warn:#E8A53A;--warn-soft:rgba(232,165,58,0.12);--danger:#E84040;--danger-soft:rgba(232,64,64,0.12);--line:rgba(255,255,255,0.07);--glass:rgba(9,8,10,0.88);--r:16px;--r-sm:10px;--nav-h:60px}
+    :root{--bg:#0C0B0F;--bg-2:#151318;--bg-3:#1E1C24;--bg-4:#272530;--tx:#F2E8D4;--tx-2:#C8BA9C;--tx-3:#9A8C7A;--brand:#E8401C;--brand-d:#C43318;--brand-soft:rgba(232,64,28,0.12);--success:#27C96B;--success-soft:rgba(39,201,107,0.12);--warn:#E8A53A;--warn-soft:rgba(232,165,58,0.12);--danger:#E84040;--danger-soft:rgba(232,64,64,0.12);--line:rgba(255,255,255,0.07);--glass:rgba(9,8,10,0.88);--r:16px;--r-sm:10px;--nav-h:60px;--bn-h:66px}
     html.light{--bg:#FAFAF8;--bg-2:#F2EEE5;--bg-3:#EAE4D9;--bg-4:#DDD6C8;--tx:#1A1008;--tx-2:#5C4F3C;--tx-3:#9A8B7A;--line:rgba(0,0,0,0.08);--glass:rgba(250,250,248,0.92)}
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
     html{-webkit-font-smoothing:antialiased}
-    body{font-family:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg);color:var(--tx);min-height:100dvh;padding-bottom:80px}
+    body{font-family:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg);color:var(--tx);min-height:100dvh;padding-bottom:var(--bn-h)}
     a{color:inherit;text-decoration:none}
     button,input,textarea,select{font:inherit;border:0;outline:none;background:none;color:inherit;cursor:pointer}
 
@@ -38,7 +38,13 @@
     .c-umitem.red{color:var(--brand)}
     .c-nav-signin{padding:7px 15px;border-radius:99px;background:var(--brand);color:#fff;font-size:13px;font-weight:700;transition:background .12s}
     .c-nav-signin:hover{background:var(--brand-d)}
-    @media(min-width:860px){.c-dlinks{display:flex}}
+
+    /* Share FAB in nav */
+    .t-share-fab{display:none;width:36px;height:36px;border-radius:10px;background:var(--bg-3);border:1.5px solid var(--line);color:var(--tx-2);align-items:center;justify-content:center;transition:border-color .15s,color .15s;flex-shrink:0}
+    .t-share-fab:hover{border-color:rgba(255,255,255,.2);color:var(--tx)}
+    .t-share-fab.visible{display:flex}
+
+    @media(min-width:860px){:root{--bn-h:0px}.c-bnav{display:none}.c-dlinks{display:flex}}
 
     .t-wrap{max-width:640px;margin:0 auto;padding:24px 22px 52px}
 
@@ -244,8 +250,15 @@
     @keyframes tsk{0%{background-position:200% 0}100%{background-position:-200% 0}}
 
     /* ── TOAST ── */
-    .t-toast{position:fixed;left:50%;bottom:24px;z-index:999;transform:translateX(-50%) translateY(10px);background:var(--bg-4);color:var(--tx);padding:9px 20px;border-radius:99px;font-size:13px;font-weight:600;border:1px solid var(--line);box-shadow:0 8px 32px rgba(0,0,0,.5);opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;white-space:nowrap}
+    .t-toast{position:fixed;left:50%;bottom:calc(var(--bn-h) + 24px);z-index:999;transform:translateX(-50%) translateY(10px);background:var(--bg-4);color:var(--tx);padding:9px 20px;border-radius:99px;font-size:13px;font-weight:600;border:1px solid var(--line);box-shadow:0 8px 32px rgba(0,0,0,.5);opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;white-space:nowrap}
     .t-toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+    /* ── BOTTOM NAV ── */
+    .c-bnav{position:fixed;bottom:0;left:0;right:0;z-index:58;height:var(--bn-h);background:var(--glass);backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);border-top:1px solid var(--line);display:flex;padding-bottom:env(safe-area-inset-bottom,0)}
+    .c-bnav a{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:var(--tx-3);font-size:10px;font-weight:600;letter-spacing:.3px;transition:color .15s}
+    .c-bnav a svg{transition:stroke .15s}
+    .c-bnav a.on{color:var(--brand)}
+    .c-bnav a.on svg{stroke:var(--brand)}
 
     @media (min-width:640px){
       .t-code{font-size:88px;letter-spacing:10px}
@@ -268,6 +281,9 @@
         <a href="/customer-profile.html">Profile</a>
       </div>
       <div class="c-spacer"></div>
+      <button class="t-share-fab" id="shareFab" onclick="shareOrderImage()" title="Share order" type="button">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+      </button>
       <div class="c-umenu-wrap" id="userMenuWrap" hidden>
         <button class="c-ubtn" onclick="toggleCNav()" type="button">
           <div class="c-uav" id="navAv">A</div>
@@ -305,7 +321,7 @@
           </div>
           <div class="t-tl-right">
             <div class="t-tl-name">Order received</div>
-            <div class="t-tl-sub">Your order was sent to the restaurant</div>
+            <div class="t-tl-sub" id="step0Sub">Your order was sent to the restaurant</div>
           </div>
         </div>
         <div class="t-tl-step" id="step1">
@@ -325,7 +341,7 @@
           </div>
           <div class="t-tl-right">
             <div class="t-tl-name">Ready to collect</div>
-            <div class="t-tl-sub">Collect your food at the counter</div>
+            <div class="t-tl-sub" id="step2Sub">Collect your food at the counter</div>
           </div>
         </div>
         <div class="t-tl-step" id="step3">
@@ -334,7 +350,7 @@
           </div>
           <div class="t-tl-right">
             <div class="t-tl-name">Collected</div>
-            <div class="t-tl-sub">Enjoy your meal!</div>
+            <div class="t-tl-sub" id="step3Sub">Enjoy your meal!</div>
           </div>
         </div>
       </div>
@@ -342,16 +358,19 @@
       <div class="t-placed" id="placedAt"></div>
       <div class="t-last-updated" id="lastUpdated" hidden>
         <span class="t-refresh-dot"></span>
-        <span id="lastUpdatedText">Just updated</span>
+        <span>Auto-refreshing every 3s</span>
       </div>
     </div>
 
-    <!-- Order code -->
+    <!-- Pickup code -->
     <div class="t-code-card" id="codeCard">
-      <div class="t-code-label">Order code</div>
-      <div class="t-code-wrap" onclick="copyPickupCode()" title="Tap to copy" style="cursor:pointer;display:inline-flex;align-items:center;gap:10px">
+      <div class="t-code-label">Pickup code</div>
+      <div class="t-code-wrap" onclick="copyPickupCode()" title="Tap to copy" style="cursor:pointer;display:inline-block">
         <div class="t-code" id="orderCode">----</div>
-        <span id="codeCopyHint" style="font-size:11px;color:var(--tx-3);font-weight:600">tap to copy</span>
+      </div>
+      <div id="codeCopyHint" onclick="copyPickupCode()" style="font-size:11px;color:var(--tx-3);font-weight:600;margin-top:6px;display:flex;align-items:center;justify-content:center;gap:5px;cursor:pointer">
+        <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        Tap to copy
       </div>
       <div class="t-table-row" id="tableNumberRow" hidden>Table <strong></strong></div>
       <div class="t-ready-msg" id="readyText">This screen updates automatically.</div>
@@ -399,7 +418,7 @@
           <input id="lookupPhone" class="t-input" inputmode="tel" placeholder="+91 98765 43210" autocomplete="tel">
         </div>
         <div class="t-field">
-          <label for="lookupCode">Order code <span style="color:var(--tx-3);font-weight:400">(4 digits from checkout)</span></label>
+          <label for="lookupCode">Pickup code <span style="color:var(--tx-3);font-weight:400">(4 digits from checkout)</span></label>
           <input id="lookupCode" class="t-input" inputmode="numeric" maxlength="4" placeholder="e.g. 3842">
         </div>
         <button id="lookupBtn" class="t-btn t-btn-primary" style="width:100%" onclick="lookupOrder()">Find my order</button>
@@ -412,6 +431,13 @@
 
   <div class="t-toast" id="tToast"></div>
 
+  <nav class="c-bnav">
+    <a href="/customer.html" aria-label="Home"><svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Home</a>
+    <a href="/customer-restaurants.html" aria-label="Explore"><svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>Explore</a>
+    <a class="on" href="/customer-orders.html" aria-label="Orders"><svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>Orders</a>
+    <a href="/customer-profile.html" aria-label="Profile"><svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Profile</a>
+  </nav>
+
   <script src="/assets/app.js"></script>
   <script>
     const trackingToken = window.location.pathname.split("/track/")[1] || "";
@@ -420,6 +446,9 @@
     let isLoadingStatus = false;
     let statusPollingTimer = null;
     let selectedRating = 0;
+    let _orderData = null;
+    let _statusTimestamps = {};
+    let _lastKnownStatus = null;
 
     // Simple local toast (doesn't depend on app.js toast)
     function tToast(msg) {
@@ -453,10 +482,45 @@
       [0,1,2,3].forEach(i => {
         const el = document.getElementById(`step${i}`);
         el.classList.remove("done","now","cancelled");
-        if (status === "CANCELLED") { el.classList.add("cancelled"); return; }
-        if (i < idx) { el.classList.add("done"); document.getElementById(`dot${i}`).textContent = "✓"; }
-        else if (i === idx) el.classList.add("now");
+        if (status === "CANCELLED") {
+          el.classList.add("cancelled");
+          const subIds = ["step0Sub","prepSub","step2Sub","step3Sub"];
+          const subEl = document.getElementById(subIds[i]);
+          if (subEl) subEl.textContent = "Cancelled";
+          return;
+        }
+        if (i < idx) {
+          el.classList.add("done");
+          document.getElementById(`dot${i}`).textContent = "✓";
+        } else if (i === idx) {
+          el.classList.add("now");
+        }
       });
+
+      // Update timestamps in sub-text for completed/active steps
+      const step0Sub = document.getElementById("step0Sub");
+      if (step0Sub && _statusTimestamps["PENDING"]) {
+        step0Sub.textContent = `Your order was sent to the restaurant · ${_statusTimestamps["PENDING"]}`;
+      }
+      const prepSub = document.getElementById("prepSub");
+      if (prepSub && _statusTimestamps["PREPARING"] && (idx > 1 || status === "PREPARING")) {
+        // Only overwrite if not currently showing countdown
+        if (!prepSub.textContent.startsWith("Ready in")) {
+          prepSub.dataset.tsText = `Started at ${_statusTimestamps["PREPARING"]}`;
+          if (status !== "PREPARING" || !prepSub.textContent.startsWith("Ready in")) {
+            if (!_countdownTimer) prepSub.textContent = `Started at ${_statusTimestamps["PREPARING"]}`;
+          }
+        }
+      }
+      const step2Sub = document.getElementById("step2Sub");
+      if (step2Sub && _statusTimestamps["READY"]) {
+        step2Sub.textContent = `Ready at ${_statusTimestamps["READY"]}`;
+      }
+      const step3Sub = document.getElementById("step3Sub");
+      if (step3Sub && _statusTimestamps["COMPLETED"]) {
+        step3Sub.textContent = `Collected at ${_statusTimestamps["COMPLETED"]}`;
+      }
+
       // Celebration glow for READY
       const hero = document.getElementById("heroCard");
       if (hero) hero.classList.toggle("ready-glow", status === "READY" || status === "COMPLETED");
@@ -474,17 +538,14 @@
       if (!code || code === "----") return;
       navigator.clipboard?.writeText(code).then(() => {
         const hint = document.getElementById("codeCopyHint");
-        if (hint) { hint.textContent = "Copied!"; hint.style.color = "var(--success)"; setTimeout(() => { hint.textContent = "tap to copy"; hint.style.color = ""; }, 2000); }
+        if (hint) {
+          hint.innerHTML = `<svg width="12" height="12" fill="none" stroke="var(--success)" stroke-width="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> <span style="color:var(--success)">Copied!</span>`;
+          setTimeout(() => {
+            hint.innerHTML = `<svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Tap to copy`;
+            hint.style.color = "";
+          }, 2000);
+        }
       }).catch(() => tToast("Code: " + code));
-    }
-
-    function shareOrder() {
-      const url = window.location.href;
-      if (navigator.share) {
-        navigator.share({ title: "Track my Avenzo order", url }).catch(() => {});
-      } else {
-        navigator.clipboard?.writeText(url).then(() => tToast("Tracking link copied!")).catch(() => tToast(url));
-      }
     }
 
     let _countdownTimer = null;
@@ -507,30 +568,33 @@
       if (_countdownTimer) { clearInterval(_countdownTimer); _countdownTimer = null; }
     }
 
-    let _lastUpdatedTimer = null;
-    let _lastUpdatedAt = null;
-
-    function startLastUpdatedCounter() {
-      _lastUpdatedAt = Date.now();
-      const el = document.getElementById("lastUpdated");
-      const txt = document.getElementById("lastUpdatedText");
-      if (el) el.hidden = false;
-      if (_lastUpdatedTimer) clearInterval(_lastUpdatedTimer);
-      _lastUpdatedTimer = setInterval(() => {
-        const secs = Math.round((Date.now() - _lastUpdatedAt) / 1000);
-        if (txt) txt.textContent = secs < 5 ? "Just updated" : `Updated ${secs}s ago`;
-      }, 5000);
-    }
-
     async function loadStatus() {
       if (!trackingToken) { showSavedOrders(); return; }
       if (isLoadingStatus) return;
       isLoadingStatus = true;
       try {
         const data = await request(`/order/${trackingToken}`, { auth: false });
+        _orderData = data;
+
+        // Track status change timestamps (client-side, first detection only)
+        if (data.status !== _lastKnownStatus) {
+          if (!_statusTimestamps[data.status]) {
+            _statusTimestamps[data.status] = new Date().toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
+          }
+          _lastKnownStatus = data.status;
+        }
+        // Initialize PENDING timestamp from placed-at text on first load
+        if (!_statusTimestamps["PENDING"]) {
+          _statusTimestamps["PENDING"] = document.getElementById("placedAt")?.textContent.replace("Placed ", "") || "";
+        }
 
         document.getElementById("restaurantName").textContent = data.restaurant?.name || "Restaurant";
         document.getElementById("placedAt").textContent = data.createdAt ? `Placed ${formatDate(data.createdAt)}` : "";
+
+        // Re-seed PENDING timestamp from formatted placed date if still empty
+        if (!_statusTimestamps["PENDING"]) {
+          _statusTimestamps["PENDING"] = document.getElementById("placedAt")?.textContent.replace("Placed ", "") || "";
+        }
 
         const badge = document.getElementById("statusBadge");
         badge.className = `t-status-badge ${badgeCls(data.status)}`;
@@ -604,7 +668,15 @@
         renderTrackingActions(data);
         renderRatingSection(data);
         maybeInitCustomerBar();
-        startLastUpdatedCounter();
+
+        // Show auto-refresh indicator once order loads
+        const lastUpdatedEl = document.getElementById("lastUpdated");
+        if (lastUpdatedEl) lastUpdatedEl.hidden = false;
+
+        // Show share FAB in nav when order has a real restaurant name
+        if (data.restaurant?.name) {
+          document.getElementById("shareFab")?.classList.add("visible");
+        }
 
         if (["COMPLETED","CANCELLED","PAYMENT_FAILED"].includes(data.status) || data.paymentStatus === "PAYMENT_FAILED") {
           stopStatusPolling();
@@ -752,14 +824,6 @@
         parts.push(`<button class="t-btn t-btn-danger" onclick="cancelOrder()">Cancel order</button>`);
       }
 
-      // Add share button if we have a tracking token
-      if (trackingToken) {
-        parts.push(`<button class="t-btn t-btn-ghost" onclick="shareOrder()" style="flex:0 0 auto">
-    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
-    Share
-  </button>`);
-      }
-
       target.innerHTML = parts.join("");
     }
 
@@ -883,6 +947,176 @@
       clearInterval(statusPollingTimer);
       statusPollingTimer = null;
       stopCountdown();
+    }
+
+    async function shareOrderImage() {
+      if (!_orderData) return;
+      const d = _orderData;
+
+      const W = 640, H = 900;
+      const cv = document.createElement('canvas');
+      cv.width = W; cv.height = H;
+      const ctx = cv.getContext('2d');
+
+      // Background
+      ctx.fillStyle = '#0C0B0F';
+      ctx.fillRect(0, 0, W, H);
+
+      // Top brand strip
+      const grad = ctx.createLinearGradient(0, 0, W, 0);
+      grad.addColorStop(0, '#E8401C');
+      grad.addColorStop(1, '#C43318');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, W, 8);
+
+      // AVENZO logo text
+      ctx.fillStyle = '#E8401C';
+      ctx.font = 'bold 28px "Plus Jakarta Sans", system-ui, sans-serif';
+      ctx.letterSpacing = '4px';
+      ctx.fillText('AVENZO', 40, 66);
+
+      // Tagline
+      ctx.fillStyle = '#9A8C7A';
+      ctx.font = '500 13px "Plus Jakarta Sans", system-ui, sans-serif';
+      ctx.letterSpacing = '0px';
+      ctx.fillText('Dine-in ordering', 40, 90);
+
+      // Separator
+      ctx.fillStyle = 'rgba(255,255,255,0.07)';
+      ctx.fillRect(40, 108, W - 80, 1);
+
+      // Restaurant name
+      ctx.fillStyle = '#F2E8D4';
+      ctx.font = 'bold 32px "Plus Jakarta Sans", system-ui, sans-serif';
+      const restName = d.restaurant?.name || 'Restaurant';
+      ctx.fillText(restName.length > 28 ? restName.slice(0, 28) + '…' : restName, 40, 158);
+
+      // Status badge text
+      const statusColors = { PENDING: '#E8A53A', PREPARING: '#E8401C', READY: '#27C96B', COMPLETED: '#27C96B', CANCELLED: '#E84040' };
+      const statusLabels = { PENDING: 'Order received', PREPARING: 'Being prepared', READY: 'Ready to collect!', COMPLETED: 'Completed', CANCELLED: 'Cancelled' };
+      const sc = statusColors[d.status] || '#9A8C7A';
+      ctx.fillStyle = sc;
+      ctx.font = 'bold 14px "Plus Jakarta Sans", system-ui, sans-serif';
+      ctx.fillText('● ' + (statusLabels[d.status] || d.status), 40, 188);
+
+      // Pickup code section
+      ctx.fillStyle = 'rgba(30,28,36,1)';
+      roundRect(ctx, 40, 212, W - 80, 160, 16);
+      ctx.fill();
+
+      ctx.fillStyle = '#9A8C7A';
+      ctx.font = '700 11px "Plus Jakarta Sans", system-ui, sans-serif';
+      ctx.letterSpacing = '1px';
+      ctx.fillText('PICKUP CODE', 64, 248);
+
+      ctx.fillStyle = d.status === 'READY' || d.status === 'COMPLETED' ? '#27C96B' : '#F2E8D4';
+      ctx.font = 'bold 80px "Plus Jakarta Sans", system-ui, sans-serif';
+      ctx.letterSpacing = '10px';
+      ctx.fillText(d.pickupCode || '----', 60, 340);
+
+      if (d.tableNumber) {
+        ctx.fillStyle = '#9A8C7A';
+        ctx.font = '600 13px "Plus Jakarta Sans", system-ui, sans-serif';
+        ctx.letterSpacing = '0px';
+        ctx.fillText('Table ' + d.tableNumber, 64, 362);
+      }
+
+      // Items section
+      ctx.fillStyle = 'rgba(255,255,255,0.07)';
+      ctx.fillRect(40, 392, W - 80, 1);
+
+      ctx.fillStyle = '#9A8C7A';
+      ctx.font = '700 11px "Plus Jakarta Sans", system-ui, sans-serif';
+      ctx.letterSpacing = '0.8px';
+      ctx.fillText('YOUR ORDER', 40, 420);
+
+      ctx.letterSpacing = '0px';
+      let y = 448;
+      let total = 0;
+      const items = d.items || [];
+      const maxItems = Math.min(items.length, 5);
+      for (let i = 0; i < maxItems; i++) {
+        const item = items[i];
+        const line = item.priceAtOrder * item.quantity;
+        total += line;
+        const name = item.nameAtOrder.length > 34 ? item.nameAtOrder.slice(0, 34) + '…' : item.nameAtOrder;
+        ctx.fillStyle = '#C8BA9C';
+        ctx.font = '600 14px "Plus Jakarta Sans", system-ui, sans-serif';
+        ctx.fillText(`${item.quantity}× ${name}`, 40, y);
+        ctx.fillStyle = '#F2E8D4';
+        ctx.font = '700 14px "Plus Jakarta Sans", system-ui, sans-serif';
+        ctx.textAlign = 'right';
+        ctx.fillText('₹' + line.toFixed(0), W - 40, y);
+        ctx.textAlign = 'left';
+        y += 28;
+      }
+      if (items.length > 5) {
+        ctx.fillStyle = '#9A8C7A';
+        ctx.font = '600 13px "Plus Jakarta Sans", system-ui, sans-serif';
+        ctx.fillText(`+${items.length - 5} more item${items.length - 5 > 1 ? 's' : ''}`, 40, y);
+        y += 28;
+      }
+
+      // Total row
+      ctx.fillStyle = 'rgba(255,255,255,0.07)';
+      ctx.fillRect(40, y + 4, W - 80, 1);
+      y += 24;
+      ctx.fillStyle = '#F2E8D4';
+      ctx.font = '700 16px "Plus Jakarta Sans", system-ui, sans-serif';
+      ctx.fillText('Total', 40, y);
+      ctx.fillStyle = '#E8401C';
+      ctx.font = 'bold 18px "Plus Jakarta Sans", system-ui, sans-serif';
+      ctx.textAlign = 'right';
+      ctx.fillText('₹' + total.toFixed(0), W - 40, y);
+      ctx.textAlign = 'left';
+
+      // Footer
+      const footerY = H - 44;
+      ctx.fillStyle = 'rgba(255,255,255,0.05)';
+      ctx.fillRect(0, footerY - 16, W, 1);
+      ctx.fillStyle = '#9A8C7A';
+      ctx.font = '600 12px "Plus Jakarta Sans", system-ui, sans-serif';
+      ctx.fillText('Powered by AVENZO · avenzo.in', 40, footerY + 8);
+      const placed = d.createdAt ? new Date(d.createdAt).toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' }) : '';
+      if (placed) {
+        ctx.textAlign = 'right';
+        ctx.fillText(placed, W - 40, footerY + 8);
+        ctx.textAlign = 'left';
+      }
+
+      // Bottom brand bar
+      ctx.fillStyle = '#E8401C';
+      ctx.fillRect(0, H - 8, W, 8);
+
+      cv.toBlob(async (blob) => {
+        const file = new File([blob], 'avenzo-order.png', { type: 'image/png' });
+        try {
+          if (navigator.canShare && navigator.canShare({ files: [file] })) {
+            await navigator.share({ files: [file], title: 'My order at ' + (d.restaurant?.name || 'Avenzo') });
+          } else {
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'avenzo-order.png';
+            a.click();
+            setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+            tToast('Order card downloaded!');
+          }
+        } catch {}
+      }, 'image/png');
+    }
+
+    function roundRect(ctx, x, y, w, h, r) {
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.lineTo(x + w - r, y);
+      ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+      ctx.lineTo(x + w, y + h - r);
+      ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+      ctx.lineTo(x + r, y + h);
+      ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+      ctx.lineTo(x, y + r);
+      ctx.quadraticCurveTo(x, y, x + r, y);
+      ctx.closePath();
     }
 
     loadStatus();

@@ -331,6 +331,7 @@
       background: var(--brand-soft);
       border-color: rgba(232,64,28,0.35);
       color: var(--brand);
+      box-shadow: inset 3px 0 0 var(--brand);
     }
 
     .m-cat-btn-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -981,19 +982,44 @@
 
       .m-cat-btn {
         width: 100%;
-        min-height: 52px;
-        padding: 6px 4px;
-        border-radius: 10px;
+        min-height: 60px;
+        padding: 8px 4px 6px;
+        border-radius: 12px;
         flex-direction: column;
         align-items: center;
         justify-content: center;
         text-align: center;
-        font-size: 10px;
+        font-size: 9px;
         font-weight: 700;
-        gap: 2px;
+        gap: 3px;
+        letter-spacing: 0.3px;
+        border: 1px solid transparent;
+        position: relative;
+        overflow: hidden;
       }
-      .m-cat-btn-name { font-size: 10px; white-space: normal; word-break: break-word; line-height: 1.2; }
-      .m-cat-btn-ct { font-size: 9px; margin-top: 2px; }
+      .m-cat-btn::after {
+        content: '';
+        position: absolute;
+        left: 0; top: 20%; bottom: 20%;
+        width: 3px;
+        border-radius: 0 3px 3px 0;
+        background: var(--brand);
+        opacity: 0;
+        transition: opacity 0.2s;
+      }
+      .m-cat-btn.active::after { opacity: 1; }
+      .m-cat-btn.active {
+        background: linear-gradient(135deg, rgba(232,64,28,0.15), rgba(232,64,28,0.05));
+        border-color: rgba(232,64,28,0.3);
+        color: var(--brand);
+      }
+      .m-cat-btn-emoji {
+        font-size: 18px;
+        line-height: 1;
+        display: block;
+      }
+      .m-cat-btn-name { font-size: 9px; white-space: normal; word-break: break-word; line-height: 1.2; }
+      .m-cat-btn-ct { font-size: 8px; margin-top: 1px; opacity: 0.7; }
 
       .m-section-head { top: calc(var(--cust-bar-h) + var(--dine-h) + var(--search-h)); }
 
@@ -1124,6 +1150,47 @@
       100% { box-shadow: 0 0 0 0 rgba(232,64,28,0); }
     }
     .m-cart-bar.pulse { animation: cart-pulse 0.5s ease; }
+
+    /* ── BOTTOM NAV (mobile only) ── */
+    .c-bnav-menu{position:fixed;bottom:0;left:0;right:0;z-index:54;height:66px;background:var(--glass);backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);border-top:1px solid var(--line);display:flex;padding-bottom:env(safe-area-inset-bottom,0)}
+    .c-bnav-menu a{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:var(--tx-3);font-size:10px;font-weight:600;letter-spacing:.3px;transition:color .15s}
+    .c-bnav-menu a svg{transition:stroke .15s}
+    .c-bnav-menu a.on{color:var(--brand)}
+    .c-bnav-menu a.on svg{stroke:var(--brand)}
+    .c-bnav-menu.hidden{display:none}
+    @media(min-width:860px){.c-bnav-menu{display:none}}
+
+    /* ── QUICK-VIEW SAFE AREA ── */
+    .m-qv-actions { padding-bottom: max(22px, env(safe-area-inset-bottom)); }
+
+    /* ── CART BAR SAFE AREA ── */
+    .m-cart-inner { padding-bottom: env(safe-area-inset-bottom, 0); }
+
+    /* ── SEARCH / FILTER RESPONSIVENESS ── */
+    @media (max-width: 480px) {
+      .m-food-filter { gap: 2px; }
+      .m-ft-btn { padding: 0 8px; font-size: 11px; min-height: 30px; }
+      .m-search-bar { padding: 8px 14px; }
+    }
+
+    /* ── MODAL RESPONSIVENESS AT 360px ── */
+    @media (max-width: 480px) {
+      .m-modal { max-height: 95dvh; }
+      .m-modal-body { padding: 12px 16px; }
+      .m-modal-actions { padding: 12px 16px 16px; flex-direction: column; }
+      .m-modal-actions .m-btn { flex: none; width: 100%; }
+    }
+
+    /* ── CARD RESPONSIVENESS AT 360px ── */
+    @media (max-width: 400px) {
+      .m-card { grid-template-columns: 58px minmax(0, 1fr); gap: 8px; padding: 8px; }
+      .m-img-wrap { width: 58px; height: 58px; }
+      .m-item-name { font-size: 13px; }
+      .m-price { font-size: 13px; }
+    }
+
+    /* ── RESULT COUNT ── */
+    .m-result-count { font-size: 12px; color: var(--tx-3); padding: 6px 0 2px; font-weight: 600; }
   </style>
 </head>
 <body>
@@ -1319,6 +1386,14 @@
     </div>
   </div>
 
+  <!-- Bottom navigation (mobile only) -->
+  <nav class="c-bnav-menu">
+    <a href="/customer.html" aria-label="Home"><svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Home</a>
+    <a class="on" href="/customer-restaurants.html" aria-label="Explore"><svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>Explore</a>
+    <a href="/customer-orders.html" aria-label="Orders"><svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>Orders</a>
+    <a href="/customer-profile.html" aria-label="Profile"><svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Profile</a>
+  </nav>
+
   <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
   <script src="/assets/app.js"></script>
   <script>
@@ -1462,6 +1537,11 @@
           <button class="m-ft-btn" data-food-filter="VEG" type="button" onclick="setFoodFilter('VEG')">Veg</button>
           <button class="m-ft-btn" data-food-filter="NON_VEG" type="button" onclick="setFoodFilter('NON_VEG')">Non-veg</button>
         `;
+        // Apply veg-only preference saved from customer home page
+        if (localStorage.getItem('avenzo-veg-only') === '1') {
+          activeFoodType = "VEG";
+          filterEl.querySelectorAll('.m-ft-btn').forEach(b => b.classList.toggle('active', b.dataset.foodFilter === 'VEG'));
+        }
       }
       renderRail();
       renderMenu();
@@ -1475,6 +1555,26 @@
       });
       renderRail();
       renderMenu();
+    }
+
+    function catEmoji(name) {
+      const n = (name || '').toLowerCase();
+      if (n.includes('rice') || n.includes('biryani')) return '🍚';
+      if (n.includes('bread') || n.includes('roti') || n.includes('naan')) return '🫓';
+      if (n.includes('starter') || n.includes('appetizer')) return '🥗';
+      if (n.includes('soup')) return '🍲';
+      if (n.includes('dessert') || n.includes('sweet')) return '🍮';
+      if (n.includes('drink') || n.includes('beverage') || n.includes('juice') || n.includes('shake')) return '🥤';
+      if (n.includes('chicken') || n.includes('poultry')) return '🍗';
+      if (n.includes('fish') || n.includes('seafood')) return '🐟';
+      if (n.includes('mutton') || n.includes('lamb')) return '🥩';
+      if (n.includes('veg') || n.includes('salad')) return '🥦';
+      if (n.includes('pizza') || n.includes('pasta')) return '🍕';
+      if (n.includes('burger') || n.includes('sandwich')) return '🍔';
+      if (n.includes('snack') || n.includes('fries')) return '🍟';
+      if (n.includes('egg')) return '🥚';
+      if (n.includes('special') || n.includes('chef')) return '⭐';
+      return '🍽️';
     }
 
     function renderRail() {
@@ -1493,11 +1593,13 @@
       });
       document.getElementById("categoryRail").innerHTML = `
         <button class="m-cat-btn ${activeCategory === "ALL" ? "active" : ""}" data-cat="ALL" onclick="setCategory('ALL')">
+          <span class="m-cat-btn-emoji">🍽️</span>
           <span class="m-cat-btn-name">All</span>
           <span class="m-cat-btn-ct">${filteredByType.length}</span>
         </button>
         ${categories.map(name => `
           <button class="m-cat-btn ${activeCategory === name ? "active" : ""}" data-cat="${slugifyLocal(name)}" onclick='setCategory(${JSON.stringify(name)})'>
+            <span class="m-cat-btn-emoji">${catEmoji(name)}</span>
             <span class="m-cat-btn-name">${escapeHtml(name)}</span>
             <span class="m-cat-btn-ct">${countMap[name] || 0}</span>
           </button>
@@ -1700,7 +1802,10 @@
       document.getElementById("count").textContent = totalItems;
       document.getElementById("total").textContent = money(totalPrice);
       document.getElementById("orderBtn").disabled = totalItems === 0;
-      document.querySelector(".m-cart-bar")?.classList.toggle("has-items", totalItems > 0);
+      const hasItems = totalItems > 0;
+      document.querySelector(".m-cart-bar")?.classList.toggle("has-items", hasItems);
+      // Hide bottom nav when cart bar is visible so they don't overlap
+      document.querySelector(".c-bnav-menu")?.classList.toggle("hidden", hasItems);
 
       const badgeEl = document.getElementById("cartBadge");
       if (totalItems > 0 && badgeEl) {
