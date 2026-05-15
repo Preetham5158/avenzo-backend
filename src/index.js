@@ -3800,9 +3800,9 @@ v1.patch("/restaurant/orders/:id/status", v1Auth, async (req, res) => {
         if (!allowed.includes(newStatus)) {
             return v1err(res, "VALIDATION_ERROR", `Cannot move order from ${order.status} to ${newStatus}`);
         }
-        // Block kitchen from acting on unpaid orders.
-        if (["PREPARING"].includes(newStatus) && order.paymentStatus === "PAYMENT_PENDING") {
-            return v1err(res, "PAYMENT_REQUIRED", "Order payment has not been confirmed", 402);
+        // Block PREPARING until payment is fully resolved — neither pending nor customer-claimed is enough.
+        if (newStatus === "PREPARING" && ["PAYMENT_PENDING", "PAYMENT_CLAIMED"].includes(order.paymentStatus)) {
+            return v1err(res, "PAYMENT_REQUIRED", "Order payment has not been confirmed yet", 402);
         }
         const updated = await prisma.order.update({
             where: { id: order.id },
