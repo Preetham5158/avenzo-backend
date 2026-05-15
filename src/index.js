@@ -21,6 +21,7 @@ const { OAuth2Client } = require("google-auth-library");
 
 const app = express();
 const prisma = createPrismaClient();
+const publicDir = path.join(__dirname, "../public");
 
 app.set("trust proxy", 1);
 
@@ -84,7 +85,7 @@ app.use(express.json({
         }
     }
 }));
-app.use(express.static("public"));
+app.use(express.static(publicDir));
 
 // Health check — must respond even if DB is slow; used by load balancers and Render.
 app.get("/health", (req, res) => {
@@ -376,11 +377,11 @@ async function getPopularMenuIds(restaurantId) {
 }
 
 app.get("/", (req, res) => {
-    res.sendFile(path.join(__dirname, "../public/index.html"));
+    res.sendFile(path.join(publicDir, "index.html"));
 });
 
 app.get("/r/:slug", (req, res) => {
-    res.sendFile(path.join(__dirname, "../public/menu.html"));
+    res.sendFile(path.join(publicDir, "menu.html"));
 });
 
 app.get("/restaurant/slug/:slug", async (req, res) => {
@@ -971,19 +972,19 @@ app.get("/orders/find", orderLookupLimiter, async (req, res) => {
 });
 
 app.get("/track", (req, res) => {
-    res.sendFile(path.join(__dirname, "../public/track.html"));
+    res.sendFile(path.join(publicDir, "track.html"));
 });
 
 app.get("/track/:id", (req, res) => {
-    res.sendFile(path.join(__dirname, "../public/track.html"));
+    res.sendFile(path.join(publicDir, "track.html"));
 });
 
 app.get("/restaurant-interest", (req, res) => {
-    res.sendFile(path.join(__dirname, "../public/restaurant-interest.html"));
+    res.sendFile(path.join(publicDir, "restaurant-interest.html"));
 });
 
 app.get("/forgot-password", (req, res) => {
-    res.sendFile(path.join(__dirname, "../public/forgot-password.html"));
+    res.sendFile(path.join(publicDir, "forgot-password.html"));
 });
 
 app.post("/restaurant-interest", restaurantInterestLimiter, async (req, res) => {
