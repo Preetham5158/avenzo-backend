@@ -353,12 +353,12 @@
 if (!sessionStorage.getItem("token")) location.href = "/customer-login.html";
 
 const BANNERS = [
-  {grad:"linear-gradient(135deg,#2E1510,#1A0C08)",emoji:"🍖"},
-  {grad:"linear-gradient(135deg,#0D2018,#081410)",emoji:"🌿"},
-  {grad:"linear-gradient(135deg,#0E1832,#09102A)",emoji:"🍱"},
-  {grad:"linear-gradient(135deg,#261F08,#181404)",emoji:"🌾"},
-  {grad:"linear-gradient(135deg,#1E0D26,#130919)",emoji:"🍜"},
-  {grad:"linear-gradient(135deg,#081E28,#051318)",emoji:"🐟"}
+  {grad:"linear-gradient(135deg,#5C1A0A,#3D1008)",emoji:"🍖"},
+  {grad:"linear-gradient(135deg,#0F4020,#083014)",emoji:"🌿"},
+  {grad:"linear-gradient(135deg,#112060,#0C163A)",emoji:"🍱"},
+  {grad:"linear-gradient(135deg,#5C3C08,#3A2504)",emoji:"🌾"},
+  {grad:"linear-gradient(135deg,#420A5C,#2A0638)",emoji:"🍜"},
+  {grad:"linear-gradient(135deg,#0A3C54,#062635)",emoji:"🐟"}
 ];
 const EMOJIS = {PURE_VEG:"🌿", BOTH:"🍱", NON_VEG:"🍖"};
 function hash(s){return[...s].reduce((a,c)=>(a*31+c.charCodeAt(0))&0xffff,0)}
@@ -565,7 +565,7 @@ function renderFeat() {
   const b = BANNERS[hash(pick.name) % BANNERS.length], imgs = pick.previewImages || [];
   const media = imgs.length
     ? `<div class="c-fslides">${imgs.map((u,i) => `<div class="c-fslide${i===0?" on":""}"><img src="${escapeHtml(u)}" alt="" loading="lazy"></div>`).join("")}</div>`
-    : `<div style="position:absolute;inset:0;background:${b.grad}"></div><div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:80px;opacity:.18">${EMOJIS[pick.foodType]||b.emoji}</div>`;
+    : `<div style="position:absolute;inset:0;background:${b.grad}"></div><div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:96px;opacity:.38">${EMOJIS[pick.foodType]||b.emoji}</div>`;
   document.getElementById("featMount").innerHTML = `
     <a class="c-feat" href="/r/${encodeURIComponent(pick.slug)}">
       <div class="c-feat-media">${media}</div>
