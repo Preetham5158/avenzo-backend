@@ -1,0 +1,42 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git checkout *)",
+      "Bash(git pull *)",
+      "Bash(git cherry-pick *)",
+      "Bash(git push *)",
+      "Bash(git reset *)",
+      "Bash(npm install *)",
+      "Bash(npx prisma *)",
+      "Bash(node --check src/server.js)",
+      "Bash(node --check src/app.js)",
+      "Bash(node --check src/index.js)",
+      "Bash(node --check scripts/smoke-test.js)",
+      "Bash(npm start *)",
+      "Bash(curl -s http://localhost:3000/health)",
+      "Bash(curl *)",
+      "Bash(node *)",
+      "Bash(pkill -f \"node src/server.js\")",
+      "Bash(git merge *)",
+      "Bash(tasklist)",
+      "Bash(findstr node *)",
+      "Bash(taskkill /F /PID 19824 /PID 24628 /PID 22316)",
+      "PowerShell(Stop-Process *)",
+      "Bash(Get-Content \"C:\\\\Users\\\\preet\\\\avenzo-backend\\\\src\\\\index.js\")",
+      "Bash(Select-Object -First 100)",
+      "PowerShell(Get-Process *)",
+      "PowerShell(\\(Get-Content \"C:\\\\Users\\\\preet\\\\avenzo-backend\\\\public\\\\menu.html\" | Measure-Object -Line\\).Lines)",
+      "PowerShell(cd C:\\\\Users\\\\preet\\\\avenzo-backend; $proc = Start-Process -NoNewWindow -PassThru -FilePath \"node\" -ArgumentList \"src/index.js\"; Start-Sleep -Seconds 4; Write-Output \"PID: $\\($proc.Id\\)\")",
+      "PowerShell(wc *)",
+      "WebSearch",
+      "Bash(echo \"exit:$?\")",
+      "Bash(dir C:\\\\Users\\\\preet\\\\avenzo-backend\\\\src\\\\routes\\\\ *)",
+      "Bash(echo \"index: $?\")",
+      "Bash(echo \"app: $?\")",
+      "Bash(echo \"server: $?\")",
+      "Bash(echo \"front: $?\")"
+    ]
+  }
+}

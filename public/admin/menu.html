@@ -22,6 +22,20 @@
       background: var(--bg-3);
       flex-shrink: 0;
     }
+    .menu-img-placeholder {
+      width: 68px;
+      height: 68px;
+      border-radius: var(--r-sm);
+      background: var(--bg-3);
+      border: 1px solid var(--line);
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--brand);
+    }
     .menu-name { font-size: 15px; font-weight: 700; color: var(--tx); margin-bottom: 3px; }
     .menu-meta { font-size: 12px; color: var(--tx-2); margin-bottom: 4px; }
     .menu-price { font-size: 15px; font-weight: 800; color: var(--tx); margin-bottom: 4px; }
@@ -232,14 +246,18 @@ function renderMenu() {
   container.innerHTML = items.map(item => {
     const catName = categories.find(c => c.id === item.categoryId)?.name || "Uncategorised";
     const foodLabel = item.foodType === "VEG" ? "Veg" : "Non-veg";
+    const initial = (item.name || "?")[0].toUpperCase();
+    const imgHtml = item.imageUrl
+      ? `<img class="menu-img" src="${escapeHtml(item.imageUrl)}" alt="${escapeHtml(item.name)}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
+      : `<div class="menu-img-placeholder">${escapeHtml(initial)}</div>`;
     return `
       <div class="card card-p">
         <div class="menu-row">
-          <img class="menu-img" src="${escapeHtml(item.imageUrl||"/logo.png")}" alt="${escapeHtml(item.name)}" onerror="this.src='/logo.png'">
+          ${imgHtml}
           <div>
             <div class="menu-name">${escapeHtml(item.name)}${!item.isActive?` <span class="pill pill-danger" style="font-size:10px;vertical-align:middle">Hidden</span>`:""}</div>
             <div class="menu-meta">${escapeHtml(catName)} &middot; ${foodLabel}</div>
-            <div class="menu-price">${money(item.pricePaise)}</div>
+            <div class="menu-price">${money(item.price)}</div>
             ${item.description ? `<div class="menu-desc">${escapeHtml(item.description)}</div>` : ""}
           </div>
           <div class="menu-actions">
@@ -293,7 +311,7 @@ function openItemModal(id) {
   document.getElementById("itemModalTitle").textContent = item ? "Edit item" : "Add item";
   document.getElementById("itemId").value = id;
   document.getElementById("itemName").value = item?.name || "";
-  document.getElementById("itemPrice").value = item ? (item.pricePaise / 100).toFixed(0) : "";
+  document.getElementById("itemPrice").value = item ? (item.price || "") : "";
   document.getElementById("itemFoodType").value = item?.foodType || "VEG";
   document.getElementById("itemDescription").value = item?.description || "";
   document.getElementById("itemImageUrl").value = item?.imageUrl || "";
@@ -316,7 +334,7 @@ async function saveItem(event) {
     const id = document.getElementById("itemId").value;
     const body = {
       name: document.getElementById("itemName").value.trim(),
-      pricePaise: Math.round(parseFloat(document.getElementById("itemPrice").value) * 100),
+      price: parseFloat(document.getElementById("itemPrice").value),
       categoryId: document.getElementById("itemCategory").value || undefined,
       foodType: document.getElementById("itemFoodType").value,
       description: document.getElementById("itemDescription").value.trim() || undefined,

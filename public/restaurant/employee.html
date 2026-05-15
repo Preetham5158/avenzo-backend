@@ -375,7 +375,7 @@
           <div>
             <div class="stock-item-name">${escapeHtml(item.name)}</div>
             <div class="stock-item-meta">
-              ${money(item.pricePaise)}
+              ${money(item.price)}
               ${item.foodType ? ` · ${item.foodType === "VEG" ? "Veg" : "Non-veg"}` : ""}
               ${!item.isActive ? ` · <span style="color:var(--danger)">Hidden</span>` : ""}
             </div>

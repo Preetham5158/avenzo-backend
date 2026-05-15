@@ -24,8 +24,8 @@
       <div class="admin-ph">
         <div>
           <div class="admin-eyebrow">Billing setup</div>
-          <h1 class="admin-ph-title">Payment Methods</h1>
-          <p class="admin-ph-sub">Configure how customers pay at this restaurant.</p>
+          <h1 class="admin-ph-title" id="pageTitle">Payment Methods</h1>
+          <p class="admin-ph-sub" id="pageSub">Configure how customers pay at this restaurant.</p>
         </div>
         <div class="admin-ph-actions">
           <button class="btn btn-primary" onclick="openMethodModal()">Add method</button>
@@ -246,6 +246,8 @@ initAdminLayout("payments", restaurantId).then(async user => {
       const r = (data.restaurants || []).find(x => x.id === restaurantId);
       if (r) {
         document.getElementById("adminContext").textContent = r.name;
+        document.getElementById("pageTitle").textContent = r.name;
+        document.getElementById("pageSub").textContent = `Payment methods for ${r.name}`;
         document.getElementById("restCtxBar").style.display = "";
         renderRestaurantContext(r, "payments", restaurantId);
       }

@@ -2192,6 +2192,67 @@ app.patch("/order/:id/status", authMiddleware, async (req, res) => {
     }
 });
 
+app.get("/admin/dashboard/stats", authMiddleware, async (req, res) => {
+    try {
+        const user = await getAuthUser(req.user.userId);
+        if (!user || user.role === "USER") return res.status(403).json({ error: "Not allowed" });
+
+        const restaurants = await prisma.restaurant.findMany({
+            where: isSuperAdmin(user)
+                ? {}
+                : isOwner(user)
+                    ? { ownerId: user.id }
+                    : { id: user.staffRestaurantId || "__none__" },
+            select: { id: true }
+        });
+
+        const restaurantIds = restaurants.map(r => r.id);
+        if (!restaurantIds.length) {
+            return res.json({ ordersToday: 0, revenueToday: 0, activeOrders: 0, outOfStock: 0 });
+        }
+
+        const todayStart = new Date();
+        todayStart.setHours(0, 0, 0, 0);
+
+        const [ordersToday, revenueResult, activeOrders, outOfStock] = await Promise.all([
+            prisma.order.count({
+                where: { restaurantId: { in: restaurantIds }, createdAt: { gte: todayStart } }
+            }),
+            prisma.order.aggregate({
+                where: {
+                    restaurantId: { in: restaurantIds },
+                    createdAt: { gte: todayStart },
+                    status: "COMPLETED"
+                },
+                _sum: { totalPricePaise: true }
+            }),
+            prisma.order.count({
+                where: {
+                    restaurantId: { in: restaurantIds },
+                    status: { in: ["PENDING", "PREPARING"] }
+                }
+            }),
+            prisma.menu.count({
+                where: {
+                    restaurantId: { in: restaurantIds },
+                    isAvailable: false,
+                    isActive: true
+                }
+            })
+        ]);
+
+        res.json({
+            ordersToday,
+            revenueToday: paiseToRupees(revenueResult._sum.totalPricePaise || 0),
+            activeOrders,
+            outOfStock
+        });
+    } catch (err) {
+        logRouteError("GET /admin/dashboard/stats", err);
+        res.status(500).json({ error: "Failed to fetch stats" });
+    }
+});
+
 app.get("/admin/menu/:restaurantId", authMiddleware, async (req, res) => {
     try {
         const { restaurantId } = req.params;

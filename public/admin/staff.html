@@ -24,8 +24,8 @@
       <div class="admin-ph">
         <div>
           <div class="admin-eyebrow">Team access</div>
-          <h1 class="admin-ph-title">Staff</h1>
-          <p class="admin-ph-sub">Assign staff to help operate this restaurant.</p>
+          <h1 class="admin-ph-title" id="pageTitle">Staff</h1>
+          <p class="admin-ph-sub" id="pageSub">Assign staff to help operate this restaurant.</p>
         </div>
       </div>
 
@@ -53,7 +53,10 @@ async function loadStaff() {
     document.getElementById("staffList").innerHTML = skeletonCards(2);
     const data = await request(`/admin/staff/${restaurantId}`);
     const staff = data.staff || [];
-    document.getElementById("adminContext").textContent = data.restaurant?.name || "Staff";
+    const rName = data.restaurant?.name || "Staff";
+    document.getElementById("adminContext").textContent = rName;
+    document.getElementById("pageTitle").textContent = rName;
+    document.getElementById("pageSub").textContent = `Team members at ${rName}`;
     if (data.restaurant) {
       document.getElementById("restCtxBar").style.display = "";
       renderRestaurantContext(data.restaurant, "staff", restaurantId);

@@ -7,6 +7,89 @@
   <meta name="theme-color" content="#E8401C">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/assets/admin.css">
+  <style>
+    .dash-ops-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .ops-card {
+      background: var(--bg-2);
+      border: 1px solid var(--line);
+      border-radius: var(--r);
+      padding: 18px 20px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      position: relative;
+      overflow: hidden;
+    }
+    .ops-card::before {
+      content: "";
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+    }
+    .ops-card-orders::before { background: var(--brand); }
+    .ops-card-revenue::before { background: var(--success); }
+    .ops-card-active::before { background: var(--warn); }
+    .ops-card-stock::before { background: var(--danger); }
+    .ops-card-stock-ok::before { background: var(--success); }
+    .ops-card-label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--tx-2);
+    }
+    .ops-card-value {
+      font-size: 32px;
+      font-weight: 800;
+      color: var(--tx);
+      line-height: 1;
+    }
+    .ops-card-sub {
+      font-size: 12px;
+      color: var(--tx-2);
+    }
+    .ops-card-action {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--brand);
+      text-decoration: none;
+      margin-top: 2px;
+      display: inline-block;
+    }
+    .ops-card-action:hover { text-decoration: underline; }
+
+    .dash-section-label {
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--tx-2);
+      margin: 24px 0 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .dash-section-label::after {
+      content: "";
+      flex: 1;
+      height: 1px;
+      background: var(--line);
+    }
+
+    @media (max-width: 900px) {
+      .dash-ops-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 480px) {
+      .dash-ops-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
+      .ops-card { padding: 14px 14px 12px; }
+      .ops-card-value { font-size: 26px; }
+    }
+  </style>
 </head>
 <body>
 <div class="admin-shell">
@@ -41,7 +124,37 @@
 
       <div id="greetingCard"></div>
       <div id="alertBanner"></div>
+
+      <!-- Live operations metrics -->
+      <div class="dash-section-label">Today's activity</div>
+      <div class="dash-ops-grid" id="opsStats">
+        <div class="ops-card ops-card-orders">
+          <div class="ops-card-label">Orders today</div>
+          <div class="ops-card-value ops-skeleton" style="height:38px;border-radius:6px;background:var(--bg-3)"></div>
+          <div class="ops-card-sub">All restaurants</div>
+        </div>
+        <div class="ops-card ops-card-revenue">
+          <div class="ops-card-label">Revenue today</div>
+          <div class="ops-card-value ops-skeleton" style="height:38px;border-radius:6px;background:var(--bg-3)"></div>
+          <div class="ops-card-sub">Completed orders</div>
+        </div>
+        <div class="ops-card ops-card-active">
+          <div class="ops-card-label">Waiting now</div>
+          <div class="ops-card-value ops-skeleton" style="height:38px;border-radius:6px;background:var(--bg-3)"></div>
+          <div class="ops-card-sub">Pending &amp; preparing</div>
+        </div>
+        <div class="ops-card ops-card-stock">
+          <div class="ops-card-label">Out of stock</div>
+          <div class="ops-card-value ops-skeleton" style="height:38px;border-radius:6px;background:var(--bg-3)"></div>
+          <div class="ops-card-sub">Active items hidden</div>
+        </div>
+      </div>
+
+      <!-- Platform health metrics -->
+      <div class="dash-section-label">Platform overview</div>
       <div class="stat-grid" id="stats"></div>
+
+      <div class="dash-section-label">Restaurants</div>
       <div id="list"></div>
 
     </div>
@@ -82,11 +195,44 @@ async function loadDashboard() {
 
     renderGreeting(currentUser, roleLabel);
     renderAlerts(restaurants);
-    renderStats(restaurants);
+    renderPlatformStats(restaurants);
     renderRestaurants(restaurants);
   } catch (err) {
     document.getElementById("list").innerHTML = `<div class="empty-state"><div class="empty-state-icon">🏪</div><div class="empty-state-title">Could not load restaurants</div><div class="empty-state-sub">${escapeHtml(err.message || "No access")}</div></div>`;
     toast(err.message);
+  }
+}
+
+async function loadOpsStats() {
+  try {
+    const data = await request("/admin/dashboard/stats");
+    const stockClass = data.outOfStock > 0 ? "ops-card-stock" : "ops-card-stock-ok";
+    document.getElementById("opsStats").innerHTML = `
+      <div class="ops-card ops-card-orders">
+        <div class="ops-card-label">Orders today</div>
+        <div class="ops-card-value">${data.ordersToday}</div>
+        <div class="ops-card-sub">Across all restaurants</div>
+      </div>
+      <div class="ops-card ops-card-revenue">
+        <div class="ops-card-label">Revenue today</div>
+        <div class="ops-card-value">${money(data.revenueToday)}</div>
+        <div class="ops-card-sub">From completed orders</div>
+      </div>
+      <div class="ops-card ops-card-active">
+        <div class="ops-card-label">Waiting now</div>
+        <div class="ops-card-value">${data.activeOrders}</div>
+        <div class="ops-card-sub">Pending &amp; preparing</div>
+        ${data.activeOrders > 0 ? `<a class="ops-card-action" href="/admin/orders.html">View orders →</a>` : ""}
+      </div>
+      <div class="ops-card ${stockClass}">
+        <div class="ops-card-label">Out of stock</div>
+        <div class="ops-card-value">${data.outOfStock}</div>
+        <div class="ops-card-sub">${data.outOfStock > 0 ? "Items hidden from menu" : "All items in stock"}</div>
+        ${data.outOfStock > 0 ? `<a class="ops-card-action" href="/admin/menu.html">Update stock →</a>` : ""}
+      </div>
+    `;
+  } catch (err) {
+    document.getElementById("opsStats").innerHTML = `<div class="ops-card" style="grid-column:1/-1"><div class="ops-card-sub">Could not load live stats — ${escapeHtml(err.message)}</div></div>`;
   }
 }
 
@@ -97,7 +243,7 @@ function renderGreeting(user, roleLabel) {
   document.getElementById("greetingCard").innerHTML = `
     <div class="greeting-card">
       <div class="greeting-name">${escapeHtml(greeting)}, ${escapeHtml(displayName)}</div>
-      <div class="greeting-sub">Here's an overview of all your restaurants.</div>
+      <div class="greeting-sub">Here's what's happening across your restaurants today.</div>
       <span class="greeting-role">${escapeHtml(roleLabel)}</span>
     </div>
   `;
@@ -120,10 +266,10 @@ function renderAlerts(restaurants) {
   document.getElementById("alertBanner").innerHTML = html;
 }
 
-function renderStats(restaurants) {
-  const active    = restaurants.filter(r => r.isActive && r.subscriptionStatus !== "EXPIRED" && r.subscriptionStatus !== "SUSPENDED").length;
-  const trial     = restaurants.filter(r => r.subscriptionStatus === "TRIALING").length;
-  const issues    = restaurants.filter(r => !r.isActive || r.subscriptionStatus === "EXPIRED" || r.subscriptionStatus === "SUSPENDED").length;
+function renderPlatformStats(restaurants) {
+  const active  = restaurants.filter(r => r.isActive && r.subscriptionStatus !== "EXPIRED" && r.subscriptionStatus !== "SUSPENDED").length;
+  const trial   = restaurants.filter(r => r.subscriptionStatus === "TRIALING").length;
+  const issues  = restaurants.filter(r => !r.isActive || r.subscriptionStatus === "EXPIRED" || r.subscriptionStatus === "SUSPENDED").length;
   document.getElementById("stats").innerHTML = `
     <div class="stat-card stat-top-brand">
       <div class="stat-card-label">Total restaurants</div>
@@ -168,7 +314,6 @@ function renderRestaurants(restaurants) {
     const initial   = (r.name || "R")[0].toUpperCase();
     const avatarMod = !r.isActive ? " paused" : (!isLive ? " expired" : "");
 
-    // Subscription expiry info
     let expiryHtml = "";
     if (r.subscriptionEndsAt) {
       const daysLeft = Math.ceil((new Date(r.subscriptionEndsAt) - Date.now()) / 86400000);
@@ -242,6 +387,7 @@ async function loadLeadBadge() {
 initAdminLayout("home").then(user => {
   if (!user) return;
   currentUser = user;
+  loadOpsStats();
   loadDashboard();
 });
 </script>
