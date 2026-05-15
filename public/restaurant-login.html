@@ -93,7 +93,7 @@ html.light .bfeat{background:rgba(0,0,0,.03)}
 .mob-logo span{font-size:16px;font-weight:900;letter-spacing:.08em}
 
 /* ── Card ── */
-.auth-card{width:100%;max-width:400px;animation:fadeUp .4s ease both}
+.auth-card{width:100%;max-width:400px;animation:fadeUp .4s ease both;display:flex;flex-direction:column}
 .auth-eyebrow{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--brand-2);margin-bottom:10px}
 .auth-h{font-size:26px;font-weight:800;letter-spacing:-.022em;line-height:1.2;color:var(--tx)}
 .auth-sub{font-size:14px;color:var(--tx-2);margin-top:7px;line-height:1.6}
@@ -183,6 +183,17 @@ html.light .bfeat{background:rgba(0,0,0,.03)}
 .t-sun{display:flex}.t-moon{display:none}
 html.light .t-sun{display:none}html.light .t-moon{display:flex}
 
+@media(max-width:440px){
+  .otp-boxes{gap:6px}
+  .otp-d{font-size:18px}
+  .auth-panel{padding:28px 16px}
+  .theme-pill{right:12px;bottom:max(16px,env(safe-area-inset-bottom,16px))}
+}
+@media(max-width:360px){
+  .otp-boxes{gap:4px}
+  .otp-d{font-size:15px}
+}
+button:focus-visible,.fld input:focus-visible,.otp-d:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
 @media(min-width:900px){
   .auth-shell{grid-template-columns:44% 56%;min-height:100svh;overflow:hidden}
   .auth-brand{display:flex}
