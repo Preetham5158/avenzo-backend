@@ -214,6 +214,13 @@ function customerBottomNavHtml(active = "home") {
 
 // ── Admin layout helpers ──
 
+function toggleTheme() {
+  const isLight = document.body.classList.toggle("light");
+  localStorage.setItem("avenzo-theme", isLight ? "light" : "dark");
+  const btn = document.getElementById("themeToggleBtn");
+  if (btn) btn.textContent = isLight ? "🌙" : "☀️";
+}
+
 function adminSidebarHtml(active, restaurantId, role) {
   const q = restaurantId ? `?restaurantId=${restaurantId}` : "";
   const links = [
@@ -223,6 +230,9 @@ function adminSidebarHtml(active, restaurantId, role) {
     ...(role !== "EMPLOYEE" ? [
       { key: "staff",    href: `/admin/staff.html${q}`,       label: "Staff",    icon: `<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>` },
       { key: "payments", href: `/admin/payments.html${q}`,    label: "Payments", icon: `<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>` },
+    ] : []),
+    ...(restaurantId ? [
+      { key: "qr", href: `/qr.html${q}`, label: "QR Cards", icon: `<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="5" y="5" width="3" height="3"/><rect x="16" y="5" width="3" height="3"/><rect x="5" y="16" width="3" height="3"/><path d="M14 14h3v3h-3zM17 17h3v3h-3zM14 20h3"/></svg>` },
     ] : []),
     ...(role === "ADMIN" ? [
       { key: "leads",    href: "/admin/leads.html",            label: "Leads",    icon: `<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>`, badge: true },
@@ -247,6 +257,9 @@ function adminBottomNavHtml(active, restaurantId, role) {
       { key: "staff",    href: `/admin/staff.html${q}`,   label: "Staff",    icon: "👥" },
       { key: "payments", href: `/admin/payments.html${q}`,label: "Payments", icon: "💳" },
     ] : []),
+    ...(restaurantId ? [
+      { key: "qr", href: `/qr.html${q}`, label: "QR", icon: "📱" },
+    ] : []),
     ...(role === "ADMIN" ? [
       { key: "leads",    href: "/admin/leads.html",        label: "Leads",    icon: "📊", badge: true },
     ] : []),
@@ -260,7 +273,42 @@ function adminBottomNavHtml(active, restaurantId, role) {
   `).join("");
 }
 
+function renderRestaurantContext(restaurant, activePage, restaurantId) {
+  const el = document.getElementById("restCtxBar");
+  if (!el || !restaurant) return;
+  const q = `?restaurantId=${restaurantId}`;
+  const pages = [
+    { key: "orders",   href: `/admin/orders.html${q}`,   label: "Orders" },
+    { key: "menu",     href: `/admin/menu.html${q}`,     label: "Menu" },
+    { key: "staff",    href: `/admin/staff.html${q}`,    label: "Staff" },
+    { key: "payments", href: `/admin/payments.html${q}`, label: "Payments" },
+    { key: "qr",       href: `/qr.html${q}`,             label: "QR Cards" },
+  ];
+  const initial = (restaurant.name || "R")[0].toUpperCase();
+  const isLive = restaurant.isActive && restaurant.subscriptionStatus !== "EXPIRED" && restaurant.subscriptionStatus !== "SUSPENDED";
+  const avatarMod = !restaurant.isActive ? " paused" : (!isLive ? " expired" : "");
+  const svcPill  = isLive ? "pill-success" : "pill-danger";
+  const svcLabel = !restaurant.isActive ? "Paused" : restaurant.subscriptionStatus === "SUSPENDED" ? "Suspended" : restaurant.subscriptionStatus === "EXPIRED" ? "Expired" : "Live";
+  el.innerHTML = `
+    <div class="rest-ctx-avatar${avatarMod}">${escapeHtml(initial)}</div>
+    <div class="rest-ctx-info">
+      <div class="rest-ctx-name">${escapeHtml(restaurant.name)}</div>
+      <div class="rest-ctx-sub">
+        ${restaurant.address || restaurant.locality ? `<span>${escapeHtml(restaurant.address || restaurant.locality)}</span>` : ""}
+        <span class="pill ${svcPill}" style="font-size:10.5px;padding:2px 8px">${svcLabel}</span>
+      </div>
+    </div>
+    <nav class="rest-ctx-nav">
+      ${pages.map(p => `<a href="${p.href}" class="${activePage === p.key ? "active" : ""}">${p.label}</a>`).join("")}
+    </nav>
+  `;
+}
+
 async function initAdminLayout(activePage = "home", restaurantId = "") {
+  // Apply saved theme immediately before any rendering
+  if (localStorage.getItem("avenzo-theme") === "light") {
+    document.body.classList.add("light");
+  }
   requireAuth("/restaurant-login.html");
   try {
     const user = await initAccountMenu("accountMenu", "/restaurant-login.html");
@@ -273,6 +321,18 @@ async function initAdminLayout(activePage = "home", restaurantId = "") {
     const bnav = document.getElementById("adminBnav");
     if (sidebar) sidebar.innerHTML = adminSidebarHtml(activePage, restaurantId, user.role);
     if (bnav)    bnav.innerHTML    = adminBottomNavHtml(activePage, restaurantId, user.role);
+    // Inject theme toggle button into topbar
+    const topbarRight = document.querySelector(".admin-topbar-right");
+    if (topbarRight && !document.getElementById("themeToggleBtn")) {
+      const isLight = document.body.classList.contains("light");
+      const btn = document.createElement("button");
+      btn.id = "themeToggleBtn";
+      btn.className = "theme-toggle";
+      btn.title = isLight ? "Switch to dark mode" : "Switch to light mode";
+      btn.textContent = isLight ? "🌙" : "☀️";
+      btn.setAttribute("onclick", "toggleTheme()");
+      topbarRight.insertBefore(btn, topbarRight.firstChild);
+    }
     // Load leads badge for ADMIN
     if (user.role === "ADMIN") {
       request("/admin/restaurant-leads/summary").then(data => {

@@ -29,6 +29,7 @@
   <nav class="admin-sidebar" id="adminSidebar"></nav>
   <main class="admin-main">
     <div class="admin-page">
+      <div id="restCtxBar" class="rest-ctx" style="display:none"></div>
       <div class="admin-subhead">
         <div class="row-between" style="flex-wrap:wrap;gap:10px">
           <div>
@@ -104,6 +105,10 @@ async function loadOrders() {
     document.getElementById("adminContext").textContent = data.restaurant?.name || "Orders";
     document.getElementById("restaurantName").textContent = data.restaurant?.name || "Restaurant Orders";
     document.getElementById("liveIndicator").style.display = "";
+    if (data.restaurant) {
+      document.getElementById("restCtxBar").style.display = "";
+      renderRestaurantContext(data.restaurant, "orders", restaurantId);
+    }
     const total = orderPagination.total || allOrders.length;
     document.getElementById("orderCount").textContent = `${total} order${total === 1 ? "" : "s"}`;
     renderStats(allOrders);

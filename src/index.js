@@ -2200,16 +2200,26 @@ app.get("/admin/menu/:restaurantId", authMiddleware, async (req, res) => {
         if (!access.canAccess) return res.status(403).json({ error: "Not allowed" });
         if (!ensureWorkspaceService(access, res)) return;
 
-        const menu = await prisma.menu.findMany({
-            where: { restaurantId },
-            include: { category: true },
-            orderBy: [
-                { category: { sortOrder: "asc" } },
-                { createdAt: "desc" }
-            ]
-        });
+        const [menu, categories, restaurant] = await Promise.all([
+            prisma.menu.findMany({
+                where: { restaurantId },
+                include: { category: true },
+                orderBy: [
+                    { category: { sortOrder: "asc" } },
+                    { createdAt: "desc" }
+                ]
+            }),
+            prisma.menuCategory.findMany({
+                where: { restaurantId },
+                orderBy: { sortOrder: "asc" }
+            }),
+            prisma.restaurant.findUnique({
+                where: { id: restaurantId },
+                select: { id: true, name: true, foodType: true, isActive: true, subscriptionStatus: true }
+            })
+        ]);
 
-        res.json(menu.map(adminMenuItem));
+        res.json({ items: menu.map(adminMenuItem), categories, restaurant });
     } catch (err) {
         logRouteError("GET /admin/menu/:restaurantId", err);
         res.status(500).json({ error: "Error fetching admin menu" });

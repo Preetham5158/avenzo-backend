@@ -19,6 +19,7 @@
   <nav class="admin-sidebar" id="adminSidebar"></nav>
   <main class="admin-main">
     <div class="admin-page">
+      <div id="restCtxBar" class="rest-ctx" style="display:none"></div>
 
       <div class="admin-ph">
         <div>
@@ -53,6 +54,10 @@ async function loadStaff() {
     const data = await request(`/admin/staff/${restaurantId}`);
     const staff = data.staff || [];
     document.getElementById("adminContext").textContent = data.restaurant?.name || "Staff";
+    if (data.restaurant) {
+      document.getElementById("restCtxBar").style.display = "";
+      renderRestaurantContext(data.restaurant, "staff", restaurantId);
+    }
     if (!staff.length) {
       document.getElementById("staffList").innerHTML = `
         <div class="empty-state">

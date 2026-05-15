@@ -19,6 +19,7 @@
   <nav class="admin-sidebar" id="adminSidebar"></nav>
   <main class="admin-main">
     <div class="admin-page">
+      <div id="restCtxBar" class="rest-ctx" style="display:none"></div>
 
       <div class="admin-ph">
         <div>
@@ -236,9 +237,20 @@ async function deleteMethod(id, displayName) {
 
 document.getElementById("methodModal").addEventListener("click", e => { if (e.target === e.currentTarget) closeMethodModal(); });
 
-initAdminLayout("payments", restaurantId).then(user => {
+initAdminLayout("payments", restaurantId).then(async user => {
   if (!user) return;
   document.getElementById("adminContext").textContent = "Payment Methods";
+  // Load restaurant context strip
+  if (restaurantId) {
+    request("/restaurants").then(data => {
+      const r = (data.restaurants || []).find(x => x.id === restaurantId);
+      if (r) {
+        document.getElementById("adminContext").textContent = r.name;
+        document.getElementById("restCtxBar").style.display = "";
+        renderRestaurantContext(r, "payments", restaurantId);
+      }
+    }).catch(() => {});
+  }
   loadMethods();
 });
 </script>
