@@ -17,6 +17,7 @@
     .toast{position:fixed;left:50%;bottom:calc(var(--bn-h)+14px);z-index:999;transform:translateX(-50%) translateY(10px);background:var(--bg-4);color:var(--tx);padding:9px 20px;border-radius:99px;font-size:13px;font-weight:600;border:1px solid var(--line);box-shadow:0 8px 32px rgba(0,0,0,0.5);opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;white-space:nowrap}
     .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
+    /* nav */
     .c-nav{position:sticky;top:0;z-index:50;height:var(--nav-h);background:var(--glass);backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);border-bottom:1px solid var(--line)}
     .c-nav-inner{height:100%;max-width:1160px;margin:0 auto;padding:0 22px;display:flex;align-items:center;gap:16px}
     .c-logo{display:flex;align-items:center;gap:9px}.c-logo img{width:26px;height:26px;border-radius:7px}.c-logo span{font-size:16px;font-weight:800;letter-spacing:1.6px}
@@ -27,25 +28,30 @@
     .c-uinfo{padding:12px 14px;border-bottom:1px solid var(--line)}.c-uinfo strong{display:block;font-size:13px;margin-bottom:2px}.c-uinfo small{font-size:12px;color:var(--tx-3)}
     .c-umitem{display:block;width:100%;padding:11px 14px;text-align:left;font-size:13px;font-weight:600;color:var(--tx-2);cursor:pointer;transition:background .1s,color .1s}.c-umitem:hover{background:var(--bg-4);color:var(--tx)}.c-umitem.red{color:var(--brand)}
 
+    /* hero */
     .c-wrap{max-width:1160px;margin:0 auto;padding:0 22px}
     .c-hero{padding:28px 0 24px;background:radial-gradient(ellipse 60% 80% at 90% 110%,rgba(232,64,28,0.10) 0%,transparent 55%),var(--bg);border-bottom:1px solid var(--line)}
     .c-page-tag{font-size:12px;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;color:var(--brand);margin-bottom:8px}
-    .c-hero-h1{font-size:clamp(24px,3.5vw,36px);font-weight:800;line-height:1.12;color:var(--tx);margin-bottom:22px}
-
-    /* search + tabs */
-    .c-sbar{display:flex;align-items:center;gap:10px;height:50px;max-width:460px;background:var(--bg-3);border:1.5px solid var(--line);border-radius:14px;padding:0 16px;transition:border-color .15s,box-shadow .15s}
+    .c-hero-h1{font-size:clamp(24px,3.5vw,36px);font-weight:800;line-height:1.12;color:var(--tx);margin-bottom:18px}
+    .c-sbar{display:flex;align-items:center;gap:10px;height:50px;max-width:440px;background:var(--bg-3);border:1.5px solid var(--line);border-radius:14px;padding:0 16px;transition:border-color .15s,box-shadow .15s}
     .c-sbar:focus-within{border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-soft)}
     .c-sbar svg{color:var(--tx-3);flex-shrink:0}.c-sbar input{flex:1;font-size:15px;color:var(--tx);background:transparent}.c-sbar input::placeholder{color:var(--tx-3)}
-    .c-tabs{display:flex;gap:6px;margin-top:16px}
-    .c-tab{padding:8px 18px;border-radius:99px;font-size:13px;font-weight:700;color:var(--tx-3);background:var(--bg-3);border:1.5px solid var(--line);cursor:pointer;transition:all .15s}
-    .c-tab:hover{color:var(--tx-2)}
-    .c-tab.on{background:var(--brand-soft);border-color:rgba(232,64,28,0.5);color:var(--brand)}
+    .c-tabs{display:flex;gap:6px;margin-top:16px;overflow-x:auto;scrollbar-width:none}.c-tabs::-webkit-scrollbar{display:none}
+    .c-tab{flex:0 0 auto;padding:8px 18px;border-radius:99px;font-size:13px;font-weight:700;color:var(--tx-3);background:var(--bg-3);border:1.5px solid var(--line);cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:6px}
+    .c-tab:hover{color:var(--tx-2)}.c-tab.on{background:var(--brand-soft);border-color:rgba(232,64,28,0.5);color:var(--brand)}
+    .c-tab-badge{font-size:11px;font-weight:700;padding:1px 6px;border-radius:99px;background:var(--bg-4);color:var(--tx-3)}.c-tab.on .c-tab-badge{background:rgba(232,64,28,0.25);color:var(--brand)}
 
-    .c-sec{margin-top:32px}
+    /* two-col desktop layout */
+    .c-page{padding:28px 0;display:block}
+    .c-main{min-width:0}
+    .c-sidebar{display:none}
+
+    /* order cards */
     .c-stack{display:grid;gap:12px}
-
-    /* order card */
-    .c-ocard{background:var(--bg-2);border:1px solid var(--line);border-radius:var(--r);padding:16px 18px;display:grid;gap:12px}
+    .c-ocard{background:var(--bg-2);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;display:grid;gap:0}
+    .c-ocard-accent{height:3px;background:var(--warn)}
+    .c-ocard-accent.ok{background:var(--success)}.c-ocard-accent.danger{background:var(--danger)}.c-ocard-accent.muted{background:var(--bg-4)}
+    .c-ocard-inner{padding:16px 18px;display:grid;gap:12px}
     .c-ocard-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
     .c-ocard-rest{font-size:11px;font-weight:700;letter-spacing:0.6px;text-transform:uppercase;color:var(--tx-3);margin-bottom:4px}
     .c-ocard-num{font-size:16px;font-weight:800;color:var(--tx);margin-bottom:2px}
@@ -54,21 +60,41 @@
     .c-ometa{font-size:12px;color:var(--tx-2);background:var(--bg-3);padding:4px 10px;border-radius:6px}
     .c-ocard-items{display:flex;gap:6px;flex-wrap:wrap}
     .c-oitem{font-size:12px;color:var(--tx-2);background:var(--bg-3);border:1px solid var(--line);padding:3px 10px;border-radius:99px}
-    .c-ocard-actions{display:flex;gap:8px;flex-wrap:wrap}
+    .c-ocard-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+
+    /* status progress bar */
+    .c-steps{display:flex;align-items:center;gap:0;margin-top:4px}
+    .c-step{display:flex;flex-direction:column;align-items:center;gap:4px;flex:1;position:relative}
+    .c-step-dot{width:20px;height:20px;border-radius:50%;border:2px solid var(--bg-4);background:var(--bg-3);display:flex;align-items:center;justify-content:center;font-size:9px;z-index:1;flex-shrink:0;transition:all .2s}
+    .c-step.done .c-step-dot{border-color:var(--success);background:var(--success);color:#fff}
+    .c-step.active .c-step-dot{border-color:var(--warn);background:var(--warn);color:#fff;box-shadow:0 0 0 4px rgba(232,165,58,0.2)}
+    .c-step-label{font-size:10px;font-weight:600;color:var(--tx-3);text-align:center;white-space:nowrap}
+    .c-step.done .c-step-label,.c-step.active .c-step-label{color:var(--tx-2)}
+    .c-step-line{position:absolute;top:9px;left:calc(50% + 10px);right:calc(-50% + 10px);height:2px;background:var(--bg-4)}
+    .c-step.done .c-step-line{background:var(--success)}
 
     .c-pill{font-size:10px;font-weight:700;padding:4px 10px;border-radius:99px}
-    .c-pill-warn{background:rgba(232,165,58,0.15);color:var(--warn)}
-    .c-pill-ok{background:rgba(39,201,107,0.14);color:var(--success)}
-    .c-pill-danger{background:rgba(232,64,28,0.14);color:var(--danger)}
-    .c-pill-muted{background:var(--bg-3);color:var(--tx-3)}
+    .c-pill-warn{background:rgba(232,165,58,0.15);color:var(--warn)}.c-pill-ok{background:rgba(39,201,107,0.14);color:var(--success)}.c-pill-danger{background:rgba(232,64,28,0.14);color:var(--danger)}.c-pill-muted{background:var(--bg-3);color:var(--tx-3)}
 
     .c-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:9px 18px;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;transition:all .15s;font-family:inherit}
-    .c-btn-primary{background:var(--brand);color:#fff;box-shadow:0 4px 18px rgba(232,64,28,0.3)}
-    .c-btn-primary:hover{background:var(--brand-d)}
-    .c-btn-ghost{background:var(--bg-3);color:var(--tx-2);border:1px solid var(--line)}
-    .c-btn-ghost:hover{color:var(--tx);border-color:rgba(255,255,255,0.15)}
-    .c-btn-danger{background:rgba(232,64,28,0.10);color:var(--danger);border:1px solid rgba(232,64,28,0.2)}
-    .c-btn-danger:hover{background:rgba(232,64,28,0.18)}
+    .c-btn-primary{background:var(--brand);color:#fff;box-shadow:0 4px 18px rgba(232,64,28,0.3)}.c-btn-primary:hover{background:var(--brand-d)}
+    .c-btn-ghost{background:var(--bg-3);color:var(--tx-2);border:1px solid var(--line)}.c-btn-ghost:hover{color:var(--tx);border-color:rgba(255,255,255,0.15)}
+    .c-btn-danger{background:rgba(232,64,28,0.10);color:var(--danger);border:1px solid rgba(232,64,28,0.2)}.c-btn-danger:hover{background:rgba(232,64,28,0.18)}
+
+    /* sidebar stats */
+    .c-stat-card{background:var(--bg-2);border:1px solid var(--line);border-radius:var(--r);padding:20px 22px;margin-bottom:14px}
+    .c-stat-card-title{font-size:14px;font-weight:800;margin-bottom:16px}
+    .c-stat-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .c-stat-box{background:var(--bg-3);border-radius:12px;padding:14px 16px}
+    .c-stat-val{font-size:22px;font-weight:800;color:var(--tx);line-height:1}
+    .c-stat-lbl{font-size:11px;color:var(--tx-3);font-weight:600;margin-top:4px}
+    .c-stat-full{background:var(--bg-3);border-radius:12px;padding:14px 16px;margin-top:12px}
+    .c-stat-full .c-stat-val{font-size:20px}
+    .c-recent-title{font-size:13px;font-weight:800;margin:18px 0 10px}
+    .c-recent-item{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--line)}
+    .c-recent-item:last-child{border-bottom:0}
+    .c-recent-name{font-size:13px;font-weight:600;color:var(--tx-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:140px}
+    .c-recent-count{font-size:12px;color:var(--tx-3)}
 
     .c-skel{background:linear-gradient(90deg,var(--bg-3) 25%,var(--bg-4) 50%,var(--bg-3) 75%);background-size:200% 100%;border-radius:var(--r);animation:cskel 1.5s linear infinite}
     @keyframes cskel{0%{background-position:200% 0}100%{background-position:-200% 0}}
@@ -83,18 +109,20 @@
     .c-modal-title{font-size:18px;font-weight:800}
     .c-modal-close{width:32px;height:32px;border-radius:8px;background:var(--bg-4);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:18px;cursor:pointer;color:var(--tx-2)}
     .c-stars{display:flex;gap:6px;justify-content:center}
-    .c-star-btn{font-size:36px;cursor:pointer;color:var(--bg-4);transition:color .1s,transform .1s}
-    .c-star-btn:hover,.c-star-btn.on{color:#E8A53A;transform:scale(1.15)}
-    .c-rate-input{width:100%;background:var(--bg-4);border:1.5px solid var(--line);border-radius:10px;padding:12px 14px;font-size:14px;color:var(--tx);resize:none;transition:border-color .15s}
-    .c-rate-input:focus{border-color:var(--brand)}
-    .c-rate-input::placeholder{color:var(--tx-3)}
+    .c-star-btn{font-size:36px;cursor:pointer;color:var(--bg-4);transition:color .1s,transform .1s}.c-star-btn:hover,.c-star-btn.on{color:#E8A53A;transform:scale(1.15)}
+    .c-rate-input{width:100%;background:var(--bg-4);border:1.5px solid var(--line);border-radius:10px;padding:12px 14px;font-size:14px;color:var(--tx);resize:none;transition:border-color .15s}.c-rate-input:focus{border-color:var(--brand)}.c-rate-input::placeholder{color:var(--tx-3)}
 
+    /* bottom nav */
     .c-bnav{position:fixed;bottom:0;left:0;right:0;z-index:60;height:var(--bn-h);background:var(--glass);backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);border-top:1px solid var(--line);display:flex;padding-bottom:env(safe-area-inset-bottom,0)}
     .c-bnav a{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:var(--tx-3);font-size:10px;font-weight:600;letter-spacing:0.3px;transition:color .15s}.c-bnav a svg{transition:stroke .15s}.c-bnav a.on{color:var(--brand)}.c-bnav a.on svg{stroke:var(--brand)}
     .c-theme{position:fixed;right:20px;bottom:calc(var(--bn-h)+14px);z-index:55;display:flex;align-items:center;gap:7px;background:var(--bg-3);border:1px solid var(--line);border-radius:99px;padding:8px 14px 8px 10px;font-size:13px;font-weight:600;color:var(--tx-2);cursor:pointer;box-shadow:0 4px 20px rgba(0,0,0,0.35);transition:color .15s,border-color .15s}.c-theme:hover{color:var(--tx);border-color:rgba(255,255,255,0.18)}
     html.light .c-theme .t-sun{display:none}html:not(.light) .c-theme .t-moon{display:none}html.light .c-theme .t-dark{display:none}html:not(.light) .c-theme .t-light{display:none}
 
-    @media(min-width:901px){:root{--bn-h:0px}body{padding-bottom:0}.c-bnav{display:none}.c-dlinks{display:flex}.c-theme{bottom:20px}}
+    @media(min-width:901px){
+      :root{--bn-h:0px}body{padding-bottom:0}.c-bnav{display:none}.c-dlinks{display:flex}.c-theme{bottom:20px}
+      .c-page{display:grid;grid-template-columns:1fr 260px;column-gap:24px;align-items:start}
+      .c-sidebar{display:block;position:sticky;top:calc(var(--nav-h)+16px);max-height:calc(100dvh - var(--nav-h) - 32px);overflow-y:auto}
+    }
     @media(max-width:900px){.c-wrap{padding:0 16px}}
     @media(max-width:480px){.c-modal-bg{align-items:flex-end;padding:10px}.c-modal{border-radius:var(--r) var(--r) 12px 12px}}
   </style>
@@ -104,8 +132,10 @@
     <div class="c-nav-inner">
       <a class="c-logo" href="/customer.html"><img src="/logo.png" alt="Avenzo"><span>AVENZO</span></a>
       <nav class="c-dlinks">
-        <a href="/customer.html">Home</a><a href="/customer-restaurants.html">Explore</a>
-        <a class="on" href="/customer-orders.html">Orders</a><a href="/customer-profile.html">Profile</a>
+        <a href="/customer.html">Home</a>
+        <a href="/customer-restaurants.html">Explore</a>
+        <a class="on" href="/customer-orders.html">Orders</a>
+        <a href="/customer-profile.html">Profile</a>
       </nav>
       <div class="c-spacer"></div>
       <div class="c-umenu-wrap">
@@ -129,36 +159,55 @@
       <h1 class="c-hero-h1">Your order history</h1>
       <div class="c-sbar">
         <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-        <input id="searchIn" type="search" placeholder="Search restaurant or code…" oninput="renderOrders()">
+        <input id="searchIn" type="search" placeholder="Restaurant name or order code…" oninput="renderOrders()">
       </div>
       <div class="c-tabs">
-        <button class="c-tab on" id="tab-active"    onclick="setGroup('active')">Active</button>
-        <button class="c-tab"    id="tab-past"      onclick="setGroup('past')">Completed</button>
-        <button class="c-tab"    id="tab-cancelled" onclick="setGroup('cancelled')">Cancelled</button>
+        <button class="c-tab on" id="tab-active" onclick="setGroup('active')">Active <span class="c-tab-badge" id="badge-active">—</span></button>
+        <button class="c-tab" id="tab-past" onclick="setGroup('past')">Completed <span class="c-tab-badge" id="badge-past">—</span></button>
+        <button class="c-tab" id="tab-cancelled" onclick="setGroup('cancelled')">Cancelled <span class="c-tab-badge" id="badge-cancelled">—</span></button>
       </div>
     </div>
   </section>
 
-  <section class="c-sec">
-    <div class="c-wrap">
-      <div class="c-stack" id="ordersGrid">
-        <div class="c-skel" style="height:140px"></div>
-        <div class="c-skel" style="height:140px"></div>
-      </div>
-      <div class="c-pager" id="pager"></div>
+  <div class="c-wrap">
+    <div class="c-page">
+      <main class="c-main" style="padding-top:28px">
+        <div class="c-stack" id="ordersGrid">
+          <div class="c-skel" style="height:160px"></div>
+          <div class="c-skel" style="height:160px"></div>
+        </div>
+        <div class="c-pager" id="pager"></div>
+        <div style="height:40px"></div>
+      </main>
+
+      <aside class="c-sidebar" style="padding-top:28px">
+        <div class="c-stat-card" id="statsPanel">
+          <div class="c-stat-card-title">Your activity</div>
+          <div class="c-stat-row">
+            <div class="c-stat-box"><div class="c-stat-val" id="statTotal">—</div><div class="c-stat-lbl">Total orders</div></div>
+            <div class="c-stat-box"><div class="c-stat-val" id="statActive">—</div><div class="c-stat-lbl">Active now</div></div>
+          </div>
+          <div class="c-stat-full"><div class="c-stat-val" id="statSpent">—</div><div class="c-stat-lbl">Total spent</div></div>
+          <div id="recentRestSection" style="display:none">
+            <div class="c-recent-title">Visited restaurants</div>
+            <div id="recentRestList"></div>
+          </div>
+        </div>
+        <a class="c-btn c-btn-ghost" href="/customer-restaurants.html" style="width:100%;font-size:13px;justify-content:center;text-decoration:none">Browse restaurants →</a>
+      </aside>
     </div>
-  </section>
-  <div style="height:36px"></div>
+  </div>
 
   <!-- Rating modal -->
   <div class="c-modal-bg" id="rateModal">
     <form class="c-modal" onsubmit="submitRating(event)">
       <div class="c-modal-head">
-        <span class="c-modal-title">Rate your order</span>
+        <span class="c-modal-title">Rate your visit</span>
         <button type="button" class="c-modal-close" onclick="closeRate()">×</button>
       </div>
+      <div id="rateRestName" style="font-size:13px;color:var(--tx-3)"></div>
       <div class="c-stars" id="rateStars"></div>
-      <textarea class="c-rate-input" id="rateComment" rows="2" maxlength="500" placeholder="Optional feedback…"></textarea>
+      <textarea class="c-rate-input" id="rateComment" rows="2" maxlength="500" placeholder="How was your experience? (optional)"></textarea>
       <button id="rateSubmit" class="c-btn c-btn-primary" type="submit" disabled>Submit rating</button>
     </form>
   </div>
@@ -177,138 +226,205 @@
 
   <script src="/assets/app.js"></script>
   <script>
-    if(!sessionStorage.getItem("token"))location.href="/customer-login.html";
-    let orders=[],pagination={page:1,totalPages:1},activeGroup="active",rateToken="",rateVal=0;
+    if (!sessionStorage.getItem("token")) location.href = "/customer-login.html";
+    let orders = [], pagination = {page:1,totalPages:1}, activeGroup = "active", rateToken = "", rateVal = 0;
 
-    (async()=>{
-      try{
-        const u=await request("/auth/me");
-        if(u.role!=="USER"){location.href="/admin/dashboard.html";return;}
-        document.getElementById("uAv").textContent=(u.name||u.email||"U")[0].toUpperCase();
-        document.getElementById("uNm").textContent=u.name?u.name.split(" ")[0]:u.email.split("@")[0];
-        document.getElementById("uFullName").textContent=u.name||u.email||"—";
-        document.getElementById("uEmail").textContent=u.email||"";
+    (async () => {
+      try {
+        const u = await request("/auth/me");
+        if (u.role !== "USER") { location.href = "/admin/dashboard.html"; return; }
+        document.getElementById("uAv").textContent = (u.name||u.email||"U")[0].toUpperCase();
+        document.getElementById("uNm").textContent = u.name ? u.name.split(" ")[0] : u.email.split("@")[0];
+        document.getElementById("uFullName").textContent = u.name || u.email || "—";
+        document.getElementById("uEmail").textContent = u.email || "";
         loadOrders(true);
-      }catch{location.href="/customer-login.html";}
+      } catch { location.href = "/customer-login.html"; }
     })();
 
-    async function loadOrders(reset=false){
-      if(reset)pagination.page=1;
-      document.getElementById("ordersGrid").innerHTML='<div class="c-skel" style="height:140px"></div><div class="c-skel" style="height:140px"></div>';
-      try{
-        const d=await request(`/customer/orders?page=${pagination.page}&limit=30`);
-        orders=d.orders||[];
-        pagination=d.pagination||{page:1,totalPages:1};
+    async function loadOrders(reset = false) {
+      if (reset) pagination.page = 1;
+      document.getElementById("ordersGrid").innerHTML = '<div class="c-skel" style="height:160px"></div><div class="c-skel" style="height:160px"></div>';
+      try {
+        const d = await request(`/customer/orders?page=${pagination.page}&limit=50`);
+        orders = d.orders || [];
+        pagination = d.pagination || {page:1,totalPages:1};
+        updateTabBadges();
+        renderSummary();
         renderOrders();
-      }catch(e){document.getElementById("ordersGrid").innerHTML=`<div class="c-empty"><div class="c-empty-icon">😕</div><p>${escapeHtml(e.message)}</p></div>`;}
+      } catch (e) {
+        document.getElementById("ordersGrid").innerHTML = `<div class="c-empty"><div class="c-empty-icon">😕</div><p>${escapeHtml(e.message)}</p></div>`;
+      }
     }
 
-    function setGroup(g){
-      activeGroup=g;
-      document.querySelectorAll(".c-tab").forEach(t=>t.classList.toggle("on",t.id===`tab-${g}`));
+    function updateTabBadges() {
+      const counts = {active:0, past:0, cancelled:0};
+      orders.forEach(o => {
+        if (["PENDING","PREPARING","READY"].includes(o.status)) counts.active++;
+        else if (o.status === "COMPLETED") counts.past++;
+        else if (o.status === "CANCELLED") counts.cancelled++;
+      });
+      document.getElementById("badge-active").textContent = counts.active;
+      document.getElementById("badge-past").textContent = counts.past;
+      document.getElementById("badge-cancelled").textContent = counts.cancelled;
+    }
+
+    function renderSummary() {
+      const completed = orders.filter(o => o.status === "COMPLETED");
+      const active = orders.filter(o => ["PENDING","PREPARING","READY"].includes(o.status));
+      const totalSpent = completed.reduce((s, o) => s + (o.totalPrice || 0), 0);
+      document.getElementById("statTotal").textContent = orders.length;
+      document.getElementById("statActive").textContent = active.length;
+      document.getElementById("statSpent").textContent = money(totalSpent);
+
+      // visited restaurants frequency map
+      const restMap = new Map();
+      orders.forEach(o => {
+        if (o.restaurant?.name) {
+          const k = o.restaurant.name;
+          restMap.set(k, {slug: o.restaurant.slug, count: (restMap.get(k)?.count || 0) + 1});
+        }
+      });
+      const topRests = [...restMap.entries()].sort((a, b) => b[1].count - a[1].count).slice(0, 5);
+      if (topRests.length) {
+        document.getElementById("recentRestSection").style.display = "block";
+        document.getElementById("recentRestList").innerHTML = topRests.map(([name, {slug, count}]) =>
+          `<div class="c-recent-item">
+            <a class="c-recent-name" href="/r/${encodeURIComponent(slug)}">${escapeHtml(name)}</a>
+            <span class="c-recent-count">${count} order${count !== 1 ? "s" : ""}</span>
+          </div>`
+        ).join("");
+      }
+    }
+
+    function setGroup(g) {
+      activeGroup = g;
+      document.querySelectorAll(".c-tab").forEach(t => t.classList.toggle("on", t.id === `tab-${g}`));
       renderOrders();
     }
 
-    function renderOrders(){
-      const q=document.getElementById("searchIn").value.trim().toLowerCase();
-      const visible=orders.filter(o=>
-        (!q||[o.restaurant?.name,o.pickupCode,String(o.orderNumber)].join(" ").toLowerCase().includes(q))&&groupMatch(o.status)
+    function renderOrders() {
+      const q = document.getElementById("searchIn").value.trim().toLowerCase();
+      const visible = orders.filter(o =>
+        (!q || [o.restaurant?.name, o.pickupCode, String(o.orderNumber)].join(" ").toLowerCase().includes(q)) && groupMatch(o.status)
       );
-      const g=document.getElementById("ordersGrid");
-      if(!visible.length){
-        g.innerHTML=`<div class="c-empty"><div class="c-empty-icon">${activeGroup==="active"?"📭":activeGroup==="past"?"🧾":"🚫"}</div><p>${emptyMsg()}</p><a class="c-btn c-btn-ghost" href="/customer-restaurants.html" style="text-decoration:none">Browse restaurants</a></div>`;
+      const g = document.getElementById("ordersGrid");
+      if (!visible.length) {
+        g.innerHTML = `<div class="c-empty"><div class="c-empty-icon">${activeGroup==="active"?"📭":activeGroup==="past"?"🧾":"🚫"}</div><p>${emptyMsg()}</p><a class="c-btn c-btn-ghost" href="/customer-restaurants.html" style="text-decoration:none">Browse restaurants</a></div>`;
         renderPager(); return;
       }
-      g.innerHTML=visible.map(o=>{
-        const menuHref=o.restaurant?.slug?`/r/${encodeURIComponent(o.restaurant.slug)}`:"/customer-restaurants.html";
-        const preview=(o.items||[]).slice(0,4).map(i=>`<span class="c-oitem">${escapeHtml(i.nameAtOrder)} ×${i.quantity}</span>`).join("");
-        const canRate=o.status==="COMPLETED"&&o.rating===null;
-        return`<div class="c-ocard">
-          <div class="c-ocard-head">
-            <div>
-              <div class="c-ocard-rest">${escapeHtml(o.restaurant?.name||"Avenzo restaurant")}</div>
-              <div class="c-ocard-num">Order #${o.orderNumber}</div>
-              <div class="c-ocard-date">${formatDate(o.createdAt)}</div>
+      g.innerHTML = visible.map(o => {
+        const menuHref = o.restaurant?.slug ? `/r/${encodeURIComponent(o.restaurant.slug)}` : "/customer-restaurants.html";
+        const preview = (o.items || []).slice(0, 4).map(i => `<span class="c-oitem">${escapeHtml(i.nameAtOrder)} ×${i.quantity}</span>`).join("");
+        const canRate = o.status === "COMPLETED" && o.rating === null;
+        const isActive = ["PENDING","PREPARING","READY"].includes(o.status);
+        const accentClass = isActive ? "" : o.status === "COMPLETED" ? " ok" : o.status === "CANCELLED" ? " danger" : " muted";
+
+        const stepsHtml = isActive ? statusSteps(o.status) : "";
+
+        return `<div class="c-ocard">
+          <div class="c-ocard-accent${accentClass}"></div>
+          <div class="c-ocard-inner">
+            <div class="c-ocard-head">
+              <div>
+                <div class="c-ocard-rest">${escapeHtml(o.restaurant?.name || "Avenzo restaurant")}</div>
+                <div class="c-ocard-num">Order #${o.orderNumber}</div>
+                <div class="c-ocard-date">${formatDate(o.createdAt)}</div>
+              </div>
+              <span class="c-pill ${statusPillClass(o.status)}">${statusLabel(o.status)}</span>
             </div>
-            <span class="c-pill ${statusPillClass(o.status)}">${statusLabel(o.status)}</span>
-          </div>
-          <div class="c-ocard-meta">
-            <span class="c-ometa">Code: ${escapeHtml(o.pickupCode)}</span>
-            <span class="c-ometa">${money(o.totalPrice)}</span>
-            ${o.tableNumber?`<span class="c-ometa">Table ${escapeHtml(o.tableNumber)}</span>`:""}
-            <span class="c-ometa">${payLabel(o.paymentStatus)}</span>
-          </div>
-          ${preview?`<div class="c-ocard-items">${preview}</div>`:""}
-          <div class="c-ocard-actions">
-            <a class="c-btn c-btn-primary" href="/track/${o.trackingToken}" style="font-size:13px;padding:8px 16px">Track order</a>
-            <a class="c-btn c-btn-ghost" href="${menuHref}" style="font-size:13px;padding:8px 16px">Restaurant</a>
-            ${["COMPLETED","CANCELLED"].includes(o.status)?`<a class="c-btn c-btn-ghost" href="${menuHref}" style="font-size:13px;padding:8px 16px">Order again</a>`:""}
-            ${o.status==="PENDING"&&o.paymentStatus!=="PAID"?`<button class="c-btn c-btn-danger" style="font-size:13px;padding:8px 16px" onclick="cancelOrder('${o.trackingToken}')">Cancel</button>`:""}
-            ${canRate?`<button class="c-btn c-btn-ghost" style="font-size:13px;padding:8px 16px" onclick="openRate('${o.trackingToken}')">Rate ★</button>`:""}
-            ${o.rating?`<span class="c-pill c-pill-ok" style="display:inline-flex;align-items:center">${o.rating} ★</span>`:""}
+            ${stepsHtml}
+            <div class="c-ocard-meta">
+              <span class="c-ometa">Code: ${escapeHtml(o.pickupCode)}</span>
+              <span class="c-ometa">${money(o.totalPrice)}</span>
+              ${o.tableNumber ? `<span class="c-ometa">Table ${escapeHtml(o.tableNumber)}</span>` : ""}
+              <span class="c-ometa">${payLabel(o.paymentStatus)}</span>
+            </div>
+            ${preview ? `<div class="c-ocard-items">${preview}</div>` : ""}
+            <div class="c-ocard-actions">
+              <a class="c-btn c-btn-primary" href="/track/${o.trackingToken}" style="font-size:13px;padding:8px 16px">Track order</a>
+              <a class="c-btn c-btn-ghost" href="${menuHref}" style="font-size:13px;padding:8px 16px">Restaurant</a>
+              ${["COMPLETED","CANCELLED"].includes(o.status) ? `<a class="c-btn c-btn-ghost" href="${menuHref}" style="font-size:13px;padding:8px 16px">Order again</a>` : ""}
+              ${o.status === "PENDING" && o.paymentStatus !== "PAID" ? `<button class="c-btn c-btn-danger" style="font-size:13px;padding:8px 16px" onclick="cancelOrder('${o.trackingToken}')">Cancel</button>` : ""}
+              ${canRate ? `<button class="c-btn c-btn-ghost" style="font-size:13px;padding:8px 16px" onclick="openRate('${o.trackingToken}','${escapeHtml(o.restaurant?.name||"")}')">Rate ★</button>` : ""}
+              ${o.rating ? `<span class="c-pill c-pill-ok" style="display:inline-flex;align-items:center">${o.rating} ★</span>` : ""}
+            </div>
           </div>
         </div>`;
       }).join("");
       renderPager();
     }
 
-    function groupMatch(s){
-      if(activeGroup==="active")return["PENDING","PREPARING","READY"].includes(s);
-      if(activeGroup==="past")return s==="COMPLETED";
-      return s==="CANCELLED";
-    }
-    function emptyMsg(){
-      if(activeGroup==="past")return"Completed orders will appear here.";
-      if(activeGroup==="cancelled")return"Cancelled orders will appear here.";
-      return"No active orders right now — browse and start one!";
-    }
-    function statusLabel(s){return{PENDING:"Received",PREPARING:"Preparing",READY:"Ready",COMPLETED:"Completed",CANCELLED:"Cancelled"}[s]||s}
-    function statusPillClass(s){if(["READY","COMPLETED"].includes(s))return"c-pill-ok";if(s==="CANCELLED")return"c-pill-danger";return"c-pill-warn"}
-    function payLabel(s){return{PAYMENT_NOT_REQUIRED:"No payment",PAYMENT_PENDING:"Payment pending",PAID:"Paid",PAYMENT_FAILED:"Payment failed",REFUNDED:"Refunded",PARTIALLY_REFUNDED:"Partial refund"}[s]||"—"}
-
-    async function cancelOrder(t){
-      if(!confirm("Cancel this order?"))return;
-      try{await request(`/order/${t}/cancel`,{method:"POST"});toast("Order cancelled.");loadOrders(true);}
-      catch(e){toast(e.message||"Could not cancel order.");}
+    function statusSteps(status) {
+      const steps = ["PENDING","PREPARING","READY","COMPLETED"];
+      const labels = ["Received","Preparing","Ready","Done"];
+      const cur = steps.indexOf(status);
+      return `<div class="c-steps">${steps.map((s, i) => {
+        const state = i < cur ? "done" : i === cur ? "active" : "";
+        const check = i < cur ? "✓" : i === cur ? "●" : "";
+        const line = i < steps.length - 1 ? `<div class="c-step-line"></div>` : "";
+        return `<div class="c-step ${state}">${line}<div class="c-step-dot">${check}</div><div class="c-step-label">${labels[i]}</div></div>`;
+      }).join("")}</div>`;
     }
 
-    function renderPager(){
-      const tp=pagination.totalPages||1;
-      document.getElementById("pager").innerHTML=tp<=1?"":
-        `<button class="c-btn c-btn-ghost" style="padding:8px 16px;font-size:13px" ${pagination.page<=1?"disabled":""} onclick="changePage(-1)">← Previous</button>
+    function groupMatch(s) {
+      if (activeGroup === "active") return ["PENDING","PREPARING","READY"].includes(s);
+      if (activeGroup === "past") return s === "COMPLETED";
+      return s === "CANCELLED";
+    }
+    function emptyMsg() {
+      if (activeGroup === "past") return "Completed orders will show here.";
+      if (activeGroup === "cancelled") return "No cancelled orders.";
+      return "No active orders right now — browse and start one!";
+    }
+    function statusLabel(s) { return {PENDING:"Received",PREPARING:"Preparing",READY:"Ready",COMPLETED:"Completed",CANCELLED:"Cancelled"}[s] || s }
+    function statusPillClass(s) { if (["READY","COMPLETED"].includes(s)) return "c-pill-ok"; if (s === "CANCELLED") return "c-pill-danger"; return "c-pill-warn" }
+    function payLabel(s) { return {PAYMENT_NOT_REQUIRED:"No payment",PAYMENT_PENDING:"Pending payment",PAID:"Paid",PAYMENT_FAILED:"Payment failed",REFUNDED:"Refunded",PARTIALLY_REFUNDED:"Partial refund"}[s] || "—" }
+
+    async function cancelOrder(t) {
+      if (!confirm("Cancel this order?")) return;
+      try { await request(`/order/${t}/cancel`, {method:"POST"}); toast("Order cancelled."); loadOrders(true); }
+      catch (e) { toast(e.message || "Could not cancel order."); }
+    }
+
+    function renderPager() {
+      const tp = pagination.totalPages || 1;
+      document.getElementById("pager").innerHTML = tp <= 1 ? "" :
+        `<button class="c-btn c-btn-ghost" style="padding:8px 16px;font-size:13px" ${pagination.page <= 1 ? "disabled" : ""} onclick="changePage(-1)">← Previous</button>
          <span style="font-size:13px;color:var(--tx-3)">Page ${pagination.page} of ${tp}</span>
-         <button class="c-btn c-btn-ghost" style="padding:8px 16px;font-size:13px" ${pagination.page>=tp?"disabled":""} onclick="changePage(1)">Next →</button>`;
+         <button class="c-btn c-btn-ghost" style="padding:8px 16px;font-size:13px" ${pagination.page >= tp ? "disabled" : ""} onclick="changePage(1)">Next →</button>`;
     }
-    function changePage(d){pagination.page=Math.min(Math.max(1,pagination.page+d),pagination.totalPages||1);loadOrders(false);}
+    function changePage(d) { pagination.page = Math.min(Math.max(1, pagination.page + d), pagination.totalPages || 1); loadOrders(false); }
 
-    /* rating */
-    function openRate(t){
-      rateToken=t;rateVal=0;
-      document.getElementById("rateStars").innerHTML=[1,2,3,4,5].map(n=>`<button type="button" class="c-star-btn" data-v="${n}" onclick="pickStar(${n})">★</button>`).join("");
-      document.getElementById("rateComment").value="";
-      document.getElementById("rateSubmit").disabled=true;
+    function openRate(t, name) {
+      rateToken = t; rateVal = 0;
+      document.getElementById("rateRestName").textContent = name || "";
+      document.getElementById("rateStars").innerHTML = [1,2,3,4,5].map(n =>
+        `<button type="button" class="c-star-btn" data-v="${n}" onclick="pickStar(${n})">★</button>`
+      ).join("");
+      document.getElementById("rateComment").value = "";
+      document.getElementById("rateSubmit").disabled = true;
       document.getElementById("rateModal").classList.add("open");
     }
-    function closeRate(){document.getElementById("rateModal").classList.remove("open")}
-    function pickStar(v){
-      rateVal=v;
-      document.querySelectorAll(".c-star-btn").forEach(b=>b.classList.toggle("on",Number(b.dataset.v)<=v));
-      document.getElementById("rateSubmit").disabled=false;
+    function closeRate() { document.getElementById("rateModal").classList.remove("open") }
+    function pickStar(v) {
+      rateVal = v;
+      document.querySelectorAll(".c-star-btn").forEach(b => b.classList.toggle("on", Number(b.dataset.v) <= v));
+      document.getElementById("rateSubmit").disabled = false;
     }
-    async function submitRating(e){
-      e.preventDefault();if(!rateVal)return;
-      const btn=document.getElementById("rateSubmit");
-      btn.disabled=true;btn.textContent="Submitting…";
-      try{
-        await request(`/order/${rateToken}/rating`,{method:"POST",body:JSON.stringify({rating:rateVal,comment:document.getElementById("rateComment").value.trim()||null})});
-        closeRate();toast("Rating submitted — thank you!");loadOrders(true);
-      }catch(er){toast(er.message||"Could not submit rating");btn.disabled=false;btn.textContent="Submit rating";}
+    async function submitRating(e) {
+      e.preventDefault(); if (!rateVal) return;
+      const btn = document.getElementById("rateSubmit");
+      btn.disabled = true; btn.textContent = "Submitting…";
+      try {
+        await request(`/order/${rateToken}/rating`, {method:"POST", body:JSON.stringify({rating:rateVal, comment:document.getElementById("rateComment").value.trim()||null})});
+        closeRate(); toast("Rating submitted — thank you!"); loadOrders(true);
+      } catch (er) { toast(er.message || "Could not submit rating"); btn.disabled = false; btn.textContent = "Submit rating"; }
     }
 
-    function toggleUMenu(){document.getElementById("uDrop").classList.toggle("open")}
-    document.addEventListener("click",e=>{if(!document.getElementById("uBtn")?.contains(e.target))document.getElementById("uDrop")?.classList.remove("open")});
-    function doSignOut(){sessionStorage.removeItem("token");location.href="/customer-login.html"}
-    function toggleTheme(){const on=document.documentElement.classList.toggle("light");localStorage.setItem("avenzo-theme",on?"light":"dark")}
+    function toggleUMenu() { document.getElementById("uDrop").classList.toggle("open") }
+    document.addEventListener("click", e => { if (!document.getElementById("uBtn")?.contains(e.target)) document.getElementById("uDrop")?.classList.remove("open") });
+    function doSignOut() { sessionStorage.removeItem("token"); location.href = "/customer-login.html" }
+    function toggleTheme() { const on = document.documentElement.classList.toggle("light"); localStorage.setItem("avenzo-theme", on ? "light" : "dark") }
   </script>
 </body>
 </html>
