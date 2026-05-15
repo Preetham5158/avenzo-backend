@@ -166,6 +166,8 @@
     <a href="/admin/dashboard.html">Home</a>
     <a class="active" href="#">Menu</a>
     <a href="#" onclick="goOrders(event)">Orders</a>
+    <a href="#" onclick="goStaff(event)">Staff</a>
+    <a href="#" onclick="goPayments(event)">Payments</a>
   </nav>
 
   <div class="modal-backdrop" id="itemModal">
@@ -570,6 +572,16 @@
     function goOrders(event) {
       event.preventDefault();
       window.location.href = `/admin/orders.html?restaurantId=${restaurantId}`;
+    }
+
+    function goStaff(event) {
+      event.preventDefault();
+      window.location.href = `/admin/staff.html?restaurantId=${restaurantId}`;
+    }
+
+    function goPayments(event) {
+      event.preventDefault();
+      window.location.href = `/admin/payments.html?restaurantId=${restaurantId}`;
     }
 
     init();

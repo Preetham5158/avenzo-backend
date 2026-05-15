@@ -101,8 +101,10 @@
   </div>
   <nav class="admin-dock">
     <a href="/admin/dashboard.html">Home</a>
-    <a href="#" onclick="goMenu(event)">Menu</a>
     <a class="active" href="#">Orders</a>
+    <a href="#" onclick="goMenu(event)">Menu</a>
+    <a href="#" onclick="goStaff(event)">Staff</a>
+    <a href="#" onclick="goPayments(event)">Payments</a>
   </nav>
 
   <script src="/assets/app.js"></script>
@@ -406,6 +408,16 @@
     function goMenu(event) {
       event.preventDefault();
       window.location.href = `/admin/menu.html?restaurantId=${restaurantId}`;
+    }
+
+    function goStaff(event) {
+      event.preventDefault();
+      window.location.href = `/admin/staff.html?restaurantId=${restaurantId}`;
+    }
+
+    function goPayments(event) {
+      event.preventDefault();
+      window.location.href = `/admin/payments.html?restaurantId=${restaurantId}`;
     }
 
     initPartnerPage().then((user) => {

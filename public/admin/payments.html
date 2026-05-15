@@ -147,6 +147,14 @@
     </form>
   </div>
 
+  <nav class="admin-dock">
+    <a href="/admin/dashboard.html">Home</a>
+    <a href="#" onclick="goOrders(event)">Orders</a>
+    <a href="#" onclick="goMenu(event)">Menu</a>
+    <a href="#" onclick="goStaff(event)">Staff</a>
+    <a class="active" href="#">Payments</a>
+  </nav>
+
   <script src="/assets/app.js"></script>
   <script>
     const restaurantId = new URLSearchParams(location.search).get("restaurantId");
@@ -270,9 +278,12 @@
       }
     }
 
+    function goOrders(e) { e.preventDefault(); window.location.href = `/admin/orders.html?restaurantId=${restaurantId}`; }
+    function goMenu(e) { e.preventDefault(); window.location.href = `/admin/menu.html?restaurantId=${restaurantId}`; }
+    function goStaff(e) { e.preventDefault(); window.location.href = `/admin/staff.html?restaurantId=${restaurantId}`; }
+
     initPartnerPage().then((user) => {
       if (!user) return;
-      const name = document.getElementById("restaurantLabel");
       loadMethods();
     });
   </script>

@@ -221,6 +221,10 @@ async function initCustomerPage(active = "home") {
   if (bnTarget) bnTarget.innerHTML = customerBottomNavHtml(active);
 
   const user = await initAccountMenu();
+  if (user && user.role === "EMPLOYEE") {
+    window.location.href = "/restaurant/employee.html";
+    return null;
+  }
   if (user && user.role !== "USER") {
     window.location.href = "/admin/dashboard.html";
     return null;
