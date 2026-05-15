@@ -250,12 +250,17 @@
             ${r.owner?.email ? `<span class="pill">${escapeHtml(r.owner.email)}</span>` : ""}
           </div>
           <div class="restaurant-actions">
-            <button class="btn btn-dark" onclick="openMenu('${r.id}')">Menu</button>
-            <button class="btn btn-soft" onclick="openOrders('${r.id}')">Orders</button>
-            <button class="btn btn-ghost" onclick="openQr('${r.id}')">Scan card</button>
-            ${canManageStaff(r) ? `<button class="btn btn-ghost" onclick="openStaff('${r.id}')">Staff</button>` : ""}
-            ${canEditRestaurants ? `<button class="btn btn-ghost" onclick="openPayments('${r.id}')">Payments</button>` : ""}
-            ${canEditRestaurants ? `<button class="btn btn-ghost" onclick='openRestaurantModal(${JSON.stringify(r.id)})'>Edit</button>` : ""}
+            ${currentUser?.role === "EMPLOYEE" ? `
+              <button class="btn btn-dark" onclick="openOrders('${r.id}')">Kitchen view</button>
+              <button class="btn btn-ghost" onclick="openMenu('${r.id}')">View menu</button>
+            ` : `
+              <button class="btn btn-dark" onclick="openMenu('${r.id}')">Menu</button>
+              <button class="btn btn-soft" onclick="openOrders('${r.id}')">Orders</button>
+              <button class="btn btn-ghost" onclick="openQr('${r.id}')">Scan card</button>
+              ${canManageStaff(r) ? `<button class="btn btn-ghost" onclick="openStaff('${r.id}')">Staff</button>` : ""}
+              ${canEditRestaurants ? `<button class="btn btn-ghost" onclick="openPayments('${r.id}')">Payments</button>` : ""}
+              ${canEditRestaurants ? `<button class="btn btn-ghost" onclick='openRestaurantModal(${JSON.stringify(r.id)})'>Edit</button>` : ""}
+            `}
           </div>
         </article>
       `).join("");
@@ -372,6 +377,11 @@
     }
 
     function openOrders(id) {
+      // Employees use the dedicated kitchen view
+      if (currentUser?.role === "EMPLOYEE") {
+        window.location.href = `/restaurant/employee.html`;
+        return;
+      }
       window.location.href = `/admin/orders.html?restaurantId=${id}`;
     }
 
