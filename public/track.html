@@ -56,23 +56,122 @@
     .t-live-dot{width:8px;height:8px;border-radius:50%;background:currentColor;animation:tdot 1.8s ease-in-out infinite;flex-shrink:0}
     @keyframes tdot{0%,100%{transform:scale(1);opacity:.9}50%{transform:scale(1.35);opacity:.5}}
 
-    /* ── STEP PROGRESS ── */
-    .t-steps{display:flex;align-items:flex-start;gap:0}
-    .t-step{flex:1;display:flex;flex-direction:column;align-items:center;position:relative}
-    .t-step-line{position:absolute;top:10px;left:50%;right:-50%;height:2px;background:var(--bg-4);transition:background .35s}
-    .t-step:last-child .t-step-line{display:none}
-    .t-step-dot{width:20px;height:20px;border-radius:50%;background:var(--bg-4);border:2px solid var(--bg-4);z-index:1;position:relative;transition:all .35s}
-    .t-step-lbl{margin-top:8px;font-size:11px;font-weight:600;color:var(--tx-3);text-align:center;line-height:1.2;transition:color .35s}
-    .t-step.done .t-step-dot{background:var(--success);border-color:var(--success);box-shadow:0 0 0 4px var(--success-soft)}
-    .t-step.done .t-step-line{background:var(--success)}
-    .t-step.done .t-step-lbl{color:var(--success)}
-    .t-step.now .t-step-dot{background:var(--warn);border-color:var(--warn);box-shadow:0 0 0 6px var(--warn-soft);animation:tdot 1.8s ease-in-out infinite}
-    .t-step.now .t-step-lbl{color:var(--warn);font-weight:700}
+    /* ── VERTICAL TIMELINE ── */
+    .t-timeline {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      padding: 4px 0;
+    }
+    .t-tl-step {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      position: relative;
+    }
+    .t-tl-col {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      flex-shrink: 0;
+      width: 28px;
+    }
+    .t-tl-dot {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--bg-4);
+      border: 2px solid var(--bg-3);
+      z-index: 1;
+      transition: all 0.35s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      flex-shrink: 0;
+    }
+    .t-tl-line {
+      width: 2px;
+      flex: 1;
+      min-height: 24px;
+      background: var(--bg-4);
+      transition: background 0.35s;
+      margin: 2px 0;
+    }
+    .t-tl-step:last-child .t-tl-line { display: none; }
+    .t-tl-right {
+      padding-bottom: 22px;
+      flex: 1;
+      padding-top: 4px;
+    }
+    .t-tl-name {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--tx-3);
+      line-height: 1.2;
+      transition: color 0.3s;
+    }
+    .t-tl-sub {
+      font-size: 12px;
+      color: var(--tx-3);
+      margin-top: 3px;
+      line-height: 1.4;
+    }
+    /* Done state */
+    .t-tl-step.done .t-tl-dot {
+      background: var(--success);
+      border-color: var(--success);
+      color: #fff;
+      box-shadow: 0 0 0 4px rgba(39,201,107,0.15);
+    }
+    .t-tl-step.done .t-tl-line { background: var(--success); }
+    .t-tl-step.done .t-tl-name { color: var(--success); }
+    /* Active/Now state */
+    .t-tl-step.now .t-tl-dot {
+      background: var(--warn);
+      border-color: var(--warn);
+      color: #fff;
+      animation: tpulse 2s ease-in-out infinite;
+    }
+    .t-tl-step.now .t-tl-name { color: var(--warn); font-weight: 800; font-size: 15px; }
+    @keyframes tpulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(232,165,58,0.5); }
+      50% { box-shadow: 0 0 0 8px rgba(232,165,58,0); }
+    }
+    /* Cancelled state */
+    .t-tl-step.cancelled .t-tl-dot { background: var(--danger); border-color: var(--danger); color: #fff; }
+    /* READY celebration */
+    .t-hero.ready-glow {
+      border-color: rgba(39,201,107,0.5);
+      box-shadow: 0 0 0 1px rgba(39,201,107,0.2), 0 8px 32px rgba(39,201,107,0.15);
+      animation: ready-pulse 2s ease-in-out 3;
+    }
+    @keyframes ready-pulse {
+      0%, 100% { box-shadow: 0 0 0 1px rgba(39,201,107,0.2), 0 8px 32px rgba(39,201,107,0.15); }
+      50% { box-shadow: 0 0 0 4px rgba(39,201,107,0.3), 0 8px 48px rgba(39,201,107,0.3); }
+    }
 
     .t-placed{font-size:12px;color:var(--tx-3);margin-top:14px}
+    .t-last-updated {
+      font-size: 11px;
+      color: var(--tx-3);
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      margin-top: 10px;
+    }
+    .t-refresh-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--success);
+      animation: tdot 1.8s ease-in-out infinite;
+    }
 
     /* ── ORDER CODE CARD ── */
     .t-code-card{padding:22px;background:var(--bg-2);border:1px solid var(--line);border-radius:var(--r);margin-bottom:16px;text-align:center}
+    .t-code-card.status-ready { border-color: rgba(39,201,107,0.3); background: rgba(39,201,107,0.05); }
+    .t-code-card.status-preparing { border-color: rgba(232,165,58,0.3); background: rgba(232,165,58,0.04); }
+    .t-code { transition: color 0.3s; }
+    .t-code-card.status-ready .t-code { color: var(--success); }
     .t-code-label{font-size:12px;font-weight:600;color:var(--tx-3);letter-spacing:.8px;text-transform:uppercase;margin-bottom:8px}
     .t-code{font-size:clamp(56px,14vw,80px);font-weight:800;line-height:1;letter-spacing:6px;color:var(--tx);font-variant-numeric:tabular-nums}
     .t-table-row{margin-top:8px;font-size:13px;color:var(--tx-3)}
@@ -198,35 +297,62 @@
         </span>
       </div>
 
-      <div class="t-steps" id="stepsRow">
-        <div class="t-step" id="step0">
-          <div class="t-step-line"></div>
-          <div class="t-step-dot"></div>
-          <div class="t-step-lbl">Received</div>
+      <div class="t-timeline" id="stepsRow">
+        <div class="t-tl-step" id="step0">
+          <div class="t-tl-col">
+            <div class="t-tl-dot" id="dot0">1</div>
+            <div class="t-tl-line"></div>
+          </div>
+          <div class="t-tl-right">
+            <div class="t-tl-name">Order received</div>
+            <div class="t-tl-sub">Your order was sent to the restaurant</div>
+          </div>
         </div>
-        <div class="t-step" id="step1">
-          <div class="t-step-line"></div>
-          <div class="t-step-dot"></div>
-          <div class="t-step-lbl">Preparing</div>
+        <div class="t-tl-step" id="step1">
+          <div class="t-tl-col">
+            <div class="t-tl-dot" id="dot1">2</div>
+            <div class="t-tl-line"></div>
+          </div>
+          <div class="t-tl-right">
+            <div class="t-tl-name">Being prepared</div>
+            <div class="t-tl-sub" id="prepSub">The kitchen is working on your food</div>
+          </div>
         </div>
-        <div class="t-step" id="step2">
-          <div class="t-step-line"></div>
-          <div class="t-step-dot"></div>
-          <div class="t-step-lbl">Ready</div>
+        <div class="t-tl-step" id="step2">
+          <div class="t-tl-col">
+            <div class="t-tl-dot" id="dot2">3</div>
+            <div class="t-tl-line"></div>
+          </div>
+          <div class="t-tl-right">
+            <div class="t-tl-name">Ready to collect</div>
+            <div class="t-tl-sub">Collect your food at the counter</div>
+          </div>
         </div>
-        <div class="t-step" id="step3">
-          <div class="t-step-dot"></div>
-          <div class="t-step-lbl">Collected</div>
+        <div class="t-tl-step" id="step3">
+          <div class="t-tl-col">
+            <div class="t-tl-dot" id="dot3">✓</div>
+          </div>
+          <div class="t-tl-right">
+            <div class="t-tl-name">Collected</div>
+            <div class="t-tl-sub">Enjoy your meal!</div>
+          </div>
         </div>
       </div>
 
       <div class="t-placed" id="placedAt"></div>
+      <div class="t-last-updated" id="lastUpdated" hidden>
+        <span class="t-refresh-dot"></span>
+        <span id="lastUpdatedText">Just updated</span>
+      </div>
     </div>
 
     <!-- Order code -->
     <div class="t-code-card" id="codeCard">
       <div class="t-code-label">Order code</div>
-      <div class="t-code" id="orderCode">----</div>
+      <div class="t-code-wrap" onclick="copyPickupCode()" title="Tap to copy" style="cursor:pointer;display:inline-flex;align-items:center;gap:10px">
+        <div class="t-code" id="orderCode">----</div>
+        <span id="codeCopyHint" style="font-size:11px;color:var(--tx-3);font-weight:600">tap to copy</span>
+      </div>
       <div class="t-table-row" id="tableNumberRow" hidden>Table <strong></strong></div>
       <div class="t-ready-msg" id="readyText">This screen updates automatically.</div>
     </div>
@@ -240,7 +366,10 @@
 
     <!-- Items + total -->
     <div class="t-card" id="itemsCard">
-      <div class="t-card-title">Your order</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;margin-bottom:14px" onclick="toggleItems()">
+        <div class="t-card-title" style="margin-bottom:0">Your order</div>
+        <button style="background:var(--bg-3);border:1px solid var(--line);border-radius:8px;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-size:14px;color:var(--tx-2)" id="itemsToggleBtn">−</button>
+      </div>
       <div id="items"></div>
       <div class="t-total-row">
         <span class="t-total-label">Total</span>
@@ -320,22 +449,77 @@
     }
 
     function updateSteps(status) {
-      // 4 steps: PENDING(0) → PREPARING(1) → READY(2) → COMPLETED(3)
-      const idx = statuses.indexOf(status);
-      if (status === "CANCELLED") {
-        // dim all
-        [0,1,2,3].forEach(i => {
-          const el = document.getElementById(`step${i}`);
-          el.classList.remove("done","now");
-        });
-        return;
-      }
+      const idx = ["PENDING","PREPARING","READY","COMPLETED"].indexOf(status);
       [0,1,2,3].forEach(i => {
         const el = document.getElementById(`step${i}`);
-        el.classList.remove("done","now");
-        if (i < idx) el.classList.add("done");
+        el.classList.remove("done","now","cancelled");
+        if (status === "CANCELLED") { el.classList.add("cancelled"); return; }
+        if (i < idx) { el.classList.add("done"); document.getElementById(`dot${i}`).textContent = "✓"; }
         else if (i === idx) el.classList.add("now");
       });
+      // Celebration glow for READY
+      const hero = document.getElementById("heroCard");
+      if (hero) hero.classList.toggle("ready-glow", status === "READY" || status === "COMPLETED");
+    }
+
+    let _itemsOpen = true;
+    function toggleItems() {
+      _itemsOpen = !_itemsOpen;
+      document.getElementById("items").style.display = _itemsOpen ? "" : "none";
+      document.getElementById("itemsToggleBtn").textContent = _itemsOpen ? "−" : "+";
+    }
+
+    function copyPickupCode() {
+      const code = document.getElementById("orderCode")?.textContent;
+      if (!code || code === "----") return;
+      navigator.clipboard?.writeText(code).then(() => {
+        const hint = document.getElementById("codeCopyHint");
+        if (hint) { hint.textContent = "Copied!"; hint.style.color = "var(--success)"; setTimeout(() => { hint.textContent = "tap to copy"; hint.style.color = ""; }, 2000); }
+      }).catch(() => tToast("Code: " + code));
+    }
+
+    function shareOrder() {
+      const url = window.location.href;
+      if (navigator.share) {
+        navigator.share({ title: "Track my Avenzo order", url }).catch(() => {});
+      } else {
+        navigator.clipboard?.writeText(url).then(() => tToast("Tracking link copied!")).catch(() => tToast(url));
+      }
+    }
+
+    let _countdownTimer = null;
+
+    function startCountdown(readyAt) {
+      stopCountdown();
+      const subEl = document.getElementById("prepSub");
+      if (!subEl) return;
+      function tick() {
+        const diff = Math.max(0, Math.round((new Date(readyAt) - Date.now()) / 1000));
+        if (diff === 0) { subEl.textContent = "Ready very soon!"; stopCountdown(); return; }
+        const m = Math.floor(diff / 60), s = diff % 60;
+        subEl.textContent = `Ready in ${m > 0 ? m + "m " : ""}${s}s`;
+      }
+      tick();
+      _countdownTimer = setInterval(tick, 1000);
+    }
+
+    function stopCountdown() {
+      if (_countdownTimer) { clearInterval(_countdownTimer); _countdownTimer = null; }
+    }
+
+    let _lastUpdatedTimer = null;
+    let _lastUpdatedAt = null;
+
+    function startLastUpdatedCounter() {
+      _lastUpdatedAt = Date.now();
+      const el = document.getElementById("lastUpdated");
+      const txt = document.getElementById("lastUpdatedText");
+      if (el) el.hidden = false;
+      if (_lastUpdatedTimer) clearInterval(_lastUpdatedTimer);
+      _lastUpdatedTimer = setInterval(() => {
+        const secs = Math.round((Date.now() - _lastUpdatedAt) / 1000);
+        if (txt) txt.textContent = secs < 5 ? "Just updated" : `Updated ${secs}s ago`;
+      }, 5000);
     }
 
     async function loadStatus() {
@@ -359,6 +543,12 @@
         updateSteps(data.status);
 
         document.getElementById("orderCode").textContent = data.pickupCode || "----";
+        const codeCard = document.getElementById("codeCard");
+        if (codeCard) {
+          codeCard.className = "t-code-card";
+          if (data.status === "READY" || data.status === "COMPLETED") codeCard.classList.add("status-ready");
+          else if (data.status === "PREPARING") codeCard.classList.add("status-preparing");
+        }
         const tableEl = document.getElementById("tableNumberRow");
         if (data.tableNumber) {
           tableEl.querySelector("strong").textContent = data.tableNumber;
@@ -389,6 +579,12 @@
           readyEl.textContent = "The restaurant has received your order.";
         }
 
+        if (data.status === "PREPARING" && data.readyAt) {
+          startCountdown(data.readyAt);
+        } else {
+          stopCountdown();
+        }
+
         let total = 0;
         document.getElementById("items").innerHTML = (data.items || []).map(item => {
           const line = item.priceAtOrder * item.quantity;
@@ -408,6 +604,7 @@
         renderTrackingActions(data);
         renderRatingSection(data);
         maybeInitCustomerBar();
+        startLastUpdatedCounter();
 
         if (["COMPLETED","CANCELLED","PAYMENT_FAILED"].includes(data.status) || data.paymentStatus === "PAYMENT_FAILED") {
           stopStatusPolling();
@@ -555,6 +752,14 @@
         parts.push(`<button class="t-btn t-btn-danger" onclick="cancelOrder()">Cancel order</button>`);
       }
 
+      // Add share button if we have a tracking token
+      if (trackingToken) {
+        parts.push(`<button class="t-btn t-btn-ghost" onclick="shareOrder()" style="flex:0 0 auto">
+    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+    Share
+  </button>`);
+      }
+
       target.innerHTML = parts.join("");
     }
 
@@ -677,6 +882,7 @@
       if (!statusPollingTimer) return;
       clearInterval(statusPollingTimer);
       statusPollingTimer = null;
+      stopCountdown();
     }
 
     loadStatus();
