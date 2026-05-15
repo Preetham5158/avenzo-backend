@@ -249,7 +249,7 @@
     }
 
     .m-ft-btn {
-      min-height: 34px;
+      min-height: 42px;
       padding: 0 13px;
       border-radius: 99px;
       background: transparent;
@@ -350,7 +350,7 @@
     .m-section-head {
       position: sticky;
       top: var(--rail-top);
-      z-index: 20;
+      z-index: 22;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -479,10 +479,11 @@
     .m-veg-dot,
     .m-nv-dot {
       display: inline-block;
-      width: 8px;
-      height: 8px;
+      width: 10px;
+      height: 10px;
       border-radius: 50%;
       flex-shrink: 0;
+      margin: 0 2px;
     }
     .m-veg-dot { background: var(--success); }
     .m-nv-dot  { background: var(--brand); }
@@ -908,7 +909,7 @@
     .toast {
       position: fixed;
       left: 50%;
-      bottom: 96px;
+      bottom: calc(80px + env(safe-area-inset-bottom,0));
       z-index: 999;
       transform: translateX(-50%) translateY(10px);
       background: var(--bg-4);
@@ -1014,12 +1015,12 @@
         color: var(--brand);
       }
       .m-cat-btn-emoji {
-        font-size: 18px;
+        font-size: 16px;
         line-height: 1;
         display: block;
       }
       .m-cat-btn-name { font-size: 9px; white-space: normal; word-break: break-word; line-height: 1.2; }
-      .m-cat-btn-ct { font-size: 8px; margin-top: 1px; opacity: 0.7; }
+      .m-cat-btn-ct { font-size: 8px; margin-top: 1px; opacity: 0.7; display: block; overflow: visible; }
 
       .m-section-head { top: calc(var(--cust-bar-h) + var(--dine-h) + var(--search-h)); }
 
@@ -1037,7 +1038,7 @@
       .m-cart-inner { padding: 0 14px; }
       .m-order-btn { flex: 1; min-width: 0; }
       .m-dine-name { font-size: 16px; }
-      .m-theme-btn { right: 14px; bottom: 88px; }
+      .m-theme-btn { right: 14px; bottom: calc(76px + env(safe-area-inset-bottom,0)); }
     }
 
     @media (min-width: 860px) {
@@ -1084,6 +1085,7 @@
     .m-qv-img {
       width: 100%;
       height: 220px;
+      max-height: 38vh;
       object-fit: cover;
       display: block;
     }
@@ -1165,20 +1167,20 @@
 
     /* ── CART BAR SAFE AREA ── */
     .m-cart-inner { padding-bottom: env(safe-area-inset-bottom, 0); }
+    @media(max-width:859px){
+      .m-cart-bar { bottom: 0; }
+      .m-cart-bar.has-items ~ .c-bnav-menu { display: none; }
+    }
 
-    /* ── SEARCH / FILTER RESPONSIVENESS ── */
+    /* ── SEARCH / FILTER + MODAL RESPONSIVENESS AT 360px ── */
     @media (max-width: 480px) {
       .m-food-filter { gap: 2px; }
       .m-ft-btn { padding: 0 8px; font-size: 11px; min-height: 30px; }
       .m-search-bar { padding: 8px 14px; }
-    }
-
-    /* ── MODAL RESPONSIVENESS AT 360px ── */
-    @media (max-width: 480px) {
       .m-modal { max-height: 95dvh; }
-      .m-modal-body { padding: 12px 16px; }
-      .m-modal-actions { padding: 12px 16px 16px; flex-direction: column; }
-      .m-modal-actions .m-btn { flex: none; width: 100%; }
+      .m-modal-body { padding: 12px 14px; }
+      .m-modal-actions { padding: 10px 14px 16px; flex-wrap: wrap; }
+      .m-modal-actions .m-btn { min-width: 100%; flex: none; }
     }
 
     /* ── CARD RESPONSIVENESS AT 360px ── */
@@ -1191,6 +1193,9 @@
 
     /* ── RESULT COUNT ── */
     .m-result-count { font-size: 12px; color: var(--tx-3); padding: 6px 0 2px; font-weight: 600; }
+
+    /* ── FOCUS VISIBLE ── */
+    button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
   </style>
 </head>
 <body>
@@ -1306,7 +1311,7 @@
         </div>
         <div class="m-field" id="phoneField">
           <label for="phone">Mobile number</label>
-          <input id="phone" class="m-input" inputmode="tel" placeholder="10 digit mobile number">
+          <input id="phone" class="m-input" inputmode="tel" placeholder="+91 98765 43210">
           <div class="m-help" id="phoneHelp">We use this number to help the restaurant identify your order and send updates.</div>
         </div>
         <div id="paymentMethodField" hidden></div>
@@ -1734,8 +1739,8 @@
             <div class="m-price-row">
               <span class="m-price">${money(item.price)}</span>
               <span class="${dotClass}"></span>
-              ${item.isPopular ? `<span class="m-badge m-badge-pop">Popular</span>` : ""}
-              ${disabled ? `<span class="m-badge m-badge-oos">Out of stock</span>` : ""}
+              ${item.isPopular ? `<span class="m-badge m-badge-pop">🔥 Popular</span>` : ""}
+              ${disabled ? `<span class="m-badge m-badge-oos">Sold out</span>` : ""}
             </div>
           </div>
           <button class="m-add-btn" id="add-${key}" ${disabled ? "disabled" : ""} onclick="changeQty('${key}', 1)">Add</button>
@@ -2168,7 +2173,7 @@
       document.getElementById("qvPrice").textContent = money(item.price);
       document.getElementById("qvDesc").textContent = item.description || "Freshly prepared by the restaurant.";
       const dot = item.foodType === "NON_VEG" ? `<span class="m-nv-dot"></span>` : `<span class="m-veg-dot"></span>`;
-      document.getElementById("qvMeta").innerHTML = `${dot}${item.isPopular ? `<span class="m-badge m-badge-pop">Popular</span>` : ""}${!item.isAvailable ? `<span class="m-badge m-badge-oos">Out of stock</span>` : ""}`;
+      document.getElementById("qvMeta").innerHTML = `${dot}${item.isPopular ? `<span class="m-badge m-badge-pop">🔥 Popular</span>` : ""}${!item.isAvailable ? `<span class="m-badge m-badge-oos">Sold out</span>` : ""}`;
       renderQvControl(key, item.isAvailable);
       document.getElementById("qvBackdrop").classList.add("open");
       document.getElementById("qvDrawer").classList.add("open");

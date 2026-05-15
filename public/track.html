@@ -97,7 +97,7 @@
       flex-shrink: 0;
     }
     .t-tl-line {
-      width: 2px;
+      width: 3px;
       flex: 1;
       min-height: 24px;
       background: var(--bg-4);
@@ -174,6 +174,7 @@
 
     /* ── ORDER CODE CARD ── */
     .t-code-card{padding:22px;background:var(--bg-2);border:1px solid var(--line);border-radius:var(--r);margin-bottom:16px;text-align:center}
+    .t-code-wrap{display:flex;flex-direction:column;align-items:center}
     .t-code-card.status-ready { border-color: rgba(39,201,107,0.3); background: rgba(39,201,107,0.05); }
     .t-code-card.status-preparing { border-color: rgba(232,165,58,0.3); background: rgba(232,165,58,0.04); }
     .t-code { transition: color 0.3s; }
@@ -250,7 +251,7 @@
     @keyframes tsk{0%{background-position:200% 0}100%{background-position:-200% 0}}
 
     /* ── TOAST ── */
-    .t-toast{position:fixed;left:50%;bottom:calc(var(--bn-h) + 24px);z-index:999;transform:translateX(-50%) translateY(10px);background:var(--bg-4);color:var(--tx);padding:9px 20px;border-radius:99px;font-size:13px;font-weight:600;border:1px solid var(--line);box-shadow:0 8px 32px rgba(0,0,0,.5);opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;white-space:nowrap}
+    .t-toast{position:fixed;left:50%;bottom:calc(var(--bn-h) + 24px + env(safe-area-inset-bottom,0));z-index:999;transform:translateX(-50%) translateY(10px);background:var(--bg-4);color:var(--tx);padding:9px 20px;border-radius:99px;font-size:13px;font-weight:600;border:1px solid var(--line);box-shadow:0 8px 32px rgba(0,0,0,.5);opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;white-space:nowrap}
     .t-toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
     /* ── BOTTOM NAV ── */
@@ -265,6 +266,7 @@
       .t-actions{flex-wrap:nowrap}
       .t-btn{flex:0 0 auto}
     }
+    button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
   </style>
 </head>
 <body>
@@ -365,7 +367,7 @@
     <!-- Pickup code -->
     <div class="t-code-card" id="codeCard">
       <div class="t-code-label">Pickup code</div>
-      <div class="t-code-wrap" onclick="copyPickupCode()" title="Tap to copy" style="cursor:pointer;display:inline-block">
+      <div class="t-code-wrap" onclick="copyPickupCode()" title="Tap to copy" style="cursor:pointer">
         <div class="t-code" id="orderCode">----</div>
       </div>
       <div id="codeCopyHint" onclick="copyPickupCode()" style="font-size:11px;color:var(--tx-3);font-weight:600;margin-top:6px;display:flex;align-items:center;justify-content:center;gap:5px;cursor:pointer">
