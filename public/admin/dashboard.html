@@ -1,445 +1,396 @@
 <!DOCTYPE html>
 <html>
-
 <head>
-  <title>Avenzo Admin</title>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="theme-color" content="#ff6b16">
+  <title>Dashboard — Avenzo</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#E8401C">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/assets/app.css">
+  <link rel="stylesheet" href="/assets/admin.css">
   <style>
-    .workspace-hero {
-      position: sticky;
-      top: var(--topbar-height);
-      z-index: 12;
-      margin-bottom: 18px;
-    }
-
-    .metric-card h3 {
-      font-size: 30px;
-      margin-bottom: 8px;
-    }
-
-    .restaurant-card {
-      min-height: 230px;
+    .dash-ops-grid {
       display: grid;
-      align-content: space-between;
-      gap: 16px;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .ops-card {
+      background: var(--bg-2);
+      border: 1px solid var(--line);
+      border-radius: var(--r);
+      padding: 18px 20px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      position: relative;
       overflow: hidden;
     }
-
-    .restaurant-card::before {
+    .ops-card::before {
       content: "";
-      height: 5px;
-      margin: -16px -16px 0;
-      background: linear-gradient(90deg, var(--brand), var(--brand-2));
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
     }
+    .ops-card-orders::before { background: var(--brand); }
+    .ops-card-revenue::before { background: var(--success); }
+    .ops-card-active::before { background: var(--warn); }
+    .ops-card-stock::before { background: var(--danger); }
+    .ops-card-stock-ok::before { background: var(--success); }
+    .ops-card-label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--tx-2);
+    }
+    .ops-card-value {
+      font-size: 32px;
+      font-weight: 800;
+      color: var(--tx);
+      line-height: 1;
+    }
+    .ops-card-sub {
+      font-size: 12px;
+      color: var(--tx-2);
+    }
+    .ops-card-action {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--brand);
+      text-decoration: none;
+      margin-top: 2px;
+      display: inline-block;
+    }
+    .ops-card-action:hover { text-decoration: underline; }
 
-    .restaurant-actions {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+    .dash-section-label {
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--tx-2);
+      margin: 24px 0 12px;
+      display: flex;
+      align-items: center;
       gap: 8px;
     }
-
-    @media (max-width: 760px) {
-      .workspace-hero {
-        top: var(--topbar-height);
-      }
-
-      .restaurant-actions {
-        grid-template-columns: 1fr 1fr;
-      }
+    .dash-section-label::after {
+      content: "";
+      flex: 1;
+      height: 1px;
+      background: var(--line);
     }
 
-    /* Dock clearance so last card isn't hidden behind the nav pill */
-    .page { padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px)); }
-
-    @media (max-width: 400px) {
-      .restaurant-actions {
-        grid-template-columns: 1fr;
-      }
-
-      .restaurant-actions .btn {
-        min-height: 40px;
-        font-size: 13px;
-      }
+    @media (max-width: 900px) {
+      .dash-ops-grid { grid-template-columns: repeat(2, 1fr); }
     }
-
     @media (max-width: 480px) {
-      .metric-card h3 { font-size: 24px; }
+      .dash-ops-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
+      .ops-card { padding: 14px 14px 12px; }
+      .ops-card-value { font-size: 26px; }
     }
   </style>
 </head>
-
 <body>
-  <div class="shell">
-    <header class="topbar">
-      <div class="topbar-inner">
-        <div class="brand">
-          <img src="/logo.png" alt="Avenzo">
-          <span>AVENZO</span>
+<div class="admin-shell">
+  <header class="admin-topbar">
+    <a href="/admin/dashboard.html" class="admin-brand">
+      <img src="/logo.png" alt="Avenzo">
+      <span class="admin-brand-name">AVENZO</span>
+    </a>
+    <span class="admin-brand-sep"></span>
+    <span class="admin-context" id="adminContext">Dashboard</span>
+    <div class="admin-topbar-right">
+      <div id="accountMenu"></div>
+    </div>
+  </header>
+  <nav class="admin-sidebar" id="adminSidebar"></nav>
+  <main class="admin-main">
+    <div class="admin-page">
+
+      <div class="admin-ph">
+        <div class="admin-ph-left">
+          <div class="admin-eyebrow">Restaurant hub</div>
+          <h1 class="admin-ph-title" id="pageTitle">Dashboard</h1>
+          <p class="admin-ph-sub" id="pageRole">Loading your workspace...</p>
         </div>
-        <div id="accountMenu"></div>
+        <div class="admin-ph-actions">
+          <button id="leadsBtn" class="btn btn-ghost hidden" onclick="window.location.href='/admin/leads.html'">
+            Partner leads <span id="leadsBadge" class="pill pill-danger hidden"></span>
+          </button>
+          <button id="createBtn" class="btn btn-primary hidden" onclick="window.location.href='/admin/restaurant-edit.html'">+ Add restaurant</button>
+        </div>
       </div>
-    </header>
 
-    <main class="page">
-      <section class="hero-panel workspace-hero">
-        <div class="row-between">
-          <div>
-            <div class="eyebrow">Restaurant hub</div>
-            <h1 id="pageTitle">Restaurants</h1>
-            <p id="roleText" class="muted">Getting your restaurants ready...</p>
-          </div>
-          <div class="row row-wrap">
-            <button id="leadsBtn" class="btn btn-ghost" onclick="openLeads()" hidden>Restaurant leads <span id="leadsBadge" class="pill pill-danger" hidden>0</span></button>
-            <button id="createBtn" class="btn btn-primary" onclick="openRestaurantModal()" hidden>Add restaurant</button>
-          </div>
+      <div id="greetingCard"></div>
+      <div id="alertBanner"></div>
+
+      <!-- Live operations metrics -->
+      <div class="dash-section-label">Today's activity</div>
+      <div class="dash-ops-grid" id="opsStats">
+        <div class="ops-card ops-card-orders">
+          <div class="ops-card-label">Orders today</div>
+          <div class="ops-card-value ops-skeleton" style="height:38px;border-radius:6px;background:var(--bg-3)"></div>
+          <div class="ops-card-sub">All restaurants</div>
         </div>
-      </section>
-
-      <section class="grid grid-3" id="stats"></section>
-      <section class="grid grid-3 mt-16" id="list"></section>
-    </main>
-  </div>
-
-  <div class="modal-backdrop" id="restaurantModal">
-    <form class="modal" onsubmit="saveRestaurant(event)">
-      <div class="modal-head row-between">
-        <div>
-          <h3 id="restaurantModalTitle" class="section-title">Create restaurant</h3>
-          <div class="muted">Set up the restaurant profile and service status.</div>
+        <div class="ops-card ops-card-revenue">
+          <div class="ops-card-label">Revenue today</div>
+          <div class="ops-card-value ops-skeleton" style="height:38px;border-radius:6px;background:var(--bg-3)"></div>
+          <div class="ops-card-sub">Completed orders</div>
         </div>
-        <button type="button" class="btn btn-ghost icon-btn" onclick="closeRestaurantModal()">X</button>
+        <div class="ops-card ops-card-active">
+          <div class="ops-card-label">Waiting now</div>
+          <div class="ops-card-value ops-skeleton" style="height:38px;border-radius:6px;background:var(--bg-3)"></div>
+          <div class="ops-card-sub">Pending &amp; preparing</div>
+        </div>
+        <div class="ops-card ops-card-stock">
+          <div class="ops-card-label">Out of stock</div>
+          <div class="ops-card-value ops-skeleton" style="height:38px;border-radius:6px;background:var(--bg-3)"></div>
+          <div class="ops-card-sub">Active items hidden</div>
+        </div>
       </div>
-      <div class="modal-body stack">
-        <input id="restaurantId" type="hidden">
-        <div class="field">
-          <label for="restaurantName">Restaurant name</label>
-          <input id="restaurantName" class="input" required placeholder="Avenzo Cafe">
-        </div>
-        <div class="field">
-          <label for="restaurantOwnerEmail">Owner email</label>
-          <input id="restaurantOwnerEmail" class="input" type="email" placeholder="owner@example.com">
-        </div>
-        <div class="field">
-          <label for="restaurantAddress">Address</label>
-          <input id="restaurantAddress" class="input" placeholder="Street, area, Bengaluru">
-        </div>
-        <div class="grid grid-2">
-          <div class="field">
-            <label for="restaurantLocality">Locality</label>
-            <input id="restaurantLocality" class="input" placeholder="Jayanagar">
-          </div>
-          <div class="field">
-            <label for="restaurantFoodType">Restaurant food category</label>
-            <select id="restaurantFoodType" class="select">
-              <option value="PURE_VEG">Pure veg</option>
-              <option value="NON_VEG">Non-veg</option>
-              <option value="BOTH">Veg & non-veg</option>
-            </select>
-          </div>
-        </div>
-        <div class="grid grid-2">
-          <div class="field">
-            <label for="restaurantPickupNote">Guest note</label>
-            <input id="restaurantPickupNote" class="input" placeholder="Example: Please stay near the dining area after ordering">
-          </div>
-          <label class="row card card-pad cursor-pointer">
-            <input id="restaurantActive" type="checkbox" checked>
-            <span>Service active</span>
-          </label>
-        </div>
-        <div class="grid grid-2">
-          <div class="field">
-            <label for="subscriptionStatus">Subscription</label>
-            <select id="subscriptionStatus" class="select">
-              <option value="ACTIVE">Active</option>
-              <option value="TRIALING">Trialing</option>
-              <option value="EXPIRED">Expired</option>
-              <option value="SUSPENDED">Paused</option>
-            </select>
-          </div>
-          <div class="field">
-            <label for="subscriptionEndsAt">Subscription ends</label>
-            <input id="subscriptionEndsAt" class="input" type="date">
-          </div>
-        </div>
-        <button type="button" class="btn btn-soft" onclick="renewSubscription30Days()">Renew 30 days</button>
+
+      <!-- Platform health metrics -->
+      <div class="dash-section-label">Platform overview</div>
+      <div class="stat-grid" id="stats"></div>
+
+      <div class="dash-section-label">Restaurants</div>
+      <div id="list"></div>
+
+    </div>
+  </main>
+</div>
+<nav class="admin-bnav" id="adminBnav"></nav>
+
+<script src="/assets/app.js"></script>
+<script>
+let canCreateRestaurant = false;
+let canEditRestaurants = false;
+let currentUser = null;
+let restaurantCache = [];
+
+async function loadDashboard() {
+  try {
+    document.getElementById("stats").innerHTML = skeletonCards(4);
+    document.getElementById("list").innerHTML = skeletonCards(3);
+    const data = await request("/restaurants");
+    const restaurants = data.restaurants || [];
+    canCreateRestaurant = !!data.canCreateRestaurant;
+    canEditRestaurants = !!data.canEditRestaurants;
+    currentUser = data.user || currentUser;
+    restaurantCache = restaurants;
+
+    const roleLabel = canCreateRestaurant ? "Full access" : currentUser?.role === "EMPLOYEE" ? "Service view" : "Owner view";
+    document.getElementById("adminContext").textContent = canCreateRestaurant ? "All Restaurants" : "Your Workspace";
+    document.getElementById("pageTitle").textContent = canCreateRestaurant ? "All Restaurants" : "Your Restaurants";
+    document.getElementById("pageRole").textContent = canCreateRestaurant
+      ? "Manage every restaurant on the platform from this hub."
+      : "Showing restaurants assigned to your account.";
+
+    if (canCreateRestaurant) {
+      document.getElementById("leadsBtn").classList.remove("hidden");
+      document.getElementById("createBtn").classList.remove("hidden");
+      loadLeadBadge();
+    }
+
+    renderGreeting(currentUser, roleLabel);
+    renderAlerts(restaurants);
+    renderPlatformStats(restaurants);
+    renderRestaurants(restaurants);
+  } catch (err) {
+    document.getElementById("list").innerHTML = `<div class="empty-state"><div class="empty-state-icon">🏪</div><div class="empty-state-title">Could not load restaurants</div><div class="empty-state-sub">${escapeHtml(err.message || "No access")}</div></div>`;
+    toast(err.message);
+  }
+}
+
+async function loadOpsStats() {
+  try {
+    const data = await request("/admin/dashboard/stats");
+    const stockClass = data.outOfStock > 0 ? "ops-card-stock" : "ops-card-stock-ok";
+    document.getElementById("opsStats").innerHTML = `
+      <div class="ops-card ops-card-orders">
+        <div class="ops-card-label">Orders today</div>
+        <div class="ops-card-value">${data.ordersToday}</div>
+        <div class="ops-card-sub">Across all restaurants</div>
       </div>
-      <div class="modal-actions">
-        <button type="button" class="btn btn-ghost" onclick="closeRestaurantModal()">Cancel</button>
-        <button id="saveRestaurantBtn" class="btn btn-primary" type="submit">Save</button>
+      <div class="ops-card ops-card-revenue">
+        <div class="ops-card-label">Revenue today</div>
+        <div class="ops-card-value">${money(data.revenueToday)}</div>
+        <div class="ops-card-sub">From completed orders</div>
       </div>
-    </form>
-  </div>
+      <div class="ops-card ops-card-active">
+        <div class="ops-card-label">Waiting now</div>
+        <div class="ops-card-value">${data.activeOrders}</div>
+        <div class="ops-card-sub">Pending &amp; preparing</div>
+        ${data.activeOrders > 0 ? `<a class="ops-card-action" href="/admin/orders.html">View orders →</a>` : ""}
+      </div>
+      <div class="ops-card ${stockClass}">
+        <div class="ops-card-label">Out of stock</div>
+        <div class="ops-card-value">${data.outOfStock}</div>
+        <div class="ops-card-sub">${data.outOfStock > 0 ? "Items hidden from menu" : "All items in stock"}</div>
+        ${data.outOfStock > 0 ? `<a class="ops-card-action" href="/admin/menu.html">Update stock →</a>` : ""}
+      </div>
+    `;
+  } catch (err) {
+    document.getElementById("opsStats").innerHTML = `<div class="ops-card" style="grid-column:1/-1"><div class="ops-card-sub">Could not load live stats — ${escapeHtml(err.message)}</div></div>`;
+  }
+}
 
-  <nav class="admin-dock">
-    <a class="active" href="#">Home</a>
-    <a href="/admin/leads.html" id="dockLeadsLink" hidden>Leads <span id="dockLeadsBadge" class="pill pill-danger" hidden></span></a>
-  </nav>
+function renderGreeting(user, roleLabel) {
+  const displayName = user?.name || user?.email || "there";
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
+  document.getElementById("greetingCard").innerHTML = `
+    <div class="greeting-card">
+      <div class="greeting-name">${escapeHtml(greeting)}, ${escapeHtml(displayName)}</div>
+      <div class="greeting-sub">Here's what's happening across your restaurants today.</div>
+      <span class="greeting-role">${escapeHtml(roleLabel)}</span>
+    </div>
+  `;
+}
 
-  <script src="/assets/app.js"></script>
-  <script>
-    let canCreateRestaurant = false;
-    let canEditRestaurants = false;
-    let currentUser = null;
-    let restaurantCache = [];
+function renderAlerts(restaurants) {
+  const expired   = restaurants.filter(r => r.subscriptionStatus === "EXPIRED" || r.subscriptionStatus === "SUSPENDED");
+  const expiring  = restaurants.filter(r => {
+    if (!r.subscriptionEndsAt) return false;
+    const daysLeft = Math.ceil((new Date(r.subscriptionEndsAt) - Date.now()) / 86400000);
+    return daysLeft >= 0 && daysLeft <= 7 && r.subscriptionStatus === "ACTIVE";
+  });
+  let html = "";
+  if (expired.length) {
+    html += `<div class="alert-card alert-card-danger"><span class="alert-icon">⚠️</span><span>${expired.length} restaurant${expired.length > 1 ? "s" : ""} paused or expired — subscription renewal needed.</span></div>`;
+  }
+  if (expiring.length) {
+    html += `<div class="alert-card alert-card-warn"><span class="alert-icon">⏳</span><span>${expiring.length} subscription${expiring.length > 1 ? "s" : ""} expiring within 7 days.</span></div>`;
+  }
+  document.getElementById("alertBanner").innerHTML = html;
+}
 
-    async function loadRestaurants() {
-      try {
-        document.getElementById("stats").innerHTML = skeletonCards(3);
-        document.getElementById("list").innerHTML = skeletonCards(6);
-        const data = await request("/restaurants");
-        const restaurants = data.restaurants || [];
-        canCreateRestaurant = !!data.canCreateRestaurant;
-        canEditRestaurants = !!data.canEditRestaurants;
-        currentUser = data.user || null;
-        restaurantCache = restaurants;
+function renderPlatformStats(restaurants) {
+  const active  = restaurants.filter(r => r.isActive && r.subscriptionStatus !== "EXPIRED" && r.subscriptionStatus !== "SUSPENDED").length;
+  const trial   = restaurants.filter(r => r.subscriptionStatus === "TRIALING").length;
+  const issues  = restaurants.filter(r => !r.isActive || r.subscriptionStatus === "EXPIRED" || r.subscriptionStatus === "SUSPENDED").length;
+  document.getElementById("stats").innerHTML = `
+    <div class="stat-card stat-top-brand">
+      <div class="stat-card-label">Total restaurants</div>
+      <div class="stat-card-value">${restaurants.length}</div>
+      <span class="pill pill-default">Assigned to you</span>
+    </div>
+    <div class="stat-card stat-top-ready">
+      <div class="stat-card-label">Accepting orders</div>
+      <div class="stat-card-value">${active}</div>
+      <span class="pill pill-success">Live now</span>
+    </div>
+    <div class="stat-card stat-top-warn">
+      <div class="stat-card-label">On trial</div>
+      <div class="stat-card-value">${trial}</div>
+      <span class="pill pill-warn">Trial period</span>
+    </div>
+    <div class="stat-card ${issues > 0 ? "stat-top-danger" : "stat-top-ready"}">
+      <div class="stat-card-label">Needs attention</div>
+      <div class="stat-card-value">${issues}</div>
+      <span class="pill ${issues > 0 ? "pill-danger" : "pill-success"}">${issues > 0 ? "Action needed" : "All good"}</span>
+    </div>
+  `;
+}
 
-        document.getElementById("pageTitle").textContent = canCreateRestaurant ? "All Restaurants" : "Your Restaurants";
-        document.getElementById("roleText").textContent = canCreateRestaurant
-          ? "You can guide every restaurant from this hub."
-          : "Only restaurants assigned to you are shown here.";
-        document.getElementById("createBtn").hidden = !canCreateRestaurant;
-        document.getElementById("createBtn").style.display = canCreateRestaurant ? "inline-flex" : "none";
-        document.getElementById("leadsBtn").hidden = !canCreateRestaurant;
-        document.getElementById("leadsBtn").style.display = canCreateRestaurant ? "inline-flex" : "none";
-        if (canCreateRestaurant) loadLeadBadge();
+function renderRestaurants(restaurants) {
+  const container = document.getElementById("list");
+  if (!restaurants.length) {
+    container.innerHTML = `<div class="empty-state"><div class="empty-state-icon">🏪</div><div class="empty-state-title">No restaurants yet</div><div class="empty-state-sub">No restaurants are assigned to your account yet.</div></div>`;
+    return;
+  }
 
-        renderStats(restaurants, data.user);
-        renderRestaurants(restaurants);
-      } catch (err) {
-        document.getElementById("list").innerHTML = `<div class="empty">${escapeHtml(err.message || "No access")}</div>`;
-        toast(err.message);
+  const grid = document.createElement("div");
+  grid.className = "g3 mt-4";
+  grid.innerHTML = restaurants.map(r => {
+    const subLabel = { ACTIVE: "Active", TRIALING: "Trial", EXPIRED: "Expired", SUSPENDED: "Paused" }[r.subscriptionStatus] || "Unknown";
+    const subPill  = { ACTIVE: "pill-success", TRIALING: "pill-warn", EXPIRED: "pill-danger", SUSPENDED: "pill-danger" }[r.subscriptionStatus] || "pill-default";
+    const isLive   = r.isActive && r.subscriptionStatus !== "EXPIRED" && r.subscriptionStatus !== "SUSPENDED";
+    const svcPill  = isLive ? "pill-success" : "pill-danger";
+    const svcLabel = !r.isActive ? "Paused" : r.subscriptionStatus === "SUSPENDED" ? "Suspended" : r.subscriptionStatus === "EXPIRED" ? "Expired" : "Live";
+    const foodLabel = { PURE_VEG: "Pure veg", NON_VEG: "Non-veg", BOTH: "Veg & non-veg" }[r.foodType] || "";
+    const foodPill  = r.foodType === "PURE_VEG" ? "pill-success" : r.foodType === "NON_VEG" ? "pill-danger" : "pill-brand";
+    const initial   = (r.name || "R")[0].toUpperCase();
+    const avatarMod = !r.isActive ? " paused" : (!isLive ? " expired" : "");
+
+    let expiryHtml = "";
+    if (r.subscriptionEndsAt) {
+      const daysLeft = Math.ceil((new Date(r.subscriptionEndsAt) - Date.now()) / 86400000);
+      const expiryDate = new Date(r.subscriptionEndsAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+      if (daysLeft < 0) {
+        expiryHtml = `<div class="rest-card-expiry expired">Expired ${expiryDate}</div>`;
+      } else if (daysLeft <= 7) {
+        expiryHtml = `<div class="rest-card-expiry expiring">Expires in ${daysLeft} day${daysLeft !== 1 ? "s" : ""}</div>`;
+      } else {
+        expiryHtml = `<div class="rest-card-expiry">Renews ${expiryDate}</div>`;
       }
     }
 
-    function renderStats(restaurants, user) {
-      document.getElementById("stats").innerHTML = `
-        <div class="card card-pad metric-card">
-          <div class="muted">Signed in as</div>
-          <h3>${escapeHtml(user?.name || user?.email || "Avenzo user")}</h3>
-          <span class="pill pill-dark">${canCreateRestaurant ? "Full access" : "Restaurant access"}</span>
-        </div>
-        <div class="card card-pad metric-card">
-          <div class="muted">Restaurants</div>
-          <h3>${restaurants.length}</h3>
-          <span class="pill">Visible to you</span>
-        </div>
-        <div class="card card-pad metric-card">
-          <div class="muted">Access</div>
-          <h3>${canCreateRestaurant ? "All locations" : "Assigned locations"}</h3>
-          <span class="pill ${canCreateRestaurant ? "pill-success" : "pill-warning"}">${canCreateRestaurant ? "Company view" : user?.role === "EMPLOYEE" ? "Service view" : "Owner view"}</span>
-        </div>
+    const isEmployee = currentUser?.role === "EMPLOYEE";
+    let actions = "";
+    if (isEmployee) {
+      actions = `<button class="btn btn-primary" onclick="window.location.href='/restaurant/employee.html'">Kitchen view</button>`;
+    } else {
+      actions = `
+        <button class="btn btn-primary btn-sm" onclick="window.location.href='/admin/orders.html?restaurantId=${r.id}'">Orders</button>
+        <button class="btn btn-soft btn-sm" onclick="window.location.href='/admin/menu.html?restaurantId=${r.id}'">Menu</button>
+        ${canManageStaff(r) ? `<button class="btn btn-ghost btn-sm" onclick="window.location.href='/admin/staff.html?restaurantId=${r.id}'">Staff</button>` : ""}
+        ${canEditRestaurants ? `<button class="btn btn-ghost btn-sm" onclick="window.location.href='/admin/payments.html?restaurantId=${r.id}'">Payments</button>` : ""}
+        <button class="btn btn-ghost btn-sm" onclick="window.location.href='/qr.html?restaurantId=${r.id}'">QR</button>
+        ${canEditRestaurants ? `<button class="btn btn-ghost btn-sm" onclick="window.location.href='/admin/restaurant-edit.html?restaurantId=${r.id}'">Edit</button>` : ""}
       `;
     }
 
-    function renderRestaurants(restaurants) {
-      const container = document.getElementById("list");
-      if (!restaurants.length) {
-        container.innerHTML = `<div class="empty empty-full">No restaurants are assigned to your account yet.</div>`;
-        return;
-      }
-
-      container.innerHTML = restaurants.map(r => `
-        <article class="card card-pad restaurant-card">
-          <div class="row-between">
-            <div>
-              <h3 class="h3-tight">${escapeHtml(r.name)}</h3>
-              <div class="muted">${escapeHtml(r.address || r.locality || "Manage menu, dine-in orders, and scan cards")}</div>
-            </div>
-            <span class="pill ${servicePillClass(r)}">${serviceStatusLabel(r)}</span>
+    return `
+      <article class="rest-card">
+        <div class="rest-card-header">
+          <div class="rest-card-avatar${avatarMod}">${escapeHtml(initial)}</div>
+          <div class="rest-card-title">
+            <div class="rest-card-name" title="${escapeHtml(r.name)}">${escapeHtml(r.name)}</div>
+            <div class="rest-card-loc">${escapeHtml(r.address || r.locality || "No address set")}</div>
           </div>
-          <div class="row row-wrap">
-            <span class="pill ${r.subscriptionStatus === "ACTIVE" ? "pill-success" : r.subscriptionStatus === "TRIALING" ? "pill-warning" : "pill-danger"}">${subscriptionLabel(r.subscriptionStatus)}</span>
-            <span class="pill ${r.foodType === "NON_VEG" ? "pill-nonveg" : "pill-veg"}">${restaurantFoodTypeLabel(r.foodType)}</span>
-            ${r.owner?.email ? `<span class="pill">${escapeHtml(r.owner.email)}</span>` : ""}
+          <span class="pill ${svcPill}" style="flex-shrink:0">${svcLabel}</span>
+        </div>
+        <div class="rest-card-body">
+          <div class="rest-card-meta">
+            <span class="pill ${subPill}">${subLabel}</span>
+            <span class="pill ${foodPill}">${foodLabel}</span>
           </div>
-          <div class="restaurant-actions">
-            ${currentUser?.role === "EMPLOYEE" ? `
-              <button class="btn btn-dark" onclick="openOrders('${r.id}')">Kitchen view</button>
-              <button class="btn btn-ghost" onclick="openMenu('${r.id}')">View menu</button>
-            ` : `
-              <button class="btn btn-dark" onclick="openMenu('${r.id}')">Menu</button>
-              <button class="btn btn-soft" onclick="openOrders('${r.id}')">Orders</button>
-              <button class="btn btn-ghost" onclick="openQr('${r.id}')">Scan card</button>
-              ${canManageStaff(r) ? `<button class="btn btn-ghost" onclick="openStaff('${r.id}')">Staff</button>` : ""}
-              ${canEditRestaurants ? `<button class="btn btn-ghost" onclick="openPayments('${r.id}')">Payments</button>` : ""}
-              ${canEditRestaurants ? `<button class="btn btn-ghost" onclick='openRestaurantModal(${JSON.stringify(r.id)})'>Edit</button>` : ""}
-            `}
-          </div>
-        </article>
-      `).join("");
-    }
+          ${expiryHtml}
+          ${r.owner?.email && canEditRestaurants ? `<div class="rest-card-owner">Owner: ${escapeHtml(r.owner.email)}</div>` : ""}
+        </div>
+        <div class="rest-card-actions">${actions}</div>
+      </article>
+    `;
+  }).join("");
 
-    function subscriptionLabel(value) {
-      return {
-        ACTIVE: "Subscription active",
-        TRIALING: "Trial running",
-        EXPIRED: "Subscription expired",
-        SUSPENDED: "Service paused"
-      }[value] || "Subscription active";
-    }
+  container.innerHTML = "";
+  container.appendChild(grid);
+}
 
-    function isDateExpired(value) {
-      return value && new Date(value) < new Date();
-    }
+function canManageStaff(r) {
+  if (canCreateRestaurant) return true;
+  if (currentUser?.role === "RESTAURANT_OWNER" && r.ownerId === currentUser?.id) return true;
+  return false;
+}
 
-    function serviceStatusLabel(restaurant) {
-      if (!restaurant.isActive) return "Paused";
-      if (restaurant.subscriptionStatus === "SUSPENDED") return "Suspended";
-      if (restaurant.subscriptionStatus === "EXPIRED" || isDateExpired(restaurant.subscriptionEndsAt)) return "Expired";
-      return "Active";
-    }
+async function loadLeadBadge() {
+  try {
+    const data = await request("/admin/restaurant-leads/summary");
+    const count = data.unseenNewCount || 0;
+    const badge = document.getElementById("leadsBadge");
+    if (badge) { badge.textContent = count; badge.classList.toggle("hidden", count === 0); }
+  } catch {}
+}
 
-    function servicePillClass(restaurant) {
-      const label = serviceStatusLabel(restaurant);
-      if (label === "Active") return "pill-success";
-      if (label === "Paused") return "pill-warning";
-      return "pill-danger";
-    }
-
-    function dateInputValue(value) {
-      if (!value) return "";
-      return new Date(value).toISOString().slice(0, 10);
-    }
-
-    function canManageStaff(restaurant) {
-      return canCreateRestaurant || (currentUser?.role === "RESTAURANT_OWNER" && restaurant.owner?.id === currentUser.id);
-    }
-
-    function openRestaurantModal(id = "") {
-      if (id && !canEditRestaurants) {
-        toast("Only the Avenzo admin team can edit restaurant details.");
-        return;
-      }
-
-      if (!id && !canCreateRestaurant) {
-        toast("Only the Avenzo admin team can add a new restaurant.");
-        return;
-      }
-
-      const restaurant = restaurantCache.find(r => r.id === id);
-      document.getElementById("restaurantModalTitle").textContent = restaurant ? "Edit restaurant" : "Create restaurant";
-      document.getElementById("restaurantId").value = restaurant?.id || "";
-      document.getElementById("restaurantName").value = restaurant?.name || "";
-      document.getElementById("restaurantOwnerEmail").value = restaurant?.owner?.email || "";
-      document.getElementById("restaurantAddress").value = restaurant?.address || "";
-      document.getElementById("restaurantLocality").value = restaurant?.locality || "";
-      document.getElementById("restaurantPickupNote").value = restaurant?.pickupNote || "";
-      document.getElementById("restaurantFoodType").value = restaurant?.foodType || "BOTH";
-      document.getElementById("restaurantActive").checked = restaurant ? restaurant.isActive : true;
-      document.getElementById("subscriptionStatus").value = restaurant?.subscriptionStatus || "ACTIVE";
-      document.getElementById("subscriptionEndsAt").value = dateInputValue(restaurant?.subscriptionEndsAt);
-      document.getElementById("saveRestaurantBtn").textContent = restaurant ? "Save changes" : "Create";
-      document.getElementById("restaurantModal").classList.add("open");
-      document.getElementById("restaurantName").focus();
-    }
-
-    function closeRestaurantModal() {
-      document.getElementById("restaurantModal").classList.remove("open");
-    }
-
-    async function saveRestaurant(event) {
-      event.preventDefault();
-      const btn = document.getElementById("saveRestaurantBtn");
-      const id = document.getElementById("restaurantId").value;
-      if (id && !canEditRestaurants) {
-        toast("Only the Avenzo admin team can edit restaurant details.");
-        return;
-      }
-      if (!id && !canCreateRestaurant) {
-        toast("Only the Avenzo admin team can add a new restaurant.");
-        return;
-      }
-      setLoading(btn, true, "Saving...");
-      try {
-        await request(id ? `/restaurant/${id}` : "/restaurant", {
-          method: id ? "PUT" : "POST",
-          body: JSON.stringify({
-            name: document.getElementById("restaurantName").value.trim(),
-            ownerEmail: document.getElementById("restaurantOwnerEmail").value.trim() || null,
-            address: document.getElementById("restaurantAddress").value.trim() || null,
-            locality: document.getElementById("restaurantLocality").value.trim() || null,
-            pickupNote: document.getElementById("restaurantPickupNote").value.trim() || null,
-            foodType: document.getElementById("restaurantFoodType").value,
-            isActive: document.getElementById("restaurantActive").checked,
-            subscriptionStatus: document.getElementById("subscriptionStatus").value,
-            subscriptionEndsAt: document.getElementById("subscriptionEndsAt").value || null
-          })
-        });
-        closeRestaurantModal();
-        toast(id ? "Restaurant updated" : "Restaurant created");
-        loadRestaurants();
-      } catch (err) {
-        toast(err.message);
-      } finally {
-        setLoading(btn, false);
-      }
-    }
-
-    function openMenu(id) {
-      window.location.href = `/admin/menu.html?restaurantId=${id}`;
-    }
-
-    function openOrders(id) {
-      // Employees use the dedicated kitchen view
-      if (currentUser?.role === "EMPLOYEE") {
-        window.location.href = `/restaurant/employee.html`;
-        return;
-      }
-      window.location.href = `/admin/orders.html?restaurantId=${id}`;
-    }
-
-    function openQr(id) {
-      window.location.href = `/qr.html?restaurantId=${id}`;
-    }
-
-    function openStaff(id) {
-      window.location.href = `/admin/staff.html?restaurantId=${id}`;
-    }
-
-    function openPayments(id) {
-      window.location.href = `/admin/payments.html?restaurantId=${id}`;
-    }
-
-    function openLeads() {
-      window.location.href = "/admin/leads.html";
-    }
-
-    async function loadLeadBadge() {
-      try {
-        const data = await request("/admin/restaurant-leads/summary");
-        const count = data.unseenNewCount || 0;
-        // Page-head badge
-        const badge = document.getElementById("leadsBadge");
-        if (badge) { badge.textContent = count; badge.hidden = count === 0; }
-        // Dock badge
-        const dockLink = document.getElementById("dockLeadsLink");
-        const dockBadge = document.getElementById("dockLeadsBadge");
-        if (dockLink) dockLink.hidden = false;
-        if (dockBadge) { dockBadge.textContent = count; dockBadge.hidden = count === 0; }
-      } catch {
-        const b = document.getElementById("leadsBadge");
-        if (b) b.hidden = true;
-      }
-    }
-
-    function renewSubscription30Days() {
-      const date = new Date();
-      date.setDate(date.getDate() + 30);
-      document.getElementById("subscriptionStatus").value = "ACTIVE";
-      document.getElementById("subscriptionEndsAt").value = date.toISOString().slice(0, 10);
-    }
-
-    initPartnerPage().then((user) => {
-      if (!user) return;
-      loadRestaurants();
-    });
-  </script>
-  <noscript><div style="padding:20px;text-align:center;font-family:sans-serif">Please enable JavaScript to use Avenzo.</div></noscript>
+initAdminLayout("home").then(user => {
+  if (!user) return;
+  currentUser = user;
+  loadOpsStats();
+  loadDashboard();
+});
+</script>
+<noscript>Please enable JavaScript to use Avenzo.</noscript>
 </body>
-
 </html>

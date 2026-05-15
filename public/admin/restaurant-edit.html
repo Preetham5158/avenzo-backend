@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Restaurant — Avenzo</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#E8401C">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/admin.css">
+</head>
+<body>
+<div class="admin-shell">
+  <header class="admin-topbar">
+    <a href="/admin/dashboard.html" class="admin-brand">
+      <img src="/logo.png" alt="Avenzo">
+      <span class="admin-brand-name">AVENZO</span>
+    </a>
+    <span class="admin-brand-sep"></span>
+    <span class="admin-context" id="adminContext">Restaurant</span>
+    <div class="admin-topbar-right">
+      <div id="accountMenu"></div>
+    </div>
+  </header>
+  <nav class="admin-sidebar" id="adminSidebar"></nav>
+  <main class="admin-main">
+    <div class="admin-page">
+
+      <div class="admin-ph">
+        <div class="admin-ph-left">
+          <div class="admin-eyebrow">Restaurant settings</div>
+          <h1 class="admin-ph-title" id="pageTitle">New restaurant</h1>
+          <p class="admin-ph-sub" id="pageSub">Fill in the details to create a new restaurant profile.</p>
+        </div>
+        <div class="admin-ph-actions">
+          <a href="/admin/dashboard.html" class="btn btn-ghost">← Back</a>
+        </div>
+      </div>
+
+      <div id="restCtxBar" class="rest-ctx" style="display:none"></div>
+
+      <div class="g2" style="align-items:start;gap:24px" id="formLayout">
+
+        <!-- Left column: profile form -->
+        <div class="stack-lg">
+          <div class="card card-p">
+            <div class="card-title" style="margin-bottom:16px">Restaurant profile</div>
+            <div class="stack">
+              <div class="field">
+                <label for="restaurantName">Restaurant name <span style="color:var(--danger)">*</span></label>
+                <input id="restaurantName" class="input" required placeholder="e.g. The Spice Garden">
+              </div>
+              <div class="g2">
+                <div class="field">
+                  <label for="restaurantLocality">Locality</label>
+                  <input id="restaurantLocality" class="input" placeholder="Jayanagar, Bengaluru">
+                </div>
+                <div class="field">
+                  <label for="restaurantFoodType">Food type</label>
+                  <select id="restaurantFoodType" class="select">
+                    <option value="BOTH">Veg &amp; non-veg</option>
+                    <option value="PURE_VEG">Pure veg</option>
+                    <option value="NON_VEG">Non-veg only</option>
+                  </select>
+                </div>
+              </div>
+              <div class="field">
+                <label for="restaurantAddress">Full address</label>
+                <input id="restaurantAddress" class="input" placeholder="Street, area, city, pincode">
+              </div>
+              <div class="field">
+                <label for="restaurantPickupNote">Guest note</label>
+                <input id="restaurantPickupNote" class="input" placeholder="e.g. Please wait near the dining area after ordering">
+                <span class="input-hint">Shown to guests after they place an order.</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="card card-p" id="ownerSection">
+            <div class="card-title" style="margin-bottom:4px">Owner account</div>
+            <div class="card-sub" style="margin-bottom:16px">Assign this restaurant to an existing Avenzo account. The account will be promoted to Restaurant Owner.</div>
+            <div class="field">
+              <label for="restaurantOwnerEmail">Owner email</label>
+              <input id="restaurantOwnerEmail" class="input" type="email" placeholder="owner@example.com">
+              <span class="input-hint">Must match an existing Avenzo account.</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right column: subscription + status -->
+        <div class="stack-lg">
+          <div class="card card-p">
+            <div class="card-title" style="margin-bottom:16px">Service status</div>
+            <label class="toggle-row" style="margin-bottom:14px">
+              <span>Service active</span>
+              <label class="toggle" style="margin-left:auto">
+                <input id="restaurantActive" type="checkbox" checked>
+                <span class="toggle-track"></span>
+              </label>
+            </label>
+            <div class="card-sub" style="font-size:12px;color:var(--tx-3)">When off, orders cannot be placed and staff cannot access the workspace.</div>
+          </div>
+
+          <div class="card card-p">
+            <div class="card-title" style="margin-bottom:16px">Subscription</div>
+            <div class="stack">
+              <div class="field">
+                <label>Plan status</label>
+                <select id="subscriptionStatus" class="select">
+                  <option value="ACTIVE">Active</option>
+                  <option value="TRIALING">Trialing</option>
+                  <option value="EXPIRED">Expired</option>
+                  <option value="SUSPENDED">Suspended</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>Subscription ends</label>
+                <input id="subscriptionEndsAt" class="input" type="date">
+              </div>
+              <button type="button" class="btn btn-ghost btn-sm" onclick="renewSubscription30Days()">
+                Renew 30 days from today
+              </button>
+            </div>
+          </div>
+
+          <div class="card card-p" id="dangerZone" style="display:none">
+            <div class="card-title" style="color:var(--danger);margin-bottom:8px">Danger zone</div>
+            <div class="card-sub" style="margin-bottom:14px">Permanently deactivate this restaurant and remove all access.</div>
+            <button type="button" class="btn btn-danger-soft btn-sm" onclick="confirmDeactivate()">Deactivate restaurant</button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Save button -->
+      <div style="margin-top:28px;display:flex;gap:12px;align-items:center;justify-content:flex-end;border-top:1px solid var(--line);padding-top:20px">
+        <a href="/admin/dashboard.html" class="btn btn-ghost">Cancel</a>
+        <button id="saveBtn" class="btn btn-primary btn-lg" onclick="saveRestaurant()">Save restaurant</button>
+      </div>
+
+    </div>
+  </main>
+</div>
+<nav class="admin-bnav" id="adminBnav"></nav>
+
+<script src="/assets/app.js"></script>
+<script>
+const restaurantId = new URLSearchParams(location.search).get("restaurantId");
+let currentUser = null;
+let restaurantData = null;
+
+function renewSubscription30Days() {
+  const d = new Date();
+  d.setDate(d.getDate() + 30);
+  document.getElementById("subscriptionStatus").value = "ACTIVE";
+  document.getElementById("subscriptionEndsAt").value = d.toISOString().slice(0, 10);
+}
+
+async function loadRestaurant() {
+  if (!restaurantId) return; // Creating new — form is blank
+  try {
+    const data = await request("/restaurants");
+    const r = (data.restaurants || []).find(x => x.id === restaurantId);
+    if (!r) { toast("Restaurant not found"); return; }
+    restaurantData = r;
+
+    document.getElementById("pageTitle").textContent = r.name;
+    document.getElementById("pageSub").textContent = "Edit restaurant profile and service configuration.";
+    document.getElementById("adminContext").textContent = r.name;
+
+    document.getElementById("restaurantName").value = r.name || "";
+    document.getElementById("restaurantOwnerEmail").value = r.owner?.email || "";
+    document.getElementById("restaurantAddress").value = r.address || "";
+    document.getElementById("restaurantLocality").value = r.locality || "";
+    document.getElementById("restaurantPickupNote").value = r.pickupNote || "";
+    document.getElementById("restaurantFoodType").value = r.foodType || "BOTH";
+    document.getElementById("restaurantActive").checked = !!r.isActive;
+    document.getElementById("subscriptionStatus").value = r.subscriptionStatus || "ACTIVE";
+    document.getElementById("subscriptionEndsAt").value = r.subscriptionEndsAt ? r.subscriptionEndsAt.slice(0, 10) : "";
+
+    // Show context strip
+    const ctxEl = document.getElementById("restCtxBar");
+    ctxEl.style.display = "";
+    renderRestaurantContext(r, "", restaurantId);
+
+    if (currentUser?.role === "ADMIN") {
+      document.getElementById("dangerZone").style.display = "";
+    }
+  } catch (err) {
+    toast(err.message || "Could not load restaurant");
+  }
+}
+
+async function saveRestaurant() {
+  const btn = document.getElementById("saveBtn");
+  setLoading(btn, true, "Saving...");
+  try {
+    const name = document.getElementById("restaurantName").value.trim();
+    if (!name) { toast("Restaurant name is required"); setLoading(btn, false); return; }
+
+    const body = {
+      name,
+      ownerEmail: document.getElementById("restaurantOwnerEmail").value.trim() || undefined,
+      address: document.getElementById("restaurantAddress").value.trim() || undefined,
+      locality: document.getElementById("restaurantLocality").value.trim() || undefined,
+      pickupNote: document.getElementById("restaurantPickupNote").value.trim() || undefined,
+      foodType: document.getElementById("restaurantFoodType").value,
+      isActive: document.getElementById("restaurantActive").checked,
+      subscriptionStatus: document.getElementById("subscriptionStatus").value,
+      subscriptionEndsAt: document.getElementById("subscriptionEndsAt").value || undefined,
+    };
+
+    if (restaurantId) {
+      await request(`/restaurant/${restaurantId}`, { method: "PUT", body: JSON.stringify(body) });
+      toast("Restaurant updated");
+    } else {
+      await request("/restaurant", { method: "POST", body: JSON.stringify(body) });
+      toast("Restaurant created");
+      setTimeout(() => window.location.href = "/admin/dashboard.html", 600);
+    }
+  } catch (err) {
+    toast(err.message || "Could not save restaurant");
+  } finally {
+    setLoading(btn, false);
+  }
+}
+
+async function confirmDeactivate() {
+  const name = restaurantData?.name || "this restaurant";
+  if (!confirm(`Are you sure you want to deactivate "${name}"?\n\nThis will pause service and block staff access. This action is reversible — you can reactivate by turning the service back on.`)) return;
+  try {
+    await request(`/restaurant/${restaurantId}`, {
+      method: "PUT",
+      body: JSON.stringify({ isActive: false, subscriptionStatus: "SUSPENDED" })
+    });
+    toast("Restaurant deactivated");
+    setTimeout(() => window.location.href = "/admin/dashboard.html", 800);
+  } catch (err) {
+    toast(err.message || "Could not deactivate restaurant");
+  }
+}
+
+initAdminLayout("home", restaurantId || "").then(user => {
+  if (!user) return;
+  currentUser = user;
+  if (user.role !== "ADMIN") {
+    // Non-admins (restaurant owners) cannot create, but can edit their own
+    document.getElementById("ownerSection").style.display = "none";
+    document.getElementById("createBtn")?.classList.add("hidden");
+  }
+  loadRestaurant();
+});
+</script>
+<noscript>Please enable JavaScript to use Avenzo.</noscript>
+</body>
+</html>

@@ -1,293 +1,261 @@
 <!DOCTYPE html>
 <html>
-
 <head>
   <meta charset="UTF-8">
-  <title>Avenzo — Payment Methods</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="theme-color" content="#ff6b16">
+  <title>Payment Methods — Avenzo</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#E8401C">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/assets/app.css">
-  <style>
-    .method-card {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) auto;
-      gap: 12px;
-      align-items: start;
-    }
-
-    .method-badges {
-      display: flex;
-      gap: 6px;
-      flex-wrap: wrap;
-      margin-top: 6px;
-    }
-
-    .method-actions {
-      display: flex;
-      gap: 8px;
-      flex-shrink: 0;
-    }
-
-    .qr-preview {
-      max-width: 140px;
-      border-radius: 12px;
-      border: 1px solid var(--line);
-      margin-top: 8px;
-    }
-
-    @media (max-width: 480px) {
-      .method-card {
-        grid-template-columns: 1fr;
-      }
-
-      .qr-preview {
-        max-width: 100%;
-        width: 140px;
-        margin: 10px auto 0;
-        display: block;
-      }
-
-      .method-order-badge { display: none; }
-    }
-  </style>
+  <link rel="stylesheet" href="/assets/admin.css">
 </head>
-
 <body>
-  <div class="shell">
-    <header class="topbar">
-      <div class="topbar-inner">
-        <div class="brand">
-          <img src="/logo.png" alt="Avenzo">
-          <span>AVENZO</span>
-        </div>
-        <div id="accountMenu"></div>
-      </div>
-    </header>
+<div class="admin-shell">
+  <header class="admin-topbar">
+    <a href="/admin/dashboard.html" class="admin-brand"><img src="/logo.png" alt="Avenzo"><span class="admin-brand-name">AVENZO</span></a>
+    <span class="admin-brand-sep"></span>
+    <span class="admin-context" id="adminContext">Loading...</span>
+    <div class="admin-topbar-right"><div id="accountMenu"></div></div>
+  </header>
+  <nav class="admin-sidebar" id="adminSidebar"></nav>
+  <main class="admin-main">
+    <div class="admin-page">
+      <div id="restCtxBar" class="rest-ctx" style="display:none"></div>
 
-    <main class="page">
-      <section class="hero-panel stack">
-        <div class="row-between">
-          <div>
-            <div class="eyebrow"><a href="/admin/dashboard.html">Dashboard</a> / Payments</div>
-            <h1 id="pageTitle">Payment Methods</h1>
-            <p class="muted" id="restaurantLabel">Manage how customers pay for orders at this restaurant.</p>
-          </div>
+      <div class="admin-ph">
+        <div>
+          <div class="admin-eyebrow">Billing setup</div>
+          <h1 class="admin-ph-title" id="pageTitle">Payment Methods</h1>
+          <p class="admin-ph-sub" id="pageSub">Configure how customers pay at this restaurant.</p>
+        </div>
+        <div class="admin-ph-actions">
           <button class="btn btn-primary" onclick="openMethodModal()">Add method</button>
         </div>
-      </section>
-
-      <section class="card card-pad stack mt-16">
-        <div>
-          <h3 class="section-title">About payment methods</h3>
-          <p class="muted">When at least one method is enabled, new orders will be held as "Payment pending" until payment is confirmed. If no methods are enabled, orders go straight to the kitchen without payment (free ordering).</p>
-        </div>
-      </section>
-
-      <section class="stack mt-16" id="methodsList">
-        <div class="empty">Loading...</div>
-      </section>
-    </main>
-  </div>
-
-  <div class="modal-backdrop" id="methodModal">
-    <form class="modal" onsubmit="saveMethod(event)">
-      <div class="modal-head row-between">
-        <div>
-          <h3 id="methodModalTitle" class="section-title">Add payment method</h3>
-          <div class="muted">Configure how customers will pay.</div>
-        </div>
-        <button type="button" class="btn btn-ghost icon-btn" onclick="closeMethodModal()">X</button>
       </div>
-      <div class="modal-body stack">
-        <input id="methodId" type="hidden">
+
+      <div class="card card-p text-sm muted" style="margin-bottom:16px;font-size:13px;color:var(--tx-2)">
+        When a method is enabled, orders wait for payment before going to the kitchen. With no enabled methods, orders go straight through.
+      </div>
+
+      <div class="stack" id="methodsList">
+        <div class="empty-state"><div class="empty-state-title">Loading...</div></div>
+      </div>
+
+    </div>
+  </main>
+</div>
+<nav class="admin-bnav" id="adminBnav"></nav>
+
+<!-- Method modal -->
+<div class="modal-backdrop" id="methodModal">
+  <form class="modal" onsubmit="saveMethod(event)">
+    <div class="modal-head">
+      <div>
+        <div class="modal-head-title" id="methodModalTitle">Add payment method</div>
+        <div class="modal-head-sub">Configure how customers will pay.</div>
+      </div>
+      <button type="button" class="modal-close" onclick="closeMethodModal()">&#x2715;</button>
+    </div>
+    <div class="modal-body">
+      <input id="methodId" type="hidden">
+      <div class="field">
+        <label>Type</label>
+        <select id="methodType" class="select" onchange="onMethodTypeChange()">
+          <option value="UPI_QR">UPI / QR Code</option>
+          <option value="RAZORPAY">Razorpay</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Display name</label>
+        <input id="methodDisplayName" class="input" required placeholder="e.g. PhonePe QR, BharatPe, Pay Online">
+      </div>
+      <div id="upiFields">
+        <div class="field" style="margin-bottom:14px">
+          <label>QR code image URL</label>
+          <input id="methodQrImageUrl" class="input" type="url" placeholder="https://...">
+          <div class="input-hint" style="margin-top:4px">Upload your QR image to an image host and paste the URL here.</div>
+        </div>
         <div class="field">
-          <label for="methodType">Type</label>
-          <select id="methodType" class="select" onchange="onMethodTypeChange()">
-            <option value="UPI_QR">UPI / QR Code (free)</option>
-            <option value="RAZORPAY">Razorpay (online payment)</option>
-          </select>
+          <label>UPI ID <span style="font-weight:400;color:var(--tx-2)">(optional)</span></label>
+          <input id="methodUpiId" class="input" placeholder="yourname@upi">
         </div>
+      </div>
+      <div class="g2">
         <div class="field">
-          <label for="methodDisplayName">Display name</label>
-          <input id="methodDisplayName" class="input" required placeholder="e.g. PhonePe QR, BharatPe, Pay Online">
+          <label>Sort order</label>
+          <input id="methodSortOrder" class="input" type="number" value="0" min="0">
         </div>
-        <div id="upiFields">
-          <div class="field">
-            <label for="methodQrImageUrl">QR code image URL</label>
-            <input id="methodQrImageUrl" class="input" type="url" placeholder="https://...">
-            <div class="muted">Upload your QR image to an image host and paste the URL here. Customers will scan this to pay.</div>
-          </div>
-          <div class="field">
-            <label for="methodUpiId">UPI ID <span class="muted" style="font-weight:400">(optional)</span></label>
-            <input id="methodUpiId" class="input" placeholder="yourname@upi">
-          </div>
-        </div>
-        <div class="grid grid-2">
-          <div class="field">
-            <label for="methodSortOrder">Sort order</label>
-            <input id="methodSortOrder" class="input" type="number" value="0" min="0">
-          </div>
-          <div style="display:grid;gap:8px;padding-top:22px">
-            <label class="row card card-pad cursor-pointer" style="gap:8px">
-              <input id="methodEnabled" type="checkbox" checked>
-              <span>Enabled</span>
-            </label>
-            <label class="row card card-pad cursor-pointer" style="gap:8px">
-              <input id="methodDefault" type="checkbox">
-              <span>Default</span>
-            </label>
-          </div>
+        <div style="display:flex;flex-direction:column;gap:8px;padding-top:22px">
+          <label class="toggle-row">
+            <span>Enabled</span>
+            <label class="toggle" style="margin-left:auto"><input id="methodEnabled" type="checkbox" checked><span class="toggle-track"></span></label>
+          </label>
+          <label class="toggle-row">
+            <span>Default</span>
+            <label class="toggle" style="margin-left:auto"><input id="methodDefault" type="checkbox"><span class="toggle-track"></span></label>
+          </label>
         </div>
       </div>
-      <div class="modal-actions">
-        <button type="button" class="btn btn-ghost" onclick="closeMethodModal()">Cancel</button>
-        <button id="saveMethodBtn" class="btn btn-primary" type="submit">Save</button>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-ghost" onclick="closeMethodModal()">Cancel</button>
+      <button id="saveMethodBtn" class="btn btn-primary" type="submit">Save</button>
+    </div>
+  </form>
+</div>
+
+<script src="/assets/app.js"></script>
+<script>
+const restaurantId = new URLSearchParams(location.search).get("restaurantId");
+let methods = [];
+
+function onMethodTypeChange() {
+  const type = document.getElementById("methodType").value;
+  document.getElementById("upiFields").hidden = type !== "UPI_QR";
+}
+
+async function loadMethods() {
+  if (!restaurantId) {
+    document.getElementById("methodsList").innerHTML = `<div class="empty-state"><div class="empty-state-title">No restaurant selected.</div></div>`;
+    return;
+  }
+  try {
+    document.getElementById("methodsList").innerHTML = skeletonCards(2);
+    const data = await request(`/admin/payment-methods/${encodeURIComponent(restaurantId)}`);
+    methods = Array.isArray(data) ? data : (data.methods || []);
+    renderMethods();
+  } catch(err) {
+    document.getElementById("methodsList").innerHTML = `
+      <div class="empty-state">
+        <div class="empty-state-title">Could not load</div>
+        <div class="empty-state-sub">${escapeHtml(err.message)}</div>
+      </div>`;
+  }
+}
+
+function renderMethods() {
+  const container = document.getElementById("methodsList");
+  if (!methods.length) {
+    container.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-state-icon">&#128179;</div>
+        <div class="empty-state-title">No payment methods</div>
+        <div class="empty-state-sub">Orders go straight to the kitchen without payment collection.</div>
+      </div>`;
+    return;
+  }
+  container.innerHTML = methods.map(m => `
+    <div class="card card-p">
+      <div class="row-between" style="align-items:flex-start">
+        <div>
+          <div style="font-weight:700;font-size:15px">${escapeHtml(m.displayName)}</div>
+          <div class="row-wrap" style="margin-top:6px">
+            <span class="pill pill-default">${m.type === "UPI_QR" ? "UPI / QR Code" : "Razorpay"}</span>
+            <span class="pill ${m.isEnabled ? "pill-success" : "pill-danger"}">${m.isEnabled ? "Enabled" : "Disabled"}</span>
+            ${m.isDefault ? `<span class="pill pill-warn">Default</span>` : ""}
+          </div>
+          ${m.type === "UPI_QR" && m.qrImageUrl ? `<img src="${escapeHtml(m.qrImageUrl)}" alt="QR" style="max-width:120px;border-radius:var(--r-sm);border:1px solid var(--line);margin-top:8px">` : ""}
+          ${m.type === "UPI_QR" && m.upiId ? `<div class="muted" style="font-size:12px;margin-top:4px">UPI: ${escapeHtml(m.upiId)}</div>` : ""}
+        </div>
+        <div class="row" style="gap:6px;flex-shrink:0">
+          <button class="btn btn-ghost btn-sm" onclick="openMethodModal('${m.id}')">Edit</button>
+          <button class="btn btn-danger-soft btn-sm" onclick="deleteMethod('${m.id}',${JSON.stringify(m.displayName)})">Delete</button>
+        </div>
       </div>
-    </form>
-  </div>
+    </div>
+  `).join("");
+}
 
-  <nav class="admin-dock">
-    <a href="/admin/dashboard.html">Home</a>
-    <a href="#" onclick="goOrders(event)">Orders</a>
-    <a href="#" onclick="goMenu(event)">Menu</a>
-    <a href="#" onclick="goStaff(event)">Staff</a>
-    <a class="active" href="#">Payments</a>
-  </nav>
+function openMethodModal(id) {
+  id = id || "";
+  const method = methods.find(m => m.id === id);
+  document.getElementById("methodModalTitle").textContent = method ? "Edit method" : "Add payment method";
+  document.getElementById("methodId").value = id;
+  document.getElementById("methodType").value = method?.type || "UPI_QR";
+  document.getElementById("methodDisplayName").value = method?.displayName || "";
+  document.getElementById("methodQrImageUrl").value = method?.qrImageUrl || "";
+  document.getElementById("methodUpiId").value = method?.upiId || "";
+  document.getElementById("methodSortOrder").value = method?.sortOrder ?? 0;
+  document.getElementById("methodEnabled").checked = method ? method.isEnabled : true;
+  document.getElementById("methodDefault").checked = method?.isDefault || false;
+  document.getElementById("saveMethodBtn").textContent = method ? "Save changes" : "Add";
+  onMethodTypeChange();
+  document.getElementById("methodModal").classList.add("open");
+  document.getElementById("methodDisplayName").focus();
+}
 
-  <script src="/assets/app.js"></script>
-  <script>
-    const restaurantId = new URLSearchParams(location.search).get("restaurantId");
-    let methods = [];
+function closeMethodModal() {
+  document.getElementById("methodModal").classList.remove("open");
+}
 
-    function onMethodTypeChange() {
-      const type = document.getElementById("methodType").value;
-      document.getElementById("upiFields").hidden = type !== "UPI_QR";
+async function saveMethod(event) {
+  event.preventDefault();
+  const btn = document.getElementById("saveMethodBtn");
+  const id = document.getElementById("methodId").value;
+  setLoading(btn, true, "Saving...");
+  try {
+    const body = {
+      type: document.getElementById("methodType").value,
+      displayName: document.getElementById("methodDisplayName").value.trim(),
+      qrImageUrl: document.getElementById("methodQrImageUrl").value.trim() || null,
+      upiId: document.getElementById("methodUpiId").value.trim() || null,
+      sortOrder: Number(document.getElementById("methodSortOrder").value) || 0,
+      isEnabled: document.getElementById("methodEnabled").checked,
+      isDefault: document.getElementById("methodDefault").checked
+    };
+    if (id) {
+      await request(`/admin/payment-methods/${encodeURIComponent(restaurantId)}/${id}`, {
+        method: "PUT",
+        body: JSON.stringify(body)
+      });
+      toast("Payment method updated");
+    } else {
+      await request(`/admin/payment-methods/${encodeURIComponent(restaurantId)}`, {
+        method: "POST",
+        body: JSON.stringify(body)
+      });
+      toast("Payment method added");
     }
+    closeMethodModal();
+    loadMethods();
+  } catch(err) {
+    toast(err.message || "Could not save payment method");
+  } finally {
+    setLoading(btn, false);
+  }
+}
 
-    async function loadMethods() {
-      if (!restaurantId) {
-        document.getElementById("methodsList").innerHTML = `<div class="empty">No restaurant selected.</div>`;
-        return;
+async function deleteMethod(id, displayName) {
+  if (!confirm(`Delete "${displayName}"? This cannot be undone.`)) return;
+  try {
+    await request(`/admin/payment-methods/${encodeURIComponent(restaurantId)}/${id}`, { method: "DELETE" });
+    toast("Payment method deleted");
+    loadMethods();
+  } catch(err) {
+    toast(err.message || "Could not delete payment method");
+  }
+}
+
+document.getElementById("methodModal").addEventListener("click", e => { if (e.target === e.currentTarget) closeMethodModal(); });
+
+initAdminLayout("payments", restaurantId).then(async user => {
+  if (!user) return;
+  document.getElementById("adminContext").textContent = "Payment Methods";
+  // Load restaurant context strip
+  if (restaurantId) {
+    request("/restaurants").then(data => {
+      const r = (data.restaurants || []).find(x => x.id === restaurantId);
+      if (r) {
+        document.getElementById("adminContext").textContent = r.name;
+        document.getElementById("pageTitle").textContent = r.name;
+        document.getElementById("pageSub").textContent = `Payment methods for ${r.name}`;
+        document.getElementById("restCtxBar").style.display = "";
+        renderRestaurantContext(r, "payments", restaurantId);
       }
-      try {
-        const data = await request(`/admin/payment-methods/${encodeURIComponent(restaurantId)}`);
-        methods = Array.isArray(data) ? data : (data.methods || []);
-        renderMethods();
-      } catch (err) {
-        document.getElementById("methodsList").innerHTML = `<div class="empty">${escapeHtml(err.message || "Could not load payment methods.")}</div>`;
-      }
-    }
-
-    function renderMethods() {
-      const container = document.getElementById("methodsList");
-      if (!methods.length) {
-        container.innerHTML = `
-          <div class="card card-pad">
-            <div class="empty">No payment methods configured yet. Orders will go straight to the kitchen without payment.</div>
-          </div>`;
-        return;
-      }
-      container.innerHTML = methods.map(m => `
-        <article class="card card-pad method-card">
-          <div>
-            <strong>${escapeHtml(m.displayName)}</strong>
-            <div class="muted" style="font-size:13px">${m.type === "UPI_QR" ? "UPI / QR Code" : "Razorpay"}</div>
-            <div class="method-badges">
-              <span class="pill ${m.isEnabled ? "pill-success" : "pill-danger"}">${m.isEnabled ? "Enabled" : "Disabled"}</span>
-              ${m.isDefault ? `<span class="pill pill-warning">Default</span>` : ""}
-              ${m.sortOrder > 0 ? `<span class="pill method-order-badge">Order: ${m.sortOrder}</span>` : ""}
-            </div>
-            ${m.type === "UPI_QR" && m.qrImageUrl ? `<img class="qr-preview" src="${escapeHtml(m.qrImageUrl)}" alt="QR">` : ""}
-            ${m.type === "UPI_QR" && m.upiId ? `<div class="muted" style="font-size:12px;margin-top:4px">UPI ID: ${escapeHtml(m.upiId)}</div>` : ""}
-          </div>
-          <div class="method-actions">
-            <button class="btn btn-ghost" onclick="openMethodModal('${m.id}')">Edit</button>
-            <button class="btn btn-ghost" style="color:var(--danger)" onclick="deleteMethod('${m.id}', ${JSON.stringify(m.displayName)})">Delete</button>
-          </div>
-        </article>
-      `).join("");
-    }
-
-    function openMethodModal(id = "") {
-      const method = methods.find(m => m.id === id);
-      document.getElementById("methodModalTitle").textContent = method ? "Edit payment method" : "Add payment method";
-      document.getElementById("methodId").value = id;
-      document.getElementById("methodType").value = method?.type || "UPI_QR";
-      document.getElementById("methodDisplayName").value = method?.displayName || "";
-      document.getElementById("methodQrImageUrl").value = method?.qrImageUrl || "";
-      document.getElementById("methodUpiId").value = method?.upiId || "";
-      document.getElementById("methodSortOrder").value = method?.sortOrder ?? 0;
-      document.getElementById("methodEnabled").checked = method ? method.isEnabled : true;
-      document.getElementById("methodDefault").checked = method?.isDefault || false;
-      onMethodTypeChange();
-      document.getElementById("saveMethodBtn").textContent = method ? "Save changes" : "Add";
-      document.getElementById("methodModal").classList.add("open");
-      document.getElementById("methodDisplayName").focus();
-    }
-
-    function closeMethodModal() {
-      document.getElementById("methodModal").classList.remove("open");
-    }
-
-    async function saveMethod(event) {
-      event.preventDefault();
-      const btn = document.getElementById("saveMethodBtn");
-      const id = document.getElementById("methodId").value;
-      setLoading(btn, true, "Saving...");
-      try {
-        const body = {
-          type: document.getElementById("methodType").value,
-          displayName: document.getElementById("methodDisplayName").value.trim(),
-          qrImageUrl: document.getElementById("methodQrImageUrl").value.trim() || null,
-          upiId: document.getElementById("methodUpiId").value.trim() || null,
-          sortOrder: Number(document.getElementById("methodSortOrder").value) || 0,
-          isEnabled: document.getElementById("methodEnabled").checked,
-          isDefault: document.getElementById("methodDefault").checked
-        };
-        if (id) {
-          await request(`/admin/payment-methods/${encodeURIComponent(restaurantId)}/${id}`, {
-            method: "PUT",
-            body: JSON.stringify(body)
-          });
-          toast("Payment method updated");
-        } else {
-          await request(`/admin/payment-methods/${encodeURIComponent(restaurantId)}`, {
-            method: "POST",
-            body: JSON.stringify(body)
-          });
-          toast("Payment method added");
-        }
-        closeMethodModal();
-        loadMethods();
-      } catch (err) {
-        toast(err.message || "Could not save payment method");
-      } finally {
-        setLoading(btn, false);
-      }
-    }
-
-    async function deleteMethod(id, displayName) {
-      if (!confirm(`Delete "${displayName}"? This cannot be undone.`)) return;
-      try {
-        await request(`/admin/payment-methods/${encodeURIComponent(restaurantId)}/${id}`, { method: "DELETE" });
-        toast("Payment method deleted");
-        loadMethods();
-      } catch (err) {
-        toast(err.message || "Could not delete payment method");
-      }
-    }
-
-    function goOrders(e) { e.preventDefault(); window.location.href = `/admin/orders.html?restaurantId=${restaurantId}`; }
-    function goMenu(e) { e.preventDefault(); window.location.href = `/admin/menu.html?restaurantId=${restaurantId}`; }
-    function goStaff(e) { e.preventDefault(); window.location.href = `/admin/staff.html?restaurantId=${restaurantId}`; }
-
-    initPartnerPage().then((user) => {
-      if (!user) return;
-      loadMethods();
-    });
-  </script>
-  <noscript>JavaScript is required to use Avenzo Payment Methods.</noscript>
+    }).catch(() => {});
+  }
+  loadMethods();
+});
+</script>
+<noscript>Please enable JavaScript to use Avenzo.</noscript>
 </body>
-
 </html>

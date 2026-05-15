@@ -2,9 +2,12 @@ require("dotenv").config();
 
 const bcrypt = require("bcrypt");
 const crypto = require("crypto");
+const jwt = require("jsonwebtoken");
 const { createPrismaClient } = require("../src/prisma");
 
 const BASE_URL = process.env.BASE_URL || "http://localhost:5000";
+const JWT_ISSUER = "avenzo-api";
+const JWT_AUDIENCE = "avenzo-admin";
 const prisma = createPrismaClient();
 
 async function request(path, options = {}) {
@@ -55,6 +58,14 @@ async function login(email, password, path = "/auth/login") {
   });
   assert(res.status === 200, `${path} returned ${res.status}`);
   return res.data;
+}
+
+function signSmokeToken(user) {
+  return jwt.sign(
+    { userId: user.id, role: user.role },
+    process.env.JWT_SECRET,
+    { expiresIn: "1h", issuer: JWT_ISSUER, audience: JWT_AUDIENCE }
+  );
 }
 
 async function createFixtures(suffix) {
@@ -150,6 +161,14 @@ async function createFixtures(suffix) {
       employee: employee.email,
       customerWithPhone: customerWithPhone.email,
       customerNoPhone: customerNoPhone.email
+    },
+    users: {
+      admin: { id: admin.id, role: admin.role },
+      owner: { id: owner.id, role: owner.role },
+      otherOwner: { id: otherOwner.id, role: otherOwner.role },
+      employee: { id: employee.id, role: employee.role },
+      customerWithPhone: { id: customerWithPhone.id, role: customerWithPhone.role },
+      customerNoPhone: { id: customerNoPhone.id, role: customerNoPhone.role }
     },
     userIds: [admin.id, owner.id, otherOwner.id, employee.id, customerWithPhone.id, customerNoPhone.id],
     restaurantIds: [restaurant.id, otherRestaurant.id, expiredRestaurant.id],
@@ -251,12 +270,12 @@ async function main() {
       assert(signup.status === 200, `customer signup returned ${signup.status}`);
       assert(!("userId" in (signup.data || {})), "customer signup exposed internal user id");
 
-      // Use /auth/login (compatibility, no-OTP) to acquire tokens for role boundary tests.
-      tokens.customerWithPhone = (await login(fixtures.emails.customerWithPhone, fixtures.password)).token;
-      tokens.customerNoPhone = (await login(fixtures.emails.customerNoPhone, fixtures.password)).token;
-      tokens.admin = (await login(fixtures.emails.admin, fixtures.password)).token;
-      tokens.owner = (await login(fixtures.emails.owner, fixtures.password)).token;
-      tokens.employee = (await login(fixtures.emails.employee, fixtures.password)).token;
+      // Smoke uses short-lived fixture tokens for role-boundary tests so auth policy can require OTP.
+      tokens.customerWithPhone = signSmokeToken(fixtures.users.customerWithPhone);
+      tokens.customerNoPhone = signSmokeToken(fixtures.users.customerNoPhone);
+      tokens.admin = signSmokeToken(fixtures.users.admin);
+      tokens.owner = signSmokeToken(fixtures.users.owner);
+      tokens.employee = signSmokeToken(fixtures.users.employee);
 
       const customer2fa = String(process.env.AUTH_REQUIRE_CUSTOMER_2FA || "false").toLowerCase() === "true";
       const restaurant2fa = String(process.env.AUTH_REQUIRE_RESTAURANT_2FA || "false").toLowerCase() === "true";
@@ -286,6 +305,18 @@ async function main() {
         assert(!adminPartner.data?.token, "restaurant login must not return token before OTP");
       } else {
         assert(typeof adminPartner.data?.token === "string", "restaurant login should return token when 2FA is off");
+      }
+
+      const compatibilityAdmin = await request("/auth/login", {
+        method: "POST",
+        body: JSON.stringify({ email: fixtures.emails.admin, password: fixtures.password })
+      });
+      assert(compatibilityAdmin.status === 200, `compatibility login returned ${compatibilityAdmin.status}`);
+      if (restaurant2fa) {
+        assert(compatibilityAdmin.data?.otpRequired === true, "compatibility login should require OTP for restaurant/admin users when 2FA is on");
+        assert(!compatibilityAdmin.data?.token, "compatibility login must not bypass restaurant/admin OTP");
+      } else {
+        assert(typeof compatibilityAdmin.data?.token === "string", "compatibility login should return token when restaurant/admin 2FA is off");
       }
 
       // USER must always be blocked from restaurant login path regardless of 2FA setting.
@@ -415,6 +446,47 @@ async function main() {
       assert(tokensInHistory.includes(customerOrder.trackingToken), "logged-in order missing from history");
       assert(!tokensInHistory.includes(guestOrder.trackingToken), "guest order appeared in customer history");
       (orders.data.orders || []).forEach((order) => assertNoFields(order, ["id", "customerId", "restaurantId", "sessionId"], "customer order"));
+    }, results);
+
+    await check("customer-owned pending orders require account auth to cancel", async () => {
+      const anonymousCancel = await request(`/order/${customerOrder.trackingToken}/cancel`, {
+        method: "POST",
+        body: JSON.stringify({})
+      });
+      assert(anonymousCancel.status === 401, `anonymous customer-order cancel returned ${anonymousCancel.status}`);
+
+      const otherCustomerCancel = await request(`/order/${customerOrder.trackingToken}/cancel`, {
+        method: "POST",
+        headers: auth(tokens.customerNoPhone),
+        body: JSON.stringify({})
+      });
+      assert(otherCustomerCancel.status === 403, `other customer cancel returned ${otherCustomerCancel.status}`);
+
+      const ownerCancel = await request(`/order/${customerOrder.trackingToken}/cancel`, {
+        method: "POST",
+        headers: auth(tokens.customerWithPhone),
+        body: JSON.stringify({})
+      });
+      assert(ownerCancel.status === 200, `owner customer-order cancel returned ${ownerCancel.status}`);
+    }, results);
+
+    await check("password reset request response does not reveal account existence", async () => {
+      const known = await request("/auth/password-reset/request", {
+        method: "POST",
+        body: JSON.stringify({ email: fixtures.emails.customerWithPhone })
+      });
+      const unknown = await request("/auth/password-reset/request", {
+        method: "POST",
+        body: JSON.stringify({ email: `missing-${suffix}@example.com` })
+      });
+      assert(known.status === 200, `known reset returned ${known.status}`);
+      assert(unknown.status === 200, `unknown reset returned ${unknown.status}`);
+      assert(typeof known.data?.challengeId === "string", "known reset missing challengeId");
+      assert(typeof unknown.data?.challengeId === "string", "unknown reset missing challengeId");
+      assert(typeof known.data?.maskedEmail === "string", "known reset missing maskedEmail");
+      assert(typeof unknown.data?.maskedEmail === "string", "unknown reset missing maskedEmail");
+      assert(known.data?.message === unknown.data?.message, "reset response messages differ");
+      assert(Object.keys(known.data || {}).sort().join(",") === Object.keys(unknown.data || {}).sort().join(","), "reset response shapes differ");
     }, results);
 
     await check("restaurant roles cannot create customer orders", async () => {

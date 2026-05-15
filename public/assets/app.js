@@ -212,6 +212,149 @@ function customerBottomNavHtml(active = "home") {
   }</nav>`;
 }
 
+// ── Admin layout helpers ──
+
+function toggleTheme() {
+  const isLight = document.body.classList.toggle("light");
+  localStorage.setItem("avenzo-theme", isLight ? "light" : "dark");
+  // Update all theme toggle buttons on the page
+  document.querySelectorAll(".theme-toggle").forEach(btn => {
+    btn.textContent = isLight ? "🌙" : "☀️";
+    btn.title = isLight ? "Switch to dark mode" : "Switch to light mode";
+  });
+}
+
+function adminSidebarHtml(active, restaurantId, role) {
+  // Sidebar is GLOBAL navigation only — no restaurant-specific links.
+  // Restaurant-specific navigation (Orders, Menu, Staff, Payments, QR)
+  // is provided by the restaurant context strip on each inner page.
+  const isLight = typeof document !== "undefined" && document.body.classList.contains("light");
+  const globalLinks = [
+    { key: "home", href: "/admin/dashboard.html", label: "Restaurants",
+      icon: `<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>` },
+    ...(role === "ADMIN" ? [
+      { key: "leads", href: "/admin/leads.html", label: "Partner Leads",
+        icon: `<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>`, badge: true }
+    ] : []),
+  ];
+
+  const linksHtml = globalLinks.map(l => `
+    <a href="${l.href}" class="sidebar-link ${active === l.key ? "active" : ""}" ${l.badge ? 'id="sidebarLeadsLink"' : ""}>
+      ${l.icon}
+      <span>${l.label}</span>
+      ${l.badge ? '<span class="sidebar-badge hidden" id="sidebarLeadsBadge"></span>' : ""}
+    </a>
+  `).join("");
+
+  return `
+    ${linksHtml}
+    <div class="sidebar-footer">
+      <button class="theme-toggle" onclick="toggleTheme()" title="${isLight ? "Switch to dark mode" : "Switch to light mode"}">
+        ${isLight ? "🌙" : "☀️"}
+      </button>
+      <span class="sidebar-footer-label">${isLight ? "Dark mode" : "Light mode"}</span>
+    </div>
+  `;
+}
+
+function adminBottomNavHtml(active, restaurantId, role) {
+  // Bottom nav is also global-only on mobile.
+  const items = [
+    { key: "home",  href: "/admin/dashboard.html", label: "Home",  icon: "🏠" },
+    ...(role === "ADMIN" ? [
+      { key: "leads", href: "/admin/leads.html",   label: "Leads", icon: "📊", badge: true },
+    ] : []),
+  ];
+  // When inside a restaurant context, add the restaurant-specific items to mobile nav
+  if (restaurantId) {
+    const q = `?restaurantId=${restaurantId}`;
+    items.splice(1, 0,
+      { key: "orders",   href: `/admin/orders.html${q}`,   label: "Orders",   icon: "📋" },
+      { key: "menu",     href: `/admin/menu.html${q}`,     label: "Menu",     icon: "🍽️" },
+    );
+    if (role !== "EMPLOYEE") {
+      items.splice(3, 0,
+        { key: "staff",    href: `/admin/staff.html${q}`,    label: "Staff",    icon: "👥" },
+        { key: "payments", href: `/admin/payments.html${q}`, label: "Payments", icon: "💳" },
+      );
+    }
+  }
+  return items.map(item => `
+    <a href="${item.href}" class="admin-bnav-item ${active === item.key ? "active" : ""}">
+      ${item.badge ? '<span class="admin-bnav-badge hidden" id="bnavLeadsBadge"></span>' : ""}
+      <span class="admin-bnav-icon">${item.icon}</span>
+      <span>${item.label}</span>
+    </a>
+  `).join("");
+}
+
+function renderRestaurantContext(restaurant, activePage, restaurantId) {
+  const el = document.getElementById("restCtxBar");
+  if (!el || !restaurant) return;
+  const q = `?restaurantId=${restaurantId}`;
+  const pages = [
+    { key: "orders",   href: `/admin/orders.html${q}`,   label: "Orders" },
+    { key: "menu",     href: `/admin/menu.html${q}`,     label: "Menu" },
+    { key: "staff",    href: `/admin/staff.html${q}`,    label: "Staff" },
+    { key: "payments", href: `/admin/payments.html${q}`, label: "Payments" },
+    { key: "qr",       href: `/qr.html${q}`,             label: "QR Cards" },
+  ];
+  const initial = (restaurant.name || "R")[0].toUpperCase();
+  const isLive = restaurant.isActive && restaurant.subscriptionStatus !== "EXPIRED" && restaurant.subscriptionStatus !== "SUSPENDED";
+  const avatarMod = !restaurant.isActive ? " paused" : (!isLive ? " expired" : "");
+  const svcPill  = isLive ? "pill-success" : "pill-danger";
+  const svcLabel = !restaurant.isActive ? "Paused" : restaurant.subscriptionStatus === "SUSPENDED" ? "Suspended" : restaurant.subscriptionStatus === "EXPIRED" ? "Expired" : "Live";
+  el.innerHTML = `
+    <div class="rest-ctx-avatar${avatarMod}">${escapeHtml(initial)}</div>
+    <div class="rest-ctx-info">
+      <div class="rest-ctx-name">${escapeHtml(restaurant.name)}</div>
+      <div class="rest-ctx-sub">
+        ${restaurant.address || restaurant.locality ? `<span>${escapeHtml(restaurant.address || restaurant.locality)}</span>` : ""}
+        <span class="pill ${svcPill}" style="font-size:10.5px;padding:2px 8px">${svcLabel}</span>
+      </div>
+    </div>
+    <nav class="rest-ctx-nav">
+      ${pages.map(p => `<a href="${p.href}" class="${activePage === p.key ? "active" : ""}">${p.label}</a>`).join("")}
+    </nav>
+  `;
+}
+
+async function initAdminLayout(activePage = "home", restaurantId = "") {
+  // Apply saved theme immediately before any rendering
+  if (localStorage.getItem("avenzo-theme") === "light") {
+    document.body.classList.add("light");
+  }
+  requireAuth("/restaurant-login.html");
+  try {
+    const user = await initAccountMenu("accountMenu", "/restaurant-login.html");
+    if (!user) return null;
+    if (user.role === "USER") {
+      window.location.href = "/customer.html";
+      return null;
+    }
+    const sidebar = document.getElementById("adminSidebar");
+    const bnav = document.getElementById("adminBnav");
+    if (sidebar) sidebar.innerHTML = adminSidebarHtml(activePage, restaurantId, user.role);
+    if (bnav)    bnav.innerHTML    = adminBottomNavHtml(activePage, restaurantId, user.role);
+    // Load leads badge for ADMIN
+    if (user.role === "ADMIN") {
+      request("/admin/restaurant-leads/summary").then(data => {
+        const count = data.unseenNewCount || 0;
+        ["sidebarLeadsBadge", "bnavLeadsBadge"].forEach(id => {
+          const el = document.getElementById(id);
+          if (!el) return;
+          el.textContent = count;
+          el.classList.toggle("hidden", count === 0);
+        });
+      }).catch(() => {});
+    }
+    return user;
+  } catch {
+    window.location.href = "/restaurant-login.html";
+    return null;
+  }
+}
+
 async function initCustomerPage(active = "home") {
   requireAuth();
   const navTarget = document.getElementById("customerNav");

@@ -1,221 +1,238 @@
 <!DOCTYPE html>
 <html>
-
 <head>
-  <title>Avenzo Scan Cards</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <title>QR Cards — Avenzo</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#E8401C">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/assets/app.css">
+  <link rel="stylesheet" href="/assets/admin.css">
   <style>
-    .qr-grid {
-      align-items: stretch;
-    }
-
-    .qr-img {
-      width: 210px;
-      height: 210px;
-      border-radius: var(--radius);
-      background: white;
-      padding: 10px;
-      border: 1px solid var(--line);
-      display: block;
-      margin: 0 auto;
-    }
-
+    .qr-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
     .qr-card {
-      display: grid;
-      justify-items: center;
+      background: linear-gradient(150deg, #fffdf9 0%, #fff5e8 55%, #f6f9ff 100%);
+      border: 1px solid rgba(232,64,28,0.14);
+      border-radius: var(--r-lg);
+      box-shadow: 0 12px 32px rgba(40,20,5,0.10);
+      display: flex;
+      flex-direction: column;
       align-items: center;
-      text-align: center;
-      overflow: hidden;
+      gap: 16px;
+      padding: 28px 24px 22px;
       position: relative;
-      background:
-        radial-gradient(circle at 16% 10%, rgba(255, 200, 87, 0.22), transparent 35%),
-        linear-gradient(165deg, #fffdf9 0%, #fff4e6 55%, #f8fbff 100%);
-      border: 1px solid rgba(255, 107, 22, 0.15);
-      box-shadow: 0 18px 36px rgba(64, 31, 15, 0.12);
-      min-height: 420px;
+      overflow: hidden;
+      transition: box-shadow 0.2s, transform 0.2s;
     }
-
-    .qr-card:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 22px 42px rgba(255, 107, 22, 0.16);
-    }
-
-    .qr-head {
-      width: 100%;
-      display: grid;
-      gap: 4px;
-      justify-items: center;
-    }
-
-    .qr-subtext {
-      max-width: 280px;
-    }
-
-    .qr-sticker {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 28px;
-      padding: 0 10px;
-      border-radius: 999px;
-      border: 1px solid rgba(18, 116, 91, 0.24);
-      background: rgba(18, 116, 91, 0.09);
-      color: #0d5f4a;
-      font-size: 12px;
-      font-weight: 800;
-    }
-
+    .qr-card:hover { box-shadow: 0 18px 42px rgba(232,64,28,0.14); transform: translateY(-2px); }
     .qr-card::before {
       content: "";
       position: absolute;
       inset: 0 0 auto 0;
-      height: 7px;
-      background: linear-gradient(90deg, var(--brand), var(--brand-2));
+      height: 5px;
+      background: linear-gradient(90deg, #E8401C, #F0883E);
     }
-
-    @media (max-width: 760px) {
-      .qr-card {
-        min-height: 390px;
-      }
-
-      .qr-img {
-        width: 190px;
-        height: 190px;
-      }
+    .qr-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 12px;
+      border-radius: 999px;
+      background: rgba(18,116,91,0.10);
+      border: 1px solid rgba(18,116,91,0.22);
+      color: #0d5f4a;
+      font-size: 12px;
+      font-weight: 800;
     }
+    .qr-name {
+      font-size: 18px;
+      font-weight: 800;
+      color: #1a1714;
+      text-align: center;
+      line-height: 1.2;
+    }
+    .qr-loc {
+      font-size: 13px;
+      color: rgba(26,23,20,0.52);
+      text-align: center;
+      max-width: 240px;
+    }
+    .qr-img-wrap {
+      background: #fff;
+      border-radius: 12px;
+      padding: 10px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.10);
+    }
+    .qr-img { width: 180px; height: 180px; display: block; }
   </style>
 </head>
-
 <body>
-  <div class="shell">
-    <header class="topbar">
-      <div class="topbar-inner">
-        <div class="brand">
-          <img src="/logo.png" alt="Avenzo">
-          <span>AVENZO</span>
-        </div>
-        <div id="accountMenu"></div>
-      </div>
-    </header>
+<div class="admin-shell">
+  <header class="admin-topbar">
+    <a href="/admin/dashboard.html" class="admin-brand">
+      <img src="/logo.png" alt="Avenzo">
+      <span class="admin-brand-name">AVENZO</span>
+    </a>
+    <span class="admin-brand-sep"></span>
+    <span class="admin-context" id="adminContext">QR Cards</span>
+    <div class="admin-topbar-right">
+      <div id="accountMenu"></div>
+    </div>
+  </header>
+  <nav class="admin-sidebar" id="adminSidebar"></nav>
+  <main class="admin-main">
+    <div class="admin-page">
 
-    <main class="page">
-      <section class="page-head">
+      <div class="admin-ph">
         <div>
-          <div class="eyebrow">Dine-in scan cards</div>
-          <h1>Restaurant scan cards</h1>
-          <p class="muted">Print friendly table cards so guests can order while seated.</p>
+          <div class="admin-eyebrow">Dine-in</div>
+          <h1 class="admin-ph-title">QR Scan Cards</h1>
+          <p class="admin-ph-sub">Print or download table cards so guests can scan and order while seated.</p>
         </div>
-      </section>
+      </div>
 
-      <section class="grid grid-3 qr-grid" id="container"></section>
-    </main>
-  </div>
-  <nav class="admin-dock">
-    <a href="/admin/dashboard.html">Home</a>
-    <a class="active" href="#">Cards</a>
-  </nav>
+      <div id="restCtxBar" class="rest-ctx" style="display:none"></div>
 
-  <script src="/assets/app.js"></script>
-  <script>
-    const selectedRestaurantId = new URLSearchParams(location.search).get("restaurantId");
+      <div class="qr-grid" id="container"></div>
 
-    async function loadRestaurants() {
-      try {
-        document.getElementById("container").innerHTML = skeletonCards(6);
-        const data = await request("/restaurants");
-        let restaurants = data.restaurants || [];
-        if (selectedRestaurantId) {
-          restaurants = restaurants.filter(r => r.id === selectedRestaurantId);
-        }
-        restaurants = restaurants.filter(r => r.isActive && !["EXPIRED", "SUSPENDED"].includes(r.subscriptionStatus));
+    </div>
+  </main>
+</div>
+<nav class="admin-bnav" id="adminBnav"></nav>
 
-        const container = document.getElementById("container");
-        if (!restaurants.length) {
-          container.innerHTML = `<div class="empty empty-full">Scan cards will appear here when the restaurant service is active.</div>`;
-          return;
-        }
+<script src="/assets/app.js"></script>
+<script>
+const selectedRestaurantId = new URLSearchParams(location.search).get("restaurantId");
 
-        window.__restaurants = restaurants;
-        container.innerHTML = restaurants.map(r => {
-          const url = `${API}/r/${r.slug}?guest=1`;
-          const qr = qrUrl(url, 220);
-          return `
-            <article class="card card-pad stack qr-card">
-              <div class="qr-head">
-                <span class="qr-sticker">Scan to order</span>
-                <h3>${escapeHtml(r.name)}</h3>
-                <div class="muted qr-subtext">${escapeHtml(r.address || r.locality || "Scan and order at the restaurant")}</div>
-              </div>
-              <img class="qr-img" loading="lazy" decoding="async" src="${qr}" alt="Scan card for ${escapeHtml(r.name)}">
-              <button class="btn btn-primary" onclick='downloadCard(${JSON.stringify(r.id)}, ${JSON.stringify(r.name)})'>Download card</button>
-            </article>
-          `;
-        }).join("");
-      } catch (err) {
-        document.getElementById("container").innerHTML = `<div class="empty empty-full">${escapeHtml(err.message)}</div>`;
+function qrUrl(url, size) {
+  return `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(url)}`;
+}
+
+async function loadRestaurants() {
+  try {
+    document.getElementById("container").innerHTML = skeletonCards(3);
+    const data = await request("/restaurants");
+    let restaurants = data.restaurants || [];
+    if (selectedRestaurantId) {
+      restaurants = restaurants.filter(r => r.id === selectedRestaurantId);
+      const r = restaurants[0];
+      if (r) {
+        document.getElementById("adminContext").textContent = r.name;
+        document.getElementById("restCtxBar").style.display = "";
+        renderRestaurantContext(r, "qr", selectedRestaurantId);
       }
     }
+    restaurants = restaurants.filter(r => r.isActive && !["EXPIRED", "SUSPENDED"].includes(r.subscriptionStatus));
 
-    function qrUrl(url, size) {
-      return `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(url)}`;
+    const container = document.getElementById("container");
+    if (!restaurants.length) {
+      container.innerHTML = `<div class="empty-state"><div class="empty-state-icon">📱</div><div class="empty-state-title">No active restaurants</div><div class="empty-state-sub">QR cards appear here once the restaurant service is active.</div></div>`;
+      return;
     }
 
-    function downloadCard(id, name) {
-      const restaurant = (window.__restaurants || []).find(r => r.id === id);
-      const url = `${API}/r/${restaurant?.slug || id}?guest=1`;
-      const canvas = document.createElement("canvas");
-      const ctx = canvas.getContext("2d");
-      const qrImage = new Image();
-      qrImage.crossOrigin = "anonymous";
-      canvas.width = 700;
-      canvas.height = 900;
+    window.__restaurants = restaurants;
+    container.innerHTML = restaurants.map(r => {
+      const url = `${API}/r/${r.slug}?guest=1`;
+      const qr = qrUrl(url, 200);
+      return `
+        <article class="qr-card">
+          <span class="qr-badge">📱 Scan to order</span>
+          <div class="qr-name">${escapeHtml(r.name)}</div>
+          ${r.address || r.locality ? `<div class="qr-loc">${escapeHtml(r.address || r.locality)}</div>` : ""}
+          <div class="qr-img-wrap">
+            <img class="qr-img" loading="lazy" decoding="async" src="${qr}" alt="QR code for ${escapeHtml(r.name)}">
+          </div>
+          <button class="btn btn-primary w-full" onclick='downloadCard(${JSON.stringify(r.id)}, ${JSON.stringify(r.name)})'>
+            Download card
+          </button>
+        </article>
+      `;
+    }).join("");
+  } catch (err) {
+    document.getElementById("container").innerHTML = `<div class="empty-state"><div class="empty-state-icon">⚠️</div><div class="empty-state-title">Could not load QR cards</div><div class="empty-state-sub">${escapeHtml(err.message)}</div></div>`;
+  }
+}
 
-      qrImage.onload = function () {
-        const gradient = ctx.createLinearGradient(0, 0, 700, 900);
-        gradient.addColorStop(0, "#ffffff");
-        gradient.addColorStop(1, "#fff1e5");
-        ctx.fillStyle = gradient;
-        ctx.fillRect(0, 0, 700, 900);
+function downloadCard(id, name) {
+  const restaurant = (window.__restaurants || []).find(r => r.id === id);
+  const url = `${API}/r/${restaurant?.slug || id}?guest=1`;
+  const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext("2d");
+  const qrImage = new Image();
+  qrImage.crossOrigin = "anonymous";
+  canvas.width = 700;
+  canvas.height = 900;
 
-        ctx.fillStyle = "#101114";
-        ctx.font = "800 46px Arial";
-        ctx.textAlign = "center";
-        ctx.fillText("AVENZO", 350, 90);
+  qrImage.onload = function () {
+    // Background gradient
+    const gradient = ctx.createLinearGradient(0, 0, 700, 900);
+    gradient.addColorStop(0, "#fffdf9");
+    gradient.addColorStop(0.6, "#fff5e8");
+    gradient.addColorStop(1, "#f6f9ff");
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, 700, 900);
 
-        ctx.font = "700 34px Arial";
-        ctx.fillText(name, 350, 155);
+    // Top accent bar
+    const barGrad = ctx.createLinearGradient(0, 0, 700, 0);
+    barGrad.addColorStop(0, "#E8401C");
+    barGrad.addColorStop(1, "#F0883E");
+    ctx.fillStyle = barGrad;
+    ctx.fillRect(0, 0, 700, 10);
 
-        ctx.fillStyle = "#ff6a00";
-        ctx.fillRect(70, 185, 560, 12);
+    // AVENZO title
+    ctx.fillStyle = "#1a1714";
+    ctx.font = "800 48px Arial, sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText("AVENZO", 350, 90);
 
-        ctx.fillStyle = "#ffffff";
-        ctx.fillRect(150, 230, 400, 400);
-        ctx.drawImage(qrImage, 175, 255, 350, 350);
-
-        ctx.fillStyle = "#ff6a00";
-        ctx.font = "800 32px Arial";
-        ctx.fillText("Order from your seat", 350, 700);
-
-        ctx.fillStyle = "#667085";
-        ctx.font = "20px Arial";
-        ctx.fillText("Scan. Choose. Enjoy it here.", 350, 740);
-
-        const link = document.createElement("a");
-        link.download = `${name}-avenzo-qr.jpg`;
-        link.href = canvas.toDataURL("image/jpeg", 1.0);
-        link.click();
-      };
-
-      qrImage.src = qrUrl(url, 350);
+    // Restaurant name
+    ctx.fillStyle = "#E8401C";
+    ctx.font = "700 32px Arial, sans-serif";
+    const maxWidth = 580;
+    let fontSize = 32;
+    while (ctx.measureText(name).width > maxWidth && fontSize > 18) {
+      fontSize--;
+      ctx.font = `700 ${fontSize}px Arial, sans-serif`;
     }
+    ctx.fillText(name, 350, 148);
 
-    initPartnerPage().then((user) => {
-      if (!user) return;
-      loadRestaurants();
-    });
-  </script>
+    // Divider
+    ctx.strokeStyle = "rgba(232,64,28,0.2)";
+    ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(70, 175); ctx.lineTo(630, 175); ctx.stroke();
+
+    // QR white frame + image
+    ctx.fillStyle = "#ffffff";
+    ctx.shadowColor = "rgba(0,0,0,0.10)";
+    ctx.shadowBlur = 20;
+    ctx.roundRect ? ctx.roundRect(155, 210, 390, 390, 16) : ctx.rect(155, 210, 390, 390);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.drawImage(qrImage, 180, 235, 340, 340);
+
+    // CTA text
+    ctx.fillStyle = "#E8401C";
+    ctx.font = "800 30px Arial, sans-serif";
+    ctx.fillText("Order from your seat", 350, 680);
+
+    ctx.fillStyle = "rgba(26,23,20,0.5)";
+    ctx.font = "20px Arial, sans-serif";
+    ctx.fillText("Scan · Choose · Enjoy here", 350, 720);
+
+    // Download
+    const link = document.createElement("a");
+    link.download = `${name.replace(/[^a-z0-9]/gi, "-").toLowerCase()}-qr.jpg`;
+    link.href = canvas.toDataURL("image/jpeg", 0.95);
+    link.click();
+  };
+
+  qrImage.src = qrUrl(url, 380);
+}
+
+initAdminLayout("qr", selectedRestaurantId || "").then(user => {
+  if (!user) return;
+  loadRestaurants();
+});
+</script>
+<noscript>Please enable JavaScript to use Avenzo.</noscript>
 </body>
-
 </html>
