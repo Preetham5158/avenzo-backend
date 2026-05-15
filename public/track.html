@@ -1,78 +1,151 @@
 <!DOCTYPE html>
-<html>
-
+<html lang="en">
 <head>
-  <title>Track Order</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/assets/app.css">
+  <title>Track Order — Avenzo</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <script>try{if(localStorage.getItem('avenzo-theme')==='light')document.documentElement.classList.add('light')}catch(e){}</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
-    .status-steps {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 8px;
-    }
+    :root{--bg:#0C0B0F;--bg-2:#151318;--bg-3:#1E1C24;--bg-4:#272530;--tx:#F2E8D4;--tx-2:#C8BA9C;--tx-3:#9A8C7A;--brand:#E8401C;--brand-d:#C43318;--brand-soft:rgba(232,64,28,0.12);--success:#27C96B;--success-soft:rgba(39,201,107,0.12);--warn:#E8A53A;--warn-soft:rgba(232,165,58,0.12);--danger:#E84040;--danger-soft:rgba(232,64,64,0.12);--line:rgba(255,255,255,0.07);--glass:rgba(9,8,10,0.88);--r:16px;--r-sm:10px;--nav-h:60px}
+    html.light{--bg:#FAFAF8;--bg-2:#F2EEE5;--bg-3:#EAE4D9;--bg-4:#DDD6C8;--tx:#1A1008;--tx-2:#5C4F3C;--tx-3:#9A8B7A;--line:rgba(0,0,0,0.08);--glass:rgba(250,250,248,0.92)}
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    html{-webkit-font-smoothing:antialiased}
+    body{font-family:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg);color:var(--tx);min-height:100dvh;padding-bottom:80px}
+    a{color:inherit;text-decoration:none}
+    button,input,textarea,select{font:inherit;border:0;outline:none;background:none;color:inherit;cursor:pointer}
 
-    .step {
-      min-height: 8px;
-      border-radius: 999px;
-      background: #e6e9f0;
-    }
+    /* ── NAV ── */
+    .t-nav{position:sticky;top:0;z-index:50;height:var(--nav-h);background:var(--glass);backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);border-bottom:1px solid var(--line)}
+    .t-nav-in{height:100%;max-width:640px;margin:0 auto;padding:0 22px;display:flex;align-items:center;gap:12px}
+    .t-logo{display:flex;align-items:center;gap:9px;flex:1}.t-logo img{width:26px;height:26px;border-radius:7px}.t-logo span{font-size:16px;font-weight:800;letter-spacing:1.6px}
+    .t-nav-links{display:flex;align-items:center;gap:6px}
+    .t-nav-links a{padding:7px 13px;border-radius:8px;font-size:13px;font-weight:600;color:var(--tx-3);transition:color .12s,background .12s}.t-nav-links a:hover{color:var(--tx);background:var(--bg-3)}
 
-    .step.active {
-      background: linear-gradient(45deg, var(--brand), var(--brand-2));
-    }
+    /* customer topbar (shown when logged in) */
+    .topbar{position:sticky;top:0;z-index:50;background:var(--glass);backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);border-bottom:1px solid var(--line)}
+    .topbar-inner{height:var(--nav-h);max-width:1160px;margin:0 auto;padding:0 22px;display:flex;align-items:center;gap:12px}
+    .brand{display:flex;align-items:center;gap:9px;flex-shrink:0}.brand img{width:26px;height:26px;border-radius:7px}.brand span{font-size:16px;font-weight:800;letter-spacing:1.6px}
 
-    .order-code {
-      font-size: clamp(44px, 12vw, 72px);
-      line-height: 1;
-      font-weight: 800;
-      letter-spacing: 0;
-    }
+    .t-wrap{max-width:640px;margin:0 auto;padding:24px 22px 52px}
 
-    .saved-orders {
-      display: grid;
-      gap: 10px;
-    }
+    /* ── HERO STATUS ── */
+    .t-hero{padding:22px;background:var(--bg-2);border:1px solid var(--line);border-radius:var(--r);margin-bottom:16px}
+    .t-hero-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:18px}
+    .t-rest-name{font-size:clamp(20px,4vw,28px);font-weight:800;line-height:1.1;flex:1;min-width:0}
+    .t-status-badge{display:inline-flex;align-items:center;gap:7px;padding:5px 13px;border-radius:99px;font-size:13px;font-weight:700;flex-shrink:0;border:1.5px solid transparent}
+    .t-status-badge.pending{background:var(--warn-soft);color:var(--warn);border-color:rgba(232,165,58,.25)}
+    .t-status-badge.preparing{background:var(--brand-soft);color:var(--brand);border-color:rgba(232,64,28,.25)}
+    .t-status-badge.ready{background:var(--success-soft);color:var(--success);border-color:rgba(39,201,107,.25)}
+    .t-status-badge.completed{background:var(--success-soft);color:var(--success);border-color:rgba(39,201,107,.25)}
+    .t-status-badge.cancelled{background:var(--danger-soft);color:var(--danger);border-color:rgba(232,64,64,.25)}
+    .t-status-badge.checking{background:var(--bg-3);color:var(--tx-3);border-color:var(--line)}
+    .t-live-dot{width:8px;height:8px;border-radius:50%;background:currentColor;animation:tdot 1.8s ease-in-out infinite;flex-shrink:0}
+    @keyframes tdot{0%,100%{transform:scale(1);opacity:.9}50%{transform:scale(1.35);opacity:.5}}
 
-    .saved-order {
-      width: 100%;
-      text-align: left;
-      background: white;
-    }
+    /* ── STEP PROGRESS ── */
+    .t-steps{display:flex;align-items:flex-start;gap:0}
+    .t-step{flex:1;display:flex;flex-direction:column;align-items:center;position:relative}
+    .t-step-line{position:absolute;top:10px;left:50%;right:-50%;height:2px;background:var(--bg-4);transition:background .35s}
+    .t-step:last-child .t-step-line{display:none}
+    .t-step-dot{width:20px;height:20px;border-radius:50%;background:var(--bg-4);border:2px solid var(--bg-4);z-index:1;position:relative;transition:all .35s}
+    .t-step-lbl{margin-top:8px;font-size:11px;font-weight:600;color:var(--tx-3);text-align:center;line-height:1.2;transition:color .35s}
+    .t-step.done .t-step-dot{background:var(--success);border-color:var(--success);box-shadow:0 0 0 4px var(--success-soft)}
+    .t-step.done .t-step-line{background:var(--success)}
+    .t-step.done .t-step-lbl{color:var(--success)}
+    .t-step.now .t-step-dot{background:var(--warn);border-color:var(--warn);box-shadow:0 0 0 6px var(--warn-soft);animation:tdot 1.8s ease-in-out infinite}
+    .t-step.now .t-step-lbl{color:var(--warn);font-weight:700}
 
-    .star-row {
-      display: flex;
-      gap: 4px;
-      justify-content: center;
-    }
+    .t-placed{font-size:12px;color:var(--tx-3);margin-top:14px}
 
-    .star-btn {
-      background: transparent;
-      border: 0;
-      font-size: 34px;
-      line-height: 1;
-      padding: 4px;
-      cursor: pointer;
-      color: #d1d5db;
-      transition: color 0.12s ease, transform 0.12s ease;
-    }
+    /* ── ORDER CODE CARD ── */
+    .t-code-card{padding:22px;background:var(--bg-2);border:1px solid var(--line);border-radius:var(--r);margin-bottom:16px;text-align:center}
+    .t-code-label{font-size:12px;font-weight:600;color:var(--tx-3);letter-spacing:.8px;text-transform:uppercase;margin-bottom:8px}
+    .t-code{font-size:clamp(56px,14vw,80px);font-weight:800;line-height:1;letter-spacing:6px;color:var(--tx);font-variant-numeric:tabular-nums}
+    .t-table-row{margin-top:8px;font-size:13px;color:var(--tx-3)}
+    .t-table-row strong{color:var(--tx-2)}
+    .t-ready-msg{margin-top:14px;font-size:14px;font-weight:600;color:var(--tx-2);line-height:1.4}
+    .t-ready-msg.ok{color:var(--success)}
+    .t-ready-msg.warn{color:var(--warn)}
 
-    .star-btn.lit {
-      color: var(--brand-2);
-    }
+    /* ── ITEMS ── */
+    .t-card{padding:20px;background:var(--bg-2);border:1px solid var(--line);border-radius:var(--r);margin-bottom:16px}
+    .t-card-title{font-size:14px;font-weight:700;color:var(--tx-3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:14px}
+    .t-item{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--line)}
+    .t-item:last-child{border-bottom:0;padding-bottom:0}
+    .t-item-name{font-size:15px;font-weight:600}
+    .t-item-qty{font-size:13px;color:var(--tx-3);margin-top:2px}
+    .t-item-price{font-size:15px;font-weight:700;flex-shrink:0}
+    .t-total-row{display:flex;justify-content:space-between;align-items:center;padding-top:14px;border-top:1px solid var(--line);margin-top:4px}
+    .t-total-label{font-size:16px;font-weight:700}
+    .t-total-val{font-size:18px;font-weight:800;color:var(--brand)}
 
-    .star-btn:hover {
-      transform: scale(1.18);
-    }
+    /* ── PAYMENT PANELS ── */
+    .t-pay-panel{padding:16px;border-radius:var(--r-sm);margin-bottom:16px;border:1.5px solid transparent}
+    .t-pay-pending{background:var(--warn-soft);border-color:rgba(232,165,58,.25)}
+    .t-pay-failed{background:var(--danger-soft);border-color:rgba(232,64,64,.25)}
+    .t-pay-claimed{background:var(--success-soft);border-color:rgba(39,201,107,.25)}
+    .t-pay-title{font-size:14px;font-weight:700;margin-bottom:4px}
+    .t-pay-panel .t-pay-pending .t-pay-title{color:var(--warn)}
+    .t-pay-panel.t-pay-failed .t-pay-title{color:var(--danger)}
+    .t-pay-panel.t-pay-claimed .t-pay-title{color:var(--success)}
+    .t-pay-msg{font-size:13px;color:var(--tx-3);line-height:1.5;margin-top:4px}
+    .t-pay-qr-img{width:100%;max-width:180px;border-radius:12px;border:1px solid var(--line);display:block;margin:12px auto 6px}
+    .t-pay-upi-id{font-size:12px;color:var(--tx-3);text-align:center;margin-bottom:10px}
 
-    .rating-panel {
-      text-align: center;
+    /* ── ACTIONS ── */
+    .t-actions{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:16px}
+    .t-btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:12px 22px;border-radius:12px;font-size:14px;font-weight:700;transition:all .15s;flex:1;min-height:48px}
+    .t-btn-primary{background:var(--brand);color:#fff}.t-btn-primary:hover{background:var(--brand-d)}
+    .t-btn-ghost{background:var(--bg-3);color:var(--tx-2);border:1.5px solid var(--line)}.t-btn-ghost:hover{border-color:rgba(255,255,255,.16);color:var(--tx)}
+    .t-btn-danger{background:var(--danger-soft);color:var(--danger);border:1.5px solid rgba(232,64,64,.25)}.t-btn-danger:hover{background:rgba(232,64,64,.2)}
+
+    /* ── RATING ── */
+    .t-rating-card{padding:22px;background:var(--bg-2);border:1px solid var(--line);border-radius:var(--r);margin-bottom:16px;text-align:center}
+    .t-rating-eyebrow{font-size:11px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--tx-3);margin-bottom:10px}
+    .t-rating-title{font-size:20px;font-weight:800;margin-bottom:6px}
+    .t-rating-sub{font-size:13px;color:var(--tx-3);margin-bottom:18px}
+    .t-stars{display:flex;justify-content:center;gap:8px;margin-bottom:14px}
+    .t-star{font-size:36px;line-height:1;cursor:pointer;color:var(--bg-4);transition:color .12s,transform .12s;user-select:none}
+    .t-star.lit{color:var(--warn)}
+    .t-star:hover{transform:scale(1.18)}
+    .t-comment{width:100%;background:var(--bg-3);border:1.5px solid var(--line);border-radius:var(--r-sm);padding:12px 14px;font-size:14px;color:var(--tx);resize:vertical;min-height:64px;transition:border-color .15s}
+    .t-comment:focus{border-color:var(--brand)}
+    .t-comment::placeholder{color:var(--tx-3)}
+    .t-submitted-stars{font-size:24px;letter-spacing:2px;margin-bottom:6px}
+
+    /* ── GUEST LOOKUP ── */
+    .t-field{margin-bottom:14px}
+    .t-field label{display:block;font-size:13px;font-weight:600;color:var(--tx-2);margin-bottom:7px}
+    .t-input{width:100%;background:var(--bg-3);border:1.5px solid var(--line);border-radius:12px;padding:13px 16px;font-size:15px;color:var(--tx);transition:border-color .15s,box-shadow .15s}
+    .t-input:focus{border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-soft)}
+    .t-input::placeholder{color:var(--tx-3)}
+    .t-msg{font-size:13px;color:var(--tx-3);margin-top:8px}
+    .t-saved-order{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;text-align:left;background:var(--bg-3);border:1.5px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:10px;transition:border-color .15s}
+    .t-saved-order:hover{border-color:rgba(255,255,255,.16)}
+    .t-saved-order strong{display:block;font-size:14px;font-weight:700}
+    .t-saved-order span.sub{font-size:12px;color:var(--tx-3);margin-top:2px;display:block}
+    .t-pill{display:inline-flex;align-items:center;padding:4px 12px;border-radius:99px;font-size:12px;font-weight:700;background:var(--brand-soft);color:var(--brand)}
+
+    /* ── LOADING SKELETON ── */
+    .t-skel{background:linear-gradient(90deg,var(--bg-3) 25%,var(--bg-4) 50%,var(--bg-3) 75%);background-size:200% 100%;border-radius:10px;animation:tsk 1.5s linear infinite}
+    @keyframes tsk{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+    /* ── TOAST ── */
+    .t-toast{position:fixed;left:50%;bottom:24px;z-index:999;transform:translateX(-50%) translateY(10px);background:var(--bg-4);color:var(--tx);padding:9px 20px;border-radius:99px;font-size:13px;font-weight:600;border:1px solid var(--line);box-shadow:0 8px 32px rgba(0,0,0,.5);opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;white-space:nowrap}
+    .t-toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+    @media (min-width:640px){
+      .t-code{font-size:88px;letter-spacing:10px}
+      .t-actions{flex-wrap:nowrap}
+      .t-btn{flex:0 0 auto}
     }
   </style>
 </head>
-
 <body>
+
+  <!-- Customer topbar (injected by app.js when logged in) -->
   <header class="topbar" id="customerTopbar" hidden>
     <div class="topbar-inner">
       <a class="brand" href="/customer.html" aria-label="Avenzo home">
@@ -83,217 +156,279 @@
     </div>
   </header>
 
-  <main class="page track-page">
-    <section class="hero-panel stack track-hero">
-      <div class="brand center-brand">
-        <img src="/logo.png" alt="Avenzo">
-        <span>AVENZO</span>
+  <!-- Minimal nav for guests -->
+  <nav class="t-nav" id="guestNav">
+    <div class="t-nav-in">
+      <a class="t-logo" href="/">
+        <img src="/logo.png" alt="Avenzo"><span>AVENZO</span>
+      </a>
+      <div class="t-nav-links">
+        <a href="/customer-login.html">Sign in</a>
       </div>
-      <div>
-        <div class="eyebrow">Order tracking</div>
-        <h1 id="restaurantName">Getting your order...</h1>
-        <p class="muted" id="orderNumber">Your food status will appear here.</p>
-      </div>
-    </section>
+    </div>
+  </nav>
 
-    <section class="card card-pad stack mt-16">
-      <div class="row-between">
-        <span class="pill pill-dark" id="statusBadge">Checking</span>
-        <span class="muted" id="placedAt"></span>
-      </div>
-
-      <div class="status-steps" id="steps">
-        <div class="step"></div>
-        <div class="step"></div>
-        <div class="step"></div>
-        <div class="step"></div>
+  <div class="t-wrap">
+    <!-- Hero: status + step tracker -->
+    <div class="t-hero" id="heroCard">
+      <div class="t-hero-top">
+        <h1 class="t-rest-name" id="restaurantName">Getting your order…</h1>
+        <span class="t-status-badge checking" id="statusBadge">
+          <span class="t-live-dot"></span>
+          <span id="statusText">Checking</span>
+        </span>
       </div>
 
-      <div class="track-code-block">
-        <div class="muted">Order code</div>
-        <div class="order-code" id="orderCode">----</div>
-        <div id="tableNumberRow" hidden style="margin-top:6px;font-size:13px" class="muted">Table <strong></strong></div>
-        <p class="muted" id="readyText">This screen updates automatically.</p>
+      <div class="t-steps" id="stepsRow">
+        <div class="t-step" id="step0">
+          <div class="t-step-line"></div>
+          <div class="t-step-dot"></div>
+          <div class="t-step-lbl">Received</div>
+        </div>
+        <div class="t-step" id="step1">
+          <div class="t-step-line"></div>
+          <div class="t-step-dot"></div>
+          <div class="t-step-lbl">Preparing</div>
+        </div>
+        <div class="t-step" id="step2">
+          <div class="t-step-line"></div>
+          <div class="t-step-dot"></div>
+          <div class="t-step-lbl">Ready</div>
+        </div>
+        <div class="t-step" id="step3">
+          <div class="t-step-dot"></div>
+          <div class="t-step-lbl">Collected</div>
+        </div>
       </div>
 
-      <div class="stack" id="items"></div>
+      <div class="t-placed" id="placedAt"></div>
+    </div>
 
-      <div class="row-between top-line">
-        <strong>Total</strong>
-        <strong id="total">Rs 0</strong>
+    <!-- Order code -->
+    <div class="t-code-card" id="codeCard">
+      <div class="t-code-label">Order code</div>
+      <div class="t-code" id="orderCode">----</div>
+      <div class="t-table-row" id="tableNumberRow" hidden>Table <strong></strong></div>
+      <div class="t-ready-msg" id="readyText">This screen updates automatically.</div>
+    </div>
+
+    <!-- Payment panels -->
+    <div id="paymentPendingPanel" hidden></div>
+    <div class="t-pay-panel t-pay-failed" id="paymentFailedPanel" hidden>
+      <div class="t-pay-title" style="color:var(--danger)">Payment failed</div>
+      <p class="t-pay-msg">Your order was cancelled because the payment did not go through.</p>
+    </div>
+
+    <!-- Items + total -->
+    <div class="t-card" id="itemsCard">
+      <div class="t-card-title">Your order</div>
+      <div id="items"></div>
+      <div class="t-total-row">
+        <span class="t-total-label">Total</span>
+        <span class="t-total-val" id="total">₹0</span>
+      </div>
+    </div>
+
+    <!-- Action buttons -->
+    <div class="t-actions" id="trackingActions"></div>
+
+    <!-- Rating -->
+    <div class="t-rating-card" id="ratingSection" hidden>
+      <div class="t-rating-eyebrow">Your feedback</div>
+      <div class="t-rating-title">How was your experience?</div>
+      <p class="t-rating-sub" id="ratingHelp">Tap a star to rate your visit at this restaurant.</p>
+      <div class="t-stars" id="starRow" role="radiogroup" aria-label="Rate this order"></div>
+      <textarea id="ratingComment" class="t-comment" rows="2" maxlength="500" placeholder="Anything you'd like to share? (optional)"></textarea>
+      <button id="submitRatingBtn" class="t-btn t-btn-primary" style="width:100%;margin-top:12px" onclick="submitRating()" disabled>Submit</button>
+    </div>
+
+    <!-- Saved orders (guest, no token) -->
+    <div id="savedOrdersCard" hidden>
+      <div class="t-card" style="margin-bottom:16px">
+        <div class="t-card-title">Find your order</div>
+        <div class="t-field">
+          <label for="lookupPhone">Mobile number</label>
+          <input id="lookupPhone" class="t-input" inputmode="tel" placeholder="+91 98765 43210" autocomplete="tel">
+        </div>
+        <div class="t-field">
+          <label for="lookupCode">Order code <span style="color:var(--tx-3);font-weight:400">(4 digits from checkout)</span></label>
+          <input id="lookupCode" class="t-input" inputmode="numeric" maxlength="4" placeholder="e.g. 3842">
+        </div>
+        <button id="lookupBtn" class="t-btn t-btn-primary" style="width:100%" onclick="lookupOrder()">Find my order</button>
+        <div class="t-msg" id="lookupMsg"></div>
       </div>
 
-      <div class="row row-wrap top-line" id="trackingActions"></div>
+      <div id="savedOrdersList"></div>
+    </div>
+  </div>
 
-      <div id="paymentPendingPanel" hidden style="margin-top:12px;padding:12px 14px;border-radius:14px;background:#fff8e1;border:1px solid #ffe082;font-size:14px">
-        <strong style="color:#e65100">Payment awaited</strong>
-        <p class="muted" style="margin:4px 0 0">Your order is saved. Please complete payment to send it to the kitchen.</p>
-      </div>
-      <div id="paymentFailedPanel" hidden style="margin-top:12px;padding:12px 14px;border-radius:14px;background:#fff0f0;border:1px solid #ffcdd2;font-size:14px">
-        <strong style="color:#c62828">Payment failed</strong>
-        <p class="muted" style="margin:4px 0 0">Your order was cancelled because the payment did not go through.</p>
-      </div>
-    </section>
-
-    <section class="card card-pad stack mt-16" id="ratingSection" hidden>
-      <div class="rating-panel">
-        <div class="eyebrow">Your feedback</div>
-        <h3 class="section-title">How was your order?</h3>
-        <p class="muted" id="ratingHelp">Tap a star to rate your experience at this restaurant.</p>
-        <div class="star-row" id="starRow" role="radiogroup" aria-label="Rate this order"></div>
-        <textarea id="ratingComment" class="input mt-12" rows="2" maxlength="500" placeholder="Optional: what did you think?" style="resize:vertical;min-height:60px"></textarea>
-        <button id="submitRatingBtn" class="btn btn-primary mt-12" onclick="submitRating()" disabled>Submit rating</button>
-      </div>
-    </section>
-
-    <section class="card card-pad stack mt-16" id="savedOrdersCard" hidden>
-      <div>
-        <h3 class="section-title">Recent orders on this device</h3>
-        <div class="muted">No login needed. Orders placed from this browser appear here.</div>
-      </div>
-      <div class="saved-orders" id="savedOrders"></div>
-    </section>
-  </main>
+  <div class="t-toast" id="tToast"></div>
 
   <script src="/assets/app.js"></script>
   <script>
     const trackingToken = window.location.pathname.split("/track/")[1] || "";
-    // guest=1 in URL means this tracking page was opened from guest checkout — show guest actions only.
     const guestTracking = new URLSearchParams(location.search).get("guest") === "1";
     const statuses = ["PENDING", "PREPARING", "READY", "COMPLETED"];
     let isLoadingStatus = false;
     let statusPollingTimer = null;
     let selectedRating = 0;
 
-    function badgeClass(status) {
-      if (status === "READY" || status === "COMPLETED") return "pill-success";
-      if (status === "CANCELLED") return "pill-danger";
-      return "pill-warning";
+    // Simple local toast (doesn't depend on app.js toast)
+    function tToast(msg) {
+      const el = document.getElementById("tToast");
+      el.textContent = msg;
+      el.classList.add("show");
+      setTimeout(() => el.classList.remove("show"), 3000);
+    }
+
+    function statusLabel(value) {
+      return {
+        PENDING: "Order received",
+        PREPARING: "Being prepared",
+        READY: "Ready to collect",
+        COMPLETED: "Completed",
+        CANCELLED: "Cancelled"
+      }[value] || "Checking";
+    }
+
+    function badgeCls(status) {
+      if (status === "READY") return "ready";
+      if (status === "COMPLETED") return "completed";
+      if (status === "CANCELLED") return "cancelled";
+      if (status === "PREPARING") return "preparing";
+      if (status === "PENDING") return "pending";
+      return "checking";
+    }
+
+    function updateSteps(status) {
+      // 4 steps: PENDING(0) → PREPARING(1) → READY(2) → COMPLETED(3)
+      const idx = statuses.indexOf(status);
+      if (status === "CANCELLED") {
+        // dim all
+        [0,1,2,3].forEach(i => {
+          const el = document.getElementById(`step${i}`);
+          el.classList.remove("done","now");
+        });
+        return;
+      }
+      [0,1,2,3].forEach(i => {
+        const el = document.getElementById(`step${i}`);
+        el.classList.remove("done","now");
+        if (i < idx) el.classList.add("done");
+        else if (i === idx) el.classList.add("now");
+      });
     }
 
     async function loadStatus() {
-      if (!trackingToken) {
-        showSavedOrders();
-        return;
-      }
-
+      if (!trackingToken) { showSavedOrders(); return; }
       if (isLoadingStatus) return;
       isLoadingStatus = true;
       try {
         const data = await request(`/order/${trackingToken}`, { auth: false });
 
         document.getElementById("restaurantName").textContent = data.restaurant?.name || "Restaurant";
-        document.getElementById("orderNumber").textContent = Number.isInteger(data.orderNumber) ? `Order #${data.orderNumber}` : "Order received";
-        document.getElementById("orderCode").textContent = data.pickupCode;
-        document.getElementById("placedAt").textContent = formatDate(data.createdAt);
-        const tableEl = document.getElementById("tableNumberRow");
-        if (tableEl) {
-          if (data.tableNumber) {
-            tableEl.querySelector("strong").textContent = data.tableNumber;
-            tableEl.hidden = false;
-          } else {
-            tableEl.hidden = true;
-          }
-        }
+        document.getElementById("placedAt").textContent = data.createdAt ? `Placed ${formatDate(data.createdAt)}` : "";
+
         const badge = document.getElementById("statusBadge");
-        badge.className = `pill ${badgeClass(data.status)}`;
-        badge.textContent = statusLabel(data.status);
+        badge.className = `t-status-badge ${badgeCls(data.status)}`;
+        badge.innerHTML = `<span class="t-live-dot"></span><span>${statusLabel(data.status)}</span>`;
+        // Stop pulsing dot for terminal states
+        if (["COMPLETED","CANCELLED","PAYMENT_FAILED"].includes(data.status) || data.paymentStatus === "PAYMENT_FAILED") {
+          badge.querySelector(".t-live-dot")?.remove();
+        }
 
-        const activeIndex = Math.max(0, statuses.indexOf(data.status));
-        document.querySelectorAll(".step").forEach((step, index) => {
-          step.classList.toggle("active", index <= activeIndex && data.status !== "CANCELLED");
-        });
+        updateSteps(data.status);
 
-        let readyMsg = "The restaurant has received your order.";
-        if (data.status === "READY") readyMsg = "Your food is ready. Please collect at the counter.";
-        else if (data.status === "COMPLETED") readyMsg = "Done. Enjoy your meal.";
-        else if (data.status === "CANCELLED") readyMsg = "This order was cancelled.";
-        else if (data.status === "PREPARING") {
+        document.getElementById("orderCode").textContent = data.pickupCode || "----";
+        const tableEl = document.getElementById("tableNumberRow");
+        if (data.tableNumber) {
+          tableEl.querySelector("strong").textContent = data.tableNumber;
+          tableEl.hidden = false;
+        } else {
+          tableEl.hidden = true;
+        }
+
+        const readyEl = document.getElementById("readyText");
+        readyEl.className = "t-ready-msg";
+        if (data.status === "READY") {
+          readyEl.textContent = "Your order is ready — please collect at the counter.";
+          readyEl.classList.add("ok");
+        } else if (data.status === "COMPLETED") {
+          readyEl.textContent = "All done. Enjoy your meal!";
+          readyEl.classList.add("ok");
+        } else if (data.status === "CANCELLED") {
+          readyEl.textContent = "This order was cancelled.";
+        } else if (data.status === "PREPARING") {
           if (data.readyAt) {
             const t = new Date(data.readyAt);
-            readyMsg = `Being prepared — ready around ${t.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}.`;
+            readyEl.textContent = `Being prepared — ready around ${t.toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"})}.`;
           } else {
-            readyMsg = "The restaurant is preparing your food.";
+            readyEl.textContent = "The restaurant is preparing your food.";
           }
+          readyEl.classList.add("warn");
+        } else {
+          readyEl.textContent = "The restaurant has received your order.";
         }
-        document.getElementById("readyText").textContent = readyMsg;
 
         let total = 0;
         document.getElementById("items").innerHTML = (data.items || []).map(item => {
           const line = item.priceAtOrder * item.quantity;
           total += line;
           return `
-            <div class="row-between">
-              <span>${escapeHtml(item.nameAtOrder)} x ${item.quantity}</span>
-              <strong>${money(line)}</strong>
-            </div>
-          `;
+            <div class="t-item">
+              <div>
+                <div class="t-item-name">${escapeHtml(item.nameAtOrder)}</div>
+                <div class="t-item-qty">${item.quantity} × ${money(item.priceAtOrder)}</div>
+              </div>
+              <div class="t-item-price">${money(line)}</div>
+            </div>`;
         }).join("");
         document.getElementById("total").textContent = money(total);
+
         renderPaymentPanels(data);
         renderTrackingActions(data);
         renderRatingSection(data);
         maybeInitCustomerBar();
 
-        // Stop polling once terminal state is reached (no more updates expected).
-        if (["COMPLETED", "CANCELLED", "PAYMENT_FAILED"].includes(data.status) ||
-            data.paymentStatus === "PAYMENT_FAILED") {
+        if (["COMPLETED","CANCELLED","PAYMENT_FAILED"].includes(data.status) || data.paymentStatus === "PAYMENT_FAILED") {
           stopStatusPolling();
         }
       } catch (err) {
         document.getElementById("restaurantName").textContent = "Order not found";
-        document.getElementById("readyText").textContent = err.message || "Unable to load order.";
+        document.getElementById("readyText").textContent = err.message || "Unable to load this order.";
       } finally {
         isLoadingStatus = false;
       }
     }
 
     function showSavedOrders() {
-      let orders = [];
-      try {
-        orders = JSON.parse(localStorage.getItem("avenzoRecentOrders") || "[]");
-      } catch {
-        orders = [];
-      }
+      // Hide code card, show find order UI
+      document.getElementById("codeCard").hidden = true;
+      document.getElementById("itemsCard").hidden = true;
+      document.getElementById("trackingActions").innerHTML = "";
+      document.getElementById("heroCard").querySelector(".t-hero-top").innerHTML = `
+        <h1 class="t-rest-name">Find your order</h1>
+        <span class="t-status-badge checking"><span>Recent</span></span>`;
+      document.getElementById("stepsRow").hidden = true;
+      document.getElementById("placedAt").textContent = "Enter your mobile number and order code below.";
 
-      document.getElementById("restaurantName").textContent = "Find your order";
-      document.getElementById("orderNumber").textContent = "Enter your details below or choose a recent order.";
-      document.getElementById("statusBadge").textContent = "Recent";
-      document.getElementById("orderCode").textContent = "----";
-      document.getElementById("readyText").textContent = "";
-      document.getElementById("items").innerHTML = `
-        <div class="stack" style="padding:8px 0">
-          <div class="field">
-            <label for="lookupPhone">Mobile number</label>
-            <input id="lookupPhone" class="input" inputmode="tel" placeholder="+91 98765 43210" autocomplete="tel">
-          </div>
-          <div class="field">
-            <label for="lookupCode">Order code (4 digits shown at checkout)</label>
-            <input id="lookupCode" class="input" inputmode="numeric" maxlength="4" placeholder="e.g. 3842">
-          </div>
-          <button id="lookupBtn" class="btn btn-primary" onclick="lookupOrder()">Find my order</button>
-          <div id="lookupMsg" class="muted feedback-line"></div>
-        </div>
-      `;
-      document.getElementById("total").textContent = "";
+      let orders = [];
+      try { orders = JSON.parse(localStorage.getItem("avenzoRecentOrders") || "[]"); } catch {}
 
       const card = document.getElementById("savedOrdersCard");
-      const list = document.getElementById("savedOrders");
       card.hidden = false;
-      list.innerHTML = orders.length
-        ? orders.map(order => `
-          <button class="saved-order card card-pad row-between cursor-pointer" type="button" onclick="location.href='/track/${order.trackingToken}?guest=1'">
-            <span>
-              <strong>${order.orderNumber ? `Order #${order.orderNumber}` : "Order"}</strong>
-              <span class="muted">Code ${escapeHtml(order.pickupCode || "----")}</span>
-            </span>
-            <span class="pill">Track</span>
-          </button>
-        `).join("")
-        : "";
-      document.getElementById("trackingActions").innerHTML = `
-        <a class="btn btn-ghost" href="/customer-login.html">Sign in to your account</a>
-      `;
+      const list = document.getElementById("savedOrdersList");
+      if (orders.length) {
+        list.innerHTML = `<div style="font-size:13px;font-weight:700;color:var(--tx-3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px">Recent on this device</div>` +
+          orders.map(order => `
+            <button class="t-saved-order" type="button" onclick="location.href='/track/${order.trackingToken}?guest=1'">
+              <div>
+                <strong>${order.orderNumber ? `Order #${order.orderNumber}` : "Order"}</strong>
+                <span class="sub">Code ${escapeHtml(order.pickupCode || "----")}</span>
+              </div>
+              <span class="t-pill">Track →</span>
+            </button>`).join("");
+      }
     }
 
     async function lookupOrder() {
@@ -303,62 +438,66 @@
       const btn = document.getElementById("lookupBtn");
       msg.textContent = "";
       if (!phone || !code) { msg.textContent = "Enter your mobile number and order code."; return; }
-      setLoading(btn, true, "Searching...");
+      btn.textContent = "Searching…";
+      btn.disabled = true;
       try {
         const data = await request(`/orders/find?phone=${encodeURIComponent(phone)}&code=${encodeURIComponent(code)}`, { auth: false });
         window.location.href = `/track/${data.trackingToken}?guest=1`;
       } catch (err) {
-        msg.textContent = err.message || "No order found.";
+        msg.textContent = err.message || "No order found with those details.";
       } finally {
-        setLoading(btn, false, "Find my order");
+        btn.disabled = false;
+        btn.textContent = "Find my order";
       }
     }
 
     function renderPaymentPanels(order) {
       const pendingPanel = document.getElementById("paymentPendingPanel");
       const failedPanel = document.getElementById("paymentFailedPanel");
-      pendingPanel.hidden = !["PAYMENT_PENDING", "PAYMENT_CLAIMED"].includes(order.paymentStatus);
+
       failedPanel.hidden = order.paymentStatus !== "PAYMENT_FAILED";
 
       if (order.paymentStatus === "PAYMENT_CLAIMED") {
-        // Customer already submitted claim — restaurant is verifying.
+        pendingPanel.hidden = false;
+        pendingPanel.className = "t-pay-panel t-pay-claimed";
         pendingPanel.innerHTML = `
-          <strong style="color:#2e7d32">Payment claim submitted</strong>
-          <p class="muted" style="margin:4px 0 0">Your payment claim has been sent to the restaurant. They will verify it in their UPI app and confirm shortly. Your order will move to preparation once confirmed.</p>
-        `;
+          <div class="t-pay-title" style="color:var(--success)">Payment claim submitted</div>
+          <p class="t-pay-msg">Your payment claim has been sent to the restaurant. They will verify it and confirm shortly.</p>`;
         return;
       }
 
-      if (order.paymentStatus === "PAYMENT_PENDING" && order.paymentInfo) {
+      if (!["PAYMENT_PENDING","PAYMENT_CLAIMED"].includes(order.paymentStatus)) {
+        pendingPanel.hidden = true;
+        return;
+      }
+
+      pendingPanel.hidden = false;
+      pendingPanel.className = "t-pay-panel t-pay-pending";
+
+      if (order.paymentStatus === "PAYMENT_PENDING" && order.paymentInfo?.type === "UPI_QR") {
         const info = order.paymentInfo;
-        if (info.type === "UPI_QR") {
-          let upiHtml = `<div style="margin-top:10px">`;
-          if (info.qrImageUrl) {
-            upiHtml += `<img src="${escapeHtml(info.qrImageUrl)}" alt="UPI QR" style="max-width:200px;width:100%;border-radius:12px;border:1px solid #eee;display:block;margin-bottom:8px">`;
-          }
-          if (info.upiId) {
-            upiHtml += `<p class="muted" style="font-size:13px;margin:0">UPI ID: ${escapeHtml(info.upiId)}</p>`;
-          }
-          upiHtml += `</div>`;
-          pendingPanel.innerHTML = `
-            <strong style="color:#e65100">Payment awaited — ${escapeHtml(info.displayName)}</strong>
-            <p class="muted" style="margin:4px 0 0">Scan the QR code or use the UPI ID below. Tap "I have paid" after completing payment.</p>
-            ${upiHtml}
-            <button class="btn btn-primary" style="margin-top:10px;width:100%" onclick="retryPayment()">I have paid</button>
-          `;
-        }
+        let qrHtml = "";
+        if (info.qrImageUrl) qrHtml += `<img src="${escapeHtml(info.qrImageUrl)}" alt="UPI QR" class="t-pay-qr-img">`;
+        if (info.upiId) qrHtml += `<div class="t-pay-upi-id">UPI ID: ${escapeHtml(info.upiId)}</div>`;
+        pendingPanel.innerHTML = `
+          <div class="t-pay-title" style="color:var(--warn)">Payment awaited — ${escapeHtml(info.displayName || "UPI")}</div>
+          <p class="t-pay-msg">Scan the QR code or use the UPI ID. Tap "I have paid" after completing payment.</p>
+          ${qrHtml}
+          <button class="t-btn t-btn-primary" style="width:100%;margin-top:4px" onclick="retryPayment()">I have paid</button>`;
+      } else {
+        pendingPanel.innerHTML = `
+          <div class="t-pay-title" style="color:var(--warn)">Payment awaited</div>
+          <p class="t-pay-msg">Your order is saved. Please complete payment to send it to the kitchen.</p>`;
       }
     }
 
     async function retryPayment() {
       if (!trackingToken) return;
       const btn = event?.target;
-      if (btn) setLoading(btn, true, "Submitting...");
+      if (btn) { btn.textContent = "Submitting…"; btn.disabled = true; }
       try {
         const data = await request(`/order/${trackingToken}`, { auth: false });
-        if (data.paymentStatus === "PAID") { await loadStatus(); return; }
-        if (data.paymentStatus === "PAYMENT_CLAIMED") { await loadStatus(); return; }
-
+        if (["PAID","PAYMENT_CLAIMED"].includes(data.paymentStatus)) { await loadStatus(); return; }
         const info = data.paymentInfo;
         if (info?.type === "UPI_QR") {
           await request("/payment/upi-confirm", {
@@ -366,20 +505,16 @@
             body: JSON.stringify({ trackingToken }),
             auth: false
           });
-          toast("Payment claim submitted. The restaurant will confirm shortly.");
+          tToast("Payment claim submitted. The restaurant will confirm shortly.");
           await loadStatus();
         } else {
           const slug = data.restaurant?.slug;
-          if (slug) {
-            window.location.href = `/r/${encodeURIComponent(slug)}?guest=1`;
-          } else {
-            toast("Please return to the menu to complete payment.");
-          }
+          if (slug) window.location.href = `/r/${encodeURIComponent(slug)}?guest=1`;
+          else tToast("Please return to the menu to complete payment.");
         }
       } catch (err) {
-        toast(err.message || "Could not submit payment claim.");
-      } finally {
-        if (btn && btn.isConnected) setLoading(btn, false, "I have paid");
+        tToast(err.message || "Could not submit payment claim.");
+        if (btn && btn.isConnected) { btn.disabled = false; btn.textContent = "I have paid"; }
       }
     }
 
@@ -391,15 +526,14 @@
       const parts = [];
 
       if (!guestTracking && getToken()) {
-        parts.push(`<a class="btn btn-primary" href="/customer-restaurants.html">Browse restaurants</a>`);
-        parts.push(`<a class="btn btn-ghost" href="/customer-orders.html">My orders</a>`);
-      } else if (["COMPLETED", "CANCELLED"].includes(order.status)) {
-        parts.push(`<a class="btn btn-primary" href="${menuHref}">Order again</a>`);
+        parts.push(`<a class="t-btn t-btn-primary" href="/customer-restaurants.html">Browse restaurants</a>`);
+        parts.push(`<a class="t-btn t-btn-ghost" href="/customer-orders.html">My orders</a>`);
+      } else if (["COMPLETED","CANCELLED"].includes(order.status)) {
+        parts.push(`<a class="t-btn t-btn-primary" href="${menuHref}">Order again</a>`);
       }
 
-      // Show cancel only while PENDING and not already paid
       if (order.status === "PENDING" && order.paymentStatus !== "PAID") {
-        parts.push(`<button class="btn btn-ghost" style="color:var(--danger,#c62828)" onclick="cancelOrder()">Cancel order</button>`);
+        parts.push(`<button class="t-btn t-btn-danger" onclick="cancelOrder()">Cancel order</button>`);
       }
 
       target.innerHTML = parts.join("");
@@ -410,48 +544,45 @@
       if (!confirm("Cancel this order? This cannot be undone.")) return;
       try {
         await request(`/order/${trackingToken}/cancel`, { method: "POST", auth: false });
-        toast("Order cancelled.");
+        tToast("Order cancelled.");
         await loadStatus();
       } catch (err) {
-        toast(err.message || "Could not cancel order.");
+        tToast(err.message || "Could not cancel order.");
       }
     }
 
     function renderRatingSection(order) {
       const section = document.getElementById("ratingSection");
       if (order.status !== "COMPLETED") { section.hidden = true; return; }
+      section.hidden = false;
       if (order.hasRating) {
-        section.hidden = false;
         section.innerHTML = `
-          <div class="rating-panel">
-            <div class="eyebrow">Already rated</div>
-            <h3 class="section-title">${renderStars(order.rating || 0)} ${order.rating ? `${order.rating}/5` : ""}</h3>
-            <p class="muted mb-0">Thank you for your feedback!</p>
-          </div>`;
+          <div class="t-rating-eyebrow">Your feedback</div>
+          <div class="t-submitted-stars">${[1,2,3,4,5].map(n=>`<span style="color:${n<=(order.rating||0)?'var(--warn)':'var(--bg-4)'}">★</span>`).join("")}</div>
+          <div class="t-rating-title">${order.rating}/5 stars</div>
+          <p style="font-size:13px;color:var(--tx-3);margin-top:6px">Thank you for your feedback!</p>`;
         return;
       }
-      section.hidden = false;
-      document.getElementById("starRow").innerHTML = [1,2,3,4,5].map(n => `
-        <button class="star-btn" type="button" data-val="${n}" onclick="selectStar(${n})" aria-label="${n} star${n > 1 ? "s" : ""}">★</button>
-      `).join("");
-    }
-
-    function renderStars(val) {
-      return [1,2,3,4,5].map(n => `<span style="color:${n <= val ? "var(--brand-2)" : "#d1d5db"}">★</span>`).join("");
+      // Rebuild star row
+      document.getElementById("starRow").innerHTML = [1,2,3,4,5].map(n =>
+        `<span class="t-star" data-val="${n}" onclick="selectStar(${n})" role="radio" tabindex="0" aria-label="${n} star${n>1?"s":""}">★</span>`
+      ).join("");
+      document.getElementById("submitRatingBtn") && (document.getElementById("submitRatingBtn").disabled = true);
     }
 
     function selectStar(val) {
       selectedRating = val;
-      document.querySelectorAll(".star-btn").forEach(btn => {
-        btn.classList.toggle("lit", Number(btn.dataset.val) <= val);
+      document.querySelectorAll(".t-star").forEach(s => {
+        s.classList.toggle("lit", Number(s.dataset.val) <= val);
       });
-      document.getElementById("submitRatingBtn").disabled = false;
+      const btn = document.getElementById("submitRatingBtn");
+      if (btn) btn.disabled = false;
     }
 
     async function submitRating() {
       if (!selectedRating) return;
       const btn = document.getElementById("submitRatingBtn");
-      setLoading(btn, true, "Submitting...");
+      if (btn) { btn.textContent = "Submitting…"; btn.disabled = true; }
       try {
         const comment = document.getElementById("ratingComment")?.value.trim() || null;
         await request(`/order/${trackingToken}/rating`, {
@@ -461,15 +592,14 @@
         });
         const section = document.getElementById("ratingSection");
         section.innerHTML = `
-          <div class="rating-panel">
-            <div class="eyebrow">Submitted</div>
-            <h3 class="section-title">${renderStars(selectedRating)} ${selectedRating}/5</h3>
-            <p class="muted mb-0">Thank you! Your feedback helps improve the experience.</p>
-          </div>`;
-        toast("Rating submitted. Thank you!");
+          <div class="t-rating-eyebrow">Submitted</div>
+          <div class="t-submitted-stars">${[1,2,3,4,5].map(n=>`<span style="color:${n<=selectedRating?'var(--warn)':'var(--bg-4)'}">★</span>`).join("")}</div>
+          <div class="t-rating-title">${selectedRating}/5 stars</div>
+          <p style="font-size:13px;color:var(--tx-3);margin-top:6px">Thank you! Your feedback helps improve the experience.</p>`;
+        tToast("Rating submitted. Thank you!");
       } catch (err) {
-        toast(err.message || "Could not submit rating");
-        setLoading(btn, false);
+        tToast(err.message || "Could not submit rating.");
+        if (btn && btn.isConnected) { btn.disabled = false; btn.textContent = "Submit"; }
       }
     }
 
@@ -478,20 +608,9 @@
       const bar = document.getElementById("customerTopbar");
       if (!bar || !bar.hidden) return;
       bar.hidden = false;
+      document.getElementById("guestNav").hidden = true;
       document.getElementById("customerNav").innerHTML = customerNavHtml("orders");
       initAccountMenu("accountMenu", "/customer-login.html");
-      const heroBrand = document.querySelector(".center-brand");
-      if (heroBrand) heroBrand.hidden = true;
-    }
-
-    function statusLabel(value) {
-      return {
-        PENDING: "Order received",
-        PREPARING: "Being prepared",
-        READY: "Ready for pickup",
-        COMPLETED: "Completed",
-        CANCELLED: "Cancelled"
-      }[value] || "Checking";
     }
 
     function startStatusPolling() {
@@ -512,12 +631,9 @@
     if (trackingToken) startStatusPolling();
 
     document.addEventListener("visibilitychange", () => {
-      if (document.hidden) return;
-      loadStatus();
+      if (!document.hidden) loadStatus();
     });
-
     window.addEventListener("pagehide", stopStatusPolling);
   </script>
 </body>
-
 </html>
