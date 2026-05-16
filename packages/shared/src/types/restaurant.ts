@@ -1,15 +1,26 @@
 export interface PublicRestaurant {
   slug: string;
   name: string;
-  description?: string;
-  isOpen: boolean;
+  address: string;
+  locality: string;
+  pickupNote: string | null;
+  foodType: string;
+  isActive: boolean;
+  serviceAvailable: boolean;
+  serviceMessage: string | null;
+  avgRating: number | null;
+  ratingCount: number;
 }
 
 export interface PublicMenuItem {
   key: string;
   name: string;
-  price: number;
-  description?: string;
+  description: string | null;
+  imageUrl: string | null;
+  foodType: "VEG" | "NON_VEG" | "EGG";
   isAvailable: boolean;
-  category?: { name: string; sortOrder: number };
+  isActive: boolean;
+  price: number;
+  category: { name: string; sortOrder: number };
+  isPopular: boolean;
 }

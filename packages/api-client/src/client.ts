@@ -1,3 +1,13 @@
+import type {
+  PublicRestaurant,
+  MenuResponse,
+  PaymentMethodInfo,
+  CreateOrderRequest,
+  CreateOrderResponse,
+  OrderDetail,
+  OrderSummary,
+} from "@avenzo/shared";
+
 export interface User {
   id: string;
   email: string;
@@ -116,26 +126,26 @@ export class AvenzoApiClient {
 
   public_ = {
     getRestaurant: (slug: string) =>
-      this.request<object>(`/api/v1/public/restaurants/${slug}`, { auth: false }),
+      this.request<PublicRestaurant>(`/api/v1/public/restaurants/${slug}`, { auth: false }),
     getMenu: (slug: string) =>
-      this.request<{ restaurant: object; categories: object[]; items: object[]; paymentMethods: object[] }>(`/api/v1/public/restaurants/${slug}/menu`, { auth: false }),
+      this.request<MenuResponse>(`/api/v1/public/restaurants/${slug}/menu`, { auth: false }),
     getPaymentMethods: (params: { slug?: string; restaurantId?: string }) =>
-      this.request<object[]>(`/api/v1/public/payment-methods?${new URLSearchParams(params)}`, { auth: false }),
+      this.request<PaymentMethodInfo[]>(`/api/v1/public/payment-methods?${new URLSearchParams(params)}`, { auth: false }),
     lookupOrder: (params: Record<string, string>) =>
-      this.request<object>(`/api/v1/public/orders/lookup?${new URLSearchParams(params)}`, { auth: false }),
+      this.request<OrderDetail>(`/api/v1/public/orders/lookup?${new URLSearchParams(params)}`, { auth: false }),
     findOrder: (params: { phone: string; code: string }) =>
       this.request<{ trackingToken: string }>(`/api/v1/public/orders/find?${new URLSearchParams(params)}`, { auth: false }),
   };
 
   orders = {
-    create: (body: object) =>
-      this.request<object>("/api/v1/customer/orders", { method: "POST", body: JSON.stringify(body) }),
+    create: (body: CreateOrderRequest) =>
+      this.request<CreateOrderResponse>("/api/v1/customer/orders", { method: "POST", body: JSON.stringify(body) }),
     get: (trackingToken: string) =>
-      this.request<object>(`/api/v1/customer/orders/${trackingToken}`),
+      this.request<OrderDetail>(`/api/v1/customer/orders/${trackingToken}`),
     paymentStatus: (trackingToken: string) =>
       this.request<{ paymentStatus: string; orderStatus: string }>(`/api/v1/customer/orders/${trackingToken}/payment-status`, { auth: false }),
     list: (params?: Record<string, string>) =>
-      this.request<{ items: object[]; pagination: object }>(
+      this.request<{ items: OrderSummary[]; pagination: { page: number; limit: number; total: number; hasMore: boolean } }>(
         `/api/v1/customer/orders${params ? "?" + new URLSearchParams(params) : ""}`
       ),
     cancel: (trackingToken: string) =>
