@@ -57,7 +57,7 @@ export default function ProfileScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <Stack.Screen options={{ title: "My Profile", headerShown: true }} />
+      <Stack.Screen options={{ title: "My Profile", headerShown: true, headerBackVisible: false }} />
       <ScrollView contentContainerStyle={styles.content}>
         {error ? (
           <View style={styles.errorBox}>
