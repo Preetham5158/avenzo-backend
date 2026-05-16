@@ -1,108 +1,108 @@
-# Production Deployment — Avenzo Backend
+# Production Deployment - Avenzo Backend
 
-## Repository structure
-The backend lives at `apps/api/` inside the monorepo.
-All Render commands must target `apps/api` explicitly — see below.
+## Repository Structure
+
+The production backend runtime lives at `apps/api/` inside the monorepo. Render should run commands from the repository root and use the root npm workspace scripts.
 
 ## Prerequisites
-- Node.js 20+ (LTS)
-- PostgreSQL 14+ via Supabase (pgBouncer pooler + direct URL)
-- Redis (Upstash recommended for serverless; hosted Redis for dedicated)
-- Razorpay live account with webhook secret
-- Resend account with verified domain
 
-## Environment variables
-Set these in the Render dashboard → Environment.
-Copy `apps/api/.env.example` as a reference.
+- Node.js 20+ LTS.
+- PostgreSQL 14+ via Supabase or another managed PostgreSQL provider.
+- Redis, such as Upstash or hosted Redis.
+- Razorpay live account with webhook secret.
+- Resend account with verified domain.
 
-**Required in production (app will refuse to start without these):**
-- `DATABASE_URL` — pooled connection string (pgBouncer, port 6543)
-- `DIRECT_URL` — direct connection string (port 5432), used by Prisma migrations
-- `JWT_SECRET` — minimum 64 random characters (`openssl rand -hex 64`)
-- `RAZORPAY_KEY_ID` — must be a live key (`rzp_live_...`)
+## Environment Variables
+
+Set these in the Render dashboard environment settings. Copy `apps/api/.env.example` as a reference.
+
+Required in production:
+
+- `DATABASE_URL` - pooled connection string for runtime queries.
+- `DIRECT_URL` - direct connection string for Prisma migrations.
+- `JWT_SECRET` - minimum 64 random characters.
+- `RAZORPAY_KEY_ID` - live key, starting with `rzp_live_`.
 - `RAZORPAY_KEY_SECRET`
-- `RAZORPAY_WEBHOOK_SECRET` — from Razorpay dashboard → Webhooks
-- `REDIS_URL` — `rediss://default:PASSWORD@HOST:PORT` for Upstash
-- `OTP_MODE=email` — OTP_MODE=log is blocked in production
-- `RESEND_API_KEY` — from Resend dashboard
-- `FROM_EMAIL` — verified sender domain
-- `CORS_ORIGINS` — comma-separated allowed origins (no wildcard)
+- `RAZORPAY_WEBHOOK_SECRET`
+- `REDIS_URL`
+- `OTP_MODE=email`
+- `RESEND_API_KEY`
+- `FROM_EMAIL`
+- `CORS_ORIGINS` - comma-separated allowed origins.
 
-## Render deployment commands
+Backend secrets must stay backend-only. Frontend and mobile apps should receive only public API base URLs.
 
-### Build Command
-```
+## Render Deployment Commands
+
+Build Command:
+
+```bash
 npm run render:build
 ```
 
-This runs (defined in root `package.json`):
-```
-npm install --prefix apps/api && npm --prefix apps/api run prisma:migrate:deploy && npm --prefix apps/api run prisma:generate
-```
+Start Command:
 
-### Start Command
-```
+```bash
 node apps/api/src/server.js
 ```
 
-### Health check path
-```
+Health check path:
+
+```text
 /health
 ```
 
-### Readiness probe (if supported)
-```
+Readiness probe, if supported:
+
+```text
 /ready
 ```
 
-## What each build step does
-1. `npm install --prefix apps/api` — installs all backend dependencies into `apps/api/node_modules`
-2. `npm --prefix apps/api run prisma:migrate:deploy` — applies any pending DB migrations
-3. `npm --prefix apps/api run prisma:generate` — regenerates the Prisma client
+## What render:build Does
 
-> **Never use `prisma db push`** — it bypasses migration history.
+`render:build` is defined in the root `package.json` and currently runs:
 
-## Worker service (separate Render service)
-If running BullMQ worker as a separate service:
-
-Start Command:
+```bash
+npm run api:prisma:migrate:deploy && npm run api:prisma:generate
 ```
+
+Render should install dependencies from the monorepo root before running the build command. The build command then applies pending Prisma migrations and regenerates Prisma Client through the root workspace scripts.
+
+Never use `prisma db push` in production.
+
+## Worker Service
+
+If BullMQ workers run as a separate Render service, use the same build command as the API service.
+
+Worker Start Command:
+
+```bash
 node apps/api/src/jobs/worker.js
 ```
 
-Build Command: same as API — `npm run render:build`
+## Webhook Configuration
 
-## Webhook configuration (Razorpay)
 - URL: `https://your-domain.com/webhooks/razorpay`
 - Events: `payment.captured`, `payment.failed`, `order.paid`
-- Copy the webhook secret to `RAZORPAY_WEBHOOK_SECRET`
+- Copy the webhook secret to `RAZORPAY_WEBHOOK_SECRET`.
 
-## Redis setup (Upstash)
-1. Create a free Upstash Redis database
-2. Copy the `rediss://` connection string to `REDIS_URL`
-3. Rate limiting degrades gracefully if Redis is unavailable, but this is not safe in production under load
+## Security Checklist
 
-## Security checklist
-- [ ] `NODE_ENV=production`
-- [ ] `JWT_SECRET` is at least 64 characters and is NOT the placeholder
-- [ ] `RAZORPAY_KEY_ID` starts with `rzp_live_` (not `rzp_test_`)
-- [ ] `OTP_MODE=email` (never `log`)
-- [ ] `CORS_ORIGINS` lists only your actual frontend domains
-- [ ] `SENTRY_DSN` is set for error tracking
-- [ ] HTTPS is enforced (Render enforces this automatically)
+- `NODE_ENV=production`
+- `JWT_SECRET` is strong and not a placeholder.
+- `RAZORPAY_KEY_ID` starts with `rzp_live_`.
+- `OTP_MODE=email`
+- `CORS_ORIGINS` lists only real frontend domains.
+- `SENTRY_DSN` is set if production error tracking is enabled.
+- HTTPS is enforced by the platform.
 
 ## Monitoring
-- `/health` — liveness probe (no DB query, always fast)
-- `/ready` — readiness probe (queries DB, returns 503 if down)
-- Slow requests (>1s) are logged with `"msg":"Slow request"` to stdout
-- Sentry captures unhandled errors when `SENTRY_DSN` is set
 
-## Future pnpm migration
-Once pnpm is installed:
-```
-# Build Command
-pnpm install --frozen-lockfile && pnpm --filter @avenzo/api prisma:migrate:deploy && pnpm --filter @avenzo/api prisma:generate
+- `/health` - liveness probe.
+- `/ready` - readiness probe.
+- Slow requests are logged to stdout.
+- Sentry captures unhandled errors when `SENTRY_DSN` is set.
 
-# Start Command
-node apps/api/src/server.js
-```
+## Static Compatibility Note
+
+`apps/api/public` and `webCompat` routes are still required until `apps/customer-web` and `apps/restaurant-web` replace the static pages and parity is tested.

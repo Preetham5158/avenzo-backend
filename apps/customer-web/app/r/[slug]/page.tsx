@@ -1,3 +1,5 @@
-export default function RestaurantPage({ params }: { params: { slug: string } }) {
-  return <main><h1>Menu — {params.slug}</h1></main>;
+export default async function RestaurantPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
+
+  return <main><h1>Menu — {slug}</h1></main>;
 }
