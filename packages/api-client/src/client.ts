@@ -39,6 +39,15 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
 
+export class ApiRequestError extends Error {
+  readonly status: number;
+  constructor(message: string, status: number) {
+    super(message);
+    this.name = "ApiRequestError";
+    this.status = status;
+  }
+}
+
 export class AvenzoApiClient {
   private baseUrl: string;
   private getToken: () => string | null;
@@ -68,7 +77,7 @@ export class AvenzoApiClient {
     const res = await fetch(`${this.baseUrl}${path}`, { ...fetchOptions, headers });
     const data: unknown = await res.json();
     const envelope: ApiEnvelope = isRecord(data) ? data : {};
-    if (!res.ok) throw new Error(envelope.error?.message ?? "Request failed");
+    if (!res.ok) throw new ApiRequestError(envelope.error?.message ?? "Request failed", res.status);
     if (typeof envelope.success === "boolean" && "data" in envelope) {
       if ("pagination" in envelope) return { items: envelope.data, pagination: envelope.pagination } as T;
       return envelope.data as T;

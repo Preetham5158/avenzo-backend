@@ -1,9 +1,8 @@
-import { Redirect } from "expo-router";
+import { Redirect, Stack } from "expo-router";
 import { ActivityIndicator, View } from "react-native";
 import { useAuth } from "@/context/AuthContext";
 
-// Entry gate — redirects to auth or app depending on session state.
-export default function Index() {
+export default function AppLayout() {
   const { user, loading } = useAuth();
 
   if (loading) {
@@ -14,5 +13,9 @@ export default function Index() {
     );
   }
 
-  return <Redirect href={user ? "/(app)/profile" : "/(auth)/login"} />;
+  if (!user) {
+    return <Redirect href="/(auth)/login" />;
+  }
+
+  return <Stack />;
 }

@@ -2,6 +2,10 @@
   "extends": "expo/tsconfig.base",
   "compilerOptions": {
     "strict": true,
-    "paths": { "@/*": ["./src/*"] }
+    "paths": {
+      "@/*": ["./src/*"],
+      "@avenzo/api-client": ["../../packages/api-client/src/index.ts"],
+      "@avenzo/shared": ["../../packages/shared/src/index.ts"]
+    }
   }
 }
