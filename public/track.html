@@ -575,7 +575,7 @@
       if (isLoadingStatus) return;
       isLoadingStatus = true;
       try {
-        const data = await request(`/order/${trackingToken}`, { auth: false });
+        const data = await request(`/api/v1/customer/orders/${trackingToken}`, { auth: false });
         _orderData = data;
 
         // Track status change timestamps (client-side, first detection only)
@@ -731,7 +731,7 @@
       btn.textContent = "Searching…";
       btn.disabled = true;
       try {
-        const data = await request(`/orders/find?phone=${encodeURIComponent(phone)}&code=${encodeURIComponent(code)}`, { auth: false });
+        const data = await request(`/api/v1/public/orders/find?phone=${encodeURIComponent(phone)}&code=${encodeURIComponent(code)}`, { auth: false });
         window.location.href = `/track/${data.trackingToken}?guest=1`;
       } catch (err) {
         msg.textContent = err.message || "No order found with those details.";
@@ -786,11 +786,11 @@
       const btn = event?.target;
       if (btn) { btn.textContent = "Submitting…"; btn.disabled = true; }
       try {
-        const data = await request(`/order/${trackingToken}`, { auth: false });
+        const data = await request(`/api/v1/customer/orders/${trackingToken}`, { auth: false });
         if (["PAID","PAYMENT_CLAIMED"].includes(data.paymentStatus)) { await loadStatus(); return; }
         const info = data.paymentInfo;
         if (info?.type === "UPI_QR") {
-          await request("/payment/upi-confirm", {
+          await request("/api/v1/customer/payments/upi/claim", {
             method: "POST",
             body: JSON.stringify({ trackingToken }),
             auth: false
@@ -833,7 +833,7 @@
       if (!trackingToken) return;
       if (!confirm("Cancel this order? This cannot be undone.")) return;
       try {
-        await request(`/order/${trackingToken}/cancel`, { method: "POST", auth: false });
+        await request(`/api/v1/customer/orders/${trackingToken}/cancel`, { method: "POST", auth: false });
         tToast("Order cancelled.");
         await loadStatus();
       } catch (err) {
@@ -875,7 +875,7 @@
       if (btn) { btn.textContent = "Submitting…"; btn.disabled = true; }
       try {
         const comment = document.getElementById("ratingComment")?.value.trim() || null;
-        await request(`/order/${trackingToken}/rating`, {
+        await request(`/api/v1/customer/orders/${trackingToken}/rating`, {
           method: "POST",
           body: JSON.stringify({ rating: selectedRating, comment }),
           auth: false
@@ -894,13 +894,13 @@
     }
 
     function maybeInitCustomerBar() {
-      const token = getToken ? getToken() : sessionStorage.getItem("token");
+      const token = getToken ? getToken() : sessionStorage.getItem("avenzo_access_token");
       if (!token || (typeof guestTracking !== "undefined" && guestTracking)) {
         const sl = document.getElementById("signInLink");
         if (sl) sl.hidden = false;
         return;
       }
-      request("/auth/me").then(u => {
+      request("/api/v1/me").then(u => {
         if (!u || u.role !== "USER") {
           const sl = document.getElementById("signInLink");
           if (sl) sl.hidden = false;

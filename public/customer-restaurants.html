@@ -179,7 +179,7 @@
 
   <script src="/assets/app.js"></script>
   <script>
-    if (!sessionStorage.getItem("token")) location.href = "/customer-login.html";
+    if (!sessionStorage.getItem("avenzo_access_token")) location.href = "/customer-login.html";
 
     const BANNERS = [
       {grad:"linear-gradient(135deg,#2E1510,#1A0C08)",emoji:"🍖"},
@@ -308,7 +308,7 @@
 
     function toggleUMenu() { document.getElementById("uDrop").classList.toggle("open") }
     document.addEventListener("click", e => { if (!document.getElementById("uBtn")?.contains(e.target)) document.getElementById("uDrop")?.classList.remove("open") });
-    function doSignOut() { sessionStorage.removeItem("token"); location.href = "/customer-login.html" }
+    function doSignOut() { sessionStorage.removeItem("avenzo_access_token"); location.href = "/customer-login.html" }
     function toggleTheme() { const on = document.documentElement.classList.toggle("light"); localStorage.setItem("avenzo-theme", on ? "light" : "dark") }
   </script>
 </body>

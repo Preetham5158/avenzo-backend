@@ -3279,6 +3279,7 @@ v1.get("/public/restaurants/:slug/menu", trackingLimiter, async (req, res) => {
         const [menu, categories, popularIds] = await Promise.all([
             prisma.menu.findMany({
                 where: { restaurantId: restaurant.id, isActive: true, ...foodFilter },
+                include: { category: true },
                 orderBy: [{ category: { sortOrder: "asc" } }, { category: { name: "asc" } }]
             }),
             prisma.category.findMany({
@@ -3925,6 +3926,134 @@ v1.post("/restaurant/device-token", v1Auth, async (req, res) => {
     } catch (err) {
         logRouteError("POST /api/v1/restaurant/device-token", err);
         return v1err(res, "SERVER_ERROR", "Could not register device token", 500);
+    }
+});
+
+// ── Unified /me — works for any authenticated role ────────────────────────
+
+v1.get("/me", v1Auth, async (req, res) => {
+    try {
+        const user = await getAuthUser(req.user.userId);
+        if (!user) return v1err(res, "NOT_FOUND", "Account not found", 404);
+        return v1ok(res, { id: user.id, email: user.email, name: user.name, phone: user.phone, role: user.role });
+    } catch (err) {
+        logRouteError("GET /api/v1/me", err);
+        return v1err(res, "SERVER_ERROR", "Could not fetch profile", 500);
+    }
+});
+
+// ── Customer order actions ─────────────────────────────────────────────────
+
+v1.post("/customer/orders/:trackingToken/cancel", orderLimiter, v1OptionalAuth, async (req, res) => {
+    try {
+        const order = await prisma.order.findUnique({
+            where: { trackingToken: req.params.trackingToken },
+            select: { id: true, status: true, customerId: true, paymentStatus: true, restaurantId: true }
+        });
+        if (!order) return v1err(res, "NOT_FOUND", "Order not found", 404);
+        if (order.status === "CANCELLED") return v1ok(res, { cancelled: true });
+        if (order.status !== "PENDING") {
+            return v1err(res, "BAD_REQUEST", "This order is already being prepared and cannot be cancelled. Please speak to the restaurant.", 400);
+        }
+        if (order.paymentStatus === "PAID") {
+            return v1err(res, "BAD_REQUEST", "A paid order cannot be self-cancelled. Please contact the restaurant.", 400);
+        }
+        if (order.customerId && !req.user?.userId) {
+            return v1err(res, "UNAUTHORIZED", "Please sign in again.", 401);
+        }
+        if (order.customerId && order.customerId !== req.user.userId) {
+            return v1err(res, "FORBIDDEN", "You cannot cancel this order.", 403);
+        }
+        await prisma.order.update({ where: { id: order.id }, data: { status: "CANCELLED" } });
+        await auditLog("ORDER_STATUS_UPDATED", {
+            restaurantId: order.restaurantId,
+            orderId: order.id,
+            actorUserId: req.user?.userId || null,
+            metadata: { to: "CANCELLED", source: "customer_self_cancel" }
+        });
+        return v1ok(res, { cancelled: true });
+    } catch (err) {
+        logRouteError("POST /api/v1/customer/orders/:trackingToken/cancel", err);
+        return v1err(res, "SERVER_ERROR", "Could not cancel order", 500);
+    }
+});
+
+v1.post("/customer/orders/:trackingToken/rating", orderLimiter, v1OptionalAuth, async (req, res) => {
+    try {
+        const ratingVal = Number(req.body.rating);
+        if (!Number.isInteger(ratingVal) || ratingVal < 1 || ratingVal > 5) {
+            return v1err(res, "VALIDATION_ERROR", "Rating must be between 1 and 5 stars");
+        }
+        const comment = req.body.comment ? String(req.body.comment).trim().slice(0, 500) : null;
+        await submitRating(prisma, {
+            trackingToken: req.params.trackingToken,
+            rating: ratingVal,
+            comment,
+            userId: req.user?.userId || null
+        });
+        return v1ok(res, { rated: true, message: "Thank you for your feedback!" });
+    } catch (err) {
+        if (err.status) return v1err(res, "BAD_REQUEST", err.message, err.status);
+        logRouteError("POST /api/v1/customer/orders/:trackingToken/rating", err);
+        return v1err(res, "SERVER_ERROR", "Could not save your rating", 500);
+    }
+});
+
+// ── Public order lookup ────────────────────────────────────────────────────
+
+v1.get("/public/orders/lookup", orderLookupLimiter, async (req, res) => {
+    try {
+        let restaurantId = cleanString(req.query.restaurantId, 80);
+        const restaurantSlug = cleanString(req.query.restaurantSlug, 140);
+        const phone = normalizePhone(req.query.phone);
+        if ((!restaurantId && !restaurantSlug) || !phone || !isValidPhone(phone)) {
+            return v1err(res, "VALIDATION_ERROR", "Enter the same mobile number used for ordering");
+        }
+        if (!restaurantId && restaurantSlug) {
+            const r = await prisma.restaurant.findUnique({ where: { slug: restaurantSlug }, select: { id: true } });
+            if (!r) return v1err(res, "NOT_FOUND", "Restaurant not found", 404);
+            restaurantId = r.id;
+        }
+        const orders = await prisma.order.findMany({
+            where: { restaurantId, phone },
+            select: { trackingToken: true, orderNumber: true, pickupCode: true, status: true, totalPricePaise: true, createdAt: true },
+            orderBy: { createdAt: "desc" },
+            take: 5
+        });
+        return v1ok(res, {
+            orders: orders.map(o => ({
+                trackingToken: o.trackingToken,
+                orderNumber: o.orderNumber,
+                pickupCode: o.pickupCode,
+                status: o.status,
+                totalPrice: paiseToRupees(o.totalPricePaise),
+                createdAt: o.createdAt
+            }))
+        });
+    } catch (err) {
+        logRouteError("GET /api/v1/public/orders/lookup", err);
+        return v1err(res, "SERVER_ERROR", "Could not find orders", 500);
+    }
+});
+
+v1.get("/public/orders/find", orderLookupLimiter, async (req, res) => {
+    try {
+        const phone = normalizePhone(req.query.phone);
+        const code = cleanString(req.query.code, 10);
+        if (!phone || !isValidPhone(phone) || !code) {
+            return v1err(res, "VALIDATION_ERROR", "Mobile number and order code are required");
+        }
+        // Limit lookups to the last 48 hours to avoid exposing old orders.
+        const since = new Date(Date.now() - 48 * 60 * 60 * 1000);
+        const order = await prisma.order.findFirst({
+            where: { phone, pickupCode: code, createdAt: { gte: since } },
+            select: { trackingToken: true }
+        });
+        if (!order) return v1err(res, "NOT_FOUND", "No order found. Check your mobile number and the code shown at checkout.", 404);
+        return v1ok(res, { trackingToken: order.trackingToken });
+    } catch (err) {
+        logRouteError("GET /api/v1/public/orders/find", err);
+        return v1err(res, "SERVER_ERROR", "Could not find order", 500);
     }
 });
 

@@ -321,7 +321,7 @@ button:focus-visible,.fld input:focus-visible,.otp-d:focus-visible{outline:2px s
 
 <script src="/assets/app.js"></script>
 <script>
-if (sessionStorage.getItem('token')) location.href = '/admin/dashboard.html';
+if (sessionStorage.getItem('avenzo_access_token')) location.href = '/admin/dashboard.html';
 
 let cid = null, reTimer = null, pwVis = false;
 
@@ -343,13 +343,8 @@ async function doLogin(e) {
   const btn = document.getElementById('loginBtn');
   btn.disabled = true; btn.textContent = 'Signing in…';
   try {
-    const data = await request('/auth/restaurant/login', { method: 'POST', body: JSON.stringify({ email, password: pw }) });
-    if (data.otpRequired) {
-      cid = data.challengeId;
-      showOtp(data.maskedEmail || email);
-    } else {
-      finish(data);
-    }
+    const data = await request('/api/v1/restaurant/auth/login', { method: 'POST', body: JSON.stringify({ email, password: pw }), auth: false });
+    finish(data);
   } catch (err) {
     const msg = err.message || '';
     setErr('loginErr',
@@ -432,7 +427,7 @@ document.querySelectorAll('.otp-d').forEach((inp, i, all) => {
 });
 
 function finish(data) {
-  sessionStorage.setItem('token', data.token);
+  sessionStorage.setItem('avenzo_access_token', data.accessToken || data.token);
   location.href = '/admin/dashboard.html';
 }
 
