@@ -13,9 +13,9 @@ Use EXPO_PUBLIC_API_URL for the backend API base URL.
 Example: http://192.168.x.x:5000 for local development.
 
 ## Running
-From apps/customer-mobile/: expo start
-Or from root: pnpm --filter @avenzo/customer-mobile start
+From `apps/customer-mobile/`: `npx expo start`
+Or from root: `npm --workspace @avenzo/customer-mobile run start`
 
 ## TypeScript
 Apps extend expo/tsconfig.base.
-Type checking: pnpm --filter @avenzo/customer-mobile typecheck
+Type checking: `npm --workspace @avenzo/customer-mobile run typecheck`

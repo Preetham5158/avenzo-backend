@@ -1,127 +1,1017 @@
 openapi: "3.1.0"
 info:
   title: Avenzo API
-  description: Restaurant dine-in ordering platform REST API
+  description: Existing Avenzo backend API contracts. apps/api is the source of truth.
   version: "1.0.0"
-  contact:
-    name: Avenzo Engineering
 servers:
   - url: http://localhost:5000
     description: Local development
   - url: https://api.avenzo.in
     description: Production
+tags:
+  - name: System
+  - name: Auth
+  - name: Public
+  - name: Customer Orders
+  - name: Restaurant Orders
+  - name: Payments
+  - name: Restaurant
+  - name: Device Tokens
+  - name: Webhooks
 paths:
   /health:
     get:
-      summary: Health check
-      operationId: getHealth
       tags: [System]
+      summary: Liveness probe
+      operationId: getHealth
       responses:
         "200":
-          description: Service is healthy
-  /api/v1/customer/auth/login:
+          description: Process is running.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+  /ready:
+    get:
+      tags: [System]
+      summary: Readiness probe
+      operationId: getReady
+      responses:
+        "200":
+          description: Database is reachable.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReadyResponse"
+        "503":
+          description: Database is not reachable.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReadyResponse"
+  /webhooks/razorpay:
     post:
-      summary: Customer email login
-      operationId: customerLogin
-      tags: [Customer Auth]
+      tags: [Webhooks]
+      summary: Razorpay webhook receiver
+      operationId: razorpayWebhook
+      description: Requires `x-razorpay-signature` and raw request body verification.
+      parameters:
+        - name: x-razorpay-signature
+          in: header
+          required: true
+          schema:
+            type: string
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
-              required: [email, password]
-              properties:
-                email:
-                  type: string
-                  format: email
-                password:
-                  type: string
+              additionalProperties: true
       responses:
         "200":
-          description: Login successful
-  /api/v1/restaurant/auth/login:
+          description: Webhook accepted or safely ignored.
+        "400":
+          description: Missing or invalid signature/payload.
+        "500":
+          description: Processing failed and provider should retry.
+  /api/v1/customer/auth/signup:
     post:
-      summary: Restaurant partner login
-      operationId: restaurantLogin
-      tags: [Restaurant Auth]
-      responses:
-        "200":
-          description: Login successful
-  /api/v1/public/restaurants/{slug}:
-    get:
-      summary: Get public restaurant info
-      operationId: getPublicRestaurant
-      tags: [Public]
-      parameters:
-        - name: slug
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        "200":
-          description: Restaurant details
-  /api/v1/public/restaurants/{slug}/menu:
-    get:
-      summary: Get restaurant menu
-      operationId: getPublicMenu
-      tags: [Public]
-      parameters:
-        - name: slug
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        "200":
-          description: Menu items list
-  /api/v1/customer/orders:
-    post:
-      summary: Create order
-      operationId: createOrder
-      tags: [Orders]
+      tags: [Auth]
+      summary: Customer signup
+      operationId: customerSignup
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CustomerSignupRequest"
       responses:
         "201":
-          description: Order created
+          description: Account created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponseEnvelope"
+        "400":
+          $ref: "#/components/responses/V1Error"
+        "409":
+          $ref: "#/components/responses/V1Error"
+  /api/v1/customer/auth/login:
+    post:
+      tags: [Auth]
+      summary: Customer email login
+      operationId: customerLogin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Login successful.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponseEnvelope"
+        "400":
+          $ref: "#/components/responses/V1Error"
+        "401":
+          $ref: "#/components/responses/V1Error"
+        "403":
+          $ref: "#/components/responses/V1Error"
+  /api/v1/customer/auth/me:
     get:
-      summary: List customer orders
-      operationId: listOrders
-      tags: [Orders]
+      tags: [Auth]
+      summary: Current customer profile
+      operationId: getCustomerAuthMe
       security:
         - bearerAuth: []
       responses:
         "200":
-          description: Orders list
-  /api/v1/customer/payments/razorpay/create:
+          $ref: "#/components/responses/UserEnvelope"
+        "401":
+          $ref: "#/components/responses/V1Error"
+  /api/v1/restaurant/auth/login:
     post:
-      summary: Create Razorpay payment order
-      operationId: createRazorpayOrder
-      tags: [Payments]
+      tags: [Auth]
+      summary: Restaurant partner login
+      operationId: restaurantLogin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
       responses:
         "200":
-          description: Razorpay order created
+          description: Login successful.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RestaurantAuthResponseEnvelope"
+        "400":
+          $ref: "#/components/responses/V1Error"
+        "401":
+          $ref: "#/components/responses/V1Error"
+        "403":
+          $ref: "#/components/responses/V1Error"
+  /api/v1/restaurant/me:
+    get:
+      tags: [Auth]
+      summary: Current restaurant user profile
+      operationId: getRestaurantMe
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          $ref: "#/components/responses/RestaurantMeEnvelope"
+        "401":
+          $ref: "#/components/responses/V1Error"
+        "403":
+          $ref: "#/components/responses/V1Error"
+  /api/v1/me:
+    get:
+      tags: [Auth]
+      summary: Generic current user profile
+      operationId: getMe
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          $ref: "#/components/responses/GenericUserEnvelope"
+        "401":
+          $ref: "#/components/responses/V1Error"
+  /api/v1/public/restaurants/{slug}:
+    get:
+      tags: [Public]
+      summary: Public restaurant info
+      operationId: getPublicRestaurant
+      parameters:
+        - $ref: "#/components/parameters/RestaurantSlug"
+      responses:
+        "200":
+          $ref: "#/components/responses/PublicRestaurantEnvelope"
+        "404":
+          $ref: "#/components/responses/V1Error"
+  /api/v1/public/restaurants/{slug}/menu:
+    get:
+      tags: [Public]
+      summary: Public restaurant menu
+      operationId: getPublicMenu
+      parameters:
+        - $ref: "#/components/parameters/RestaurantSlug"
+        - name: foodType
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [VEG, NON_VEG, BOTH]
+      responses:
+        "200":
+          $ref: "#/components/responses/MenuEnvelope"
+        "404":
+          $ref: "#/components/responses/V1Error"
+        "423":
+          $ref: "#/components/responses/V1Error"
+  /api/v1/public/payment-methods:
+    get:
+      tags: [Public]
+      summary: Public payment methods
+      operationId: getPublicPaymentMethods
+      parameters:
+        - name: slug
+          in: query
+          schema:
+            type: string
+        - name: restaurantId
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          $ref: "#/components/responses/PaymentMethodsEnvelope"
+        "400":
+          $ref: "#/components/responses/V1Error"
+        "404":
+          $ref: "#/components/responses/V1Error"
+  /api/v1/public/orders/lookup:
+    get:
+      tags: [Public]
+      summary: Lookup recent orders by restaurant and phone
+      operationId: lookupPublicOrders
+      parameters:
+        - name: restaurantId
+          in: query
+          schema:
+            type: string
+        - name: restaurantSlug
+          in: query
+          schema:
+            type: string
+        - name: phone
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          $ref: "#/components/responses/OrderLookupEnvelope"
+        "400":
+          $ref: "#/components/responses/V1Error"
+        "404":
+          $ref: "#/components/responses/V1Error"
+  /api/v1/public/orders/find:
+    get:
+      tags: [Public]
+      summary: Find order tracking token by phone and pickup code
+      operationId: findPublicOrder
+      parameters:
+        - name: phone
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: code
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          $ref: "#/components/responses/TrackingTokenEnvelope"
+        "400":
+          $ref: "#/components/responses/V1Error"
+        "404":
+          $ref: "#/components/responses/V1Error"
+  /api/v1/customer/orders:
+    post:
+      tags: [Customer Orders]
+      summary: Create customer order
+      operationId: createCustomerOrder
+      description: Auth is optional. Guests must provide phone and sessionId.
+      security:
+        - bearerAuth: []
+        - {}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateOrderRequest"
+      responses:
+        "201":
+          $ref: "#/components/responses/CreateOrderEnvelope"
+        "400":
+          $ref: "#/components/responses/V1Error"
+        "404":
+          $ref: "#/components/responses/V1Error"
+        "423":
+          $ref: "#/components/responses/V1Error"
+        "429":
+          $ref: "#/components/responses/V1Error"
+    get:
+      tags: [Customer Orders]
+      summary: List current customer's orders
+      operationId: listCustomerOrders
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          $ref: "#/components/responses/ListEnvelope"
+        "401":
+          $ref: "#/components/responses/V1Error"
+        "403":
+          $ref: "#/components/responses/V1Error"
+  /api/v1/customer/orders/{trackingToken}:
+    get:
+      tags: [Customer Orders]
+      summary: Get order by tracking token
+      operationId: getCustomerOrder
+      security:
+        - bearerAuth: []
+        - {}
+      parameters:
+        - $ref: "#/components/parameters/TrackingToken"
+      responses:
+        "200":
+          $ref: "#/components/responses/OrderEnvelope"
+        "404":
+          $ref: "#/components/responses/V1Error"
+  /api/v1/customer/orders/{trackingToken}/payment-status:
+    get:
+      tags: [Customer Orders]
+      summary: Get order payment status
+      operationId: getCustomerOrderPaymentStatus
+      parameters:
+        - $ref: "#/components/parameters/TrackingToken"
+      responses:
+        "200":
+          $ref: "#/components/responses/PaymentStatusEnvelope"
+        "404":
+          $ref: "#/components/responses/V1Error"
+  /api/v1/customer/orders/{trackingToken}/cancel:
+    post:
+      tags: [Customer Orders]
+      summary: Cancel pending customer order
+      operationId: cancelCustomerOrder
+      security:
+        - bearerAuth: []
+        - {}
+      parameters:
+        - $ref: "#/components/parameters/TrackingToken"
+      responses:
+        "200":
+          $ref: "#/components/responses/CancelledEnvelope"
+        "400":
+          $ref: "#/components/responses/V1Error"
+        "401":
+          $ref: "#/components/responses/V1Error"
+        "403":
+          $ref: "#/components/responses/V1Error"
+        "404":
+          $ref: "#/components/responses/V1Error"
+  /api/v1/customer/orders/{trackingToken}/rating:
+    post:
+      tags: [Customer Orders]
+      summary: Submit order rating
+      operationId: rateCustomerOrder
+      security:
+        - bearerAuth: []
+        - {}
+      parameters:
+        - $ref: "#/components/parameters/TrackingToken"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RatingRequest"
+      responses:
+        "200":
+          $ref: "#/components/responses/RatedEnvelope"
+        "400":
+          $ref: "#/components/responses/V1Error"
+        "403":
+          $ref: "#/components/responses/V1Error"
+        "404":
+          $ref: "#/components/responses/V1Error"
+        "409":
+          $ref: "#/components/responses/V1Error"
   /api/v1/restaurant/orders:
     get:
+      tags: [Restaurant Orders]
       summary: List restaurant orders
       operationId: listRestaurantOrders
-      tags: [Restaurant Orders]
       security:
         - bearerAuth: []
+      parameters:
+        - name: restaurantId
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+        - name: kitchen
+          in: query
+          schema:
+            type: boolean
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/Limit"
       responses:
         "200":
-          description: Orders list
+          $ref: "#/components/responses/ListEnvelope"
+        "400":
+          $ref: "#/components/responses/V1Error"
+        "401":
+          $ref: "#/components/responses/V1Error"
+        "403":
+          $ref: "#/components/responses/V1Error"
+  /api/v1/restaurant/orders/{id}:
+    get:
+      tags: [Restaurant Orders]
+      summary: Get restaurant order by internal id
+      operationId: getRestaurantOrder
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "200":
+          $ref: "#/components/responses/OrderEnvelope"
+        "401":
+          $ref: "#/components/responses/V1Error"
+        "403":
+          $ref: "#/components/responses/V1Error"
+        "404":
+          $ref: "#/components/responses/V1Error"
+  /api/v1/restaurant/orders/{id}/status:
+    patch:
+      tags: [Restaurant Orders]
+      summary: Update restaurant order status
+      operationId: updateRestaurantOrderStatus
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status:
+                  type: string
+      responses:
+        "200":
+          $ref: "#/components/responses/OrderStatusEnvelope"
+        "400":
+          $ref: "#/components/responses/V1Error"
+        "401":
+          $ref: "#/components/responses/V1Error"
+        "402":
+          $ref: "#/components/responses/V1Error"
+        "403":
+          $ref: "#/components/responses/V1Error"
+        "404":
+          $ref: "#/components/responses/V1Error"
+  /api/v1/customer/payments/razorpay/create:
+    post:
+      tags: [Payments]
+      summary: Create Razorpay order
+      operationId: createRazorpayOrder
+      security:
+        - bearerAuth: []
+        - {}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TrackingTokenRequest"
+      responses:
+        "200":
+          $ref: "#/components/responses/RazorpayOrderEnvelope"
+        "400":
+          $ref: "#/components/responses/V1Error"
+        "404":
+          $ref: "#/components/responses/V1Error"
+        "423":
+          $ref: "#/components/responses/V1Error"
+        "503":
+          $ref: "#/components/responses/V1Error"
+  /api/v1/customer/payments/upi/claim:
+    post:
+      tags: [Payments]
+      summary: Claim UPI QR payment
+      operationId: claimUpiPayment
+      security:
+        - bearerAuth: []
+        - {}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [trackingToken]
+              properties:
+                trackingToken:
+                  type: string
+                paymentReference:
+                  type: string
+      responses:
+        "200":
+          $ref: "#/components/responses/ClaimedEnvelope"
+        "400":
+          $ref: "#/components/responses/V1Error"
+        "404":
+          $ref: "#/components/responses/V1Error"
+  /api/v1/restaurant/payments/manual-confirm:
+    post:
+      tags: [Payments]
+      summary: Restaurant manual payment confirmation
+      operationId: manualConfirmPayment
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [orderId]
+              properties:
+                orderId:
+                  type: string
+      responses:
+        "200":
+          $ref: "#/components/responses/ConfirmedEnvelope"
+        "400":
+          $ref: "#/components/responses/V1Error"
+        "401":
+          $ref: "#/components/responses/V1Error"
+        "403":
+          $ref: "#/components/responses/V1Error"
+        "404":
+          $ref: "#/components/responses/V1Error"
+  /api/v1/restaurant/menu/items/{id}/availability:
+    patch:
+      tags: [Restaurant]
+      summary: Update menu item availability
+      operationId: updateMenuItemAvailability
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                isAvailable:
+                  type: boolean
+      responses:
+        "200":
+          $ref: "#/components/responses/MenuAvailabilityEnvelope"
+        "401":
+          $ref: "#/components/responses/V1Error"
+        "403":
+          $ref: "#/components/responses/V1Error"
+        "404":
+          $ref: "#/components/responses/V1Error"
+  /api/v1/restaurant/subscription:
+    get:
+      tags: [Restaurant]
+      summary: Restaurant subscription status
+      operationId: getRestaurantSubscription
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: restaurantId
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          $ref: "#/components/responses/SubscriptionEnvelope"
+        "400":
+          $ref: "#/components/responses/V1Error"
+        "401":
+          $ref: "#/components/responses/V1Error"
+        "403":
+          $ref: "#/components/responses/V1Error"
+  /api/v1/customer/device-token:
+    post:
+      tags: [Device Tokens]
+      summary: Register customer device token
+      operationId: registerCustomerDeviceToken
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DeviceTokenRequest"
+      responses:
+        "200":
+          $ref: "#/components/responses/RegisteredEnvelope"
+        "400":
+          $ref: "#/components/responses/V1Error"
+        "401":
+          $ref: "#/components/responses/V1Error"
+        "403":
+          $ref: "#/components/responses/V1Error"
+  /api/v1/restaurant/device-token:
+    post:
+      tags: [Device Tokens]
+      summary: Register restaurant device token
+      operationId: registerRestaurantDeviceToken
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DeviceTokenRequest"
+      responses:
+        "200":
+          $ref: "#/components/responses/RegisteredEnvelope"
+        "400":
+          $ref: "#/components/responses/V1Error"
+        "401":
+          $ref: "#/components/responses/V1Error"
+        "403":
+          $ref: "#/components/responses/V1Error"
 components:
   securitySchemes:
     bearerAuth:
       type: http
       scheme: bearer
       bearerFormat: JWT
-tags:
-  - name: System
-  - name: Customer Auth
-  - name: Restaurant Auth
-  - name: Public
-  - name: Orders
-  - name: Payments
-  - name: Restaurant Orders
+  parameters:
+    Id:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+    RestaurantSlug:
+      name: slug
+      in: path
+      required: true
+      schema:
+        type: string
+    TrackingToken:
+      name: trackingToken
+      in: path
+      required: true
+      schema:
+        type: string
+    Page:
+      name: page
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+    Limit:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+  responses:
+    V1Error:
+      description: Standard v1 error envelope.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/V1ErrorEnvelope"
+    UserEnvelope:
+      description: User profile envelope.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                const: true
+              data:
+                type: object
+                properties:
+                  user:
+                    $ref: "#/components/schemas/User"
+    GenericUserEnvelope:
+      description: Generic user profile envelope.
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: "#/components/schemas/V1Envelope"
+    RestaurantMeEnvelope:
+      description: Restaurant user and restaurant envelope.
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: "#/components/schemas/V1Envelope"
+    PublicRestaurantEnvelope:
+      description: Public restaurant envelope.
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: "#/components/schemas/V1Envelope"
+    MenuEnvelope:
+      description: Restaurant menu envelope.
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: "#/components/schemas/V1Envelope"
+    PaymentMethodsEnvelope:
+      description: Payment methods envelope.
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: "#/components/schemas/V1Envelope"
+    OrderLookupEnvelope:
+      description: Recent order lookup envelope.
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: "#/components/schemas/V1Envelope"
+    TrackingTokenEnvelope:
+      description: Tracking token envelope.
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: "#/components/schemas/V1Envelope"
+    CreateOrderEnvelope:
+      description: Created order envelope.
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: "#/components/schemas/V1Envelope"
+    OrderEnvelope:
+      description: Order envelope.
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: "#/components/schemas/V1Envelope"
+    ListEnvelope:
+      description: v1 list envelope with pagination.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/V1ListEnvelope"
+    PaymentStatusEnvelope:
+      description: Payment status envelope.
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: "#/components/schemas/V1Envelope"
+    CancelledEnvelope:
+      description: Cancellation envelope.
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: "#/components/schemas/V1Envelope"
+    RatedEnvelope:
+      description: Rating envelope.
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: "#/components/schemas/V1Envelope"
+    OrderStatusEnvelope:
+      description: Order status update envelope.
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: "#/components/schemas/V1Envelope"
+    RazorpayOrderEnvelope:
+      description: Razorpay order envelope.
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: "#/components/schemas/V1Envelope"
+    ClaimedEnvelope:
+      description: Payment claim envelope.
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: "#/components/schemas/V1Envelope"
+    ConfirmedEnvelope:
+      description: Payment confirmation envelope.
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: "#/components/schemas/V1Envelope"
+    MenuAvailabilityEnvelope:
+      description: Menu availability envelope.
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: "#/components/schemas/V1Envelope"
+    SubscriptionEnvelope:
+      description: Subscription envelope.
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: "#/components/schemas/V1Envelope"
+    RegisteredEnvelope:
+      description: Device token registration envelope.
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: "#/components/schemas/V1Envelope"
+  schemas:
+    V1Envelope:
+      type: object
+      properties:
+        success:
+          const: true
+        data:
+          type:
+            - object
+            - array
+            - "null"
+    V1ListEnvelope:
+      type: object
+      properties:
+        success:
+          const: true
+        data:
+          type: array
+          items: {}
+        pagination:
+          type: object
+          properties:
+            page:
+              type: integer
+            limit:
+              type: integer
+            total:
+              type: integer
+            hasMore:
+              type: boolean
+    V1ErrorEnvelope:
+      type: object
+      required: [success, error]
+      properties:
+        success:
+          const: false
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          const: ok
+        uptime:
+          type: number
+    ReadyResponse:
+      type: object
+      properties:
+        status:
+          type: string
+        db:
+          type: string
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+        name:
+          type:
+            - string
+            - "null"
+        phone:
+          type:
+            - string
+            - "null"
+        role:
+          type: string
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+    CustomerSignupRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 8
+        name:
+          type: string
+        phone:
+          type: string
+    AuthResponseEnvelope:
+      allOf:
+        - $ref: "#/components/schemas/V1Envelope"
+    RestaurantAuthResponseEnvelope:
+      allOf:
+        - $ref: "#/components/schemas/V1Envelope"
+    CreateOrderRequest:
+      type: object
+      required: [items, sessionId]
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              menuId:
+                type: string
+              menuKey:
+                type: string
+              quantity:
+                type: integer
+        sessionId:
+          type: string
+        phone:
+          type: string
+        restaurantSlug:
+          type: string
+        restaurantId:
+          type: string
+        paymentMethodId:
+          type: string
+        tableNumber:
+          type: string
+        idempotencyKey:
+          type: string
+        guest:
+          type: boolean
+    TrackingTokenRequest:
+      type: object
+      required: [trackingToken]
+      properties:
+        trackingToken:
+          type: string
+    RatingRequest:
+      type: object
+      required: [rating]
+      properties:
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+        comment:
+          type: string
+          maxLength: 500
+    DeviceTokenRequest:
+      type: object
+      required: [token, platform]
+      properties:
+        token:
+          type: string
+        platform:
+          type: string
+          enum: [ios, android, web]
+        appType:
+          type: string

@@ -2,334 +2,190 @@
 
 ## 1. Project Overview
 
-Avenzo is a production-bound restaurant/customer dine-in ordering platform. The backend is an Express.js/Node.js server backed by PostgreSQL (via Prisma ORM), Redis (rate limiting), and BullMQ (background jobs).
+Avenzo's backend lives in `apps/api`. It is the only backend runtime and owns Express routes, Prisma, database access, migrations, jobs, auth, payments, webhooks, API contracts, and static web compatibility support.
 
-The platform has three shells:
-1. **Public shell** — QR-code menu pages, order tracking, restaurant interest form
-2. **Customer shell** — Signed-in customer accounts, order history, profile
-3. **Restaurant/Admin shell** — Partner dashboard, kitchen view, menu management, staff management
+The backend currently supports:
 
----
+1. Public customer pages served from `apps/api/public`.
+2. Customer account and order flows.
+3. Restaurant/admin dashboard and operational flows.
+4. `/api/v1` JSON API routes for long-term clients.
+5. Temporary `webCompat` routes for the existing static HTML frontend.
 
-## 2. Final Folder Structure
+`apps/api/public` and `apps/api/src/modules/webCompat/*` are temporary compatibility layers. They must remain working until `apps/customer-web` and `apps/restaurant-web` fully replace the static pages and parity is tested.
 
+## 2. Current Folder Structure
+
+```text
+apps/api/
+  prisma/
+    schema.prisma
+    migrations/
+
+  src/
+    index.js
+    app.js
+    server.js
+    prisma.js
+    routes/
+      health.routes.js
+      web.routes.js
+      web-compat.routes.js
+      v1.routes.js
+    modules/
+      auth/
+      deviceTokens/
+      orders/
+      payments/
+      public/
+      restaurants/
+      webCompat/
+        otp.helpers.js
+        auth.web-compat.routes.js
+        public.web-compat.routes.js
+        customer.web-compat.routes.js
+        admin.web-compat.routes.js
+        payment.web-compat.routes.js
+      webhooks/
+    services/
+    middlewares/
+    serializers/
+    config/
+    lib/
+    utils/
+    jobs/
+
+  public/
+  tests/
+  openapi/
+  scripts/
 ```
-src/
-├── index.js                        # App entry point (slim, ~220 lines)
-├── app.js                          # Re-export for tests
-├── server.js                       # Standalone server runner
-├── prisma.js                       # Prisma client singleton factory
-│
-├── routes/
-│   ├── health.routes.js            # GET /health, GET /ready
-│   ├── web.routes.js               # Static HTML page routes (/r/:slug, /track/:token, etc.)
-│   ├── legacy.routes.js            # Aggregator for all legacy routes
-│   └── v1.routes.js                # /api/v1 router (composes sub-modules)
-│
-├── modules/
-│   ├── legacy/
-│   │   ├── otp.helpers.js          # OTP generation, hashing, challenge creation
-│   │   ├── auth.legacy.routes.js   # POST /auth/*, GET /auth/*
-│   │   ├── public.legacy.routes.js # GET /restaurant/*, GET /menu/*, POST /order, etc.
-│   │   ├── customer.legacy.routes.js # GET/PATCH /customer/*
-│   │   ├── admin.legacy.routes.js  # GET/POST/PUT/DELETE /restaurants, /menu, /admin/*
-│   │   └── payment.legacy.routes.js # GET/POST /payment/*, /admin/payment-methods/*
-│   ├── auth/
-│   │   └── auth.routes.js          # /api/v1 customer + restaurant auth
-│   ├── orders/
-│   │   └── order.routes.js         # /api/v1 customer + restaurant orders
-│   ├── payments/
-│   │   └── payment.routes.js       # /api/v1 payments
-│   ├── public/
-│   │   └── public.routes.js        # /api/v1 public endpoints
-│   ├── restaurants/
-│   │   └── restaurant.routes.js    # /api/v1 restaurant management
-│   ├── webhooks/
-│   │   └── webhook.routes.js       # /webhooks/razorpay
-│   └── deviceTokens/
-│       └── deviceToken.routes.js   # Device token management
-│
-├── services/
-│   ├── auth.service.js             # JWT, auth helpers, restaurant access, audit log
-│   ├── order.service.js            # Popular menu IDs, payment methods, idempotency
-│   ├── notification.service.js     # Email/SMS/OTP notifications
-│   ├── abuse.service.js            # Order abuse detection
-│   └── rating.service.js          # submitRating
-│
-├── middlewares/
-│   ├── auth.middleware.js          # authMiddleware, optionalAuth, v1Auth, v1OptionalAuth
-│   ├── rateLimit.middleware.js     # createRateLimiter factory
-│   ├── error.middleware.js         # Global error handler
-│   └── requestId.middleware.js     # X-Request-ID header
-│
-├── serializers/
-│   ├── order.serializer.js         # publicOrderResponse, customerOrderSummary
-│   └── menu.serializer.js          # publicMenuItem, adminMenuItem
-│
-├── config/
-│   ├── rateLimiters.js             # All Redis-backed rate limiter instances
-│   └── env.js                      # Env var validation
-│
-├── lib/
-│   ├── helpers.js                  # Pure helper functions (normalizeSlug, cleanString, etc.)
-│   ├── constants.js                # Shared enums (JWT_ISSUER, FOOD_TYPES, etc.)
-│   ├── response.js                 # v1ok, v1err, v1list response envelopes
-│   ├── asyncHandler.js             # Async route wrapper
-│   └── redis.js                    # Redis client singleton
-│
-├── utils/
-│   ├── money.js                    # rupeesToPaise, paiseToRupees
-│   ├── token.js                    # publicMenuKey
-│   └── phone.js                    # normalizePhone, isValidPhone
-│
-└── jobs/
-    ├── queues.js                   # BullMQ queue definitions
-    ├── worker.js                   # BullMQ worker entry point
-    ├── notification.jobs.js        # Notification job processors
-    ├── payment.jobs.js             # Payment job processors
-    └── cleanup.jobs.js             # Cleanup job processors
-```
-
----
 
 ## 3. App Startup Flow
 
-1. `src/index.js` loads — `require("dotenv").config()`
-2. Express app created: `const app = express()`
-3. Trust proxy configured (Render/Railway/etc.)
-4. JWT_SECRET validated — throws if missing
-5. CORS middleware registered (reads CORS_ORIGINS env)
-6. Request ID middleware registered (attaches X-Request-ID)
-7. Security headers middleware registered (CSP, HSTS, etc.)
-8. `express.json` registered with raw body capture for Razorpay webhooks
-9. `express.static` registered for public/ directory
-10. Route modules mounted in order (see section 4)
-11. 404 catch-all middleware registered
-12. Global error handler registered
-13. `startServer()` called — connects Redis, starts HTTP listener
-
----
+1. `apps/api/src/index.js` loads environment configuration.
+2. Express app is created.
+3. Trust proxy, CORS, request IDs, security headers, and JSON parsing are configured.
+4. Raw body capture is preserved for Razorpay webhook signature verification.
+5. `express.static` serves `apps/api/public`.
+6. Health, static web, web compatibility, webhook, and `/api/v1` routes are mounted.
+7. 404 and global error middleware are registered.
+8. `startServer()` connects runtime dependencies and starts the HTTP listener.
 
 ## 4. Route Mounting Flow
 
+```text
+health.routes           -> /health, /ready
+web.routes              -> static HTML page routes
+web-compat.routes       -> temporary compatibility API routes for apps/api/public
+/webhooks               -> Razorpay webhook routes
+/api/v1                 -> stable API routes for current and future clients
+404 handler
+error handler
 ```
-app.use(health.routes)       → GET /health, GET /ready
-app.use(web.routes)          → Static HTML pages
-app.use(legacy.routes)       → All legacy API endpoints (see section 7)
-app.use("/webhooks", ...)    → POST /webhooks/razorpay
-app.use("/api/v1", ...)      → All v1 API endpoints (see section 6)
-app.use(404 catch-all)
-app.use(error handler)
-```
 
----
+`apps/api/src/routes/web-compat.routes.js` aggregates the route files under `apps/api/src/modules/webCompat/*`.
 
-## 5. Static Web Routes
+## 5. Static Web Compatibility
 
-Served by `web.routes.js`:
+Static pages are served from `apps/api/public` and page shells are routed by `apps/api/src/routes/web.routes.js`.
 
-| Path | File |
+| Path | Static file |
 |---|---|
-| `/r/:slug` | `public/menu.html` |
-| `/track/:token` | `public/track.html` |
-| `/customer-login.html` | `public/customer-login.html` |
-| `/customer-signup.html` | `public/customer-signup.html` |
-| `/customer-orders.html` | `public/customer-orders.html` |
-| `/customer-profile.html` | `public/customer-profile.html` |
-| `/restaurant-login.html` | `public/restaurant-login.html` |
+| `/` | `apps/api/public/index.html` |
+| `/r/:slug` | `apps/api/public/menu.html` |
+| `/track/:token` | `apps/api/public/track.html` |
+| `/customer-login.html` | `apps/api/public/customer-login.html` |
+| `/customer-signup.html` | `apps/api/public/customer-signup.html` |
+| `/customer-orders.html` | `apps/api/public/customer-orders.html` |
+| `/customer-profile.html` | `apps/api/public/customer-profile.html` |
+| `/restaurant-login.html` | `apps/api/public/restaurant-login.html` |
 
----
+The compatibility API routes under `webCompat` preserve behavior for these static pages. Do not remove them until `apps/customer-web` and `apps/restaurant-web` have complete, tested replacements.
 
 ## 6. /api/v1 Routes
 
-All routes are prefixed `/api/v1`.
+All stable JSON API routes should remain under `/api/v1` where applicable.
 
-**Customer Auth** (`/api/v1/customer/auth/`):
-- `POST /customer/auth/signup`
-- `POST /customer/auth/login`
-- `GET /customer/auth/me`
+Current domain modules include auth, public browsing, orders, payments, restaurants, device tokens, and webhooks. `apps/api/src/routes/v1.routes.js` is the `/api/v1` aggregator.
 
-**Restaurant Auth** (`/api/v1/restaurant/auth/`):
-- `POST /restaurant/auth/login`
-- `GET /restaurant/me`
+## 7. webCompat Routes
 
-**Public** (`/api/v1/public/`):
-- `GET /public/restaurant/:slug`
-- `GET /public/menu/:menuKey`
-- `POST /public/order`
+`webCompat` routes are the current compatibility surface for `apps/api/public`. They are not a new product surface and should not be expanded for new client apps.
 
-**Orders** (`/api/v1/`):
-- `GET /orders/:restaurantId` — Restaurant order list
-- `PATCH /orders/:id/status` — Restaurant order status update
+Files:
 
-**Payments** (`/api/v1/`):
-- `POST /payments/create`
-- `POST /payments/upi-confirm`
+- `apps/api/src/routes/web-compat.routes.js`
+- `apps/api/src/modules/webCompat/auth.web-compat.routes.js`
+- `apps/api/src/modules/webCompat/public.web-compat.routes.js`
+- `apps/api/src/modules/webCompat/customer.web-compat.routes.js`
+- `apps/api/src/modules/webCompat/admin.web-compat.routes.js`
+- `apps/api/src/modules/webCompat/payment.web-compat.routes.js`
+- `apps/api/src/modules/webCompat/otp.helpers.js`
 
-**Restaurants** (`/api/v1/`):
-- Restaurant management endpoints
+Use `/api/v1` and `packages/api-client` for future web and mobile client work.
 
----
+## 8. Backend Boundaries
 
-## 7. Legacy Routes
+- Prisma and database access stay inside `apps/api`.
+- Frontend and mobile apps must not import Prisma or backend internals.
+- Routes should stay thin.
+- Services hold business logic.
+- Serializers shape API responses.
+- Jobs handle background work.
+- Webhooks and payment/order behavior should remain stable and carefully tested.
 
-These routes are preserved for backward compatibility. All responses are identical to the original implementation.
+## 9. Prisma/DB Layer
 
-| Legacy Route | V1 Equivalent |
-|---|---|
-| `POST /auth/customer/signup` | `POST /api/v1/customer/auth/signup` |
-| `POST /auth/customer/login` | `POST /api/v1/customer/auth/login` |
-| `POST /auth/restaurant/login` | `POST /api/v1/restaurant/auth/login` |
-| `POST /auth/google` | `POST /api/v1/customer/auth/google` |
-| `GET /auth/me` | `GET /api/v1/customer/auth/me` |
-| `GET /restaurant/slug/:slug` | `GET /api/v1/public/restaurant/:slug` |
-| `GET /menu/:restaurantId` | `GET /api/v1/public/menu` |
-| `POST /order` | `POST /api/v1/public/order` |
-| `GET /order/:trackingToken` | `GET /api/v1/public/order/:trackingToken` |
-| `GET /customer/profile` | `GET /api/v1/me` |
-| `GET /customer/orders` | `GET /api/v1/customer/orders` |
+- Prisma schema: `apps/api/prisma/schema.prisma`.
+- Migrations: `apps/api/prisma/migrations`.
+- Prisma client factory: `apps/api/src/prisma.js`.
+- Production migration command: `npm run api:prisma:migrate:deploy`.
+- Validation command: `npm run api:prisma:validate`.
+- Generation command: `npm run api:prisma:generate`.
 
----
+Never use `prisma db push` for production.
 
-## 8. Auth Module
+## 10. Jobs and Worker
 
-- **JWT** — HS256, issuer `avenzo-api`, audience `avenzo-admin`, 7d expiry
-- **Customer login** — Password or Google SSO; optional 2FA via OTP
-- **Restaurant login** — Password only; optional 2FA via OTP
-- **Middleware** — `authMiddleware` (required), `optionalAuth` (guest-safe), `v1Auth`, `v1OptionalAuth`
-- **Roles** — `USER` (customer), `RESTAURANT_OWNER`, `EMPLOYEE`, `ADMIN`
+Job queues and processors live under `apps/api/src/jobs`.
 
----
-
-## 9. Orders Module
-
-- Order creation validates restaurant availability, phone number, menu items, and payment method
-- Payment guard: orders with `PAYMENT_PENDING` or `PAYMENT_CLAIMED` status block kitchen progression
-- Idempotency: DB-backed idempotency keys prevent duplicate orders on retry
-- Abuse detection: IP + phone + device fingerprint rate limiting via `abuse.service.js`
-- Tracking: public order tracking uses `trackingToken` only — no internal IDs exposed
-
----
-
-## 10. Payments Module
-
-- **Razorpay** — Orders created server-side; webhook verifies payment via HMAC-SHA256
-- **UPI QR** — Customer claims payment (`PAYMENT_CLAIMED`); restaurant staff confirms (`PAID`)
-- **Manual confirm** — `POST /admin/order/:id/confirm-payment` marks UPI orders as paid
-- Payment safety rule: kitchen cannot proceed while `paymentStatus` is `PAYMENT_PENDING` or `PAYMENT_CLAIMED`
-
----
-
-## 11. Webhooks Module
-
-- `POST /webhooks/razorpay`
-- Raw body captured before JSON parsing via `express.json verify` hook
-- HMAC-SHA256 signature verified with `RAZORPAY_WEBHOOK_SECRET`
-- Duplicate events deduplicated by `razorpayPaymentId`
-- Successful payment sets `paymentStatus = PAID` and triggers order confirmation notification
-
----
-
-## 12. Restaurant/Menu Modules
-
-- Restaurant access controlled by `getRestaurantAccess()` — returns `canAccess`, `canManage`, `canOperate`
-- `ensureWorkspaceService()` blocks operators from acting on expired/suspended restaurants (admins can still access)
-- Food type compatibility enforced: PURE_VEG restaurants cannot have NON_VEG items
-- Category sort order managed via `PATCH /admin/categories/:restaurantId/reorder`
-
----
-
-## 13. Redis Rate Limiting
-
-Rate limiters live in `src/config/rateLimiters.js`. Each limiter is created with `createRateLimiter()` from `src/middlewares/rateLimit.middleware.js`.
-
-| Limiter | Window | Max | Namespace |
-|---|---|---|---|
-| `authLimiter` | 15 min | 30 | auth |
-| `orderLimiter` | 1 min | 20 | order |
-| `orderLookupLimiter` | 1 min | 12 | olookup |
-| `trackingLimiter` | 1 min | 60 | track |
-| `restaurantInterestLimiter` | 60 min | 8 | rint |
-| `otpLimiter` | 10 min | 12 | otp |
-| `passwordResetLimiter` | 15 min | 5 | pwreset |
-| `paymentLimiter` | 1 min | 15 | payment |
-
-If Redis is unavailable, limiters fall back to an in-memory Map.
-
----
-
-## 14. BullMQ Jobs
-
-Job queues are defined in `src/jobs/queues.js`. The worker entry point is `src/jobs/worker.js`.
-
-Job types:
-- **Notification jobs** — Email/SMS order confirmation and status update notifications
-- **Payment jobs** — Async Razorpay reconciliation
-- **Cleanup jobs** — Expired idempotency keys, old OTP challenges
-
-To run the worker:
-```bash
-node src/jobs/worker.js
-```
-
----
-
-## 15. Prisma/DB Layer
-
-- Singleton Prisma client created via `createPrismaClient()` in `src/prisma.js`
-- Supabase pooler connections use `@prisma/adapter-pg` with libpq-compatible SSL
-- **Never use `prisma db push`** — use migrations only
-- Migration commands:
-  ```bash
-  npx prisma migrate dev --name <migration-name>  # development
-  npx prisma migrate deploy                        # production
-  ```
-
----
-
-## 16. How to Add a New Endpoint
-
-1. Decide which module it belongs to (auth, orders, payments, restaurants, public)
-2. Add the route to the appropriate module file in `src/modules/<module>/<module>.routes.js`
-3. If it's a new v1 endpoint, mount it in `src/routes/v1.routes.js`
-4. If it's a legacy route, add it to the appropriate file in `src/modules/legacy/`
-5. Add any new helper functions to `src/lib/helpers.js` or a service file
-6. Add rate limiting via `src/config/rateLimiters.js` if needed
-7. Run tests and syntax checks before committing
-
----
-
-## 17. How to Run Tests
+Worker start command:
 
 ```bash
-npm test -- --forceExit
+node apps/api/src/jobs/worker.js
 ```
 
-Tests are in the `tests/` directory. Jest configuration is in `package.json`.
+The worker uses the same backend-only environment variables as the API runtime.
 
-Setup file (`tests/setup.js`) sets required env vars before any module is loaded.
+## 11. Tests and Checks
 
----
-
-## 18. How to Run Worker
+Common root commands:
 
 ```bash
-node src/jobs/worker.js
+npm run api:test
+npm run api:prisma:validate
+npm run api:prisma:generate
+npm run lint
+npm run build
 ```
 
-The worker requires `REDIS_URL` and `DATABASE_URL` to be set.
+API tests live in `apps/api/tests`.
 
----
+## 12. Deployment Notes
 
-## 19. Deployment Notes
+Render should deploy from the monorepo root using npm workspace scripts.
 
-- Set `NODE_ENV=production`
-- Set `JWT_SECRET` to a secure random string (minimum 32 characters)
-- Set `DATABASE_URL` and `DIRECT_URL` for Supabase/PostgreSQL
-- Set `REDIS_URL` for Redis (rate limiting)
-- Set `CORS_ORIGINS` to your frontend domain(s), comma-separated
-- Set `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, `RAZORPAY_WEBHOOK_SECRET` for payments
-- Set `GOOGLE_CLIENT_ID` for Google SSO
-- Run `npx prisma migrate deploy` before starting the server
-- The server runs on `PORT` (default 5000)
-- Trust proxy is enabled — ensure your reverse proxy sets `X-Forwarded-For`
+Build command:
+
+```bash
+npm run render:build
+```
+
+Start command:
+
+```bash
+node apps/api/src/server.js
+```
+
+Keep `/health` and `/ready` stable.
