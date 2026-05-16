@@ -63,3 +63,15 @@ Decision: Avenzo prioritizes a clean, maintainable foundation before rushing pro
 Reason: Auth, payments, orders, mobile, and restaurant operations need durable boundaries.
 
 Consequence: Foundational cleanup should avoid business behavior changes and product shortcuts.
+
+## ADR-009: JWT Token Strategy — 7-Day Access Token, No Refresh for Mobile Foundation Phase
+
+Decision: Keep the current 7-day JWT access token. Do not add a refresh token endpoint during the mobile foundation phase.
+
+Reason: Refresh token implementation requires meaningful additional complexity — token rotation, revocation/blacklist storage (Redis or DB), and secure handling of refresh token expiry on device. For the initial mobile auth shell, a 7-day hard expiry with re-login on 401 is acceptable and avoids premature infrastructure.
+
+Consequence:
+- Mobile apps must store the access token in AsyncStorage (not sessionStorage, which does not exist in React Native).
+- Mobile apps must intercept 401 responses and prompt the user to re-login.
+- The `expiresIn` field returned by auth endpoints (604800 seconds = 7 days) should be surfaced in the mobile UI to allow graceful re-login prompts before expiry.
+- A dedicated refresh token phase should be introduced once the mobile auth shell is stable, as its own well-scoped task. Do not add refresh token logic as a side effect of other work.

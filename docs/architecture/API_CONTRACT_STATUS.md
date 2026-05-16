@@ -1,6 +1,6 @@
 # API Contract Status
 
-Status after Phase 2 API Contract Foundation.
+Status after Phase 5 — v1 API Gap Closure for Mobile Readiness.
 
 ## Source of Truth
 
@@ -23,6 +23,12 @@ The OpenAPI file now covers:
 - All currently registered payment routes.
 - Restaurant menu availability and subscription routes.
 - Customer and restaurant device-token routes.
+
+## Phase 5 Additions
+
+- `PATCH /api/v1/customer/profile` — v1 customer profile update with Bearer token. Replaces the webCompat `PATCH /customer/profile` for mobile and future web clients.
+- `User` interface promoted to `packages/api-client` export. All auth methods now return typed `User` objects.
+- See ADR-009 in `docs/architecture/DECISION_RECORDS.md` for the token refresh decision.
 
 ## Previously Missing Routes Added to OpenAPI
 
@@ -52,7 +58,7 @@ The OpenAPI file now covers:
 
 `packages/api-client` now has methods for the current documented `/api/v1` client-facing routes:
 
-- Auth: customer signup/login/me, restaurant login/me, generic me.
+- Auth: customer signup/login/me, **customer profile update**, restaurant login/me, generic me.
 - Public: restaurant, menu, payment methods, order lookup, order find.
 - Customer orders: create, list, get, payment status, cancel, rate.
 - Restaurant orders: list, get, status update.

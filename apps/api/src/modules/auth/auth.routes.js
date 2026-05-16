@@ -15,7 +15,7 @@ const bcrypt = require("bcrypt");
 const { createPrismaClient } = require("../../prisma");
 const { v1ok, v1err } = require("../../lib/response");
 const { cleanString, isValidEmail, logRouteError } = require("../../lib/helpers");
-const { normalizePhone } = require("../../utils/phone");
+const { normalizePhone, isValidPhone } = require("../../utils/phone");
 const { authLimiter } = require("../../config/rateLimiters");
 const { v1Auth } = require("../../middlewares/auth.middleware");
 const {
@@ -152,6 +152,43 @@ router.get("/restaurant/me", v1Auth, async (req, res) => {
     } catch (err) {
         logRouteError("GET /api/v1/restaurant/me", err);
         return v1err(res, "SERVER_ERROR", "Could not fetch profile", 500);
+    }
+});
+
+router.patch("/customer/profile", v1Auth, async (req, res) => {
+    try {
+        // Customer accounts only — restaurant/admin users have no profile to update here.
+        if (req.user.role !== "USER") return v1err(res, "FORBIDDEN", "Customer accounts only", 403);
+
+        const updateData = {};
+        if ("name" in req.body) {
+            updateData.name = cleanString(req.body.name, 120) || null;
+        }
+        if ("phone" in req.body) {
+            if (req.body.phone === null || req.body.phone === "") {
+                updateData.phone = null;
+            } else {
+                const normalized = normalizePhone(String(req.body.phone));
+                if (!normalized || !isValidPhone(normalized)) {
+                    return v1err(res, "VALIDATION_ERROR", "Invalid phone number");
+                }
+                updateData.phone = normalized;
+            }
+        }
+        if (Object.keys(updateData).length === 0) {
+            return v1err(res, "VALIDATION_ERROR", "Provide at least one field to update: name or phone");
+        }
+
+        const updated = await prisma.user.update({
+            where: { id: req.user.userId },
+            data: updateData,
+            select: { id: true, email: true, name: true, phone: true, role: true }
+        });
+
+        return v1ok(res, { user: updated });
+    } catch (err) {
+        logRouteError("PATCH /api/v1/customer/profile", err);
+        return v1err(res, "SERVER_ERROR", "Could not update profile", 500);
     }
 });
 

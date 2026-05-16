@@ -31,6 +31,7 @@ Response envelopes for `/api/v1`:
 | POST | `/api/v1/restaurant/auth/login` | Public | Body: `email`, `password` | `data.accessToken`, `data.expiresIn`, `data.user`, `data.restaurant` | `VALIDATION_ERROR`, `INVALID_CREDENTIALS`, `FORBIDDEN`, `SERVER_ERROR` |
 | GET | `/api/v1/restaurant/me` | Restaurant-authenticated | Bearer token | `data.user`, `data.restaurant` | `UNAUTHORIZED`, `FORBIDDEN`, `SERVER_ERROR` |
 | GET | `/api/v1/me` | Authenticated | Bearer token | `data.id`, `data.email`, `data.name`, `data.phone`, `data.role` | `UNAUTHORIZED`, `NOT_FOUND`, `SERVER_ERROR` |
+| PATCH | `/api/v1/customer/profile` | Customer-authenticated | Bearer token; body: optional `name`, `phone` | `data.user` (id, email, name, phone, role) | `VALIDATION_ERROR`, `UNAUTHORIZED`, `FORBIDDEN`, `SERVER_ERROR` |
 
 ## Public Restaurant, Menu, and Lookup
 

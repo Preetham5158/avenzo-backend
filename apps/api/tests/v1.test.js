@@ -83,6 +83,7 @@ describe("/api/v1 — OpenAPI coverage contract", () => {
         "/api/v1/customer/auth/signup",
         "/api/v1/customer/auth/login",
         "/api/v1/customer/auth/me",
+        "/api/v1/customer/profile",
         "/api/v1/restaurant/auth/login",
         "/api/v1/restaurant/me",
         "/api/v1/me",

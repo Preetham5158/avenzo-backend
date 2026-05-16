@@ -90,6 +90,11 @@ export class AvenzoApiClient {
         auth: false,
       }),
     customerMe: () => this.request<{ user: User }>("/api/v1/customer/auth/me"),
+    updateCustomerProfile: (body: { name?: string | null; phone?: string | null }) =>
+      this.request<{ user: User }>("/api/v1/customer/profile", {
+        method: "PATCH",
+        body: JSON.stringify(body),
+      }),
     restaurantLogin: (email: string, password: string) =>
       this.request<{ accessToken: string; expiresIn: number; user: User; restaurant: object | null }>("/api/v1/restaurant/auth/login", {
         method: "POST",

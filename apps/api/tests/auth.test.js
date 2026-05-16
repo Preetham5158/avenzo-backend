@@ -201,6 +201,98 @@ describe("GET /api/v1/customer/auth/me — profile field shape", () => {
     });
 });
 
+describe("PATCH /api/v1/customer/profile", () => {
+    function makeToken(role = "USER", userId = "u1") {
+        const jwt = require("jsonwebtoken");
+        return jwt.sign(
+            { userId, role },
+            process.env.JWT_SECRET,
+            { expiresIn: "7d", issuer: "avenzo-api", audience: "avenzo-admin" }
+        );
+    }
+
+    it("returns 401 without authentication token", async () => {
+        const res = await request(app).patch("/api/v1/customer/profile").send({ name: "Test" });
+        expect(res.status).toBe(401);
+        expect(res.body.success).toBe(false);
+        expect(res.body.error.code).toBe("UNAUTHORIZED");
+    });
+
+    it("returns 403 for restaurant/admin roles", async () => {
+        const token = makeToken("RESTAURANT_OWNER");
+        const res = await request(app)
+            .patch("/api/v1/customer/profile")
+            .set("Authorization", `Bearer ${token}`)
+            .send({ name: "Owner Name" });
+        expect(res.status).toBe(403);
+        expect(res.body.success).toBe(false);
+        expect(res.body.error.code).toBe("FORBIDDEN");
+    });
+
+    it("updates name and phone and returns safe user object", async () => {
+        const token = makeToken("USER", "cu1");
+        const { mockPrisma } = require("./mocks/prisma.mock");
+        mockPrisma.user.update.mockResolvedValueOnce({
+            id: "cu1", email: "c@test.com", name: "New Name", phone: "+911234500000", role: "USER"
+        });
+
+        const res = await request(app)
+            .patch("/api/v1/customer/profile")
+            .set("Authorization", `Bearer ${token}`)
+            .send({ name: "New Name", phone: "1234500000" });
+
+        expect(res.status).toBe(200);
+        expect(res.body.success).toBe(true);
+        expect(res.body.data.user.name).toBe("New Name");
+        expect(res.body.data.user.phone).toBe("+911234500000");
+        expect(res.body.data.user.email).toBe("c@test.com");
+        expect(res.body.data.user.password).toBeUndefined();
+        expect(res.body.data.user.passwordHash).toBeUndefined();
+    });
+
+    it("allows clearing phone by sending null", async () => {
+        const token = makeToken("USER", "cu2");
+        const { mockPrisma } = require("./mocks/prisma.mock");
+        mockPrisma.user.update.mockResolvedValueOnce({
+            id: "cu2", email: "c2@test.com", name: "Same Name", phone: null, role: "USER"
+        });
+
+        const res = await request(app)
+            .patch("/api/v1/customer/profile")
+            .set("Authorization", `Bearer ${token}`)
+            .send({ phone: null });
+
+        expect(res.status).toBe(200);
+        expect(res.body.data.user.phone).toBeNull();
+    });
+
+    it("rejects an invalid phone number", async () => {
+        const token = makeToken("USER", "cu3");
+
+        const res = await request(app)
+            .patch("/api/v1/customer/profile")
+            .set("Authorization", `Bearer ${token}`)
+            .send({ phone: "not-a-phone" });
+
+        expect(res.status).toBe(400);
+        expect(res.body.success).toBe(false);
+        expect(res.body.error.code).toBe("VALIDATION_ERROR");
+    });
+
+    it("rejects an empty body with no valid fields", async () => {
+        const token = makeToken("USER", "cu4");
+
+        const res = await request(app)
+            .patch("/api/v1/customer/profile")
+            .set("Authorization", `Bearer ${token}`)
+            .send({});
+
+        expect(res.status).toBe(400);
+        expect(res.body.success).toBe(false);
+        expect(res.body.error.code).toBe("VALIDATION_ERROR");
+    });
+});
+
 describe("Admin route access control", () => {
     it("GET /admin/orders/:id returns 401 without token", async () => {
         const res = await request(app).get("/admin/orders/some-restaurant-id");

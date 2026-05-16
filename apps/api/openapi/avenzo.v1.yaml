@@ -171,6 +171,28 @@ paths:
           $ref: "#/components/responses/V1Error"
         "403":
           $ref: "#/components/responses/V1Error"
+  /api/v1/customer/profile:
+    patch:
+      tags: [Auth]
+      summary: Update customer profile
+      operationId: updateCustomerProfile
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CustomerProfileUpdateRequest"
+      responses:
+        "200":
+          $ref: "#/components/responses/UserEnvelope"
+        "400":
+          $ref: "#/components/responses/V1Error"
+        "401":
+          $ref: "#/components/responses/V1Error"
+        "403":
+          $ref: "#/components/responses/V1Error"
   /api/v1/me:
     get:
       tags: [Auth]
@@ -950,6 +972,19 @@ components:
           type: string
         phone:
           type: string
+    CustomerProfileUpdateRequest:
+      type: object
+      description: At least one field must be provided.
+      properties:
+        name:
+          type:
+            - string
+            - "null"
+          maxLength: 120
+        phone:
+          type:
+            - string
+            - "null"
     AuthResponseEnvelope:
       allOf:
         - $ref: "#/components/schemas/V1Envelope"
