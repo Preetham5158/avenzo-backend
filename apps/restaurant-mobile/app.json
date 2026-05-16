@@ -1,0 +1,11 @@
+{
+  "expo": {
+    "name": "Avenzo — Restaurant",
+    "slug": "avenzo-restaurant",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "avenzo-restaurant",
+    "platforms": ["ios", "android"],
+    "newArchEnabled": true
+  }
+}

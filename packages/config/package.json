@@ -1,0 +1,5 @@
+{
+  "name": "@avenzo/config",
+  "version": "0.1.0",
+  "files": ["typescript"]
+}

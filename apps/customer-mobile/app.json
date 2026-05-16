@@ -1,0 +1,11 @@
+{
+  "expo": {
+    "name": "Avenzo",
+    "slug": "avenzo-customer",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "avenzo",
+    "platforms": ["ios", "android"],
+    "newArchEnabled": true
+  }
+}
