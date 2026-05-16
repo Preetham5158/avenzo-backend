@@ -16,6 +16,7 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:migrate:deploy": "prisma migrate deploy",
     "prisma:validate": "prisma validate",
+    "prisma:migrate:status": "prisma migrate status",
     "deploy:db": "prisma migrate deploy && prisma generate"
   },
   "dependencies": {

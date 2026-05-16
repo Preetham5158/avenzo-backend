@@ -1,5 +1,9 @@
 # Production Deployment — Avenzo Backend
 
+## Repository structure
+The backend lives at `apps/api/` inside the monorepo.
+All Render commands must target `apps/api` explicitly — see below.
+
 ## Prerequisites
 - Node.js 20+ (LTS)
 - PostgreSQL 14+ via Supabase (pgBouncer pooler + direct URL)
@@ -8,7 +12,8 @@
 - Resend account with verified domain
 
 ## Environment variables
-Copy `.env.example` to `.env` and fill in all values.
+Set these in the Render dashboard → Environment.
+Copy `apps/api/.env.example` as a reference.
 
 **Required in production (app will refuse to start without these):**
 - `DATABASE_URL` — pooled connection string (pgBouncer, port 6543)
@@ -23,30 +28,59 @@ Copy `.env.example` to `.env` and fill in all values.
 - `FROM_EMAIL` — verified sender domain
 - `CORS_ORIGINS` — comma-separated allowed origins (no wildcard)
 
-## Database migrations
-Always run migrations before deploying new code:
-```bash
-npm run prisma:migrate:deploy
-npm run prisma:generate
-```
-Never run `prisma db push` on production — it bypasses migration history.
+## Render deployment commands
 
-## Deploying on Render
-1. Set all env vars in Render dashboard → Environment
-2. Build command: `npm install && npm run prisma:migrate:deploy && npm run prisma:generate`
-3. Start command: `npm start`
-4. Health check path: `/health`
-5. Add `/ready` as a readiness probe if supported
+### Build Command
+```
+npm run render:build
+```
+
+This runs (defined in root `package.json`):
+```
+npm install --prefix apps/api && npm --prefix apps/api run prisma:migrate:deploy && npm --prefix apps/api run prisma:generate
+```
+
+### Start Command
+```
+node apps/api/src/server.js
+```
+
+### Health check path
+```
+/health
+```
+
+### Readiness probe (if supported)
+```
+/ready
+```
+
+## What each build step does
+1. `npm install --prefix apps/api` — installs all backend dependencies into `apps/api/node_modules`
+2. `npm --prefix apps/api run prisma:migrate:deploy` — applies any pending DB migrations
+3. `npm --prefix apps/api run prisma:generate` — regenerates the Prisma client
+
+> **Never use `prisma db push`** — it bypasses migration history.
+
+## Worker service (separate Render service)
+If running BullMQ worker as a separate service:
+
+Start Command:
+```
+node apps/api/src/jobs/worker.js
+```
+
+Build Command: same as API — `npm run render:build`
 
 ## Webhook configuration (Razorpay)
 - URL: `https://your-domain.com/webhooks/razorpay`
-- Events to enable: `payment.captured`, `payment.failed`, `order.paid`
+- Events: `payment.captured`, `payment.failed`, `order.paid`
 - Copy the webhook secret to `RAZORPAY_WEBHOOK_SECRET`
 
 ## Redis setup (Upstash)
 1. Create a free Upstash Redis database
 2. Copy the `rediss://` connection string to `REDIS_URL`
-3. Rate limiting and caching degrade gracefully if Redis is unavailable, but this is not safe for production under load
+3. Rate limiting degrades gracefully if Redis is unavailable, but this is not safe in production under load
 
 ## Security checklist
 - [ ] `NODE_ENV=production`
@@ -55,10 +89,20 @@ Never run `prisma db push` on production — it bypasses migration history.
 - [ ] `OTP_MODE=email` (never `log`)
 - [ ] `CORS_ORIGINS` lists only your actual frontend domains
 - [ ] `SENTRY_DSN` is set for error tracking
-- [ ] HTTPS is enforced (Render/Vercel enforce this automatically)
+- [ ] HTTPS is enforced (Render enforces this automatically)
 
 ## Monitoring
 - `/health` — liveness probe (no DB query, always fast)
 - `/ready` — readiness probe (queries DB, returns 503 if down)
 - Slow requests (>1s) are logged with `"msg":"Slow request"` to stdout
 - Sentry captures unhandled errors when `SENTRY_DSN` is set
+
+## Future pnpm migration
+Once pnpm is installed:
+```
+# Build Command
+pnpm install --frozen-lockfile && pnpm --filter @avenzo/api prisma:migrate:deploy && pnpm --filter @avenzo/api prisma:generate
+
+# Start Command
+node apps/api/src/server.js
+```

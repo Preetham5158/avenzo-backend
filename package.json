@@ -4,6 +4,8 @@
   "description": "Avenzo monorepo — restaurant dine-in ordering platform",
   "private": true,
   "scripts": {
+    "start": "node apps/api/src/server.js",
+    "render:build": "npm install --prefix apps/api && npm --prefix apps/api run prisma:migrate:deploy && npm --prefix apps/api run prisma:generate",
     "dev": "turbo dev",
     "build": "turbo build",
     "test": "turbo test",
@@ -15,7 +17,8 @@
     "api:worker": "npm --prefix apps/api run worker",
     "api:prisma:generate": "npm --prefix apps/api run prisma:generate",
     "api:prisma:migrate:deploy": "npm --prefix apps/api run prisma:migrate:deploy",
-    "api:prisma:validate": "npm --prefix apps/api run prisma:validate"
+    "api:prisma:validate": "npm --prefix apps/api run prisma:validate",
+    "api:prisma:migrate:status": "npm --prefix apps/api run prisma:migrate:status"
   },
   "workspaces": [
     "apps/*",
