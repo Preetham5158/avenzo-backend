@@ -8,70 +8,13 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/assets/admin.css">
   <style>
-    .menu-row {
-      display: grid;
-      grid-template-columns: 68px 1fr auto;
-      gap: 14px;
-      align-items: start;
-    }
-    .menu-img {
-      width: 68px;
-      height: 68px;
-      border-radius: var(--r-sm);
-      object-fit: cover;
-      background: var(--bg-3);
-      flex-shrink: 0;
-    }
-    .menu-img-placeholder {
-      width: 68px;
-      height: 68px;
-      border-radius: var(--r-sm);
-      background: var(--bg-3);
-      border: 1px solid var(--line);
-      flex-shrink: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 22px;
-      font-weight: 800;
-      color: var(--brand);
-    }
-    .menu-name { font-size: 15px; font-weight: 700; color: var(--tx); margin-bottom: 3px; }
-    .menu-meta { font-size: 12px; color: var(--tx-2); margin-bottom: 4px; }
-    .menu-price { font-size: 15px; font-weight: 800; color: var(--tx); margin-bottom: 4px; }
-    .menu-desc {
-      font-size: 13px;
-      color: var(--tx-2);
-      line-height: 1.45;
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
-    }
-    .menu-actions {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      align-items: flex-end;
-      flex-shrink: 0;
-    }
-    .admin-subhead {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
+    .admin-subhead { display: flex; flex-direction: column; gap: 10px; }
     @media (max-width: 600px) {
-      .menu-row {
-        grid-template-columns: 60px 1fr;
-      }
-      .menu-actions {
-        grid-column: 1 / -1;
-        flex-direction: row;
-        flex-wrap: wrap;
-        justify-content: flex-end;
-      }
-      .menu-img { width: 60px; height: 60px; }
+      .menu-row { grid-template-columns: 60px 1fr; }
+      .menu-actions { grid-column: 1/-1; flex-direction: row; flex-wrap: wrap; justify-content: flex-end; }
+      .menu-img, .menu-img-placeholder { width: 60px; height: 60px; }
     }
+    .img-preview { max-width: 80px; height: 56px; object-fit: cover; border-radius: var(--r-sm); border: 1px solid var(--line); margin-top: 6px; display: none; }
   </style>
 </head>
 <body>
@@ -134,7 +77,11 @@
         <div class="field"><label>Food type</label><select id="itemFoodType" class="select"><option value="VEG">Veg</option><option value="NON_VEG">Non-veg</option></select></div>
       </div>
       <div class="field"><label>Description</label><textarea id="itemDescription" class="textarea" placeholder="Short description..." rows="2"></textarea></div>
-      <div class="field"><label>Image URL</label><input id="itemImageUrl" class="input" type="url" placeholder="https://..."></div>
+      <div class="field">
+        <label>Image URL</label>
+        <input id="itemImageUrl" class="input" type="url" placeholder="https://..." oninput="previewImg(this.value)">
+        <img id="itemImgPreview" class="img-preview" alt="Preview">
+      </div>
       <label class="toggle-row">
         <span>In stock</span>
         <label class="toggle" style="margin-left:auto"><input id="itemAvailable" type="checkbox" checked><span class="toggle-track"></span></label>
@@ -201,13 +148,14 @@ async function loadMenu() {
 }
 
 function renderMenuStats() {
-  const avail = menuItems.filter(i => i.isAvailable).length;
-  const hidden = menuItems.filter(i => !i.isActive).length;
+  const inStock   = menuItems.filter(i => i.isAvailable && i.isActive).length;
+  const outStock  = menuItems.filter(i => !i.isAvailable && i.isActive).length;
+  const hidden    = menuItems.filter(i => !i.isActive).length;
   document.getElementById("menuStats").innerHTML = `
-    <div class="stat-card stat-top-brand"><div class="stat-card-label">Total items</div><div class="stat-card-value">${menuItems.length}</div></div>
-    <div class="stat-card stat-top-ready"><div class="stat-card-label">In stock</div><div class="stat-card-value">${avail}</div></div>
-    <div class="stat-card stat-top-warn"><div class="stat-card-label">Hidden</div><div class="stat-card-value">${hidden}</div></div>
-    <div class="stat-card stat-top-brand"><div class="stat-card-label">Categories</div><div class="stat-card-value">${categories.length}</div></div>
+    <div class="stat-card stat-top-brand"><div class="stat-card-label">Total items</div><div class="stat-card-value">${menuItems.length}</div><span class="pill pill-default">${categories.length} categories</span></div>
+    <div class="stat-card stat-top-ready"><div class="stat-card-label">In stock</div><div class="stat-card-value">${inStock}</div><span class="pill pill-success">Available</span></div>
+    <div class="stat-card ${outStock > 0 ? "stat-top-danger" : "stat-top-ready"}"><div class="stat-card-label">Out of stock</div><div class="stat-card-value">${outStock}</div><span class="pill ${outStock > 0 ? "pill-danger" : "pill-success"}">${outStock > 0 ? "Update needed" : "All in stock"}</span></div>
+    <div class="stat-card stat-top-warn"><div class="stat-card-label">Hidden</div><div class="stat-card-value">${hidden}</div><span class="pill pill-warn">Not on menu</span></div>
   `;
 }
 
@@ -261,10 +209,13 @@ function renderMenu() {
             ${item.description ? `<div class="menu-desc">${escapeHtml(item.description)}</div>` : ""}
           </div>
           <div class="menu-actions">
-            <label class="toggle" title="${item.isAvailable?"In stock — tap to mark out":"Out of stock — tap to mark in"}">
-              <input type="checkbox" ${item.isAvailable?"checked":""} onchange="toggleStock(this,'${item.id}')">
-              <span class="toggle-track"></span>
-            </label>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:2px">
+              <label class="toggle" title="${item.isAvailable?"In stock — tap to mark out":"Out of stock — tap to mark in"}">
+                <input type="checkbox" ${item.isAvailable?"checked":""} onchange="toggleStock(this,'${item.id}','${escapeHtml(item.name).replace(/'/g,"\\'")}')">
+                <span class="toggle-track"></span>
+              </label>
+              <span class="menu-stock-label ${item.isAvailable?"in":"out"}" id="slabel-${item.id}">${item.isAvailable?"In stock":"Out"}</span>
+            </div>
             ${canManage ? `<button class="btn btn-ghost btn-sm" onclick='openItemModal(${JSON.stringify(item.id)})'>Edit</button>` : ""}
             ${canManage ? `<button class="btn btn-danger-soft btn-sm" onclick="deleteItem('${item.id}',${JSON.stringify(item.name)})">Delete</button>` : ""}
           </div>
@@ -289,10 +240,12 @@ function setMenuSearch(v) { menuSearch = v.trim().toLowerCase(); renderMenu(); }
 async function toggleStock(checkbox, itemId) {
   const available = checkbox.checked;
   checkbox.disabled = true;
+  const label = document.getElementById(`slabel-${itemId}`);
   try {
     await request(`/menu/${itemId}`, { method: "PUT", body: JSON.stringify({ isAvailable: available }) });
     const item = menuItems.find(i => i.id === itemId);
     if (item) item.isAvailable = available;
+    if (label) { label.textContent = available ? "In stock" : "Out"; label.className = `menu-stock-label ${available ? "in" : "out"}`; }
     toast(available ? "Marked in stock" : "Marked out of stock");
   } catch(err) {
     checkbox.checked = !available;
@@ -315,6 +268,7 @@ function openItemModal(id) {
   document.getElementById("itemFoodType").value = item?.foodType || "VEG";
   document.getElementById("itemDescription").value = item?.description || "";
   document.getElementById("itemImageUrl").value = item?.imageUrl || "";
+  previewImg(item?.imageUrl || "");
   document.getElementById("itemAvailable").checked = item ? item.isAvailable : true;
   document.getElementById("itemActive").checked = item ? item.isActive : true;
   document.getElementById("itemCategory").innerHTML =
@@ -325,6 +279,18 @@ function openItemModal(id) {
   document.getElementById("itemModal").classList.add("open");
 }
 function closeItemModal() { document.getElementById("itemModal").classList.remove("open"); }
+
+function previewImg(url) {
+  const el = document.getElementById("itemImgPreview");
+  if (!el) return;
+  if (url && url.startsWith("http")) {
+    el.src = url;
+    el.style.display = "block";
+    el.onerror = () => { el.style.display = "none"; };
+  } else {
+    el.style.display = "none";
+  }
+}
 
 async function saveItem(event) {
   event.preventDefault();

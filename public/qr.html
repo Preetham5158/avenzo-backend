@@ -225,6 +225,9 @@ function downloadCard(id, name) {
     link.click();
   };
 
+  qrImage.onerror = function () {
+    toast("Could not load QR image — check your internet connection and try again.");
+  };
   qrImage.src = qrUrl(url, 380);
 }
 

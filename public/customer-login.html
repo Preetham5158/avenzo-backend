@@ -297,7 +297,7 @@ button:focus-visible,.fld input:focus-visible,.otp-d:focus-visible{outline:2px s
 
 <script src="/assets/app.js"></script>
 <script>
-if (sessionStorage.getItem('token')) location.href = new URLSearchParams(location.search).get('next') || '/customer.html';
+if (sessionStorage.getItem('avenzo_access_token')) location.href = new URLSearchParams(location.search).get('next') || '/customer.html';
 
 let cid = null, reTimer = null, gsiReady = false, pwVis = false;
 
@@ -345,7 +345,7 @@ async function onGoogleToken(res) {
   btn.disabled = true; btn.textContent = 'Signing in…';
   try {
     const data = await request('/auth/google', { method: 'POST', body: JSON.stringify({ idToken: res.credential }) });
-    sessionStorage.setItem('token', data.token);
+    sessionStorage.setItem('avenzo_access_token', data.accessToken || data.token);
     location.href = new URLSearchParams(location.search).get('next') || '/customer.html';
   } catch (err) {
     btn.disabled = false;
@@ -364,14 +364,9 @@ async function doEmailLogin(e) {
   const btn = document.getElementById('emlBtn');
   btn.disabled = true; btn.textContent = 'Signing in…';
   try {
-    const data = await request('/auth/customer/login', { method: 'POST', body: JSON.stringify({ email, password: pw }) });
-    if (data.otpRequired) {
-      cid = data.challengeId;
-      showOtp(data.maskedEmail || email, 'email');
-    } else {
-      sessionStorage.setItem('token', data.token);
-      location.href = new URLSearchParams(location.search).get('next') || '/customer.html';
-    }
+    const data = await request('/api/v1/customer/auth/login', { method: 'POST', body: JSON.stringify({ email, password: pw }), auth: false });
+    sessionStorage.setItem('avenzo_access_token', data.accessToken);
+    location.href = new URLSearchParams(location.search).get('next') || '/customer.html';
   } catch (err) {
     setErr('emlErr', err.message || 'Incorrect email or password.');
   } finally {
@@ -426,7 +421,7 @@ async function doVerify() {
   btn.disabled = true; btn.textContent = 'Verifying…'; clrErr('otpErr');
   try {
     const data = await request('/auth/otp/verify', { method: 'POST', body: JSON.stringify({ challengeId: cid, otp: digits, purpose: 'CUSTOMER_LOGIN' }) });
-    sessionStorage.setItem('token', data.token);
+    sessionStorage.setItem('avenzo_access_token', data.accessToken || data.token);
     location.href = new URLSearchParams(location.search).get('next') || '/customer.html';
   } catch (err) {
     setErr('otpErr', err.message || 'Invalid code. Try again.');

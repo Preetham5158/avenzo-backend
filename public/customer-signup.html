@@ -258,7 +258,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
 
 <script src="/assets/app.js"></script>
 <script>
-if (sessionStorage.getItem('token')) location.href = '/customer.html';
+if (sessionStorage.getItem('avenzo_access_token')) location.href = '/customer.html';
 
 let gsiReady = false, pwVis = false;
 
@@ -288,7 +288,7 @@ async function onGoogleToken(res) {
   btn.disabled = true; btn.textContent = 'Creating account…';
   try {
     const data = await request('/auth/google', { method: 'POST', body: JSON.stringify({ idToken: res.credential }) });
-    sessionStorage.setItem('token', data.token);
+    sessionStorage.setItem('avenzo_access_token', data.accessToken || data.token);
     location.href = '/customer.html';
   } catch (err) {
     btn.disabled = false;
@@ -339,10 +339,9 @@ async function doSignup(e) {
     const body = { email, password: pw };
     if (name) body.name = name;
     if (phone) body.phone = `+91${phone}`;
-    await request('/auth/customer/signup', { method: 'POST', body: JSON.stringify(body) });
-    document.getElementById('signupOk').textContent = 'Account created! Redirecting to sign in…';
-    document.getElementById('signupOk').classList.add('on');
-    setTimeout(() => { location.href = `/customer-login.html?next=${encodeURIComponent('/customer.html')}`; }, 1600);
+    const data = await request('/api/v1/customer/auth/signup', { method: 'POST', body: JSON.stringify(body), auth: false });
+    sessionStorage.setItem('avenzo_access_token', data.accessToken);
+    location.href = '/customer.html';
   } catch (err) {
     setErr('signupErr', err.message || 'Could not create account. Try again.');
     btn.disabled = false; btn.textContent = 'Create account →';

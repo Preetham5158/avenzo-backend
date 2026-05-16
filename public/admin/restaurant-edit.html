@@ -68,9 +68,14 @@
                 <input id="restaurantAddress" class="input" placeholder="Street, area, city, pincode">
               </div>
               <div class="field">
-                <label for="restaurantPickupNote">Guest note</label>
+                <label for="restaurantPickupNote">Post-order guest message</label>
                 <input id="restaurantPickupNote" class="input" placeholder="e.g. Please wait near the dining area after ordering">
                 <span class="input-hint">Shown to guests after they place an order.</span>
+              </div>
+              <div class="field" style="display:none">
+                <label>Public menu URL</label>
+                <a id="publicMenuUrl" class="input" style="display:block;padding:10px 14px;color:var(--brand);text-decoration:none;background:var(--bg-3);border-radius:var(--r-sm);border:1px solid var(--line);font-size:13px" target="_blank"></a>
+                <span class="input-hint">Share this link with customers to view your menu.</span>
               </div>
             </div>
           </div>
@@ -177,6 +182,16 @@ async function loadRestaurant() {
     document.getElementById("subscriptionStatus").value = r.subscriptionStatus || "ACTIVE";
     document.getElementById("subscriptionEndsAt").value = r.subscriptionEndsAt ? r.subscriptionEndsAt.slice(0, 10) : "";
 
+    // Show public menu URL
+    if (r.slug) {
+      const urlEl = document.getElementById("publicMenuUrl");
+      if (urlEl) {
+        urlEl.textContent = `/r/${r.slug}`;
+        urlEl.href = `/r/${r.slug}`;
+        urlEl.closest(".field").style.display = "";
+      }
+    }
+
     // Show context strip
     const ctxEl = document.getElementById("restCtxBar");
     ctxEl.style.display = "";
@@ -239,7 +254,7 @@ async function confirmDeactivate() {
   }
 }
 
-initAdminLayout("home", restaurantId || "").then(user => {
+initAdminLayout("settings", restaurantId || "").then(user => {
   if (!user) return;
   currentUser = user;
   if (user.role !== "ADMIN") {

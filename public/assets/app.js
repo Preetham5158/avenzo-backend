@@ -2,7 +2,7 @@ const API = window.location.origin;
 
 // sessionStorage keeps auth tab-isolated: a guest QR tab stays guest even when another tab is logged in.
 function getToken() {
-  return sessionStorage.getItem("token");
+  return sessionStorage.getItem("avenzo_access_token");
 }
 
 function authHeaders(extra = {}) {
@@ -32,11 +32,19 @@ async function request(path, options = {}) {
 
   if (!res.ok) {
     const friendlyAuthMessage = res.status === 401 ? "Please sign in again." : null;
-    const error = new Error(friendlyAuthMessage || data?.error || "Something went wrong");
+    const errorMsg = typeof data?.error === "string" ? data.error : data?.error?.message;
+    const error = new Error(friendlyAuthMessage || errorMsg || "Something went wrong");
     error.status = res.status;
     throw error;
   }
 
+  // Unwrap /api/v1 envelope {success, data[, pagination]} → return data directly
+  if (data && typeof data.success === "boolean" && "data" in data) {
+    if ("pagination" in data) {
+      return { items: data.data, pagination: data.pagination };
+    }
+    return data.data;
+  }
   return data;
 }
 
@@ -138,7 +146,7 @@ function skeletonCards(count = 3, variant = "card") {
 }
 
 function logout(redirectTo = "/customer-login.html") {
-  sessionStorage.removeItem("token");
+  sessionStorage.removeItem("avenzo_access_token");
   window.location.href = redirectTo;
 }
 
@@ -147,7 +155,7 @@ async function initAccountMenu(targetId = "accountMenu", signOutRedirect = "/cus
   if (!target) return null;
 
   try {
-    const user = await request("/auth/me");
+    const user = await request("/api/v1/me");
     const displayName = user.name || user.email || "Avenzo user";
     target.innerHTML = `
       <div class="account" id="accountDropdown">

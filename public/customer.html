@@ -369,7 +369,7 @@
 
 <script src="/assets/app.js"></script>
 <script>
-if (!sessionStorage.getItem("token")) location.href = "/customer-login.html";
+if (!sessionStorage.getItem("avenzo_access_token")) location.href = "/customer-login.html";
 
 const BANNERS = [
   {grad:"linear-gradient(135deg,#5C1A0A,#3D1008)",emoji:"🍖"},
@@ -416,9 +416,9 @@ function applyVegFilter() {
 (async()=>{
   try {
     const [u, rd, od] = await Promise.all([
-      request("/auth/me"),
+      request("/api/v1/me"),
       request("/customer/restaurants"),
-      request("/customer/orders?limit=50").catch(()=>({orders:[]}))
+      request("/api/v1/customer/orders?limit=50").catch(()=>({items:[]}))
     ]);
     if (u.role !== "USER") { location.href = "/admin/dashboard.html"; return; }
     currentUser = u;
@@ -429,7 +429,7 @@ function applyVegFilter() {
     setGreeting(u.name);
     initVegFilter();
     allRests = rd.restaurants || [];
-    const orders = od.orders || [];
+    const orders = od.items || od.orders || [];
     hydrateStats(orders);
     renderLive(orders);
     renderPrompt(orders, u);
@@ -749,7 +749,7 @@ function clearFilters() {
 /* ── MISC ── */
 function toggleMenu() { document.getElementById("uDrop").classList.toggle("open") }
 document.addEventListener("click", e => { if (!document.getElementById("uBtn")?.contains(e.target)) document.getElementById("uDrop")?.classList.remove("open") });
-function doSignOut() { sessionStorage.removeItem("token"); location.href = "/customer-login.html" }
+function doSignOut() { sessionStorage.removeItem("avenzo_access_token"); location.href = "/customer-login.html" }
 function toggleTheme() { const on = document.documentElement.classList.toggle("light"); localStorage.setItem("avenzo-theme", on ? "light" : "dark") }
 </script>
 </body>

@@ -220,17 +220,17 @@
 
   <script src="/assets/app.js"></script>
   <script>
-    if (!sessionStorage.getItem("token")) location.href = "/customer-login.html";
+    if (!sessionStorage.getItem("avenzo_access_token")) location.href = "/customer-login.html";
 
     (async () => {
       try {
         const [u, ordersResp] = await Promise.all([
-          request("/auth/me"),
-          request("/customer/orders?limit=50").catch(() => ({orders:[]}))
+          request("/api/v1/me"),
+          request("/api/v1/customer/orders?limit=50").catch(() => ({items:[]}))
         ]);
         if (u.role !== "USER") { location.href = "/admin/dashboard.html"; return; }
         hydrate(u);
-        hydrateStats(ordersResp.orders || []);
+        hydrateStats(ordersResp.items || ordersResp.orders || []);
       } catch { location.href = "/customer-login.html"; }
     })();
 
@@ -304,7 +304,7 @@
 
     function toggleUMenu() { document.getElementById("uDrop").classList.toggle("open") }
     document.addEventListener("click", e => { if (!document.getElementById("uBtn")?.contains(e.target)) document.getElementById("uDrop")?.classList.remove("open") });
-    function doSignOut() { sessionStorage.removeItem("token"); location.href = "/customer-login.html" }
+    function doSignOut() { sessionStorage.removeItem("avenzo_access_token"); location.href = "/customer-login.html" }
     function toggleTheme() { const on = document.documentElement.classList.toggle("light"); localStorage.setItem("avenzo-theme", on ? "light" : "dark") }
   </script>
 </body>

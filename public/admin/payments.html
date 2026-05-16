@@ -246,8 +246,8 @@ initAdminLayout("payments", restaurantId).then(async user => {
       const r = (data.restaurants || []).find(x => x.id === restaurantId);
       if (r) {
         document.getElementById("adminContext").textContent = r.name;
-        document.getElementById("pageTitle").textContent = r.name;
-        document.getElementById("pageSub").textContent = `Payment methods for ${r.name}`;
+        document.getElementById("pageTitle").textContent = "Payment Methods";
+        document.getElementById("pageSub").textContent = `How customers pay at ${r.name}`;
         document.getElementById("restCtxBar").style.display = "";
         renderRestaurantContext(r, "payments", restaurantId);
       }
