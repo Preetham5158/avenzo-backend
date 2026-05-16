@@ -30,7 +30,18 @@ jest.mock("../src/services/abuse.service", () => ({
 }));
 
 const request = require("supertest");
+const jwt = require("jsonwebtoken");
 const { app } = require("../src/index");
+const { JWT_AUDIENCE, JWT_ISSUER } = require("../src/lib/constants");
+
+function makeToken(payload) {
+    return jwt.sign(payload, process.env.JWT_SECRET, {
+        algorithm: "HS256",
+        issuer: JWT_ISSUER,
+        audience: JWT_AUDIENCE,
+        expiresIn: "1h"
+    });
+}
 
 beforeEach(() => jest.clearAllMocks());
 
@@ -108,6 +119,42 @@ describe("POST /api/v1/customer/orders — validation", () => {
         expect(res.status).toBe(404);
         expect(res.body.success).toBe(false);
         expect(res.body.error.code).toBe("NOT_FOUND");
+    });
+
+    it("uses the saved customer phone when a signed-in customer omits phone", async () => {
+        const { mockPrisma } = require("./mocks/prisma.mock");
+        mockPrisma.restaurant.findUnique.mockResolvedValueOnce({
+            id: "rest1", name: "Test", isActive: true, subscriptionStatus: "ACTIVE", subscriptionEndsAt: null
+        });
+        mockPrisma.user.findUnique.mockResolvedValueOnce({
+            id: "customer-1", role: "USER", phone: "9876543210"
+        });
+        mockPrisma.menu.findMany.mockResolvedValueOnce([
+            { id: "item1", name: "Dose", pricePaise: 5000, isAvailable: true }
+        ]);
+        mockPrisma.restaurant.update.mockResolvedValueOnce({ orderCounter: 2 });
+        mockPrisma.order.create.mockResolvedValueOnce({
+            trackingToken: "tracking-1",
+            orderNumber: 1,
+            paymentStatus: "PAYMENT_NOT_REQUIRED"
+        });
+
+        const res = await request(app)
+            .post("/api/v1/customer/orders")
+            .set("Authorization", `Bearer ${makeToken({ userId: "customer-1" })}`)
+            .send({
+                items: [{ menuId: "item1", quantity: 1 }],
+                sessionId: "session-device-id-12",
+                restaurantId: "rest1"
+            });
+
+        expect(res.status).toBe(201);
+        expect(mockPrisma.order.create).toHaveBeenCalledWith(expect.objectContaining({
+            data: expect.objectContaining({
+                customerId: "customer-1",
+                phone: "+919876543210"
+            })
+        }));
     });
 });
 

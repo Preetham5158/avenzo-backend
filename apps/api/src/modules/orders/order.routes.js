@@ -79,9 +79,6 @@ router.post("/customer/orders", orderLimiter, v1OptionalAuth, async (req, res) =
         if (normalizedItems.some(i => (!i.menuId && !i.menuKey) || !Number.isInteger(i.quantity) || i.quantity < 1 || i.quantity > 20))
             return v1err(res, "VALIDATION_ERROR", "Check item quantities (1–20 per item)");
 
-        const normalizedPhone = normalizePhone(String(phone || ""));
-        if (!normalizedPhone) return v1err(res, "VALIDATION_ERROR", "Valid phone number required");
-
         const restaurant = restaurantSlug_
             ? await prisma.restaurant.findUnique({ where: { slug: restaurantSlug_ }, select: { id: true, name: true, isActive: true, subscriptionStatus: true, subscriptionEndsAt: true } })
             : await prisma.restaurant.findUnique({ where: { id: restaurantId }, select: { id: true, name: true, isActive: true, subscriptionStatus: true, subscriptionEndsAt: true } });
@@ -100,8 +97,12 @@ router.post("/customer/orders", orderLimiter, v1OptionalAuth, async (req, res) =
         if (req.user?.userId && !guestOrder) {
             customer = await prisma.user.findUnique({ where: { id: req.user.userId }, select: { id: true, role: true, phone: true } });
             if (!customer || customer.role !== "USER") customer = null;
-            if (customer && !customer.phone && normalizedPhone) shouldSaveCustomerPhone = true;
         }
+
+        let normalizedPhone = normalizePhone(String(phone || ""));
+        if (!normalizedPhone && customer?.phone) normalizedPhone = normalizePhone(customer.phone);
+        if (customer && !customer.phone && normalizedPhone) shouldSaveCustomerPhone = true;
+        if (!normalizedPhone) return v1err(res, "VALIDATION_ERROR", "Valid phone number required");
 
         const abuse = await checkOrderAbuse(prisma, { restaurantId, phone: normalizedPhone, deviceId, ipHash });
         if (!abuse.allowed) {
