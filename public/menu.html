@@ -1871,6 +1871,8 @@
       const phoneInput = document.getElementById("phone");
       const phoneHelp = document.getElementById("phoneHelp");
       const phoneField = document.getElementById("phoneField");
+      // Null-safe guard — elements may not exist if the checkout modal is not present in the DOM yet.
+      if (!phoneInput || !phoneHelp || !phoneField) return;
       phoneInput.required = !customerProfile?.phone;
       phoneInput.value = "";
       if (customerProfile?.phone) {
