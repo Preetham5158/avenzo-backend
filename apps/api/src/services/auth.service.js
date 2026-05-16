@@ -51,7 +51,7 @@ async function findPasswordUser(email, password) {
 async function getAuthUser(userId) {
     return prisma.user.findUnique({
         where: { id: userId },
-        select: { id: true, email: true, role: true, staffRestaurantId: true }
+        select: { id: true, email: true, name: true, phone: true, role: true, staffRestaurantId: true }
     });
 }
 

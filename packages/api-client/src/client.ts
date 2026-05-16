@@ -1,3 +1,11 @@
+export interface User {
+  id: string;
+  email: string;
+  name: string | null;
+  phone: string | null;
+  role: "USER" | "RESTAURANT_OWNER" | "EMPLOYEE" | "ADMIN";
+}
+
 export interface ApiClientConfig {
   baseUrl: string;
   getToken?: () => string | null;
@@ -70,26 +78,26 @@ export class AvenzoApiClient {
 
   auth = {
     customerSignup: (body: { email: string; password: string; name?: string; phone?: string }) =>
-      this.request<{ accessToken: string; expiresIn: number; user: object }>("/api/v1/customer/auth/signup", {
+      this.request<{ accessToken: string; expiresIn: number; user: User }>("/api/v1/customer/auth/signup", {
         method: "POST",
         body: JSON.stringify(body),
         auth: false,
       }),
     customerLogin: (email: string, password: string) =>
-      this.request<{ accessToken: string; expiresIn: number; user: object }>("/api/v1/customer/auth/login", {
+      this.request<{ accessToken: string; expiresIn: number; user: User }>("/api/v1/customer/auth/login", {
         method: "POST",
         body: JSON.stringify({ email, password }),
         auth: false,
       }),
-    customerMe: () => this.request<{ user: object }>("/api/v1/customer/auth/me"),
+    customerMe: () => this.request<{ user: User }>("/api/v1/customer/auth/me"),
     restaurantLogin: (email: string, password: string) =>
-      this.request<{ accessToken: string; expiresIn: number; user: object; restaurant: object | null }>("/api/v1/restaurant/auth/login", {
+      this.request<{ accessToken: string; expiresIn: number; user: User; restaurant: object | null }>("/api/v1/restaurant/auth/login", {
         method: "POST",
         body: JSON.stringify({ email, password }),
         auth: false,
       }),
-    restaurantMe: () => this.request<{ user: object; restaurant: object | null }>("/api/v1/restaurant/me"),
-    me: () => this.request<object>("/api/v1/me"),
+    restaurantMe: () => this.request<{ user: User; restaurant: object | null }>("/api/v1/restaurant/me"),
+    me: () => this.request<User>("/api/v1/me"),
   };
 
   public_ = {
